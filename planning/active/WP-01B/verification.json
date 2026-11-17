@@ -1,0 +1,104 @@
+{
+  "recorded_at": "2026-11-17T12:15:56.772345+00:00",
+  "review_kind": "STATIC_REVIEW_ONLY; byte/metadata/document audit, not a functionality test",
+  "head": "51a10416d882fe85e5a1cfc5440eac6498fc48f4",
+  "branch": "main",
+  "remote": "https://github.com/krisandchris/JIMU_Inspection_Runtime.git",
+  "protected_tracked_count": 143,
+  "protected_prior_untracked_count": 11,
+  "protected_mismatches": [],
+  "tracked_diff": [],
+  "staged_diff": [],
+  "unexpected_untracked": [],
+  "reviewed_document_sha256": {
+    "PLAN.md": "38ec63dab5c9c50e4be175eefc7877816ec86a5a714ecb7da4ed7ba69ffedc8f",
+    "FINDINGS.md": "7f57f9a745384526428b4a22164874c8615ac2175eda1a410aeb9b72a5e7de11"
+  },
+  "reviewed_document_mismatches": [],
+  "added_planning_files": [
+    "planning/active/WP-01B/FINDINGS.md",
+    "planning/active/WP-01B/PLAN.md",
+    "planning/active/WP-01B/REVIEW.md",
+    "planning/active/WP-01B/SHA256SUMS",
+    "planning/active/WP-01B/baseline.json",
+    "planning/active/WP-01B/orchestration_verification.json",
+    "planning/active/WP-01B/planning_changes.patch",
+    "planning/active/WP-01B/reviews/A_CONTRACT_REVIEW.md",
+    "planning/active/WP-01B/reviews/B_CONTRACT_REVIEW.md",
+    "planning/active/WP-01B/reviews/C_CONTRACT_REVIEW.md",
+    "planning/active/WP-01B/reviews/C_FINAL_RECHECK.md",
+    "planning/active/WP-01B/reviews/C_PLAN_CHALLENGE.md",
+    "planning/active/WP-01B/reviews/D_CONTRACT_REVIEW.md",
+    "planning/active/WP-01B/reviews/D_FINAL_RECHECK.md",
+    "planning/active/WP-01B/reviews/D_PLAN_CHALLENGE.md",
+    "planning/active/WP-01B/verification.json"
+  ],
+  "new_file_count": 16,
+  "code_changed": false,
+  "architecture_specs_changed": false,
+  "historical_evidence_changed": false,
+  "project_tests": "TEST_NOT_RUN",
+  "project_schema_tests": "TEST_NOT_RUN",
+  "lint_mypy": "TEST_NOT_RUN",
+  "runtime": "RUNTIME_NOT_RUN",
+  "dependencies_installed": false,
+  "git_mutations": false,
+  "wp01b_implementation_authorized": false,
+  "planning_result": "CONDITIONAL",
+  "blocking_findings": [
+    "B-F01",
+    "B-F02",
+    "B-F03",
+    "B-F04"
+  ],
+  "native_subtasks_completed": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "challenge_rechecks_completed": [
+    "C",
+    "D"
+  ],
+  "historical_test_evidence_only": {
+    "reports": [
+      "planning/implementation_evidence/WP-01A/pytest_final_results.xml",
+      "planning/implementation_evidence/WP-01A/pytest_rebuild_public_index_results.xml"
+    ],
+    "each_tests": 324,
+    "each_failures": 0,
+    "each_errors": 0,
+    "each_skipped": 0,
+    "rerun": false
+  },
+  "actual_readonly_commands": [
+    "cat AGENTS.md",
+    "git status --short --branch",
+    "git rev-parse --show-toplevel",
+    "git rev-parse HEAD",
+    "git log -5 --oneline",
+    "git diff --stat",
+    "git diff --cached --stat",
+    "git worktree list --porcelain",
+    "git remote get-url origin",
+    "git log -1 --format='%H%n%P%n%T%n%s'",
+    "codex --version",
+    "codex --help",
+    "codex debug --help",
+    "codex app-server --help",
+    "codex features list",
+    "codex app-server generate-json-schema --help",
+    "codex app-server generate-json-schema --experimental --out /tmp/jimu-codex-protocol-kocnaaae",
+    "codex --strict-config app-server --print-startup-config"
+  ],
+  "byte_audit_method": "Python standard library pathlib/hashlib compares every baseline path; git ls-files/status/diff identity checks; historical JUnit XML parsing only. No project module imported or project test invoked.",
+  "document_reviewed_revision": "PLAN-1.1",
+  "patch_excludes": [
+    "planning_changes.patch",
+    "SHA256SUMS"
+  ],
+  "checksum_excludes": [
+    "SHA256SUMS"
+  ]
+}

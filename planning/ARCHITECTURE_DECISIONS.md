@@ -190,3 +190,28 @@ unchanged. D12 A/B, D13 exact intersection, D15 forward-only authority, mandator
 full scan, collect_all, immutable references and CPU WP-01/GPU WP-04 gates remain.
 No new decision or candidate is marked CONFIRMED. R1/R2/R2.1 audit directories
 and AGENTS.md are protected. STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN.
+
+
+## WP-01B Goal authorization addendum — 2026-11-17
+
+Earlier ADR/D01–D15 rows remain historical review records; this appendix does not
+rewrite their original approval dates/status. The user has approved those current
+contracts and WP-01A is merged at main 51a10416d882fe85e5a1cfc5440eac6498fc48f4.
+The latest explicit WP-01B Goal text is preserved byte-for-byte in
+implementation_evidence/WP-01B/USER_AUTHORIZATION.md
+(SHA-256 0b492c517bcd40b84d84234087beed6a7019f808161580738007bf4e3a256863).
+
+Only explicitly authorized scope decisions are recorded here:
+
+| Authorization | Status | Boundary |
+|---|---|---|
+| Complete WP-01B Definition & Fact Registry engineering, CPU-only dependencies/tests/static checks and independent review | USER_AUTHORIZED | Concrete unresolved contract conflict still requires resolution; no automatic WP-01C |
+| Branch dev/wp-01b-definition-fact-registry and independent local worktree | USER_AUTHORIZED / CREATED | No modification to main files; no Commit/Push/PR/Merge |
+| RFC8785 JCS for independent ValueSchema generation input and child Schema digest | USER_AUTHORIZED | Full parent/artifact graph/Bundle root/signatures/admission remain WP-02; no implementation validation yet |
+| Necessary Fact/Attempt/result/authority typed finite validation inputs and history checks | USER_AUTHORIZED | No Workflow, database/CAS/fencing or real invocation |
+| Pure local deterministic ToolPlan DAG validation | USER_AUTHORIZED | Does not implement full Bundle closure or scheduler |
+| Astra technical adjudication within already approved semantics | USER_AUTHORIZED | New business semantics or changing prohibited scope requires user decision |
+
+G1-D01 AST staging remains an unresolved scope question in active/WP-01B/FINDINGS.md.
+Neither proposed option is entered here as approved. Technical drafts in PLAN-2
+do not imply new business approvals; G1-D03/D04 still require explicit field completion.

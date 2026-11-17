@@ -1,0 +1,979 @@
+{
+  "scope": "WP-01A final acceptance materials and PR preparation only",
+  "captured_at": "2026-11-17T10:54:10.650048+00:00",
+  "repository_root": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+  "branch": "dev/wp-01a-foundation-types",
+  "reviewed_commit": "d3978c7b07386f9169cc2b43d3e560f908cdb9c3",
+  "main_commit": "827fa77c9d6a561b0df85d7d93f50d38a912f4ee",
+  "initial_worktree": "clean",
+  "observations": [
+    {
+      "argv": [
+        "git",
+        "status",
+        "--short",
+        "--branch"
+      ],
+      "exit_code": 0,
+      "stdout": "## dev/wp-01a-foundation-types...origin/dev/wp-01a-foundation-types\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "exit_code": 0,
+      "stdout": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "exit_code": 0,
+      "stdout": "d3978c7b07386f9169cc2b43d3e560f908cdb9c3\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "main"
+      ],
+      "exit_code": 0,
+      "stdout": "827fa77c9d6a561b0df85d7d93f50d38a912f4ee\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "--show-current"
+      ],
+      "exit_code": 0,
+      "stdout": "dev/wp-01a-foundation-types\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--stat"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--cached",
+        "--stat"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "rev-list",
+        "--left-right",
+        "--count",
+        "main...HEAD"
+      ],
+      "exit_code": 0,
+      "stdout": "0\t1\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "show",
+        "--format=fuller",
+        "--no-patch",
+        "d3978c7b07386f9169cc2b43d3e560f908cdb9c3"
+      ],
+      "exit_code": 0,
+      "stdout": "commit d3978c7b07386f9169cc2b43d3e560f908cdb9c3\nAuthor:     krisandchris <a844766774@outlook.com>\nAuthorDate: Tue Nov 17 18:33:47 2026 +0800\nCommit:     krisandchris <a844766774@outlook.com>\nCommitDate: Tue Nov 17 18:33:47 2026 +0800\n\n    feat: implement WP-01A foundation types and references\n    \n    Add strict reference/value contracts, independent status enums, a locked CPU-only environment, 324 passing tests and implementation evidence.\n    \n    Publish on the development branch for GPT-6 review. Merge into main only after review approval; WP-01B is not started.\n    \n    Audit files preserve the pre-publication baseline and acceptance snapshot. Branch creation, commit and push were separately authorized after implementation completion.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "reflog",
+        "show",
+        "--date=iso-strict",
+        "-4",
+        "dev/wp-01a-foundation-types"
+      ],
+      "exit_code": 0,
+      "stdout": "d3978c7 dev/wp-01a-foundation-types@{2026-11-17T18:33:47+08:00}: commit: feat: implement WP-01A foundation types and references\n827fa77 dev/wp-01a-foundation-types@{2026-11-17T18:33:28+08:00}: branch: Created from HEAD\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "reflog",
+        "show",
+        "--date=iso-strict",
+        "-4",
+        "refs/remotes/origin/dev/wp-01a-foundation-types"
+      ],
+      "exit_code": 0,
+      "stdout": "d3978c7 refs/remotes/origin/dev/wp-01a-foundation-types@{2026-11-17T18:34:03+08:00}: update by push\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "ls-remote",
+        "--heads",
+        "origin",
+        "refs/heads/main",
+        "refs/heads/dev/wp-01a-foundation-types"
+      ],
+      "exit_code": 0,
+      "stdout": "d3978c7b07386f9169cc2b43d3e560f908cdb9c3\trefs/heads/dev/wp-01a-foundation-types\n827fa77c9d6a561b0df85d7d93f50d38a912f4ee\trefs/heads/main\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "--method",
+        "GET",
+        "repos/krisandchris/JIMU_Inspection_Runtime/pulls",
+        "-f",
+        "state=all",
+        "-f",
+        "head=krisandchris:dev/wp-01a-foundation-types",
+        "-F",
+        "per_page=100",
+        "--paginate",
+        "--jq",
+        "[.[] | {number,html_url,state,merged_at,head_ref:.head.ref,head_sha:.head.sha,base_ref:.base.ref}]"
+      ],
+      "exit_code": 0,
+      "stdout": "[]\n",
+      "stderr": ""
+    }
+  ],
+  "pull_request_check": {
+    "method": "GitHub connector search followed by read-only REST pull-list query, all states, exact owner/head",
+    "matching_pull_requests": [],
+    "result": "NO_MATCHING_PR_FOUND",
+    "pr_created_or_modified": false
+  },
+  "reviewed_diff": {
+    "added_files": 73,
+    "existing_files_modified": 0,
+    "implementation_configuration_tests": 19,
+    "implementation_evidence": 54
+  },
+  "protected_tracked_files": [
+    {
+      "path": ".gitignore",
+      "size_bytes": 96,
+      "sha256": "8fa138fb6882640f0ade5219c1a30bcd1f3cde7bf1f01b4154a6f6f36c31409a"
+    },
+    {
+      "path": ".python-version",
+      "size_bytes": 7,
+      "sha256": "fa682ae9d943f5c8076e68335c9ba3ab4d063ad035c07ac6928653dd4ac50af7"
+    },
+    {
+      "path": "AGENTS.md",
+      "size_bytes": 11384,
+      "sha256": "d740f2005470a538240fb24873db02d84d06dfe1aaa4818aca9b9b6a4001d1e9"
+    },
+    {
+      "path": "PACKAGE_MANIFEST.json",
+      "size_bytes": 2650,
+      "sha256": "33292c3ee879c9e2c455f68a54e592a5064322ae2a348cef2ffaa0c8798c0070"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": 5445,
+      "sha256": "cdb4cb2d1a172eae90340fee7af74dd2cb5c551e096ae9402cf1fa5b9399c8ee"
+    },
+    {
+      "path": "examples/nonmotor_vehicle_illegal_parking/README.md",
+      "size_bytes": 728,
+      "sha256": "f9ebb2bdcda016b735cb6c6235004c5bd4d9b9a88c0e44478f25811670380918"
+    },
+    {
+      "path": "examples/nonmotor_vehicle_illegal_parking/bundle-fragment.yaml",
+      "size_bytes": 1758,
+      "sha256": "c307510ba8421f8367c7790665c5fc9358a64579d30fb46f69d5f8d5fc440670"
+    },
+    {
+      "path": "examples/nonmotor_vehicle_illegal_parking/decision-result.json",
+      "size_bytes": 820,
+      "sha256": "1452c1ea46f252724529d0263a31a82a9b7885fc00d6694a990d46de462238ed"
+    },
+    {
+      "path": "examples/nonmotor_vehicle_illegal_parking/task-submission.json",
+      "size_bytes": 401,
+      "sha256": "35b2e6e5ea9674a87f7a5cdc52b154623f7e56a910032f63bc576a3a6d41c0a7"
+    },
+    {
+      "path": "planning/ARCHITECTURE_DECISIONS.md",
+      "size_bytes": 19005,
+      "sha256": "950f066a138f419106282d9ccbd73c5104a8e620706dedadd46c450aa7f1f2ab"
+    },
+    {
+      "path": "planning/DEPENDENCIES.md",
+      "size_bytes": 4624,
+      "sha256": "5a91c41317198a17fd4d32a0cfba981c322a60692d9ffcae527ff17b57dbf506"
+    },
+    {
+      "path": "planning/DEVELOPMENT_ROADMAP.md",
+      "size_bytes": 5335,
+      "sha256": "7ec0af82d43be70dc62a5d4d68c16acdaa38d1b9c2d058da970d5c9ce071d273"
+    },
+    {
+      "path": "planning/TEST_STRATEGY.md",
+      "size_bytes": 15131,
+      "sha256": "0009b8df5d18a63d8740480a667f503e4829d28cc3c31efbe3e6f440e3a75ae1"
+    },
+    {
+      "path": "planning/WP-01_IMPLEMENTATION_PLAN.md",
+      "size_bytes": 101113,
+      "sha256": "e6d139880c672a72cb4c07543bff7fdb390f0330f7809e62162bd9bbe93ff753"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/README.md",
+      "size_bytes": 16129,
+      "sha256": "2629548878aaf264e7999a54f22597483bc060d4a86af4197c5fa6acc3a9b93a"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/after_sha256.json",
+      "size_bytes": 30887,
+      "sha256": "399cb6ae2a54c146cdaabc1e43c80883a8d6aa9f03c02756d5d6a5f8b1097142"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/baseline.json",
+      "size_bytes": 15948,
+      "sha256": "c9e756eef6ec87828c754838ae61c324ac8507b105702bfe4c66f21765d29e6a"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/changed_files.json",
+      "size_bytes": 11028,
+      "sha256": "437880e470953f2a01e3a31024102ed0600cb300e6bcd5cfb555eda7c9c61bd4"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/command_recorder.py.txt",
+      "size_bytes": 1547,
+      "sha256": "c5243189fa1dcedee5a619dafb24951725ea948aadac1bfc405bb2c889413269"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/command_results.jsonl",
+      "size_bytes": 30517,
+      "sha256": "2f59b57934e5ed647685e159e5bc76a9e140aade682be6ee8b9f20c0ead81e52"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/dependency_versions.json",
+      "size_bytes": 3058,
+      "sha256": "c86e5359c5fb3e6a18c84af1d16425925d37c628ba3a9cad1f09c806de2d1265"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/environment.json",
+      "size_bytes": 640,
+      "sha256": "588937e3a9b3ce086b0c30057091f16c8ec091fef37db30d8d9511cd1ec2dd93"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/findings.json",
+      "size_bytes": 3008,
+      "sha256": "e4e301026cbb5d4ee064b20b375759ea34c1c55fc4258306653d5dc493208346"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/lock_sha256.txt",
+      "size_bytes": 74,
+      "sha256": "4eccff6e35077a215879c9423be14e4c3052944235bcbf13fb3c830a645075ca"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/pytest_final_results.xml",
+      "size_bytes": 51557,
+      "sha256": "f307081eea5688d6a899a3308bc1030d9bafd5c1fa239d9271d7b71564ee4bf8"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/pytest_rebuild_public_index_results.xml",
+      "size_bytes": 51557,
+      "sha256": "7661db78da22b24f32866b27b039bdda823a52e5d132ca8ce7d28eb5b7500e30"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/pytest_rebuild_results.xml",
+      "size_bytes": 51557,
+      "sha256": "d4b89c1c4b367c862a58d794f0fd408d66d4cfe031d51c16f8f61afda63ea186"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/pytest_results.xml",
+      "size_bytes": 51557,
+      "sha256": "d81db6b7f0fe34023d39d1ab6cc8447f0340474df6c24f93ba1de04e5b84bd0e"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schema_snapshot_command.py.txt",
+      "size_bytes": 4001,
+      "sha256": "650b62694b5c9ce1be84a3484592884b3537ca94c89f032f4294f0e9263188ad"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/ArtifactId.schema.json",
+      "size_bytes": 201,
+      "sha256": "61f16027e7e095c8dec84ad0697173cb7ef76fed6548c954658460e6f7bfe187"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/ArtifactKind.schema.json",
+      "size_bytes": 609,
+      "sha256": "1fdb023b8f93a77f63f206800fd57cb52a60caf1f0bda14ba374840ed4f198a1"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/AttemptStatus.schema.json",
+      "size_bytes": 241,
+      "sha256": "0d20e02d18cb87c373e6f2b04ee01e5d81b171890dabd8725cf1b481431677b1"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/BooleanTypeDefinition.schema.json",
+      "size_bytes": 297,
+      "sha256": "27a7e216910b045239b2fd607c21564cb69bb25498e04790acc27e28ac009b22"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/BooleanValue.schema.json",
+      "size_bytes": 371,
+      "sha256": "73411dfde592ffd2fdd293923dfd46735a00772382158c035a74f45dbf4e962f"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/ContentRef.schema.json",
+      "size_bytes": 1642,
+      "sha256": "165372a27b380658cec0ae1752c03907db2c168237f1a498d7d42948c6a8c25f"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/DecisionResult.schema.json",
+      "size_bytes": 205,
+      "sha256": "cfce2e069526175a874de41efff180efee64a25e095e22a9bf82be73f02fe286"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/Digest.schema.json",
+      "size_bytes": 153,
+      "sha256": "edc005c6bb9af87ade08879c0994ec4712ff67d4419b4d71ad085fda4e7bf1ca"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/EnumTypeDefinition.schema.json",
+      "size_bytes": 586,
+      "sha256": "df66f7db992dfbf847218c0d9192c90c01f96950ace9e2643dc0f3bfc02c5ba8"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/EnumValue.schema.json",
+      "size_bytes": 453,
+      "sha256": "7d133e7c76fdc583347cc4ccb83d6db607ddde2cc81d7124ab8f359acfe7d37c"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/ExecutionStatus.schema.json",
+      "size_bytes": 234,
+      "sha256": "d4ca1250ead0e092edbd8fdedcf42dee2ba03040eee9f44f036fd2fc57091498"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/FactStatus.schema.json",
+      "size_bytes": 209,
+      "sha256": "0414f08291a7e04585b037a2a57b58c53d3c22da824f066a42bcfaa227baa699"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/IdentitySelector.schema.json",
+      "size_bytes": 980,
+      "sha256": "1b9514ee6457a9f8ad45c8f4aa360fec8a1fe20c71a20b1bfcb50a69cf810052"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/IntegerTypeDefinition.schema.json",
+      "size_bytes": 684,
+      "sha256": "5289890b44f1dd63666f8f9f69f5d1e77e6ddecc9bafc14eb2cdbc6830080cfd"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/IntegerValue.schema.json",
+      "size_bytes": 374,
+      "sha256": "125f746f9372fd2b64730ac93d291c1b1076432964706c70a30a936f87c520fe"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/ListTypeDefinition.schema.json",
+      "size_bytes": 6491,
+      "sha256": "23d4064e12b257914779859e3caf4462bb6e9638ce523bd01925df59a1ccecfd"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/ListValue.schema.json",
+      "size_bytes": 4287,
+      "sha256": "b578d733161c81ceb41ec1158771eaa42ec8f30e2ccbb5439bcf46a268335d57"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/NodeRunStatus.schema.json",
+      "size_bytes": 249,
+      "sha256": "b41577476299dc8e7eec5235e46020d550add037beb4ca2259071a5088099e61"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/NumberTypeDefinition.schema.json",
+      "size_bytes": 875,
+      "sha256": "3790bab53636020ad0d6ec1c1c1e0bb6e9eee2d5da93518319e2caa9676d1d3b"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/NumberValue.schema.json",
+      "size_bytes": 430,
+      "sha256": "962f00706c5523199bc66f5075ff594fc96f046094df38eb9d91c705c6acca8a"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/RecordFieldDefinition.schema.json",
+      "size_bytes": 6494,
+      "sha256": "6636a8d0df26fac8e97d93beaaa3fb4f004f4812cf7910d06e057c1f1fbbb657"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/RecordId.schema.json",
+      "size_bytes": 211,
+      "sha256": "d68bc90a052a7b6b9c0456197840a89cc15c8e13350c2acae7a5e06a4954c13f"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/RecordTypeDefinition.schema.json",
+      "size_bytes": 6493,
+      "sha256": "f679eca29cf1198338f5511f83859af446557dc43368f9099272c066b26c2c2a"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/RecordValue.schema.json",
+      "size_bytes": 4289,
+      "sha256": "7a79ff95db801bb940d2be3d0e2c90af233519c15dcc08bdfdba0f5f07f1b0e1"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/RuntimeRecordKind.schema.json",
+      "size_bytes": 740,
+      "sha256": "0104e7e07baad78644121bd8a4815159bdfc06b2815f19cdcd356fc9a6371d10"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/RuntimeRecordRef.schema.json",
+      "size_bytes": 1690,
+      "sha256": "234745273fdf31b5e1cca81d0048f16357db3365a42b062203605c27aff33b33"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/SchemaRef.schema.json",
+      "size_bytes": 1471,
+      "sha256": "7c7c5c44267a80abf674af5aab5d341372ec98e47f503ebfb243b87a71060616"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/StringTypeDefinition.schema.json",
+      "size_bytes": 558,
+      "sha256": "3d75daa25d3070a003a4707c81987c92821c8a6ae533ac2df1f0c87661e07deb"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/StringValue.schema.json",
+      "size_bytes": 457,
+      "sha256": "2c51c34e2741240044655e39e3b259e61b33401994a032285ca1463725fc7323"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/TaskStatus.schema.json",
+      "size_bytes": 255,
+      "sha256": "80c20dc8036e37f9999e2ff7ce1945ec49b592344d86309372d15ec44a962917"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/TypeDefinition.schema.json",
+      "size_bytes": 6487,
+      "sha256": "86ce1ab820e5290817b99288304147119e40f803104075ab730d49cece6adf68"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/Value.schema.json",
+      "size_bytes": 4283,
+      "sha256": "621e77e7411f2dd36705cd28a8f9c8bfaba0459b2cd61cc128e05a07f125b481"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/ValueContract.schema.json",
+      "size_bytes": 11009,
+      "sha256": "a131699dba47dddf9d1c0c257528aebd763922528809696ba97a1f46dd73090c"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/Version.schema.json",
+      "size_bytes": 229,
+      "sha256": "43659ebb02cec340c750b35fe70a6334ac5da6c1be405a25c969e6fbeb3eea49"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/schemas/index.json",
+      "size_bytes": 10428,
+      "sha256": "d5706c39c4c61a9183f62e98929b78edca9f73235ad93518da14017e1874a281"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/static_checks.txt",
+      "size_bytes": 11479,
+      "sha256": "c8e5f1d730cab196c85bdc41355ae8fdd2f0a47d7e8b7839516f1909f52095f3"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/test_commands.txt",
+      "size_bytes": 2522,
+      "sha256": "f5d814e67aee04127c4b980c2368a5d8cb281a902bb20a664c7ea436cf57ac43"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/test_results.txt",
+      "size_bytes": 8895,
+      "sha256": "2becc66364fdb56b3a38b58a50943c0c79de6ed8fb9032d93cb633bc777a2aa3"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/verification_summary.json",
+      "size_bytes": 1436,
+      "sha256": "66188883a6d4f1e371b51a0a05ac1c341151dc7d86a7d46782298d7b8e31da5e"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/README.md",
+      "size_bytes": 3210,
+      "sha256": "3676c908732166b1149af1e8a9da7a4ea28bcc2a95281c9c906644d42c9a0be5"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/after_sha256.json",
+      "size_bytes": 3375,
+      "sha256": "4d5251cd0489cd310c59f57a5ac827c1eed1b68966511b071350c1d2657fb527"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/AGENTS.md",
+      "size_bytes": 11384,
+      "sha256": "d740f2005470a538240fb24873db02d84d06dfe1aaa4818aca9b9b6a4001d1e9"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/PACKAGE_MANIFEST.json",
+      "size_bytes": 2650,
+      "sha256": "33292c3ee879c9e2c455f68a54e592a5064322ae2a348cef2ffaa0c8798c0070"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/README.md",
+      "size_bytes": 4362,
+      "sha256": "0b392e019bba551bd20cb8becd7bf3a5376ff84cfc1bed4f93f5aab663fd9f61"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/examples/nonmotor_vehicle_illegal_parking/README.md",
+      "size_bytes": 728,
+      "sha256": "f9ebb2bdcda016b735cb6c6235004c5bd4d9b9a88c0e44478f25811670380918"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/examples/nonmotor_vehicle_illegal_parking/bundle-fragment.yaml",
+      "size_bytes": 1758,
+      "sha256": "c307510ba8421f8367c7790665c5fc9358a64579d30fb46f69d5f8d5fc440670"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/examples/nonmotor_vehicle_illegal_parking/decision-result.json",
+      "size_bytes": 820,
+      "sha256": "1452c1ea46f252724529d0263a31a82a9b7885fc00d6694a990d46de462238ed"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/examples/nonmotor_vehicle_illegal_parking/task-submission.json",
+      "size_bytes": 401,
+      "sha256": "35b2e6e5ea9674a87f7a5cdc52b154623f7e56a910032f63bc576a3a6d41c0a7"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/planning/ARCHITECTURE_DECISIONS.md",
+      "size_bytes": 3133,
+      "sha256": "5cd599c3ed402097a02eb34f05902c298db599097702e47665b1aece5f55df61"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/planning/DEPENDENCIES.md",
+      "size_bytes": 2664,
+      "sha256": "65954e28c1e0fcb726e63630aced45a691aa01f47813af47013dd125c70bc546"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/planning/DEVELOPMENT_ROADMAP.md",
+      "size_bytes": 4475,
+      "sha256": "a1e7ba253b93824ab59f20a2342ef87824b0b92eecd28ca51bf34944cea3eecf"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/planning/TEST_STRATEGY.md",
+      "size_bytes": 2540,
+      "sha256": "540ce81dc334d81e8bdd66b870d7fef4394ef65769b9bf8503df1b54546e65ef"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/planning/WP-01_IMPLEMENTATION_PLAN.md",
+      "size_bytes": 45533,
+      "sha256": "898c3d7a5f23151b72843839596beae81b4f95ccce2f1a8049edb69cfb324e11"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/specs/01_Runtime_Domain_Model_V1.0.md",
+      "size_bytes": 11113,
+      "sha256": "52dc2169fa505fecfd48f527e47603484922d1caea9e3c78f69529fa2172850d"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/specs/02_Runtime_Bundle_Specification_V1.0.md",
+      "size_bytes": 7495,
+      "sha256": "76743eff323412781ddc7d1ee72e0f3309c3f51ad11a2fe3c1006f489bcf43c2"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/specs/03_Six_Node_Execution_Contract_V1.0.md",
+      "size_bytes": 10007,
+      "sha256": "61244ad1ca3311304062c33f27a707c6739d1f884a255479da9bd74e03c78bfd"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before/specs/04_Runtime_Technical_Architecture_V1.0.md",
+      "size_bytes": 8407,
+      "sha256": "88f2494c366bd6c3a299bcc8f2157608b66b84e700d6a1228f28c251c5e980a0"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/before_sha256.json",
+      "size_bytes": 2946,
+      "sha256": "f280e307fed32a013d37e59743cc76920f2e40cdea7de1e2012876b4d8b39e72"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R1/changes.patch",
+      "size_bytes": 88311,
+      "sha256": "9e4187648b836003ac1b98753ae0844134ebce19a537d89ab97a9f8ba25da5e6"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1.1/README.md",
+      "size_bytes": 6773,
+      "sha256": "4bf1dab656a95100aa2afacffebcaac511f71ae67bd366a16e6c5ea8f18f5b55"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1.1/after_sha256.json",
+      "size_bytes": 20186,
+      "sha256": "74be31d1571f4fb6c8a4d82f15c0ba6829b8066ffc470925b805484ecc1f552c"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1.1/before/planning/ARCHITECTURE_DECISIONS.md",
+      "size_bytes": 16355,
+      "sha256": "e8fdd09488ca0518e19f934ef44d0df5df66c1bdd819c624aa8ec6b6d395d3e2"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1.1/before/planning/TEST_STRATEGY.md",
+      "size_bytes": 9180,
+      "sha256": "76649b2e3bd1f07f1f4d15d55141f8f9396146a5836378e0ed63972ac8a79f44"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1.1/before/planning/WP-01_IMPLEMENTATION_PLAN.md",
+      "size_bytes": 91435,
+      "sha256": "5bbf70d5419eacf3e31dc2598483ee7a3ee852d8ec375797a21ebcd6b483c058"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1.1/before/specs/01_Runtime_Domain_Model_V1.0.md",
+      "size_bytes": 73798,
+      "sha256": "0bda48eaad717b27dc571a48b2e89889480578acf871fff0bb12fe394e66cfd3"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1.1/before/specs/03_Six_Node_Execution_Contract_V1.0.md",
+      "size_bytes": 27490,
+      "sha256": "eb958e75f8144e27303dd7c3bfbadfc59fdf7124b5702e0ee715630b8fe102d6"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1.1/before_sha256.json",
+      "size_bytes": 12479,
+      "sha256": "9705981323757194d979c3f79693a8bfd7a46cfd17a26726d6b9ae45a97f5df1"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1.1/changes.patch",
+      "size_bytes": 79180,
+      "sha256": "e1f60dd73de87896c46449e0ebaa8907e511b846a7fe007eac17ced45798961a"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/README.md",
+      "size_bytes": 6524,
+      "sha256": "e091c4d8edb44584ba6f26c379fb7de5123b2483121b337ba972a19cb0efca95"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/after_sha256.json",
+      "size_bytes": 11031,
+      "sha256": "137cf1368611982a4c00c7f53deeaa6798e323facecec8579167b21609e52520"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/before/planning/ARCHITECTURE_DECISIONS.md",
+      "size_bytes": 13943,
+      "sha256": "beabdf3d53f761d55f833d4b41cbecbed5909cbf2429919e64788898537d1440"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/before/planning/TEST_STRATEGY.md",
+      "size_bytes": 5637,
+      "sha256": "740fadb3004f6b159771eb51dd0044d0da37a75201c9109334cdef156bca3b47"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/before/planning/WP-01_IMPLEMENTATION_PLAN.md",
+      "size_bytes": 78693,
+      "sha256": "016494a713889010209d6f251be696844660992527732d376e8d0860a7583371"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/before/specs/01_Runtime_Domain_Model_V1.0.md",
+      "size_bytes": 53866,
+      "sha256": "9c3e8f532876d1b9b74beb139732cee3a28698573b7a76c1f175063b84e3e800"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/before/specs/02_Runtime_Bundle_Specification_V1.0.md",
+      "size_bytes": 13886,
+      "sha256": "827a35afebdfdc6ceebefd4a08a42c348cd7961f544ba6c74951d942a73e9c09"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/before/specs/03_Six_Node_Execution_Contract_V1.0.md",
+      "size_bytes": 24863,
+      "sha256": "f1c0c20f625c24db925330cd17fff622243ad5bdfb457deaafec34e02bfeb214"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/before/specs/04_Runtime_Technical_Architecture_V1.0.md",
+      "size_bytes": 10471,
+      "sha256": "bb488fcb46d81702a98fb2a651b9426942e4ba534ea9dac88525e223fd8408d8"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/before_sha256.json",
+      "size_bytes": 9036,
+      "sha256": "53596cf98c9795f40fd7123733c503b6744ef97e0d4a4453fa8bbca90c40f576"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2.1/changes.patch",
+      "size_bytes": 84963,
+      "sha256": "d20c4a557e62421f20d28b69e7d5cd66a4ab9a0271e12412fbca6ff670c3b76d"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/README.md",
+      "size_bytes": 7004,
+      "sha256": "b372dbff960fca6a4a45e3f525c4dbba09562d25ef586db2e4c4080533511e67"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/after_sha256.json",
+      "size_bytes": 7649,
+      "sha256": "28853a97ca76bb8768f3e05c4658a925eeef33434d54f77911a73c2e1017eb06"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before/README.md",
+      "size_bytes": 4362,
+      "sha256": "0b392e019bba551bd20cb8becd7bf3a5376ff84cfc1bed4f93f5aab663fd9f61"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before/planning/ARCHITECTURE_DECISIONS.md",
+      "size_bytes": 7250,
+      "sha256": "e7aa78d747bd255a03c9d9fdf5a1d02dedf344e234a61dcf8d9577a59fd97fab"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before/planning/DEPENDENCIES.md",
+      "size_bytes": 2664,
+      "sha256": "65954e28c1e0fcb726e63630aced45a691aa01f47813af47013dd125c70bc546"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before/planning/DEVELOPMENT_ROADMAP.md",
+      "size_bytes": 4475,
+      "sha256": "a1e7ba253b93824ab59f20a2342ef87824b0b92eecd28ca51bf34944cea3eecf"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before/planning/TEST_STRATEGY.md",
+      "size_bytes": 2540,
+      "sha256": "540ce81dc334d81e8bdd66b870d7fef4394ef65769b9bf8503df1b54546e65ef"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before/planning/WP-01_IMPLEMENTATION_PLAN.md",
+      "size_bytes": 58699,
+      "sha256": "e3e239cb909e032d85d7a1fd16d25b3522f906c25e5e2362dec6373d12bf3145"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before/specs/01_Runtime_Domain_Model_V1.0.md",
+      "size_bytes": 16829,
+      "sha256": "5e18362ae2fe03d3601f00067ad008475e1e63568588bba7bd0fc7c53856e24c"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before/specs/02_Runtime_Bundle_Specification_V1.0.md",
+      "size_bytes": 11599,
+      "sha256": "81d727c31899d70e053e0d3b32f1c0e778da25f3961a3c0afbf0c18ee592d37a"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before/specs/03_Six_Node_Execution_Contract_V1.0.md",
+      "size_bytes": 18687,
+      "sha256": "bf9e3a9fefab21214636e936b5e2c764bc3e2c5ea397920a2b03fcea5ba94a45"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before/specs/04_Runtime_Technical_Architecture_V1.0.md",
+      "size_bytes": 9316,
+      "sha256": "b23f592877f54cbb21f52c4a436eee5009043684adc42dabe0bc108703b92f2f"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/before_sha256.json",
+      "size_bytes": 5887,
+      "sha256": "aa1738ae00e6e64ad296978f64707c0b028c1c695f80eab28dd69895af8363b7"
+    },
+    {
+      "path": "planning/review_evidence/WP-00-R2/changes.patch",
+      "size_bytes": 129131,
+      "sha256": "98d19fda90b0db652c6029957b3316a4e91637d0a3bb2e03ef11d35bf8e46453"
+    },
+    {
+      "path": "pyproject.toml",
+      "size_bytes": 1141,
+      "sha256": "31add7fa604f1dd8d0794df47c3b389f9808ce809a7268aca0ab933c714698bf"
+    },
+    {
+      "path": "specs/01_Runtime_Domain_Model_V1.0.md",
+      "size_bytes": 82475,
+      "sha256": "20aefe2ed6e9702bdb250c3c5d29f1af4596058af8c5ddc2347ebbff51ea6f33"
+    },
+    {
+      "path": "specs/02_Runtime_Bundle_Specification_V1.0.md",
+      "size_bytes": 15648,
+      "sha256": "7375130d45e3cb99e565d20060c5b086d28679389719411354a134da77a06138"
+    },
+    {
+      "path": "specs/03_Six_Node_Execution_Contract_V1.0.md",
+      "size_bytes": 35038,
+      "sha256": "0226fef35b69cd20eb4692a21a842acf3f8a14d19df3796e86e1627c160370e4"
+    },
+    {
+      "path": "specs/04_Runtime_Technical_Architecture_V1.0.md",
+      "size_bytes": 11670,
+      "sha256": "280a3813afcc5186ad3820a544cbbb202cc02902f5b9f87fc1376dce6a589dfd"
+    },
+    {
+      "path": "src/jimu_runtime/__init__.py",
+      "size_bytes": 70,
+      "sha256": "fc8afbb1498e06d2fb935d9b8c29b69599d7b51ab194287d1df8913e8ee271b7"
+    },
+    {
+      "path": "src/jimu_runtime/domain/__init__.py",
+      "size_bytes": 74,
+      "sha256": "e4822631596947830f3685876be576643d1518ca0996492ee2f5e9025b38aae8"
+    },
+    {
+      "path": "src/jimu_runtime/domain/base.py",
+      "size_bytes": 931,
+      "sha256": "a3355aa71404cd7873120758bbf1f50d8d0c9eef326856d06922339337ad00be"
+    },
+    {
+      "path": "src/jimu_runtime/domain/enums.py",
+      "size_bytes": 4081,
+      "sha256": "b1f77c9a5e7fff1aa6cc86851a741959a75f769c9bef95dc445296f3aa20922a"
+    },
+    {
+      "path": "src/jimu_runtime/domain/primitives.py",
+      "size_bytes": 1170,
+      "sha256": "06798dd89e2bf6fcfd79afc289cbedd387c1e44151cec0cc001927dadb0237d7"
+    },
+    {
+      "path": "src/jimu_runtime/domain/references.py",
+      "size_bytes": 1942,
+      "sha256": "655b172272fc38dce12d0edf3a07969361349392f61afc119dab91620d3c6cc3"
+    },
+    {
+      "path": "src/jimu_runtime/domain/values.py",
+      "size_bytes": 10466,
+      "sha256": "338e4654d950b2237929b53bb84833493d971deac3d71989bf825bf194b5ef56"
+    },
+    {
+      "path": "tests/conftest.py",
+      "size_bytes": 742,
+      "sha256": "6e019cd8d7040481df3f2e3e2525d8f4da3942b40b31d700f3a4a0c01a240b40"
+    },
+    {
+      "path": "tests/contract/test_dependency_boundaries.py",
+      "size_bytes": 2692,
+      "sha256": "cd1476a09221800c0b29605d9fb62e36b2d36634c23e3c433341aaf4fcc678a8"
+    },
+    {
+      "path": "tests/contract/test_json_schema.py",
+      "size_bytes": 8914,
+      "sha256": "189f1468e86ef52bf306d3c76dbee5e5b497cccd50b6d034c442a24945b65f6f"
+    },
+    {
+      "path": "tests/fixtures/foundation_contracts.json",
+      "size_bytes": 2777,
+      "sha256": "a1c9b73efd48633d0f23c91f42a2100e8f98a0491c47512b98cf8a1fc26cbcbe"
+    },
+    {
+      "path": "tests/negative/test_references.py",
+      "size_bytes": 4989,
+      "sha256": "28441040f91b9ba480238904fa8e1a48e80aa1c01d8dc73cd5d624f571052d08"
+    },
+    {
+      "path": "tests/negative/test_values.py",
+      "size_bytes": 6774,
+      "sha256": "560bd0c128603d5f06982ba3947148bec97b26c09487a019c0a9014d1d606cb7"
+    },
+    {
+      "path": "tests/unit/test_foundation.py",
+      "size_bytes": 6154,
+      "sha256": "d81b73c497c9b5d4c7386d31d686fcb0a5b167d7abed89dde25cd63e07de04ca"
+    },
+    {
+      "path": "tests/unit/test_value_boundaries.py",
+      "size_bytes": 6945,
+      "sha256": "0966fadff6f56b6dc2b4dc67da799722f50925bd95e205ae34be92d1334ec290"
+    },
+    {
+      "path": "uv.lock",
+      "size_bytes": 43498,
+      "sha256": "e25b2408a2d4c92b3a6dc157b70b33c4dbbf01dfbb752577480c64000a5bd801"
+    }
+  ],
+  "original_audit_hash_mismatches": [],
+  "original_hashes_checked": 142,
+  "pytest_evidence": [
+    {
+      "path": "planning/implementation_evidence/WP-01A/pytest_final_results.xml",
+      "tests": 324,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "groups": {
+        "contract": 64,
+        "negative": 130,
+        "unit": 130
+      },
+      "numeric_semantics_test_present": true,
+      "timestamp": "2026-11-17T18:21:17.144943+08:00"
+    },
+    {
+      "path": "planning/implementation_evidence/WP-01A/pytest_rebuild_public_index_results.xml",
+      "tests": 324,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "groups": {
+        "contract": 64,
+        "negative": 130,
+        "unit": 130
+      },
+      "numeric_semantics_test_present": true,
+      "timestamp": "2026-11-17T18:21:17.371530+08:00"
+    }
+  ],
+  "latest_recorded_static_checks": [
+    {
+      "command": "uv run --locked ruff check .",
+      "started_at": "2026-11-17T10:21:10.326250+00:00",
+      "finished_at": "2026-11-17T10:21:10.342040+00:00",
+      "exit_code": 0,
+      "stdout": "All checks passed!\n"
+    },
+    {
+      "command": "uv run --locked ruff format --check .",
+      "started_at": "2026-11-17T10:21:10.370900+00:00",
+      "finished_at": "2026-11-17T10:21:10.386367+00:00",
+      "exit_code": 0,
+      "stdout": "14 files already formatted\n"
+    },
+    {
+      "command": "uv run --locked mypy src/jimu_runtime",
+      "started_at": "2026-11-17T10:21:10.416818+00:00",
+      "finished_at": "2026-11-17T10:21:10.549423+00:00",
+      "exit_code": 0,
+      "stdout": "Success: no issues found in 7 source files\n"
+    }
+  ],
+  "dependency_evidence": {
+    "lock_sha256": "e25b2408a2d4c92b3a6dc157b70b33c4dbbf01dfbb752577480c64000a5bd801",
+    "installed_versions_identical": true,
+    "installed_count": 21,
+    "registries": [
+      "https://pypi.org/simple"
+    ]
+  },
+  "schema_snapshot_count": 34,
+  "independent_review": {
+    "code_review": "PASS",
+    "test_evidence": "PASS",
+    "runtime_acceptance": "N/A",
+    "source": "Current user message reporting GPT-6 independent review; full review artifact/signature/message ID not supplied. Not a GitHub-native approval review."
+  },
+  "user_acceptance": "PENDING_USER_CONFIRMATION",
+  "F01": "DISCLOSED_NONBLOCKING_TWO_STAGE_CONSTRAINT",
+  "F02": {
+    "separate_user_instruction": "FOUND_IN_CURRENT_CONVERSATION",
+    "standalone_literal_push_instruction": "NOT_FOUND",
+    "task_scope_interpretation": "Development-branch submission for GitHub review included publication; original wording and limitation are transcribed in AUTHORIZATION_EVIDENCE.md. User final acceptance pending."
+  },
+  "this_stage_evidence": "STATIC_REVIEW_ONLY",
+  "tests_rerun_this_stage": false,
+  "runtime_run_this_stage": false,
+  "business_code_changed": false,
+  "commit_push_pr_merge_authorized_this_stage": false,
+  "wp01b_planning_or_implementation_started": false
+}

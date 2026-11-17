@@ -1,0 +1,1014 @@
+--- a/planning/ARCHITECTURE_DECISIONS.md
++++ b/planning/ARCHITECTURE_DECISIONS.md
+@@ -190,3 +190,28 @@
+ full scan, collect_all, immutable references and CPU WP-01/GPU WP-04 gates remain.
+ No new decision or candidate is marked CONFIRMED. R1/R2/R2.1 audit directories
+ and AGENTS.md are protected. STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN.
++
++
++## WP-01B Goal authorization addendum — 2026-11-17
++
++Earlier ADR/D01–D15 rows remain historical review records; this appendix does not
++rewrite their original approval dates/status. The user has approved those current
++contracts and WP-01A is merged at main 51a10416d882fe85e5a1cfc5440eac6498fc48f4.
++The latest explicit WP-01B Goal text is preserved byte-for-byte in
++implementation_evidence/WP-01B/USER_AUTHORIZATION.md
++(SHA-256 0b492c517bcd40b84d84234087beed6a7019f808161580738007bf4e3a256863).
++
++Only explicitly authorized scope decisions are recorded here:
++
++| Authorization | Status | Boundary |
++|---|---|---|
++| Complete WP-01B Definition & Fact Registry engineering, CPU-only dependencies/tests/static checks and independent review | USER_AUTHORIZED | Concrete unresolved contract conflict still requires resolution; no automatic WP-01C |
++| Branch dev/wp-01b-definition-fact-registry and independent local worktree | USER_AUTHORIZED / CREATED | No modification to main files; no Commit/Push/PR/Merge |
++| RFC8785 JCS for independent ValueSchema generation input and child Schema digest | USER_AUTHORIZED | Full parent/artifact graph/Bundle root/signatures/admission remain WP-02; no implementation validation yet |
++| Necessary Fact/Attempt/result/authority typed finite validation inputs and history checks | USER_AUTHORIZED | No Workflow, database/CAS/fencing or real invocation |
++| Pure local deterministic ToolPlan DAG validation | USER_AUTHORIZED | Does not implement full Bundle closure or scheduler |
++| Astra technical adjudication within already approved semantics | USER_AUTHORIZED | New business semantics or changing prohibited scope requires user decision |
++
++G1-D01 AST staging remains an unresolved scope question in active/WP-01B/FINDINGS.md.
++Neither proposed option is entered here as approved. Technical drafts in PLAN-2
++do not imply new business approvals; G1-D03/D04 still require explicit field completion.
+--- a/planning/active/WP-01B/FINDINGS.md
++++ b/planning/active/WP-01B/FINDINGS.md
+@@ -1,112 +1,69 @@
+-# WP-01B Planning Findings
++# WP-01B G1 Findings — Current Register
+ 
+-基线：`main@51a10416d882fe85e5a1cfc5440eac6498fc48f4`。
+-本轮只有静态分析；不修改已批准规范/代码，所有建议均 **PROPOSED / PENDING_USER_APPROVAL**。
+-这里的 B-F 编号不复用 A 实施 Findings 或独立外审 F01/F02 的编号。
+-各阻塞项是当前 B 分期/字段完整性问题，不否定 A 已验收，也不撤销用户对 D01–D15 的批准。
++Revision G1-2，基线51a10416d882fe85e5a1cfc5440eac6498fc48f4。
++最新实施授权已生效；旧“未获得任何实施授权”结论仅在before_planning/保留。
++本轮尚未代码实施/安装/测试。STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN。
++G1-D01–04不是历史架构D01–D15编号；后者已批准，不重复审批。
+ 
+-## B-F01 — 完整 Policy / conditional Producer 与禁 AST 的依赖冲突
++| Finding | 当前状态 | 处置/剩余门禁 |
++|---|---|---|
++| B-F01 / G1-D01 | C1 OPEN / USER_SCOPE_DECISION_REQUIRED | 完整Policy/conditional Producer需要condition_ast，最新禁止AST；四Sol+Primary均实际核对，不能技术裁决为兼容 |
++| B-F02 / G1-D02 | 原范围阻塞CLOSED_BY_EXPLICIT_AUTHORIZATION；技术契约已列PLAN§3 | B局部JCS/生成/child digest已授权；有界canonicalizer审查、独立vectors、实现测试尚未做，不是功能PASS |
++| B-F03 / G1-D03 | 原支持域授权阻塞CLOSED；C2具体字段补齐OPEN | 已补QuestionSelection锚点、arrival资格、完整输出/bytes绑定；FactSchema完整公共字段/metadata尚待技术冻结 |
++| B-F04 / G1-D04 | C2字段补齐OPEN，非新增用户审批项 | SchemaDescriptor/source union/Review scope/verdict仍须具体字段化；依赖方向已改低层schema_types.py |
++| B-F05 | UPDATED_SCOPE / IMPLEMENTATION_VERIFICATION_PENDING | B纳入纯ToolPlan DAG周期/可达性；RuleSet内容/完整Bundle闭包仍后续，缺资料不得报PASS |
++| B-F06 | IMPLEMENTATION_VERIFICATION_PENDING | import测试需解析ImportFrom实际子模块/重导出边；未改A代码/测试 |
+ 
+-级别：实施阻塞。来源：Primary 自查及 Sol A/B/C/D 一致报告。
++## B-F01 最小解锁决策
+ 
+-实际证据：
++原文证据：
++- Domain §14 / line1167：ApplicabilityPolicy.condition_ast必填。
++- line1168：QuestionSelectionPolicy.context_rules指向ApplicabilityPolicy。
++- line1174：ToolSkipPolicy为typed tool_condition或explicit literal true。
++- §13.1 / line1021：Producer.activation_condition为always或typed Tool condition。
++- §13.3 / lines1108–1117规定表达式输入域，但没有另一个AST-free简单条件语言。
++- A源码只有基础值/引用，无现成AST；最新Goal明确禁止B实现Rule AST。
+ 
+-- Domain `specs/01_Runtime_Domain_Model_V1.0.md:1167` 的 ApplicabilityPolicy 必填 condition_ast。
+-- 同文件 `:1174` ToolSkipPolicy 的 tool_condition 或显式 literal true；`:1021` Producer activation_condition=always 或 typed Tool condition。
+-- `:1108–1117` 为不同 AST input_domain 的输入限制；`planning/WP-01_IMPLEMENTATION_PLAN.md:163` 将 AST 作为低层依赖。
+-- 当前用户明确禁止 B 实现 Rule AST、TypeChecker、Evaluator；当前 A 代码不含可复用 AST。
++不存在可同时满足“全部既有条件能力”和“完全无AST”的封闭模型。
++仅列16个kind、14个模型、未解析ForwardRef、任意dict/Any、opaque string、把AST改名、
++删除必填condition或默认为true，均不关闭此问题。
+ 
+-因此，仅增加 PolicyKind16个枚举不等于完整16个Policy模型；只接受true/always也不等于支持已批准的条件分支。Any、任意dict、字符串代码、空模型、未解析ForwardRef、把AST改名为新Condition对象，都不是有效解决方案。
++已通过异步用户问题提交两个具体选项：
++1. 推荐：明确授权既有共享条件AST的数据模型前移B，不包含RuleDefinition/TypeChecker/Evaluator。
++   这会有限改变本轮禁AST范围，不能由Primary自行批准；批准后补模型/文件/测试并定向Challenge。
++2. 保持完全无AST：明确批准B条件分支支持域及验收范围缩减，后移C。
++   不能把缩减交付写成原完整目标PASS；不另发明简单表达式语言。
+ 
+-可审查选项：
++用户尚未答复，不把推荐或等待时间当批准。其他实施授权保持有效，无需逐文件再批。
++本Goal原文明确：“如果需要改变用户已批准的业务语义，暂停Goal并请求用户决策。”
++本轮将保存G1证据后按该条件停止；不把Goal标complete，也不以第一轮技术冲突标blocked。
+ 
+-| 选项 | 内容 | 对原B验收/兼容的影响 |
+-|---|---|---|
+-| 1 保持当前禁止与完整目标 | B仍blocked，先完成有限契约/阶段调整审查再实施 | 不暗改范围；当前建议的安全停止点 |
+-| 2 显式调整前置依赖 | 单独批准将**已批准AST数据结构**提前为B前置，类型检查器/求值/RuleDefinition仍不提前；随后重审字段与B静态检查边界 | B范围变化，必须用户明示；最终wire无需新AST体系，但新增文件/测试要列清。不在当前PLAN实施范围 |
+-| 3 显式缩减B交付 | B只交完整非AST Policy子集及可独立类型；Applicability/ToolSkip完整分支、conditional Producer和相关语义后移 | 原“完整16Policy/全部Producer”门槛未满足，必须改阶段验收和后续依赖，不得原样标B PASS |
++## 技术Challenge处置原则
+ 
+-Primary建议：保留当前禁止，先获得分期裁定；若目标仍是一次完成原八模块，**选项2是需要审批的依赖调整候选**，不是现在的执行指令。若用户优先保持B无AST，则选择3并重写阶段验收。不会自动选择任何方案。
+-关闭条件：用户选定方案；PLAN/必要规格附录准确列出新增或后移模型与验证层；Sol再次Challenge，Primary复核后再请求该WP实施批准。
++PLAN-2定向复查原文保存于g1_reviews/。仍需Primary完成的技术工作：
++1. 列FactSchemaDefinition全部公共字段、单位/坐标、证据/置信metadata约束；不只给模型名。
++2. 给SchemaDescriptor精确discriminator、raw/typed分支字段与ToolResult envelope描述；
++   TypeDefinition不能单靠raw标签证明DTO shape。
++3. 给InputBinding五个来源分支的准确wire、Schema/owner/path基准与target obligation；
++   保持optional source + explicit block，不误称mandatory producer完整可用。
++4. 给ReviewMetadata/TransitionAssessment准确identity/scope/verdict/例外与fallback分支；
++   不能发明可信审批主体或真实评测通过。
++5. 给metadata namespace entry/Record根/tag semantic_domain与Prompt partial变量scope等细节。
+ 
+-## B-F02 — value_schema 生成与 JCS / 内容摘要边界
++这些技术缺口不是用户必须另作业务决定的事项，尚未完成即保留C2，不把草案写成已闭合。
++已补入PLAN：低层共享类型位置；所有scoped ref目录冲突；N04外部selection集合锚点；
++可信arrival资格；Tool required/cardinality/output state/emitted与absence关系；raw bytes与模型绑定；
++duplicate keys在字典化前拒绝；有限历史检查边界；JCS大整数溢出/独立边界用例。
+ 
+-级别：完整 F04 生成验收阻塞；单纯 FactSchemaDefinition 引用/输入契约可单独设计，但不能称F04完成。
++- JCS只处理生成input/child；A stable_json及payload数值语义保持不变。
++- 准入父制品真实性与本地child再生成分别报告；不能用ContentRef格式通过冒充hash校验。
++- System输出用已有EXECUTION_EVENT的具体闭合descriptor，非通用event或新kind；空输出
++  有明确zero_or_one和absence原因，不能合成Fact或负证据。
++- System scope按已声明scope；不从“execution Facts只能来自system”倒推出“system不能object”。
++- Optional Question一旦进入effective batch，仍恰一个primary；optional Tool absence不同nonknown Fact。
++- Optional source可以映射required target，但on_missing=block必须显式；schema路径不存在仍拒绝。
++- 本地DAG检测是新Goal明示B工作，不再援引旧PLAN后移它。
++- 原始Challenge不改写。Primary不因Sol完成而验收，后续必须直接读代码/diff/logs与实际测试。
+ 
+-证据：Domain `:940–1009` 指定 ValueSchemaGenerationSpec、JCS、独立生成输入、canonical bytes、由 input_sha256 派生 `$id` 与 child先于parent；Bundle spec `:7–8`/§4、§5把完整制品/Bundle hash与admission留WP-02。A `domain/base.py:24–31` 明确 stable_json 非JCS，`tests/contract/test_json_schema.py:1` 明确只有foundation API Schema。
+-
+-Primary不把“完整Bundle摘要留WP-02”解释成一切局部SHA禁止，也不反向推定已授权B实现JCS。需要明确分配两个生成器责任：
+-
+-| 候选 | B交付 | 后续与限制 |
+-|---|---|---|
+-| 1 受限局部生成（推荐待批） | 仅 TypeDefinitionProjection/GenerationInput 的规范化、既定profile的value_schema内容及其JCS字节、input hash/child hash；不生成父FactSchema或Bundle摘要，不做签名/closure/admission | 明确属于F04 CPU契约生成；需审查 canonicalizer 来源、数值精度、固定向量及依赖。新增依赖须另列有界版本审批，不默认安装 |
+-| 2 仅类型/结构 | B交 projection/input/Schema结构与重复性；canonical bytes、input-derived `$id`、digest全部延后 | 必须缩减B的F04验收，不能在正式V1产物中省略必需$id后冒充符合原规范；延后完整产物/相关根验收 |
+-
+-选项1仍需冻结的工程字段：projection_profile_version、generator_id/version、允许global_limits、初始根版本与URN规则；固定可无损表达数值的拒绝规则及Golden vectors。不能把`json.dumps(sort_keys=True)`当JCS，也不能为canonicalizer方便收紧已验收A所有整数/number语义。A接受的TypeDefinition可在**生成边界**因不可无损表示而拒绝，须保留有路径的原因与显式测试。
+-Source-order Record/member规范化按Domain UTF-8顺序；JCS对象属性规范化另遵循其实际规范，不能混为一个排序函数。语义同一树在固定generation spec下产物相同，改变parent ID/version/metadata不能改变child。
+-
+-A TypeDefinition已填充string/list的结构默认上界；若generation global_limits更小，必须在批准的projection适配入口明确“原始省略”与“已显式4096/256”的处理，不能丢掉字段存在性后静默截断约束。推荐通过显式 generation输入规范化后再做A类型验证，并为已构造A模型输入保留显式约束语义；确切入口签名在关闭附录冻结。
+-关闭条件：范围选择、字段/数值/入口规则、canonicalizer来源和测试向量均可审查；未完成前不选库、不装包、不写摘要实现。
+-
+-## B-F03 — Authority 结果目标与最小 Fact / Attempt 支持范围
+-
+-级别：完整 AuthoritativeResultSelection / Fact Registry.validate_fact 验收阻塞。
+-
+-证据：Domain `:1076–1092` 给了 observation_batch/tool_step/system_output、group identity、selected_attempt_id/selected_result_ref/selected_fact_refs/revision等，但未给group的精确联合字段及selected_result_ref三组kind映射。A `domain/enums.py:60–86` 有 OBSERVATION_BATCH/TOOL_EXECUTION/FACT/ATTEMPT，没有system_output结果kind。Domain `:462–483`、`:1073–1088` 要求Fact/provenance/Attempt关联。B用户明确要求Authority/候选历史，但未单列完整ObservationBatch/ToolExecution等运行模型。
+-
+-推荐保持Authority在B目标中，不接受把它整体后移后仍标八项完成。具体候选：
+-
+-- observation_batch：group identity=(execution,profile,object)，selected_result_ref限制已有 OBSERVATION_BATCH；selected Attempt 与整个有效Question集合的primary Facts一致。
+-- tool_step：group identity=(execution,profile,object,tool_plan_ref,step_id)，result ref限制已有 TOOL_EXECUTION，且源为N05 tool_plan_step；选定该Attempt的全部mapped outputs。
+-- system_output：建议以(execution,固定SystemProducer identity/output)为组；若选择已有 FACT 作为selected_result_ref，必须明确它就是单个declared output候选、selected_fact_refs恰含该同一Fact，不能扩展为整批通用结果。zero_or_one“无Fact”是否允许形成selection、如何引用结果，**仍OPEN**；另一选择为现有EXECUTION_EVENT，但必须先定义其可信payload及关系，不能靠通用事件逃避契约。
+-
+-以上是**待批准映射**，不是已批准业务语义；不会自行新增RuntimeRecordKind，也不会用泛化Ref接收所有kind。
+-
+-支持范围候选（推荐一次冻结）：
+-
+-1. B纳入必要FactRecord五分支，复用Value/FactStatus，显式schema/scope/producer/catalogue/Attempt/source/evidence/reason字段。FactSchema metadata/置信字段形状见B-F04。
+-2. 采用非持久、纯校验输入提供有限actual-result关联：result ref、execution/profile/object、node/origin、Attempt→NodeRun→Execution归属、Attempt状态及结果可选权资格、可信envelope/association状态、声明的有效Question/step输出集合、完整candidate Fact集合、已pin selection revision链。Exact字段/联合需在附录逐项冻结，不得先落Any或新运行制品。完整Question成员集合不足以证明批次可信；各selection reason的资格必须显式制定，超时/late结果不得自动标validated_success或改Attempt终态，manual_review也不由实现猜测。
+-3. 输入由可信调用者提供，在fixture中是明确synthetic；B只验证声称记录之间的一致性，不证明调用发生/审批可信。缺result membership/Attempt关系时返回incomplete/error，不只校验ref字符串。
+-4. 不实现完整ObservationBatch/ToolExecution生命周期、事务CAS、worker fence、持久event、consumer自动选权。没有selection就不解析成“最新”，已pin revision不会随新candidate自动变。
+-
+-关闭条件：三组字段/kind、system无输出边界、最小Fact/provenance/reason字段、关联输入及不可变candidate冲突比较规则获批，正负fixtures可明确列出。明确fact_id的唯一域与不可变candidate映射，不能通过换Execution/Attempt/key复用同ID绕过冲突，也不能从Object局部ID约定推定Fact的同名规则；同内容判重如何对照原始bytes/版本化内容表示必须冻结，stable_json不是原始bytes或JCS证明。不存在“实现时自行选一个kind”。
+-
+-## B-F04 — 字段/输入描述尚不足以冻结为严格模型
+-
+-级别：对应模型/语义检查阻塞。区分业务配置值OPEN（可用合成值测类型）与字段类型未定义（不能编码猜测）。
+-
+-| 缺口 / 证据 | 需要冻结的有限决定 | 推荐候选与禁止项 |
+-|---|---|---|
+-| Entity.entity_type/lifecycle；Region.region_type/scene_type，Domain:56–81 | wire type、允许值/词表权威、长度、生命周期是否状态 | 可选受约束标识+版本化词表治理或明确有限枚举；不能从示例physical_object推成全集，不能从Release lifecycle照搬Entity |
+-| Facet optional metadata/tags，:113 | 是否首版支持、封闭键/类型、边界 | 推荐未冻结metadata暂不支持并明确兼容范围，tags若支持用有界唯一标签；不是Any/开放扩展。需批准缩减可选字段，不静默删除 |
+-| ContextFieldSelector，:1136；Profile无context_schema_ref | source枚举、schema_ref wire、field_path规则、Region/Context类型输入来源 | 推荐显式注入Context/Region/Profile metadata类型环境；provenance.allowed_sources与selector source不同概念，不能直接套同枚举；不给Profile暗加schema字段 |
+-| ToolStep/InputBinding/OutputBinding/StepDependency，:175–179；grounding mappings:744–747 | 所有输入来源分支、字段名、目标路径基准、required/optional、条件policy所在位置；step_id/依赖唯一性 | Fact输出映射已明确定义，通用mapping未定义。候选来源须逐分支冻结；拒绝自由JSONPath、shell、Candidate/Decision、未声明上游输出 |
+-| Tool输出路径 :1039–1055；Schema资源 :690–696 | ToolResult.payload及evidence/response/context的有限权威类型描述、字段可选性、出错分支解包 | 推荐只读typed descriptor，来源登记到exact SchemaRef；不导入任意外部JSON Schema、不用裸路径列表证明类型。descriptor不是新增ArtifactKind |
+-| PromptTemplate :756–779 | named placeholder语法、重复/未声明变量、partial变量scope、template边界 | 建模已列purpose/source/on_missing；renderer/selected-set compiler不在B。静态占位符验证须先有语法，不能借运行模板库猜测 |
+-| ModelBinding:349–359/DeploymentRequirement:1133–1135 | logical_model_id规范字段名、constraints唯一来源、与ProviderPolicy的关联 | exact constraints复用既有VersionConstraint，避免两套矛盾可写数据；候选field placement须冻结 |
+-| Fallback逐transition评测，Domain:371/390/715/1177 | 有限ReviewMetadata/TransitionAssessment输入：准确source/target deployment/model版本、capability、approved scope、覆盖transition/trigger、ReviewReportRef及显式校验时刻 | 非持久校验输入，不改Policy wire、不自建审批服务；report存在但覆盖不符拒绝。未提供此输入只能报告ref形状已检，具体semantic check为deferred，不能声称真实可信审批/质量通过 |
+-| FactSchemaDefinition，:924–945、总计划:255 | schema_id/version等完整字段，known/non-known/证据/置信元数据政策、单位/坐标ref形状、适用时必填条件 | 推荐共用已批准Unknown/Evidence等明确契约，不能自造多套宽松policy；数值confidence不是概率校准 |
+-| Registry字段路径，Domain:1095–1106；A RecordFieldDefinition.required | ResolvedFieldType返回type_definition/field_path/optional祖先链的闭合字段 | 不只返回叶TypeDefinition；required叶在optional父内仍可缺失。未声明路径报错，不伪造missing值/TruthValue |
+-| 初始持久根与辅助类型，Domain:644、总计划:173/236 | schema_version、长度/集合上限、错误码/路径、UTC序列化、null/absent | 推荐根显式1.0.0（待批）、错误路径为有界字段名/索引tuple；有分支禁止字段时null也拒绝；不从包版本推导 |
+-
+-这些字段集中在一个冻结附录进行技术复核与用户批准，不逐文件重复提问。保留所有原规范；若补充需要增加规范wire字段、删减可选能力或收紧支持域，必须列差异/兼容性并获有限修订授权。没有任何“按最佳猜测已冻结”的条目。
+-
+-## B-F05 — 有限语义检查与完整 closure 的边界
+-
+-状态：计划已声明验证范围，未来需由实际测试证据确认。来源：Primary +四只读审查。
+-
+-Profile.rule_set_refs必须保留（Domain:96），但RuleSet/AST/typechecker不属当前B。B可检查shape/kind、明确外部pinned inventory条目是否唯一，不能声称Rule body/mandatory producer完整性已验证。无目标内容时应报告外部依赖未完成，不造空RuleSet让全部绿灯。
+-ToolPlan的step局部字段/重复/悬空dependency ID可按批准形状检查；总计划:346将完整DAG/可达性/映射闭包归WP-02。若希望B增加纯本地cycle检查也须在最终清单注明，不暗中建compiler。
+-Policy的规则/coverage/execution常量可建模，不等于Rule/Workflow/Gate实现。Provider/Fallback元数据可检一致，不等于真实独立评测或可信审批解析。
+-完整AST input_domain检查归C；全Bundle conditional-producer completeness归WP-02。禁止因B缺Ast上下文而把这些结果写PASS。
+-
+-## B-F06 — import graph 验证需覆盖实际子模块边
+-
+-状态：B测试改进提案，非本轮已修复；不改已通过A业务代码。
+-证据：`tests/contract/test_dependency_boundaries.py:22–37` 仅记ImportFrom.module；`from jimu_runtime.domain import producers`会漏掉实际submodule边，扩展B目录后可能漏循环。
+-计划：显式绝对子模块导入、解析本地模块from-import目标与__init__重导出边；用小型合成文件图验证可发现环。检查的是Python源码import AST，不是受禁的Runtime Rule AST。保留原依赖/Any/动态执行检测，不以删断言修复。
+-
+-## 关闭与审批记录
+-
+-当前 B-F01–04 尚无用户选择/字段冻结授权；未修改任何已批准契约。PLAN可供审查，但不能据此开始代码。B-F05/06已有具体计划措施，未执行验证。
+-用户需要一次性裁定三个边界（AST分期、局部Schema/JCS职责、Authority支持范围）并允许相关字段附录闭合；随后由Primary产出明确PLAN修订、Sol只读Challenge，再取得具体实施批准。D01–D15不重复审批，真实部署/预算/质量阈值仍按各自业务门禁。
++生产分类成员、预算、评测门槛、部署值仍由配置审批，synthetic fixtures不代表生产批准；
++它们不构成本轮类型工程的重复审批要求。
+--- a/planning/active/WP-01B/PLAN.md
++++ b/planning/active/WP-01B/PLAN.md
+@@ -1,287 +1,295 @@
+-# WP-01B — Definition & Fact Registry 实施计划
+-
+-Revision: PLAN-1.1（Sol Challenge 后修订），2026-11-17。状态：**PROPOSED / CONDITIONAL / PENDING_USER_APPROVAL**。
+-本轮仅规划；`STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN`。
+-本文件是当前 WP-01B 唯一实施计划。`FINDINGS.md` 是其阻塞项附录，reviews/ 是只读输入和 Challenge，不能单独扩大本计划范围。
+-
+-## 1. 基线、授权与本轮交付
+-
+-- Repository：`krisandchris/JIMU_Inspection_Runtime`；分支 `main`。
+-- 实际 HEAD：`51a10416d882fe85e5a1cfc5440eac6498fc48f4`，与用户指定一致。
+-- WP-01A 已由 PR #1 合并，父提交为 `827fa77…`、`d3978c7…`；B 不沿用旧实施基线。
+-- 初始 143 个 tracked 文件逐字节等于 HEAD；没有 staged/unstaged tracked 修改。11 个既有 untracked 验收/合并文档属于已知前序交付，摘要一致，保留不动。完整路径及 SHA-256 见 `baseline.json`。
+-- 用户已批准 D01–D15 当前契约，且确认 A 验收/合并。旧规格和 ADR 中的 pending 标签是历史审查状态，不要求重复批准这些既有决策，也不重写历史。
+-- 本次用户**只授权 B Planning**。整体 A/B/C 方向批准不能替代本计划审批。以下 Finding 的建议尚未批准；实施、安装、测试均未开始。Commit、Push、分支、PR、Merge、部署仍分别受授权门禁控制。
+-
+-已重新阅读 AGENTS、README、四份规格、ADR/roadmap/dependencies/test strategy、WP-01 总计划、全部四个示例；直接检查 A 全部源码、公开接口、配置及相关测试/证据。可选 `ENGINEERING_EXECUTION_AND_ACCEPTANCE_STANDARD_V1.0.md` 当前不存在，不补造。
+-目录已有 src layout、7 个 Python 源文件、7 个测试 Python 文件、fixture、CPU 锁文件及历史审计包；没有 Definition、Fact Registry、Rule AST 实现。
+-
+-本轮只新增 `planning/active/WP-01B/` 内的计划、Finding、审查记录和字节证据。旧规格、A 源码/测试/配置、全部历史审计材料不修改。当前 324 passed 是 A 历史测试结果，不是本轮运行结果。
+-
+-## 2. 多智能体能力与实际配置
+-
+-| 检查项 | 实际证据与结论 |
++# WP-01B — Definition & Fact Registry
++
++Revision: PLAN-2-G1，2026-11-17。当前门禁：**G1 CONDITIONAL / G1-D01 PENDING_USER_DECISION**。
++用户已授权 WP-01B 实施、CPU-only 安装/测试、独立 worktree/开发分支；不是仍待整个 WP 重复授权。
++本轮实际证据仍为 STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN；尚未委派代码。
++
++## 1. 基线、授权和唯一计划
++
++基线 main HEAD：`51a10416d882fe85e5a1cfc5440eac6498fc48f4`。
++开发分支：`dev/wp-01b-definition-fact-registry`。
++独立 worktree：`../JIMU_Inspection_Runtime_WP01B`。
++原 main 的143个 tracked 文件、27个已知未跟踪规划/验收/合并文件均核对原摘要，无非预期变化。
++只把这27个已核对文件按原字节复制到新 worktree；源树未改。
++PLAN-1.1/FINDINGS/REVIEW/摘要封套保存在本轮 evidence 的 before_planning/，旧 reviews 不重写。
++
++最新用户 Goal 原文保存在 `planning/implementation_evidence/WP-01B/USER_AUTHORIZATION.md`，
++SHA-256 `0b492c517bcd40b84d84234087beed6a7019f808161580738007bf4e3a256863`。
++它取代上一轮“仅 Planning”权限；G1-D01–04 与历史架构 D01–D15 不同。
++历史 D01–D15 已批准，不重新审批，也不把旧 pending 标签重写为伪造历史批准。
++Commit/Push/PR/Merge/main 文件修改/部署没有授权。
++
++本文件为唯一实施计划。FINDINGS 是当前门禁，REVIEW 是实际核查记录；原始子报告不是独立实施授权。
++Primary 实测 gpt-6-astra/xhigh，四个新 Sol 实测 gpt-6.1-sol/medium，原生会话证据在 agent_sessions.json。
++原生 spawn 共享文件系统；worktree 由主控创建，并不自动给每个子智能体隔离。所有写入任务显式指定开发目录。
++
++## 2. 目标、非目标与依赖
++
++八个目标不缩减：Entity/Region；Profile/Facet/Question；ModelBinding/Tool/ToolPlan；
++Policy Catalog；FactSchemaDefinition；FactProducerDeclaration；AuthoritativeResultSelection；Fact Schema Registry。
++必要支持包含严格有限 Schema/Mapping 描述、Fact/Attempt/Result 关联输入、局部 value_schema 生成、CPU测试。
++不重复 A，不改 A 数值和 ref wire 语义。
++
++禁止：RuleDefinition/RuleSetDefinition、Rule AST（G1-D01 未获例外）、TypeChecker/Evaluator、
++Gate/Workflow、完整 Bundle graph/compiler/root digest/signature/admission、Release Manager、
++DB/ORM/API、Model Gateway、真实模型/GPU、需求平台。
++ToolPlan **本地 DAG 周期与可达性验证纳入 B**；它不等于 WP-02 全 Bundle 闭包。
++RuleSet refs 可检查 kind/exact identity；不虚报 Rule body、mandatory Rule producer completeness 已验证。
++
++模块依赖 DAG（箭头为前置→消费者）：
++
++```text
++A foundation → shared support / typed descriptors / diagnostics
++shared → ontology, resources, prompt contracts, model bindings
++shared → FactSchema projection + selectors + tool output declarations
++shared + [G1-D01 条件数据依赖] → Policy / Producer
++tool output declarations + mapping descriptors → Tool / ToolPlan
++ontology + binding refs + policy refs → Profile / Facet / Question
++FactSchema + Producer selectors → Fact / Attempt / Result / Authority
++全部有限目录 → Registry / cross-validation → schema inventory / integration tests
++```
++
++跨定义通过 ContentRef，底层模型不反向导入 Registry/validation；共享 Tool 输出只有一个定义。
++不使用全局 mutable registry，不用目录扫描/远程取回代替有限输入。仅单文件单 writer；独立模块可并行。
++
++## 3. G1 四项裁决
++
++### G1-D01 — 条件数据分期：OPEN，唯一需用户范围裁定项
++
++Domain §14 的 ApplicabilityPolicy 必填 condition_ast；context_rules 间接依赖它；
++ToolSkipPolicy 与 §13.1 Producer 允许 typed Tool condition。A 没有现成 AST。
++最新授权同时要求完整既有 Policy/Producer、禁止 AST、只用已批准简单声明策略；
++现有规范没有已批准的独立 AST-free 条件语言。literal true/always 不能等同完整历史支持域。
++
++四 Sol 只读 Challenge 与 Primary 独立原文核对一致。不采用 Any/dict/opaque string/
++未解析 ForwardRef/改名 AST/空 Applicability/14分支冒充16分支。
++向用户提交的最小二选一：
++
++1. 推荐：仅将既有共享条件 AST **数据模型**前移 B；不提前 RuleDefinition、TypeChecker、Evaluator。
++   这是明确的范围例外，尚未批准。批准后更新模型/文件/测试清单，Sol 定向 Challenge，按现有实施授权继续。
++2. 保留 B 完全无 AST：用户明确批准缩减条件分支支持域及 B 验收范围，复杂分支留 C。
++   不得把原八项完整契约门槛原样写 PASS；Applicability 简单替代形状也不能自行发明。
++
++此处等待的是分期例外，不是再次索取整个 WP、每个文件或历史 D01–D15 的批准。
++未答复不视为同意。依用户“改变已批语义需暂停 Goal”的指令，在保存本轮审计后停于此门禁。
++
++### G1-D02 — 局部 JCS / value_schema：范围已批准，契约技术冻结
++
++Schema：GlobalTypeLimits、ValueSchemaGenerationSpec、TypeDefinitionProjection、
++ValueSchemaGenerationInput、GeneratedValueSchema（非持久产物描述）、FactSchemaDefinition。
++
++- 注册生成 profile/version=1.0.0，generator_id=jimu.value-schema，generator_version=1.0.0；
++  dialect 固定完整2020-12 URI，canonicalization_id=JCS；无隐式选项。
++- limits 显式正整数，分别不超过 A 的4096字符/256项/64字段/8层容器。
++- 七类型沿用 A；只投影 payload kind/约束；Record/enum数组按 UTF-8 字节排序；
++  JCS 对象键排序独立遵循 RFC8785，不把两个排序步骤混淆。
++- 原始 TypeDefinition 输入先按显式 limits 补省略的 string/list 下界0和上界，再校验。
++  已构造 A 类型实例按其有效约束处理；超过更小 limits 拒绝，不能截断。
++- 输入只有 normalized projection + generation_spec。先 JCS input SHA-256，生成
++  urn:jimu:value-schema:<projection_profile_version>:<input_sha256> 的 $id，
++  再生成 closed kind/value Schema、JCS bytes、child SHA-256。
++- child inventory ID 用 value-schema.<input_sha256>，version=projection_profile_version；
++  exact value_schema ContentRef 指向 child_digest；父 FactSchema 再持有该引用。
++  不把 parent ID/version/semantic metadata/digest、Bundle root或环境状态加入 child。
++- 不缩减 A 的 StrictInt。生成边界要求数字可无损进入所选 canonicalizer：
++  大整数转 binary64 前后不等即拒绝；有限 float 保留 binary64 意义。
++  如库支持域更窄，必须披露并测试，不谎称安全整数区间外全部违反 RFC。
++  float(huge_int)溢出也须转换为带路径的验证错误；测试2^53−1、2^53、2^53+1、2^60和极大整数，
++  区分binary64可精确表示与具体库支持域；生成/bytes入口在字典化前拒绝重复JSON键。
++- ordinary sort_keys/stable_json 不是 JCS。实现前审查有界 CPU canonicalizer版本/来源及
++  RFC独立 golden vectors，再记录lock变化；库选择和测试未完成，不宣称兼容已验证。
++- B 校验生成 child 的精确 bytes/digest。父 FactSchema exact ref 由调用者注入；
++  B不计算/证明父制品真实性，不将格式合法 digest 当内容校验。父/全图/root/签名留 WP-02。
++
++必测：RFC固定字节向量、负零/指数边界/Unicode键顺序/孤立surrogate/非有限/精度丢失；
++同输入重复、父metadata变化不改child、Record/member乱序等价；错误childref/bytes拒绝。
++规范来源：[RFC8785](https://www.rfc-editor.org/rfc/rfc8785)。
++此为设计冻结，不是JCS测试PASS。
++
++### G1-D03 — Fact / Attempt / Authority：支持域已批准，技术附录待字段补齐
++
++持久根 FactRecord、AuthoritativeResultSelection 显式 schema_version=1.0.0。
++运行关联支持使用有限非持久 descriptors，不建设完整节点运行记录/存储服务。
++
++| 支持类型 | 输入/身份和约束 |
+ |---|---|
+-| Codex 版本 | `codex --version` → `codex-cli 0.169.0` |
+-| 原生 Multi-Agent | `collaboration.spawn_agent/list_agents/send_message/followup_task` 可用；本轮实际启动 A–D 四个只读子任务并收取结果 |
+-| 每任务模型/effort 覆盖 | spawn 显式 `fork_turns=none, model=gpt-6.1-sol, reasoning_effort=medium`；四个原生子会话 turn_context 均核对相符 |
+-| Primary | 当前 turn_context 为 `gpt-6-astra / xhigh`；按用户条件条款的 xhigh 执行，未把标题中的 Ultra 冒充实际 ultra |
+-| 配置规范 | 使用本机版本的 CLI help 和导出的 app-server protocol Schema；其 TurnStartParams 明确 model/effort。`codex --strict-config app-server --print-startup-config` exit 0。没有猜字段、修改 config 或安装框架 |
+-| 运行状态 | 原生 list_agents 实际返回四任务 running，随后取得四项完成回复；可定向 followup/interrupt |
+-| 文件系统 | 四子会话 cwd 与主会话相同，实际读取同一 HEAD/工作区；共享文件系统，无隔离写入假设 |
+-| Worktree | CLI 有 `--worktree`，原生工具有创建/查询 managed worktree；当前 Git 只有主工作树，managed inventory 为空。支持接口存在，**创建验证未执行**；spawn 无独立 worktree 参数 |
+-
+-安全白名单元数据见 `orchestration_verification.json`。子任务自身报告“无法核对 model”保留原样；Primary 后续直接核查原生会话记录确认模型，不将子任务自述当配置证据。旧 feature flag 的 deprecated/false 状态不能替代本轮实际 spawn 和 turn_context 证据。
+-
+-本轮采用“一名 Astra 主控 + Sol 开发角色的四个只读任务”，并非四个写入者。未来实施同一时刻只运行一个 Sol 写入任务，Primary 在其结束后审查/修改。独立只读工作可以并行。无需替代 Agent 框架。
+-未来若选择独立 worktree，须在 Git 授权中明确目标 ref/分支和目录，由 Primary 创建或复用后逐任务指定路径；不复制未提交变更、不同时写主树。当前不创建 worktree/分支。
+-
+-## 3. 目标、非目标与不可绕过的阻塞
+-
+-目标是用户列出的八项：Entity/Region；Profile/Facet/Question；ModelBinding/Tool/ToolPlan；Policy Catalog；FactSchemaDefinition；FactProducerDeclaration；AuthoritativeResultSelection；Fact Schema Registry。仅不可变数据模型、有限注入目录的纯校验、Schema 与 CPU 测试；不建设外部服务。
+-
+-不实施 Rule AST、Rule TypeChecker、Rule Evaluator、Applicability Gate、Bundle compiler/完整 closure/digest/signature、Release Manager、Workflow、DB/ORM、API、Model Gateway、GPU/模型调用、需求平台适配。不会新增 ArtifactKind/PolicyKind 或修改已验收 A 的数值/引用语义。
+-
+-**当前八项完整目标不能在所有现有限制下直接实现。** Policy 中必填 AST 与 B 禁 AST 有实际依赖冲突；还有必须冻结的字段/引用边界。发现冲突后停止相关设计落地与实现，不修改规格或以占位类型填补。继续完成本次明确授权的 Finding、可审查选项与计划。
+-
+-| Finding | 影响与门禁 | 当前状态 |
++| ObjectFactScope / ExecutionFactScope | execution_id；object分支另有profile_ref/object_ref；execution分支禁止Object字段 |
++| FactRecord五分支 | fact_id、scope、key、exact schema、catalogue ref/declaration_id、producer identity、Attempt/source/evidence/time/trace；known必填Value，其余禁止value包括null、必填结构化reason |
++| Question/Tool/System FactSource | Question关联batch+invocation；Tool仅N05 step ToolExecution；system精确capability/独立event结果，不伪造模型调用 |
++| AttemptDescriptor / NodeRunDescriptor / ObjectDescriptor | 明确Attempt→NodeRun→Execution、owner/node、number/status、Object所属Profile；无N07、无生命周期执行 |
++| QuestionSelectionDescriptor | exact selection ref、execution/profile、已验证资格、pinned effective_question_refs；ObservationResult集合必须与它一致，不能自证完整 |
++| ObservationResultDescriptor | OBSERVATION_BATCH、同Object/Attempt、selection/effective Questions、invocation、envelope/association验证、完整候选集合 |
++| ToolStepResultDescriptor | TOOL_EXECUTION、N05/tool_plan_step、plan/step/tool、同Object/Attempt、完整mapped output状态/候选/absence证据 |
++| SystemOutputResultDescriptor | 既有EXECUTION_EVENT、scope/Attempt、exact system requirement/output；emitted(fact_ref)或optional_absence(reason)闭合联合 |
++| AuthorityValidationInput | 上述可信有限目录、声明、Facts、完整历史selection；缺关联输入返回incomplete/error，不推断调用真实发生 |
++
++System scope 与其声明一致；现有规范不把所有 SystemProducer 限制为 execution-only。
++execution Facts 必须来自 system；N05 Tool Facts 只允许object。object system仍须完整Object/Profile归属。
++System event不是通用事件承诺：同ref只能一份匹配descriptor，emitted恰一Fact；
++absence仅zero_or_one、禁止Fact/value，selection.selected_fact_refs为空；不解除消费者缺必需Fact的阻塞。
++
++Authority组身份：
++N04=(execution,profile,object)；N05再加exact plan/step；
++system=(execution,scope,Object/Profile若适用,registered producer identity,output_name)。
++选择结果kind分别固定OBSERVATION_BATCH/TOOL_EXECUTION/EXECUTION_EVENT。
++所有Object/NodeRun/Attempt/Result/Fact/Selection目录先检查scoped ref唯一内容，禁止构造dict时覆盖。
++Object仍Execution-local；Fact按下文有限目录身份约束。结果descriptor必须显式提供可信
++arrival_qualification=on_time/late/unresolved；late拒选，unresolved或缺字段返回incomplete/error，
++即使Attempt.status=succeeded也不能代替到达资格。B不测量真实deadline、不伪证未迟到。
++
++完整性与资格：
++- 所有effective N04 Questions各恰一个primary，optional已被选入后也不能缺项。
++- N05逐step检查映射输出全集，不是Tool未使用输出全集。每个mapped output有唯一状态；
++  required=true/exactly_one必须恰一候选Fact（合法nonknown可接受）；optional/zero_or_one
++  必须在emitted(fact_ref)与optional_absence(reason)中二选一，不同时存在。absence无Fact/value，
++  已产生unknown/error Fact属于emitted且不得从selected集合丢弃。该union是校验descriptor，
++  不改原ToolOutputState五态wire；状态/payload路径/absence原因必须一致。Tool required、
++  Producer cardinality和step mapping相矛盾拒绝，不能从空Fact列表猜测optional成功。
++- selected_fact_refs等于整个选定Result的候选集合；不得跨Attempt拼接、只挑known或最高confidence。
++- 非known但结构合法的Fact可以留在可信完整批次；完整不等于全known。
++- transport失败、不可信envelope/association、missing required输出不可伪造成成功批次。
++- 三种selection reason均要求选定Attempt succeeded且归属/结果完整验证满足；
++  manual_review/explicit_retry_resolution不能救活failed/timed_out/cancelled/superseded或late Attempt。
++  这是B保守验证资格支持边界，不宣称原规格已批准全部人工恢复策略。
++  若未来需要人工接纳失败/迟到结果，另定业务规则；B不提供该隐式特权。
++  validated_success不代表所有Facts known或解除下游required evidence guard。
++- revision首项1无previous，后续同组+1且精确previous；fork/断链/跨组拒绝。
++  选择早成功Attempt合法；不自动选最新，历史Fact/Attempt/selection保留。
++
++fact_id在本次有限目录中对整条immutable candidate单值；同时检查规范candidate复合键。
++接收原始候选bytes的入口保留并严格解析：在字典化前拒绝重复键（含嵌套），拒绝非法
++Unicode/非有限数/额外字段，解析完整typed content必须等于该提交Fact，bytes/model不符拒绝。
++只有同键完全同bytes才算原始重复；
++模型相等/稳定JSON不是传输bytes去重证据。不同bytes冲突，不覆盖旧值。
++Registry返回不可变快照/显式选权视图；不实现DB CAS/fencing/幂等服务。
++冲突检查只证明提交目录/快照内一致；新快照须显式携带前序历史，不能证明调用者未漏传
++外部历史，也不声称全存储全局去重。FactSchema metadata/完整公共字段附录仍须补齐（见REVIEW）。
++
++必测：跨Attempt cherry-pick、错scope/node/producer、optional已选缺项、必需输出缺失、
++失败/late资格、错误resultkind、ID重绑/复合键冲突、revision fork、旧快照不变、system absence无假Fact。
++
++### G1-D04 — 严格字段和 Mapping：技术裁决草案，C2字段补齐未完成
++
++以下是最新授权下技术约束草案，不是新业务词表/生产阈值，也不修改 A 类型。
++定向Sol复查指出descriptor/source union/review scope尚未精确列出所有字段，不能称完整冻结。
++剩余是Primary可自行处理的技术工作，不要求用户另批；D01决策后恢复并在代码前补齐复查。
++
++- 所有B持久根显式 Literal["1.0.0"]；ID/Version/Digest/ref使用A；branch禁止字段含null也拒绝。
++  name/member等短文本1..128，描述1..4096，模板最多65536字符；普通目录集合最多1024，
++  mapped fields最多64，路径最多8段，字段名沿A FieldName。预算仍规范64-bit显式范围。
++- entity_type/region_type/scene_type/lifecycle用VocabularyMemberRef；精确词表/成员/semantic_domain验证。
++  lifecycle仅元数据，不发明状态迁移。词表成员由调用方配置，synthetic例子不批准生产值。
++- Facet.tags为有界唯一VocabularyMemberRef tuple。metadata如使用，采用有界namespace+明确
++  attribute_schema_ref+受限RecordValue，调用者提供exact typed descriptor并做双阶段验证；
++  不支持无Schema metadata、任意dict或未声明键，不静默丢弃optional字段。
++- ContextFieldSelector.source=context_snapshot/region_metadata/profile_metadata，
++  exact context SchemaRef +非空field_path；这些是读取域，不能复用provenance五种来源枚举。
++  不给Profile添加context_schema_ref；类型环境由显式注入且绑定Region/Profile身份。
++- FieldSelector为exact schema_ref +字段tuple；空path仅在通用/Fact整体值选择时允许。
++  path逐个精确字段名解析，("a.b",)是一个字段名，不是JSONPath；无索引/wildcard/跨Object。
++- ResolvedFieldType保存type_definition、field_path、optional_ancestor_paths（含可选叶）。
++  SchemaDescriptor明确表示层raw DTO/typed Value，typed record语义路径与wire kind/value包装不混用。
++  ToolIO descriptor封闭描述normalized payload/evidence/output_states及成功/失败/partial分支。
++  仅有限typed树，不导入 arbitrary JSON Schema，不以路径字符串列表证明schema结构/真实性。
++- InputBinding：来源为声明Context、当前Object/image引用、FactSelector或已声明祖先step输出；
++  target为Tool input Schema中的明确字段路径；required/on_missing显式；禁止N06来源。
++  Fact来源必须保留schema/producer/scope身份；上游step必须为DAG祖先。无计算/转换脚本。
++- required target允许可选source，但必须on_missing=block；optional target才可omit。
++  不补null/false/默认值；unknown/error/noauthority与字段缺失分开诊断。
++  重复/父子重叠target写入拒绝，所有必需target有确定映射。
++- 类型兼容只做可证明包含：kind/表示层一致，enum源子集、数值/string/list边界不宽于目标、
++  Record逐字段递归/required与closed extra一致；无法证明拒绝。无int→number coercion。
++  Fact语义仍要求exact FactSchema和scope/units/coordinate_system，不以shape替代。
++- ToolFactOutputDeclaration/Mapping沿Domain §13字段；target key必须等声明key。
++  value_path只从ToolResult.payload解包；evidence paths另有显式基准。known必须有值，
++  nonknown该path禁止值，缺state/path不推导unknown。只选择已声明的named outputs。
++- ToolStep持有step_id、exact tool_ref、unique depends_on、input_bindings、
++  fact_output_mappings、requirement、failure/skip policy refs；本地检测空/单步/分叉/汇合、
++  self/两步/长cycle、悬空/重复依赖、非祖先输入。无执行器/拓扑调度。
++- ModelBinding.logical_model_id为受限规范ID；部署版本约束权威在pinned ProviderPolicy。
++  remote_primary必须显式配置；local例外、fallback审查、预算均无行为默认。
++  Tool worker位置与模型provider路由分离。
++- ReviewMetadata/TransitionAssessment注入pinned report、exact from/to deployment/model版本、
++  capability/scope/trigger、verdict/UTC有效窗；validation_at显式。报告存在不等于覆盖该转换，
++  未注入可信材料就不报review/quality PASS。不实现真实信任解析/质量评测。
++- Prompt仅声明命名占位符（技术语法冻结为{identifier}，转义{{/}}）；变量名ASCII标识1..128、
++  unique注册、模板使用域一致；partials exact refs且有限目录无环。无loops/expression/render服务。
++
++新wire约束影响尚未实现的B类型；示例仍illustrative。既有A、历史已发布制品不迁移。
++geometry正文未在B冻结，保留exact geometry_resource ref及明确未执行内容检查，不假装几何语义PASS。
++
++## 4. Pydantic / 纯接口清单
++
++| 模块路径（domain/） | 模型与交付 | writer |
+ |---|---|---|
+-| B-F01 | 完整 16 Policy、conditional Producer 依赖 AST；B 明确禁 AST；需用户裁定阶段依赖 | BLOCKING / OPEN |
+-| B-F02 | TypeDefinition→value_schema 的 JCS/input digest 与 B/WP-02 边界；不能用 stable_json 冒充 | BLOCKING 对完整 F04 生成验收 / OPEN |
+-| B-F03 | Authority 三组 result kind、group identity、Facts/Attempt 校验输入与 B runtime-support 范围 | BLOCKING / OPEN |
+-| B-F04 | ontology 分类/lifecycle、metadata、Context selectors、Tool mappings、Schema 路径环境等 wire 细节未冻结 | BLOCKING 对相关模型/语义验收 / OPEN |
+-| B-F05 | 跨阶段 RuleSet/完整图检查不能由有限目录冒充；各层验证证据须分开 | 计划已明确边界；实现仍待核验 |
+-| B-F06 | A import DAG 测试对子模块 `ImportFrom` 边的覆盖不足 | 已纳入 B 测试改进提案；本轮未改测试 |
+-
+-完整证据、候选取舍和关闭条件见 [FINDINGS.md](FINDINGS.md)。这些不是重新审议 D01–D15；本轮不产生新的已确认业务决定。
+-
+-建议先一次性裁定 B-F01–04，再批准带冻结字段附录的本计划；不能一句“开始实现”隐式选中尚未确认的方案。若用户调整 B/C 分期，必须更新交付清单和验收表后复核，不能把缩减的交付标为原完整 B PASS。
+-
+-## 4. WP-01A 复用与兼容边界
+-
+-| 既有公开接口 | B 的使用方式与限制 |
+-|---|---|
+-| `domain.base.ContractModel` | 复用 strict/frozen/extra forbid/revalidate；新增持久根显式 schema_version；tuple/只读 map 保证深不可变，不能只依赖 frozen |
+-| `ArtifactId/RecordId/Version/Digest` | 复用 exact stable SemVer、小写 64 hex、不 coercion；不引入并行身份体系 |
+-| `ArtifactKind` 25 / `RuntimeRecordKind` 26 | 保持集合与 wire；字段增加 expected-kind 约束，不自行加 system_result 等 kind |
+-| `ContentRef` | 四字段 `artifact_kind/artifact_id/version/digest`；定义不含自己的 digest；kind 正确仅证明形状 |
+-| `IdentitySelector` | 只允许 Profile/Region applicability 身份；不当执行依赖或 membership，不转换成已验证 ContentRef |
+-| `SchemaRef` | ContentRef 子类型，另外必填完整 2020-12 dialect URI；只在明确要求 SchemaRef 的字段使用，不把所有 ContentRef 自动升级 |
+-| `RuntimeRecordRef` | kind/id 需通过拥有者的 Execution/Profile/Object scope 校验；不会自然保证全局身份唯一 |
+-| `Value/TypeDefinition/ValueContract/validate_typed_value` | 直接复用七分支和 4096/256/64/8 边界；Schema 必须来自已注入可信定义，不能接受 payload 自带约束作为权威 |
+-| 独立六状态域 | 沿用，不创建宽泛 status 枚举；必要新枚举只来自已批准 Domain 列表 |
+-| `stable_json()` | 比较序列化，不是 JCS 或任何内容真实性证明 |
+-
+-保留外审 F01：JSON Schema integer 可接受 1.0、number 可接受整数 1，A 的严格 Python Integer/Number 分别拒绝这些表示；不得为表面一致放宽 A。验证流水线必须区分 Schema 结构与严格语义，并单列预期差异。
+-
+-普通 ContentRef 与 SchemaRef 的内容身份比较取四元组，dialect 另行校验；不能依赖两个不同 Pydantic 类的对象相等性，也不能为比较而丢掉非法附加字段。新增字段收紧旧模型属于兼容变更；当前计划不授权重写 A。
+-
+-## 5. 模块依赖 DAG 与实现顺序
+-
+-箭头表示“前置被后者使用”，是 Python 模块层依赖，不是 Runtime 工作流或 Rule AST。
+-
+-```mermaid
+-flowchart TD
+-  A[WP-01A base enums primitives refs values] --> S[共享严格支持类型与诊断]
+-  S --> FS[Fact Schema models 与 projection contracts]
+-  S --> SEL[Fact scope 与 Producer selectors]
+-  S --> RES[资源与 Prompt 定义]
+-  S --> POL[Policy Catalog]
+-  FS --> REG[Fact Schema Registry]
+-  S --> OUT[Tool output declarations 与 mappings]
+-  SEL --> PROD[Producer declarations]
+-  OUT --> PROD
+-  S --> ONT[Entity Region]
+-  S --> MOD[ModelBinding]
+-  OUT --> TOOL[Tool ToolPlan]
+-  S --> CAP[Profile Facet Question 与 grounding bindings]
+-  FS --> FACT[Fact 与 Authority 支持契约 待B-F03裁定]
+-  SEL --> FACT
+-  ONT --> CHECK[有限目录一致性校验]
+-  RES --> CHECK
+-  POL --> CHECK
+-  MOD --> CHECK
+-  TOOL --> CHECK
+-  CAP --> CHECK
+-  REG --> CHECK
+-  PROD --> CHECK
+-  FACT --> CHECK
+-  X[后阶段 AST 数据前置 B-F01阻塞] -.-> POL
+-  X -.-> PROD
+-```
+-
+-跨定义关系用 ContentRef，不以内嵌 Profile/Question/Tool 模型互相 import。共享 selector、外部能力/审计引用、单位等支持类型不依赖完整定义。模型 validator 只做局部不变量；跨模型验证统一在上层 validation，不让底层反向导入 Registry/definition validators。Registry 不导入 Rule/Bundle/Workflow。`__init__.py` 不全量重导出。
+-
+-用户建议的 B.1–B.6 是业务子任务名称，可按依赖调整执行顺序：
+-
+-| 顺序 | 子任务 / 唯一写入者 | 前置与交付 | Primary 定向验收 |
+-|---|---|---|---|
+-| 0 | PLAN → CHALLENGE → USER APPROVAL | B-F01–04 关闭、字段附录冻结、允许文件确定、实际 HEAD/既有文档状态重核 | 未满足则不委派代码 |
+-| 1 | B.1 Ontology + shared support / Sol | 基础公共支持类型、Entity/Region、必要静态资源形状、有限 schema_descriptors/review_inputs | refs/版本/不可变与分类字段负例；后续Tool路径/Provider检查所需typed输入先存在 |
+-| 2 | B.5a Fact Schema / selectors / Tool outputs / Sol | FactSchemaDefinition、projection 输入、scope/producer selectors、独立 ToolFactOutputDeclaration/Mapping | TypeDefinition 复用、精确 schema identity、无父摘要环；B.3 所需输出类型先交付 |
+-| 3 | B.4 Policy Catalog / Sol | 已裁定完整范围；保持 16 种最终契约，不以子集冒充 | 所有分支显式字段；B-F01 关闭才交完整 union |
+-| 4 | B.3 Model / Tool / ToolPlan / Sol | policy refs、schema descriptors、命名输出和映射字段冻结 | remote primary、输出路径、step identities；无调度 |
+-| 5 | B.2 Capability Definitions / Sol | Profile/Facet/Question、Prompt、grounding binding | 精确 Facet 交集、Profile context、Question 一个 primary |
+-| 6 | B.5b Producer / Authority / Sol | 生产关系、碰撞域、B-F03 批准的数据支持范围 | whole-batch/step、历史候选、显式 revision；无 CAS |
+-| 7 | B.6 Fact Registry / cross-validation / Sol | finite immutable registry + 跨定义校验 | 只读解析、scope/producer/path、无 global mutable state |
+-| 8 | 完整测试与 Primary Review | 单一最终源码快照、完整 A+B 回归和质量/Schema 证据 | Primary 直接读源码/diff/原始输出，必要时定向整改 |
+-
+-B.5a 先于业务定义是类型依赖要求，不是提前建设 Registry 服务。ToolDefinition 与 ProducerDeclaration 均导入同一低层 `tool_outputs.py`，Tool 不依赖尚未实施的 B.5b；禁止临时复制输出模型。每个子任务仅运行其获准相关测试；所有任务完成后统一完整测试，代码变更后重跑受影响检查。不存在“Sol 完成即 WP 通过”。
+-
+-## 6. Pydantic Schema 交付清单与文件归属
+-
+-标记：**TARGET** 是 B 完整目标；**SUPPORT** 是目标所需的支持契约，需在审批时纳入；**BLOCKED** 指相应 Finding 未关闭，禁止占位实现；**DEFERRED** 不属于本次实现。
+-所有持久根必须 `schema_version` 显式、无默认；建议首版 `1.0.0` 作为计划候选，须随 B-F04 一次冻结，不从包版本 0.1.0 推导。嵌套 union 在所属根治理，不能凭空成为新 ArtifactKind。
+-
+-| 逻辑文件（相对 src/jimu_runtime/domain/） | 模型 / Schema 清单 | 状态与依据 |
+-|---|---|---|
+-| `definition_support.py` | ReviewReportRef、ExternalCapabilityRequirement、VocabularyMemberRef、VersionConstraint、ContextFieldSelector、受限 path/UTC/budget types | SUPPORT；Domain §9/14；Context/source 与单位细节 B-F04 |
+-| `validation/issues.py` | ValidationIssue、有限 ValidationReport（含检查范围/未执行检查） | SUPPORT；错误码/path/相关 refs 有界，非持久运行事件 |
+-| `definitions/ontology.py` | EntityDefinition、RegionDefinition | TARGET；§3.1–3.2；分类/lifecycle B-F04 |
+-| `definitions/resources.py` | VocabularyDefinition、StaticAssetDescriptor；GeometryResourceDefinition 仅在批准明确几何形状后 | SUPPORT；§9；Region.geometry_ref 可先保留精确引用，不能称几何语义已验收 |
+-| `definitions/prompts.py` | PromptTemplateDefinition、PromptVariable | SUPPORT；§10；placeholder/path/partial 契约 B-F04；无 renderer |
+-| `definitions/capabilities.py` | ProfileDefinition、FacetDefinition、QuestionDefinition、ModelGroundingBinding、ToolGroundingBinding | TARGET；§3/10/12；无反向 Profile 字段；可选 mappings B-F04 |
+-| `definitions/models.py` | ModelBinding | TARGET；§3.9/10；exact IO、capability 和 policy refs |
+-| `definitions/tools.py` | ToolDefinition、ToolPlanDefinition、ToolStep、StepDependency、InputBinding、OutputBinding | TARGET；§3.6–3.7/13；通用 mappings B-F04。不新增重复 ConditionalBranch 表达式体系 |
+-| `policies.py` | PolicyArtifact（最终16分支 union），下表全部 Policy；ContextSelectionRule、SelectionCallPolicy、SharedN02SelectionCallPolicy、AdditionalSelectionCallPolicy、ContextFieldRequirement、DeploymentRequirement、FallbackTransition、LocalPrimaryException | TARGET/SUPPORT；§3.9.1/11.1/14；其中 AST 分支 B-F01 BLOCKED |
+-| `fact_schemas/models.py` | FactSchemaDefinition、GlobalTypeLimits、ValueSchemaGenerationSpec、TypeDefinitionProjection、ValueSchemaGenerationInput、FactSchemaCatalogue、ResolvedFieldType | TARGET/SUPPORT；§12.1；复用 A TypeDefinition，不复制第二套自由代数；路径可选性返回记录受 B-F04 冻结；B-F02/04 |
+-| `fact_selectors.py` | FactScope（object/execution 类型数据）、FactSelector、QuestionProducerSelector、ToolProducerSelector、SystemProducerSelector、ProducerSelector union | SUPPORT；§13.3；无 AST Expr/运行解析器 |
+-| `tool_outputs.py` | ToolFactOutputDeclaration、ToolFactOutputMapping | SUPPORT；§13；B.5a 交付，Tool 和 Producer 共用唯一类型，避免 B.3/B.5b 顺序环 |
+-| `producers.py` | ProducerCatalogue、FactProducerDeclaration、QuestionProducer、ToolStepProducer、SystemProducer | TARGET；§13；声明类型不反向 import Tool/Profile；activation_condition B-F01 |
+-| `runtime/authority.py` | AuthoritativeResultSelection 及 observation_batch/tool_step/system_output 三个 group 分支、ActorRef | TARGET；§13.2；B-F03 未冻结前不实现 |
+-| `runtime/facts.py` | FactRecord union、KnownFact、UnknownFact、ErrorFact、NotApplicableFact、NotEvaluatedFact；FactReason、Fact source/provenance 与 scope 分支 | **条件 SUPPORT**；如 B 验收要求 validate_fact/候选历史，需要 B-F03 明确批准这些字段，而非默认为八模块外无限 runtime 扩展 |
+-| `validation/authority.py` | 非持久有限 Fact/Attempt/Result 关联输入与校验接口（确切字段见 B-F03 关闭附录） | **条件 SUPPORT**；不可用 RuntimeRecordRef 格式检查冒充整批证明；不新造 runtime artifact |
+-| `validation/schema_descriptors.py` | 有限离线 Context/Attribute/Tool IO/Response 类型描述输入 | **条件 SUPPORT**；B.1提供；B-F04 冻结权威来源、字段和支持域；非任意导入 JSON Schema |
+-| `validation/review_inputs.py` | ReviewMetadata / TransitionAssessment 有限非持久校验输入 | **条件 SUPPORT**；B-F04 冻结版本化 source/target/capability/scope/trigger/report 覆盖及显式校验时刻；不成为真实审批记录或新Artifact |
+-
+-`FactSchemaRegistration(ref, definition)` 是 Registry 构建接口的内存条目，不是新 ArtifactKind；是否需要 Pydantic 根由最终持久性要求决定，不能额外发明独立发布对象。PrimaryFactOutput 不再作为 Question 的第二权威来源：直接沿用 primary_fact_key/ref。所有新增内部 helper 必须在批准后的模型索引登记职责，避免与已有概念重复。
+-
+-完整 Policy 清单：
+-
+-| policy_kind / 模型 | B 静态验收要点 | 阶段依赖 |
+-|---|---|---|
+-| applicability / ApplicabilityPolicy | metadata-only、identity selectors、on_unknown=block | condition_ast：B-F01 |
+-| question_selection / QuestionSelectionPolicy | A/B 显式模式、mandatory/optional 分区、context/model 条件分支和 call budgets | context_rules 目标 Applicability；mandatory Rule completeness 后阶段 |
+-| unknown / UnknownPolicy | transport/envelope=no_fact、item error、非known无值 | 可完整建模 |
+-| question_validation / QuestionValidationPolicy | forbid coercion/extra、exact association、whole_fact_error | 可完整建模 |
+-| evidence / EvidencePolicy | required⊆allowed、retention/vocabulary、derived transform | 真实保留/访问执行不在 B |
+-| tool_execution / ToolExecutionPolicy | 显式预算/retry classes、whole step、条件 backoff | 不重试/调度 |
+-| tool_failure / ToolFailurePolicy | requirement、descendant block、optional continuation | 不执行 failure handling |
+-| tool_skip / ToolSkipPolicy | on_false/unknown/missing 固定策略 | condition_ast：B-F01，literal-only 不算完整 |
+-| resource_requirements / ResourceRequirements | cpu/remote/gpu 条件字段和正整数边界 | 建模 gpu 分支≠安装/运行 GPU |
+-| provider / ProviderPolicy | remote primary 或有效期/能力范围例外，唯一 primary、fallback-only 其他部署 | 预制 review 数据不证明真实授权 |
+-| fallback / FallbackPolicy | disabled 空配置；显式 transitions、refs、exact IO | 不宣称真实质量/路由通过 |
+-| rule / RulePolicy | 已批准 mandatory/unknown/required_guard/full scan 字段 | **策略数据**允许；没有 Rule/AST/执行 |
+-| conflict / ConflictPolicy | collect_all、early_exit=false | 无 winner/优先级/求值 |
+-| coverage / CoveragePolicy | 保留 conservative no_hits/no_target/partial | 不实现 Coverage 聚合或自动放行 |
+-| context_provenance / ContextProvenancePolicy | 来源、派生要求、时间字段条件、UTC | 不读取设备/运行派生 |
+-| execution / ExecutionPolicy | 固定 N01–N06 顺序、三个政策 refs/schema refs | 无工作流/Gate 执行器 |
+-
+-PolicyKind 恰为 Domain §14 的16值；新增枚举仅实现已列出的 ModelCapability、ToolType/ProviderKind/CapabilityTag、ExternalCapabilityFamily/Feature、scope/producer、EvidenceType、资源/选择/调用方式/固定 NodeId 等。单值行为用 Literal；数值预算显式范围 1..2^63−1、clock tolerance 0..2^63−1，真实值由配置给出，不由 fixture 默认生产值。
+-
+-不在 B 清单：RuleDefinition/RuleSetDefinition、AST节点/操作符/type checker；六节点 I/O、QuestionSelectionRecord、InvocationContractSnapshot、ModelInvocation、完整 ToolExecution/ObservationBatch、Applicability evaluation/Trace、ExecutionCoverage/Decision、Release/Activation/BundleManifest。它们的必要 ref 形状可以保存，但不能声称已实现或验证目标全部语义。B-F03 若需最小支持输入必须明确限定，不能顺势纳入上述完整记录。
+-
+-## 7. 关键接口契约
+-
+-### 7.1 有限目录与引用
+-
+-只接受调用者显式注入的不可变 typed definitions / schema descriptors / trusted metadata；不扫描 Bundle 文件、不递归拉取依赖、不查远程平台、无“latest”。引用身份为 kind/ID/version/digest，同 kind/ID/version 的不同 digest 拒绝。普通 ContentRef 不保证 bytes 摘要已验证；输入目录须记录信任边界。
+-
+-规范字段既有 wire 保留：Question.primary_fact_schema_ref、Facet.fact_schema_refs 用 expected-kind ContentRef；ModelBinding 明确要求 SchemaRef 的 IO 字段保留 dialect。每个资源/策略字段检查具体 kind/subtype。IdentitySelector 仅匹配显式已 pin Profile/Region；缺失或歧义不能升级成内容授权。
+-
+-定义 validator 与有限目录 validator 分离。跨定义关系建议接口（待实施时保持同义签名）：
+-
+-```text
+-validate_question_facets(question, facets, fact_schemas) -> ValidationReport
+-validate_profile_questions(profile, questions, facets, context_types, fact_schemas) -> ValidationReport
+-validate_model_tool_bindings(definitions, policies, schema_types, review_metadata) -> ValidationReport
+-validate_producer_declarations(declarations, definitions, fact_schemas, io_types) -> ValidationReport
+-```
+-
+-这些接口不接受未类型化配置对象；缺少所需类型上下文返回结构化 incomplete/error，不能写全检查 PASS。Report 要列实际执行与 deferred check IDs。外部 review 只检验已注入元数据的一致性；信任解析、期限判定所需时刻显式传入，不读环境时钟当隐式参数。
+-
+-### 7.2 Profile / Facet / Question
+-
+-Question 至少一个 Facet，主 FactSchema 必须精确属于每个 Facet allowlist 的交集；相同 shape 或 union-only 不能替代。Profile 包含每个 Question 的所有 Facet，提供兼容 declared Context 环境；scope/semantic_key/units/coordinate_system/producer kinds 一致。没有 Profile 反向字段、runtime override 或跨 Profile Fact 复用。
+-每个 eligible Object 的一个被接受 observation Attempt、每个有效 Question 恰有一个 primary；Record 子字段不拥有独立 FactStatus。mandatory/optional 属 Profile selection policy，不能写成复用 Question 的固有属性。
+-
+-### 7.3 Registry
+-
+-```text
+-FactSchemaRegistryBuilder.register(exact_ref, definition) -> None / typed issues
+-FactSchemaRegistryBuilder.freeze() -> immutable FactSchemaRegistry
+-FactSchemaRegistry.resolve(exact_ref) -> FactSchemaDefinition / typed error
+-FactSchemaRegistry.validate_payload(exact_ref, raw_value) -> Value / typed issues
+-FactSchemaRegistry.describe_type(exact_ref, field_path=()) -> ResolvedFieldType / typed issues
+-```
+-
+-register 必须外带 exact_ref，因为定义不能内含自己的 digest；核对 kind/ID/version、冲突和定义有效性。B-F02 未授权内容 hash 前不计算/宣称验证父制品真实性。不建全局单例；每个 pinned 配置构造独立 snapshot，freeze 后不可注册，旧 snapshot 不随新版本变更。
+-validate_payload 调用 A 的严格 TypeDefinition validation；False/0/0.0/空值按类型分别保留，null 不是 unknown。describe_type 仅逐段访问声明 Record 字段，空路径是整个值，禁止 JSONPath、列表动态索引/跨 Object joins。ResolvedFieldType 为非持久闭合返回记录，拟包含 type_definition、field_path、经过的 optional_ancestor_paths（含叶字段若可选）；字段在 B-F04 冻结。路径不存在返回错误，不伪造空类型；required 叶字段位于 optional 父 Record 中仍可能缺失，不能仅返回叶类型而丢掉该信息。
+-`validate_fact` 仅在 B-F03 冻结 FactRecord 支持范围后纳入，不能以 payload 通过代替 Fact 接受。`compare_compatibility` 不承诺自动语义推导/迁移；非精确引用不能自动替换，广义兼容比较留后阶段。
+-
+-### 7.4 Producer、Fact、Authority
+-
+-- QuestionProducer 的 ID/version=Question，output=primary，key/Schema 完全匹配；ToolStepProducer 的 ID/version=Tool，额外固定 ToolPlan/step/output；SystemProducer 固定注册 requirement identity/version。
+-- Question 1:1，Step 1:N 个唯一命名 outputs；ToolFactOutputMapping 不可 alias target key。N05 仅 object scope，execution scope 的 Fact 来自 system producer。
+-- value_path 相对规范 ToolResult.payload，evidence paths 相对显式 evidence section；对应 Schema descriptor 未提供不能假定路径有效。Raw JSON 不直接变 Fact。
+-- declaration 碰撞域：object 为 (profile exact-ref, fact_key)，execution 为所有 Profiles 共享 fact_key。即使 Schema 一样也拒绝两个 producer 竞争。
+-- candidate 唯一键保留 execution/scope/Object/producer（含 step/output）/fact_key/attempt；同时保留 fact_id→不可变candidate 的身份约束，不允许改Execution/Attempt/key来绕过同一ID冲突。记录ID唯一域和同内容判重字节规则在 B-F03 冻结，不把stable_json当原始bytes身份。相同键同内容可判重复，不同内容拒绝冲突；B 仅有限输入诊断，不写持久冲突事件/实现幂等服务。
+-- AuthoritativeResultSelection 为显式 whole observation batch / one step attempt / system output，revision 与 previous ref 连续且同组，selected Fact refs 必须匹配完整选定组。无选择或歧义时拒绝消费；不按时间、最高 confidence 或最后写入选权。ActorRef 只有 trusted human/service 类型，不允许模型输出作为选权依据。
+-- 完整 Fact/Attempt/Result 的字段与 result kind 见 B-F03；关联校验还需可信envelope/association状态、Attempt→NodeRun→Execution归属和显式可选权资格。完整成员集合本身不证明批次可信；超时后late结果不能自动写validated_success或改终态。各selection reason允许的资格须先冻结，不替用户决定manual_review可选范围。纯验证不证明 CAS/fencing/生产调用真实发生。
+-
+-### 7.5 Schema 生成
+-
+-分开两件事：(a) 全部已批准 Pydantic 根/union 的接口 JSON Schema 生成；(b) FactSchema 的受限 TypeDefinition payload projection。前者沿用 A 的离线2020-12做法；后者须满足 Domain §12.1 规范化、生成输入独立、无父 ID/digest、排序与 generation version/global_limits。
+-完整 F04 canonical bytes、input-derived `$id`、child digest 的实现范围等待 B-F02，不用 Pydantic API Schema 快照冒充业务 payload generator。不得将手工编辑的 Schema 当 authoritative source。
+-
+-## 8. 文件分配与唯一写入规则
+-
+-Primary 是本轮 `planning/active/WP-01B/**` 唯一写入者；A–D 只读。未来每次 Sol 委派都列 inputs、允许文件、输出、验证命令、阻塞退出规则；跨分工共享文件只在前一任务结束后交接。
+-
+-| 未来路径 | 写入任务 | 约束 |
+-|---|---|---|
+-| `domain/enums.py` | B.1 首次，后续由 Primary 显式交接 | 只增已批准且本包必需枚举；A 集合/status 不变 |
+-| `domain/definition_support.py`, `domain/validation/{__init__,issues,review_inputs,schema_descriptors}.py` | B.1 | 不引入服务/宽松 map；确切字段待 B-F04；描述输入只依赖已存在基础类型 |
+-| `domain/definitions/{__init__,ontology,resources}.py` | B.1 | 几何内容若未冻结仅保留已批准引用边界 |
+-| `domain/fact_schemas/{__init__,models,projection}.py`, `domain/fact_selectors.py`, `domain/tool_outputs.py` | B.5a | projection 按 B-F02 裁定；先交 B.3 需要的输出声明/映射，不实现 Bundle hash |
+-| `domain/policies.py` | B.4 | 完整 union 受 B-F01 阻塞 |
+-| `domain/definitions/{models,tools}.py` | B.3 | Step mappings 受 B-F04 阻塞 |
+-| `domain/definitions/{capabilities,prompts}.py` | B.2 | 无新 Capability Registry；只已有绑定 |
+-| `domain/producers.py`, `domain/runtime/{__init__,facts,authority}.py`, `domain/validation/authority.py` | B.5b | runtime/facts 是 B-F03 条件交付，不默认扩围 |
+-| `domain/fact_schemas/registry.py`, `domain/validation/{definitions,producers}.py` | B.6 | 有限注入、无I/O/完整图准入；跨模型集成验收在此汇合 |
+-| `tests/unit/test_fact_registry.py`、`tests/contract/test_b_*.py`、`tests/negative/test_b_*.py`、`tests/fixtures/wp01b/**` | 相应模块 Sol；集成阶段交接 | 单一 owner，不改 A 断言去掩盖问题 |
+-| `tests/contract/test_dependency_boundaries.py` | B.6 | 加强子模块解析/路径边；保留 A 依赖限制 |
+-| `scripts/generate_schemas.py`, `schemas/generated/**` | B.6 | 若批准生成器范围；--write/--check，A 审计快照不动 |
+-| `planning/implementation_evidence/WP-01B/**` | 实施时 Sol 记录、Primary 审核后完成 | 原始结果追加，失败也保留；不覆盖 A/WP-00 |
+-
+-包 `__init__` 仅必要空边界，不重排 A 文件结构；pyproject/uv.lock/.python-version 默认原样，无新依赖提案。若 B-F02 选择额外 canonicalizer 依赖，须先单独说明与批准有界版本，不在本计划中预授“安装最新”。规格/ADR/AGENTS 修改不在本轮文件范围；Finding 需要契约修订时先批准有限文档修订。
+-
+-## 9. 测试设计与证据层次
+-
+-所有下列是未来经批准执行的测试，当前 **TEST_NOT_RUN**。S=JSON Schema 结构；D=严格 Pydantic/TypeDefinition/有限目录语义；A=显式 authority 关联。预期 S接受/D拒绝单列（A外审F01），不能通过 coercion 消除差异。runtime 行为证据不由这些层代替。
+-
+-| case组 / 建议文件 | 正向及边界 | 负向要求 | 执行阶段 |
+-|---|---|---|---|
+-| B-T01 `test_b_definitions.py` | 每个根最小完整/可选字段/JSON和Python往返、深不可变 | 缺schema_version/错误类型/额外secret-shell字段、反向Profile、自digest | 模块交付 |
+-| B-T02 `test_b_refs.py` | ContentRef字段expected kind、SchemaRef dialect、精确身份重用 | wrong kind/digest/版本、selector替代内容、重复身份异摘要、未知目标 | 模块/集成 |
+-| B-T03 `test_b_capabilities.py` | Question单primary、Facet精确交集、跨Profile合法定义重用 | union-only、同shape异digest、漏Facet/context、scope/units/semantic mismatch | B.2 |
+-| B-T04 `test_b_policies.py` | 16分支所有显式/条件字段，A/B selection mode | 默认行为、额外branch字段、mandatory遗漏、分区不完备、未注册policy | B.4；B-F01关闭 |
+-| B-T05 `test_b_model_tools.py` | model/tool grounding、remote primary、显式例外/回退配置、Tool多命名输出 | wrong capability、local primary越权、无review/重复deployment、report存在但不覆盖该transition/trigger/scope、disabled带transition、fact alias/路径错 | B.3局部；B.6跨模型集成 |
+-| B-T06 `test_b_resources.py` | budgets精确边界、UTC有效窗、source规则、显式retention | bool/0/负数/溢出、naive时间、分支字段不符、凭据/URL执行注入 | 支持模块 |
+-| B-T07 `test_b_fact_schema.py` | 七type含嵌套Record、单位/producer、合法小边界 | 非法enum、递归/超限、remote $ref/任意schema、父digest入projection | B.5a |
+-| B-T08 `test_fact_registry.py` | register/freeze/resolve、旧新snapshot并存、False/0/0.0/空字符串/列表；同叶类型的required/optional祖先路径有不同描述 | identity冲突、freeze后写、输入容器污染、implicit latest、路径不声明、optional父内required叶误报必有值 | B.6 |
+-| B-T09 `test_b_producers.py` | Question exactly_one、Step多输出、system execution、相同key不同Profile合法 | 重复collision domain、同schema多producer、tool execution-scope、ID/version误用Attempt、key alias | B.5b |
+-| B-T10 `test_b_facts.py` | 五FactStatus、object/execution、完整refs；缺optional Record字段 | known缺值/null；非known含value/null；跨scope/Object/producer/schema；bool-as-int/number | B-F03批准支持域后 |
+-| B-T11 `test_b_authority.py` | 整批/step、不同Attempt历史、显式选早Attempt、revision链 | cherry-pick、错result kind/Execution/Profile/Object/Attempt/NodeRun、完整但不可信批次、timeout后late冒充validated_success、无selection默认最新/最高分、断链、模型actor | B.5b；B-F03关闭 |
+-| B-T12 `test_b_history.py` | 同候选键相同内容重复、不同Attempt候选并存、旧selection不变 | 同键异内容、同fact_id改candidate key/bytes、不同fact_id同candidate key异内容、覆盖旧Fact、迟到candidate改已pin选择 | 纯有限数据检查，无并发/CAS |
+-| B-T13 `test_b_schema_generation.py` | 每个已批准根/union索引、2020-12、offline、重复生成；F04固定输入 | 根遗漏/漂移、非有限数、父子环、source顺序导致不同输出、数字舍入/环境默认 | canonical部分受B-F02 |
+-| B-T14 既有 `test_dependency_boundaries.py` | 实际Python模块DAG、标准库/Pydantic、子模块ImportFrom边 | cycle、Any、SDK/服务/GPU、动态执行、导入副作用、隐藏重导出边 | B.6；不实现RuleAST |
+-| B-T15 `test_b_examples.py` | 原示例保持 illustrative，另建正规synthetic fixture | 缺digest/version/字段、旧简写和unknown枚举状态不静默接纳 | 集成 |
+-| B-T16 既有 A tests | 完整324历史用例回归，确认实际最终计数 | 不删除/skip/放宽负例获取绿灯 | 完成B后的全量验收 |
+-
+-Authority/producer元数据 fixture 必须标 synthetic，不能证明真实batch、评测、fallback、模型/工具调用或worker fencing。实际 AST domain typechecking、Rule mandatory完整性、Tool完整DAG/可达性、Bundle摘要、Gate/Coverage运行、N04实际调用数分别归 C/WP-02/后续运行包，不能列成 B 已通过用例。
+-
+-未来执行命令（本轮未执行）：
++| definition_support.py；validation/issues.py | ReviewReportRef、ExternalCapabilityRequirement、VocabularyMemberRef、VersionConstraint、ContextFieldSelector、bounded路径/UTC/预算；ValidationIssue/Report | A先交共享基础 |
++| schema_types.py；validation/schema_descriptors.py；review_inputs.py | FieldSelector/ResolvedFieldType/表示层纯类型放低层schema_types.py；validation仅有限目录校验及Review输入，底层模型不得导入validation | B；其他消费者前交付 |
++| definitions/ontology.py；resources.py | EntityDefinition、RegionDefinition、VocabularyDefinition、StaticAssetDescriptor、受限FacetMetadata辅助 | A |
++| definitions/capabilities.py；prompts.py | Profile/Facet/Question、Model/ToolGroundingBinding、PromptTemplate/PromptVariable | A |
++| definitions/models.py；tools.py | ModelBinding、ToolDefinition、ToolPlan/ToolStep/InputBinding/StepDependency | B |
++| policies.py | PolicyArtifact +16 Policy；ContextSelectionRule、SelectionCallPolicy两分支、ContextFieldRequirement、DeploymentRequirement、FallbackTransition、LocalPrimaryException | B；条件部分待D01 |
++| fact_schemas/models.py；projection.py | FactSchemaDefinition、GenerationSpec/Input/Projection/Limits、GeneratedValueSchema | C |
++| fact_selectors.py；tool_outputs.py | FactSelector、Question/Tool/SystemProducerSelector、ToolFactOutputDeclaration/Mapping | C先交，B复用 |
++| producers.py | ProducerCatalogue、FactProducerDeclaration、Question/ToolStep/SystemProducer | C；conditional待D01 |
++| runtime/facts.py；authority.py | 五Fact分支/source/reason/scope、AuthoritativeResultSelection三组、ActorRef | C |
++| validation/authority.py | typed Attempt/NodeRun/Object/Result descriptors、完整性/历史验证 | C |
++| fact_schemas/registry.py；validation/definitions.py；producers.py | builder/freeze/exact resolve、payload/path/scope/producer/authority有限验证 | D |
++| scripts/generate_schemas.py；schemas/generated/** | 全B模型/union索引、Pydantic2020-12 --write/--check | D |
++
++PolicyKind恰16：applicability、question_selection、unknown、question_validation、evidence、
++tool_execution、tool_failure、tool_skip、resource_requirements、provider、fallback、rule、
++conflict、coverage、context_provenance、execution。G1-D01不关闭就不能把其完整union标完成。
++不新增ArtifactKind/RuntimeRecordKind；不把support descriptor注册成新artifact。
++新enum集中定义，由A首次写入后主控显式交接给B/C，禁止并发写enums.py。
++
++纯接口：
++register(exact_ref, definition) → builder；freeze() → immutable registry；
++resolve(exact_ref)；validate_payload(ref, raw_value) → A Value；
++describe_type(ref, field_path) → ResolvedFieldType；
++validate_fact/validate_producers/validate_authority接受完整typed finite context返回ValidationReport。
++报告区分实际checks、incomplete、deferred；不以一个bool掩盖未检内容。
++
++## 5. 执行顺序和所有权
++
++G1关闭后按依赖推进，不再逐文件求批：
++1. A共享支持/ontology + B descriptors（不共享写文件）；主控复核接口。
++2. C FactSchema/projection/selectors/tool outputs；A vocabulary/prompts可独立。
++3. B Policy/Model/ToolPlan；A capabilities；C producer与runtime支持在接口齐全后。
++4. D Registry/cross-validation/integration/schema inventory。
++5. 模块targeted tests → 一次全量A+B验收 → Primary直接读全部核心代码/diff/logs/schema/lock →
++   独立Sol Challenge → 定向整改/复验 → 最终报告。
++目标包含新用户G2–G5所有要求，顺序调整只为依赖，不缩减模块。
++
++每次委派给出worktree、批准PLAN revision、允许文件、输入接口、输出、精确测试命令。
++agent completion不等于验收；不得自行扩大scope/修改规范/测试掩盖问题/操作Git出版。
++证据目录各Sol使用独立logs子目录，Primary拥有汇总封套。src A原有语义文件只读；
++enums与import测试确需增量时单独交接，不重构A来绕过困难。
++
++## 6. 测试与验收
++
++全部下列为计划，当前未执行。A历史324passed不是B结果。
++
++- Domain：所有根逐字段缺失/额外字段/错误类型/深不可变；exact refs、词表/domain、
++  Profile/Facet/Question精确交集、同shape异digest、单primary、无反向循环。
++- Policy：16分支完整fixture及所有branch forbidden字段（含null）；显式行为/预算、
++  remote/local例外/fallback覆盖、Context source/provenance分离。条件支持随D01裁定。
++- Mapping/DAG：source-target所有kind/范围/enum/Record/表示层，optional祖先+block/omit，
++  未声明路径、重复/重叠目标、缺required输入、禁止N06源、self/长环/非祖先step。
++- FactSchema：七type/Record/enum/list/边界；JCS独立向量与局部digest；父child解耦，
++  输入规范化/库能力边界、错误childrefs/非法schema、无远程$ref。
++- Producer：Question1:1，ToolStep1:N、仅声明输出、schema/key/id/version/scope一致；
++  collision domain、conditional边界、FactSelector路径+producer唯一匹配。
++- Authority：whole effective batch/step、required/optional、非known合法Fact、missing不同error、
++  Attempt归属/资格、系统emitted/absence、revision完整、FactID+candidate双冲突、noLWW、历史保持。
++- Registry：register/freeze/query/version并存、未知ref/错digest/value/producer/scope/authority拒绝；
++  缺上下文不得报全验证PASS，旧snapshot不随新注册/新候选变。
++- Schema：每根/union生成索引、2020-12离线校验、repeatability、结构+严格域+关联三层。
++  保留A外审F01 integer 1.0 / number 1的JSON Schema/Pydantic差异，不放宽A。
++- 工程：全部A回归、Ruff/mypy、Domain import无SDK/服务/GPU/循环；
++  ImportFrom子模块及重导出边检测，不只检查module文本。无skip/xfail/ignore规避。
++
++使用A已锁CPU环境，先记录实际版本/lock；新canonicalizer须限定并评审再锁，不全栈升级。
++未来命令：
+ 
+ ```bash
+ uv run --locked --no-sync python -m pytest tests/unit tests/contract tests/negative -q --junitxml=planning/implementation_evidence/WP-01B/pytest_results.xml
+@@ -291,54 +299,24 @@
+ uv run --locked --no-sync python scripts/generate_schemas.py --check
+ ```
+ 
+-生成器当前不存在；最后一条仅在获批并交付该工具后执行，不能提前记录为成功。先记录实际环境与 lock SHA，再复用 A 锁定 CPU 环境；缺依赖时按该次实施授权判断是否允许 `uv sync --locked --group dev`，禁止自动升级/relock。A 的已验证版本为 Python3.12.3/uv0.9.15/Pydantic2.12.5/pytest8.4.2/jsonschema4.25.1/Ruff0.14.14/mypy1.18.2，当前安装状态在实施开始时重查。
+-
+-每模块使用对应 test 文件的 targeted pytest，不为文档修改重跑；整个 B 一次完整验收后，仅新变更/失败/新风险触发复验。保留精确命令、cwd、UTC起止、exit、原始stdout/stderr、计数/skips与源码摘要；不得靠增加Any、ignore或省略测试满足门禁。
+-
+-## 10. 双智能体任务契约与 Review
+-
+-本轮 A=Ontology/Capability，B=Fact/Producer/Authority，C=Policy/Tool/Model，D=tests 四项都已只读完成，原文在 reviews/A–D。Primary 直接逐项对照 Domain、Bundle、Node、A源码/测试，未仅依据子报告判断。各子任务 Finding 统一归并为 B-F01–06，原编号仅为来源。
+-
+-写成 PLAN 后，将确定 revision 的计划交 Sol 做只读 Challenge；要求指出遗漏/错分期/不可验收条目，不授予它批准权。Primary 处理后留 issue disposition、最终字节摘要及自身独立检查记录。交付结果见 `REVIEW.md` 与 `reviews/*CHALLENGE*`。
+-
+-未来 Sol 实施委派固定包含：
+-
+-1. 批准的 PLAN revision/HEAD、输入接口/fixtures、单任务允许文件清单。
+-2. 输出模型/接口及明确禁止项；共享文件 owner 转移时间点。
+-3. 可执行的 targeted 命令、原始日志路径、已知 Finding 和失败上报条件。
+-4. 发现契约不完整立即上报，不改规范/测试掩盖，不擅自分支/commit/push/部署。
+-5. 完成时给实际 diff/文件哈希/命令结果；Primary 读取实际文件、Git diff、JUnit/raw logs、schema index并核对测试确实覆盖契约。
+-
+-Primary 对完整包做独立 Review，问题定向回派整改；审查PASS与用户最终验收分开。只有用户验收后才可考虑下一 WP，不能自动进入 C。
+-
+-## 11. 可验证验收标准
+-
+-| Gate | PASS 必要条件 | 当前状态 |
+-|---|---|---|
+-| G0 范围与契约冻结 | B-F01–04 关闭，确切 schema/字段/依赖/测试清单经独立审查及用户批准；无未解决阻塞 Finding | **BLOCKED** |
+-| G1 完整模型 | 八项目标及必要支持模型、全部获批Policy分支齐全；模型→模块→生成Schema→fixture一一映射，无占位 | NOT_IMPLEMENTED |
+-| G2 引用/领域 | strict/immutable/version/expected kind；精确Facet交集、Question单primary、Tool声明多Facts和唯一producer/scope | NOT_RUN |
+-| G3 Registry | build/freeze/精确解析/旧snapshot保持；字段路径与值严格校验；无隐式latest/覆盖/全局状态 | NOT_RUN |
+-| G4 Authority | 三组完整契约、候选历史、显式选定revision/完整组；错scope/Attempt/last-write-wins负例拒绝 | NOT_RUN；B-F03 |
+-| G5 Schema/数值 | 2020-12有效、离线、重复生成；S/D/A差异清楚；F01不弱化；F04依获批边界完成 | NOT_RUN；B-F02 |
+-| G6 测试与静态 | 所有必需测试实际0失败/错误/skip；A回归；Ruff check/format、mypy、完整import DAG通过 | TEST_NOT_RUN |
+-| G7 证据/Primary Review | 源码快照、环境/lock、原始测试/static输出、schema/hash、Findings对应实际文件；Primary独立检查 | 待实施 |
+-| G8 保护与停止 | A/历史证据完整、无未授权文件/业务语义/依赖/Git操作、无服务/模型/GPU/平台修改 | 本轮静态满足，实施后重核 |
+-| G9 用户验收 | Code/Test/Runtime/Independent Review/User Acceptance 五轴分别报告；用户明确接受B | PENDING |
+-
+-Code Acceptance 未实施；Test Acceptance 未运行；Runtime Acceptance 为 RUNTIME_NOT_APPLICABLE_TO_DOMAIN_CONTRACTS / RUNTIME_NOT_RUN。未来CPU契约测试通过不表示真实Runtime、模型质量或GPU能力。不能把 TARGET 的阻塞项标DEFERRED后仍报原完整目标PASS。
+-
+-## 12. 风险、回滚与审计
+-
+-主要风险：AST分期矛盾被隐藏；通用Schema/Context mapping没有真实类型；引用格式被当内容可信；Authority被缩成ID检查；Schema数值数学语义覆盖严格Python语义；JCS/库版本/数值舍入引入不稳定；frozen嵌套仍可变；多Agent同时写共享文件。
+-控制：阻塞明确、有限typed输入、每项验收标验证层、单写入者、A回归、无隐式替代、代码与运行证据分离。部署预算、review阈值、真实provider/证据保留值仍为业务配置OPEN，不编造生产值。
+-
+-当前只有新增文档，无DB/Release/平台迁移。回滚须由用户选择，仅针对本轮新增文件/未来批准的B差异；保留审计证据，不执行reset/restore/强制覆盖或删除用户文件。历史旧pending/旧HEAD是证据，不通过重写来“更新”。
+-
+-本轮审计：`baseline.json` 记录143 tracked +11既有文件摘要；`orchestration_verification.json` 记录实际原生模型与协议检查；reviews/保留原始子任务结果；`REVIEW.md` 为主控核查与Challenge处置；`SHA256SUMS` 覆盖本轮交付文件（排除自身），`planning_changes.patch` 为新增文档diff（明确排除自身/摘要封套）。`verification.json` 记录保护文件核对、HEAD/工作区、未执行测试等。
+-
+-## 13. 当前结论与用户决策入口
+-
+-规划材料可供独立复核，**自审 CONDITIONAL，尚不具备无条件实施门槛**。A不重新开发，D01–D15不重开；B-F01–04 需要有限契约/分期裁定。推荐用户先决定 FINDINGS 的三个边界方案，并授权其相关字段表一次性冻结，随后审查更新的PLAN再授权实施；不逐文件重复审批。
+-
+-本轮停止于 PLAN → CHALLENGE → USER APPROVAL。未编写 B Python/测试、未安装依赖、未运行项目测试/Schema/lint、未修改Git、未启动B实现或C。原生Sol协作调用用于工程审查，不是JIMU真实模型API集成。
++生成器未交付前最后一条不可执行或记PASS。模块测试仅相关路径，最终完整验收后只因变更/失败/新风险复验。
++日志精确记录UTC起止、cwd、command、exit、stdout/stderr、JUnit counts/skips、源码/lock hashes。
++测试数据synthetic；不证明模型质量、真实审批、调用、并发CAS或生产容量。
++
++PASS必须：G1四项闭合；八模块完整；所有必需pytest/Schema/Ruff/format/mypy实际通过；
++无C0/C1/C2；无未授权架构变化/越界；Astra实际代码审查及Sol独立Challenge完成；
++证据完整，原A/WP00历史未改。Runtime Acceptance=N/A，不伪称Runtime通过。
++最终交付FINAL_ACCEPTANCE_REPORT.md与implementation_evidence/WP-01B完整目录，
++PASS后更新WORK_PACKAGE_STATUS并停止，推荐C但不开始；Git出版另需用户授权。
++
++## 7. 当前状态、风险和回退
++
++G1-D02范围已闭合；D03/D04按技术授权细化但完整字段附录尚有C2需补齐，不重复申请整个工作包；
++G1-D01待用户选定分期例外/缩减方案。相关实现未开始，整体Code NOT_IMPLEMENTED，
++Test TEST_NOT_RUN，Runtime N/A，G1 Independent Review CONDITIONAL。
++不得生成名为最终验收的PASS报告替代尚未完成的代码和测试。
++
++风险：表达能力暗中缩减、descriptor冒充可信schema、authority只检ID、JCS普通排序伪装、
++层次missing与false混淆、复杂后续图检查误报已完成。通过明确边界、独立vectors、
++exact refs、完整关联输入、单写入者和实际审查控制。
++回退以保留历史的定向修订为主；不reset/restore/删用户文件，不改main。
+--- a/planning/active/WP-01B/REVIEW.md
++++ b/planning/active/WP-01B/REVIEW.md
+@@ -1,77 +1,84 @@
+-# WP-01B Planning — Primary Review 与 Sol Challenge 处置
++# WP-01B G1 — Primary Review
+ 
+-基线：main / `51a10416d882fe85e5a1cfc5440eac6498fc48f4`。
+-状态：`STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN`。
+-Primary：原生会话实测 `gpt-6-astra / xhigh`；四只读任务：实测 `gpt-6.1-sol / medium`。
++基线main=51a10416d882fe85e5a1cfc5440eac6498fc48f4。
++当前为G1契约收口审查，不是最终代码验收。
++STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN。
+ 
+-## 1. 主控独立检查
++## 实际独立核查
+ 
+-Primary完整读取本地规范/计划、A的7个源码文件，直接检查refs/enums/TypeDefinition/ValueContract/CPU配置，以及Schema与import边界测试。通过git和标准库字节读取核对HEAD、全部tracked文件、既有两套local-only证据摘要、历史JUnit。不是只接收Sol文字后就宣布通过。
++Primary重新读取用户Goal原文、AGENTS、实际PLAN/FINDINGS/REVIEW与摘要封套、
++相关四规格、A基础代码/接口及CPU配置，直接对照必填condition、projection、producer、
++authority与Mapping条款；没有仅接受Sol结论。
+ 
+-| 实际检查 | 结论与限制 |
++初始170个文件（143 tracked+27已知untracked）逐字节与工作前manifest一致，
++PLAN-1.1的15个SHA256SUMS条目匹配。main仍为指定HEAD，无tracked/staged改动。
++新建已获授权的独立worktree/分支，按manifest复制已知规划材料；原main不写入。
++新开发分支HEAD仍为基线，没有Commit/Push。
++
++原生四新Sol只读Challenge全部完成。实际会话turn_context核对：
++Primary=gpt-6-astra/xhigh；Sol-A/B/C/D=gpt-6.1-sol/medium。
++共享filesystem由实际路径读取确认；worktree隔离由Git worktree创建实际结果确认，
++不再把仅接口存在写成创建验证。未改Codex配置/安装框架。
++
++## 首轮Challenge
++
++原文在 implementation_evidence/WP-01B/g1_reviews/。
++A=Ontology/Capability，B=Model/Tool/Policy，C=Fact/Producer/Authority，D=tests。
++四者均指出D01条件表达支持域不能由“完整16种kind”代替。
++Primary直接核对Domain:1021、1167、1168、1174与最新禁止AST条款，接受其为真实分期冲突。
++已提交最小二选一，未擅自批准范围例外。
++
++其他意见按新授权技术细化：
++- D02局部JCS/child digest范围已明确，不重复要授权。
++- D03具体三种result kind、wholebatch/step、最小Fact/Attempt描述、system optional absence；
++  D定向复查接受具体闭合EXECUTION_EVENT descriptor，并明确不是通用event兜底。
++- D04 strict有限SchemaDescriptor与raw/typed表示、optional祖先、source-target兼容和missing策略。
++- D指出旧PLAN把ToolPlan cycle后移与新G3冲突；PLAN-2改为B本地DAG检测。
++- 不接受子报告中“SystemProducer仅execution”无充分依据的进一步收窄；
++  保持声明scope，execution Fact仅system与N05 object-only原约束。
++
++PLAN-2另交B/C/D定向只读Challenge，原文继续追加保存；
++整改和最终摘要写入后再记录最终核查，不以草稿审查冒充最终文件通过。
++
++## 当前验收轴
++
++| 轴 | 状态 |
+ |---|---|
+-| HEAD/branch/remote/worktree | main、指定SHA、origin目标正确；143 tracked字节等于HEAD，初始11个已知未跟踪文档。未fetch/pull/reset/restore/switch/创建分支 |
+-| A接口复用 | 直接核对ContractModel、25ArtifactKind/26RuntimeRecordKind、ref wire、七type和值/深不可变；没有重复实现A计划 |
+-| 数值F01 | 直接核对`test_json_numeric_mathematics_do_not_define_python_coercion`和A证据§7；保持双阶段，不修改A代码 |
+-| 历史测试 | 解析两份历史最终JUnit：各324 tests、0fail/error/skip；只是读取证据，本轮没有pytest |
+-| Policy依赖 | Primary在委派前发现必填AST与B禁AST冲突；四Sol审查独立报告相同问题。列B-F01，未以Any占位 |
+-| Fact生成 | 对照Domain§12.1与Bundle职责、base.stable_json限制，区分Pydantic接口Schema与F04 payload/JCS产物；列B-F02 |
+-| Authority | 直接核对26RecordKind和Domain§13.2，三组result mapping/资格/支持域尚不足冻结；保留B目标，列B-F03，不因子报告建议而擅自后移 |
+-| 未冻结字段 | 对照Domain field lists/Policy Catalog/总计划§5–6，分开业务实值OPEN与wire未定义；列B-F04，不改已批准规范 |
+-| import测试 | 直接核对既有ImportFrom解析确有扩展后的漏边风险，列B-F06测试增强提案；未改A测试 |
+-| 实施范围 | PLAN target/blocked/support/deferred区分，完整16Policy和八目标未被虚报完成；G0明确blocked；无Rule/Bundle/服务实施 |
+-| 并发写入 | A–D都只读；文件由Primary串行写入，所有必要子任务已completed |
++| G1 Contract Review | CONDITIONAL：D01用户范围裁定未取得 |
++| Code Acceptance | NOT_IMPLEMENTED |
++| Test Acceptance | TEST_NOT_RUN；324passed仅A历史 |
++| Runtime Acceptance | N/A，本包纯Domain；RUNTIME_NOT_RUN |
++| Independent Review | 已完成首轮静态Challenge；不是代码审查PASS |
++| Overall WP-01B | INCOMPLETE，不能标PASS/Goal complete |
++| 实施授权 | 已授权B；具体AST范围例外仍待用户 |
+ 
+-## 2. 只读任务与原始结果
++已执行的操作是文件/Git只读核验、原生工程子任务、授权worktree/branch创建、文档复制和修订、
++RFC资料查阅及审计哈希。没有运行pytest/Ruff/mypy/项目Schema验证、安装依赖、编写B代码或调用Runtime。
++首次审计命令python不存在（exit127），改python3成功；一次apply_patch因同path多操作被拒绝，
++未改文件；随后一次会话文本提取未匹配（exit1）也未写文件，修正后写入PLAN。
++这些是文档工具操作结果，不是功能测试失败或通过。
+ 
+-| 任务 | 输入/输出 | 结果文件 |
++待用户给D01答案后，按既有整体实施授权继续冻结相关数据模型及定向Challenge，然后交Sol实现；
++不需要用户重复批准每个文件。未答复按Goal的条件暂停指令保存证据并停止。
++
++## PLAN-2 定向Challenge的实际结论
++
++B/C/D均直接读取worktree内PLAN-2，原回复追加保存，未改写此前报告。
++Primary已对照具体条款修订：
++
++| 发现 | 处置 | 状态 |
+ |---|---|---|
+-| A Ontology / Profile / Facet / Question | 规格与A代码；精确交集/Context/ref模型/未冻结字段 | reviews/A_CONTRACT_REVIEW.md |
+-| B Fact Schema / Producer / Authority | 规格与A代码；JCS边界/碰撞/authority/result引用 | reviews/B_CONTRACT_REVIEW.md |
+-| C Policy / Tool / Model | 16Policy、Tool mappings、Remote Primary、Prompt/Schema支持 | reviews/C_CONTRACT_REVIEW.md |
+-| D tests | 现有测试/证据、S/D/A矩阵、import边界、未来命令 | reviews/D_CONTRACT_REVIEW.md |
++| 共享纯类型放validation层可导致反向依赖 | 改schema_types.py低层，validation仅目录校验 | RESOLVED_IN_PLAN，代码未实施 |
++| N04自带effective集合可能自证完整 | 加QuestionSelectionDescriptor作为独立pinned锚点 | RESOLVED_IN_PLAN |
++| 只用succeeded不能辨别late | 显式arrival_qualification；late拒选、unresolved/missing不通过 | RESOLVED_IN_PLAN，可信输入非实际时序证明 |
++| Tool optional absence与nonknown混淆 | emitted/absence descriptor、required/cardinality绑定、五态保持 | RESOLVED_IN_PLAN |
++| bytes未绑定模型/重复键覆盖 | 解析前拒重复键、非法数/Unicode；完整typed content绑定 | RESOLVED_IN_PLAN |
++| runtime refs构dict覆盖；历史输入漏项 | 所有scoped refs先查唯一内容；明确有限目录信任边界 | RESOLVED_IN_PLAN |
++| JCS数值溢出及安全整数≠binary64全集 | 路径化错误与具体边界测试补齐 | RESOLVED_IN_PLAN |
++| SchemaDescriptor/source union/Review scope尚无完整wire | 不把要求描述当字段冻结，保留B-F04 C2 | OPEN_TECHNICAL，不需新增业务审批 |
++| FactSchema metadata字段/Prompt/metadata细节 | 保留B-F03/04 C2，后续主控技术补齐后再委派代码 | OPEN_TECHNICAL |
+ 
+-原始首轮回复逐字保存。部分子任务自身无法验证model而写UNVERIFIED；Primary从本机原生session_meta/turn_context安全白名单直接确认实际值，证据在orchestration_verification.json，不改写其原回复。
+-
+-## 3. 对具体PLAN的Challenge与整改
+-
+-首轮被审查 PLAN-1 SHA-256：`fe633537098c658c2fa7701fff045916ec076f928cd9e2886a817fcb6ea62417`。
+-首轮 FINDINGS SHA-256：`e4306de5231e15d145d1021b55db071034eaaac161f0c5d2fd9ce3203672ca6b`。
+-C、D完整读取草稿并给出实质问题，原文见 `reviews/C_PLAN_CHALLENGE.md`、`D_PLAN_CHALLENGE.md`；首轮行号对应上述草稿，不是最终文件。
+-
+-| Challenge项 | Primary处置 | 文档状态 |
+-|---|---|---|
+-| C-1 / D-C01：Tool import尚未交付Producer模块，顺序与DAG冲突 | 拆`tool_outputs.py`唯一低层输出声明/映射，B.5a先交付，Tool/Producer共享；DAG/文件owner/顺序同步 | RESOLVED_IN_PLAN |
+-| C-2：review_metadata输入形状缺冻结入口 | B-F04增加ReviewMetadata/TransitionAssessment字段要求、非持久/可信边界及report不覆盖transition/trigger/scope负例；B.1支持输入、B.6跨模型集成 | RESOLVED_IN_PLAN；字段本身仍待B-F04审批 |
+-| C-3 / D-C02：describe_type丢optional祖先 | 改为闭合ResolvedFieldType候选，保留type/path/optional祖先；补required叶位于optional父的测试 | RESOLVED_IN_PLAN；字段冻结仍B-F04 |
+-| D-C03：完整成员不等于可信batch或Attempt有资格 | B-F03增加trusted envelope/association、Attempt→NodeRun→Execution、selection reason资格、late/timeout限制与负例 | RESOLVED_IN_PLAN；资格取值仍B-F03待批 |
+-| D-C04：Fact ID重绑定可绕复合键冲突 | 同时约束fact_id→不可变candidate与candidate复合键，补同ID异key/bytes、异ID同key异bytes负例；唯一域/bytes判重规则待冻结 | RESOLVED_IN_PLAN；B-F03不虚报关闭 |
+-| Primary补查：schema descriptor/review输入的文件owner晚于消费者 | 支持输入移至B.1，Tool局部验收与B.6跨模型语义验收分开 | RESOLVED_IN_PLAN |
+-
+-最终 PLAN-1.1 SHA-256：`38ec63dab5c9c50e4be175eefc7877816ec86a5a714ecb7da4ed7ba69ffedc8f`。
+-最终 FINDINGS SHA-256：`7f57f9a745384526428b4a22164874c8615ac2175eda1a410aeb9b72a5e7de11`。
+-
+-C、D随后重新读取并核对这两个最终SHA：
+-- C：`PASS_STATIC_PLAN`，仅定向整改通过，无新增阻塞性计划缺陷；B-F01–04仍OPEN，不能实施。
+-- D：整改充分，整体规划`CONDITIONAL`，B-F01–04/G0继续阻塞。
+-
+-这两个结论不冲突：计划自身缺陷已整改，而待用户裁定的范围/契约缺口未被代理批准。原始最终回复见 `reviews/C_FINAL_RECHECK.md`、`D_FINAL_RECHECK.md`。后续仅写审计封套，不再改被复查的PLAN/FINDINGS字节。
+-
+-## 4. 自审结论与下一门禁
+-
+-| 验收轴 | 当前结果 |
+-|---|---|
+-| 多智能体配置与只读任务完成 | PASS（实际native spawn/状态/会话元数据证据）；未测试worktree创建 |
+-| 当前计划交付完整性/边界/Challenge整改 | PASS_STATIC_REVIEW，目标、DAG、Schema/文件/测试/验收与阻塞清楚 |
+-| WP-01B实施准备 | **CONDITIONAL / G0 BLOCKED**：B-F01–04尚待范围裁定与字段冻结 |
+-| Code Acceptance | NOT_IMPLEMENTED，不能写PASS |
+-| Test Acceptance | TEST_NOT_RUN；A历史324passed单独保留 |
+-| Runtime Acceptance | RUNTIME_NOT_RUN / NOT_APPLICABLE_TO_THIS_PLANNING |
+-| 用户实施批准 | PENDING_USER_APPROVAL |
+-
+-实际只运行只读Git/文件查阅、Codex版本/配置协议探测、原生工程只读子任务、Markdown写入、标准库字节/历史XML审计。没有运行项目pytest、Ruff/mypy、项目Schema生成/校验、服务或模型/GPU；没有安装/升级依赖、改平台/架构规格/历史证据、Git Commit/Push/PR/Merge/部署。
+-
+-只读探测限制也保留：`--strict-config`不支持`codex features`那次探测未验证配置；后来使用支持的app-server `--print-startup-config`实际exit0。导出Codex protocol到临时目录是读取工具配置规范，不是JIMU Schema功能测试。Worktree能力仅验证工具/CLI入口及现有inventory，未创建工作树冒充隔离验证。
+-
+-下一步需要用户裁定B-F01的AST分期、B-F02的局部生成/JCS职责、B-F03的Authority最小支持范围，并一次性冻结B-F04相关字段；原因来自已批准规格与本轮明确分期限制之间的真实依赖缺口。没有重新要求D01–D15批准，也不逐文件求批。
+-本轮到此停止；不开始B代码或C。用户业务裁定、具体实施授权、Git操作授权彼此独立。
++D定向承认并撤回system execution-only额外限制，原文保留。
++当前最终PLAN并非无条件静态PASS；上述已处置项由Primary直接核对，未声称Sol对最终
++新字节又全量复核通过。D01待用户范围裁定；其余C2由Primary负责，不转嫁用户。
++尚无B代码、测试、Schema生成、依赖安装、Commit/Push；原A和WP-00历史保持原样。

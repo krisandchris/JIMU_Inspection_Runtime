@@ -1,0 +1,82 @@
+{
+  "captured_at": "2026-11-17T13:07:30.245791+00:00",
+  "expected_head": "51a10416d882fe85e5a1cfc5440eac6498fc48f4",
+  "actual_head": "51a10416d882fe85e5a1cfc5440eac6498fc48f4",
+  "branch": "dev/wp-01b-definition-fact-registry",
+  "worktree": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "source_manifest": "source_baseline.json",
+  "source_unchanged_files": 170,
+  "unexpected_worktree_changes": [],
+  "git_checks": [
+    {
+      "command": [
+        "git",
+        "status",
+        "--short",
+        "--branch"
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "exit_code": 0,
+      "stdout": "## dev/wp-01b-definition-fact-registry\n M planning/ARCHITECTURE_DECISIONS.md\n?? planning/acceptance_evidence/\n?? planning/active/\n?? planning/implementation_evidence/WP-01B/\n?? planning/transition_evidence/\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "exit_code": 0,
+      "stdout": "51a10416d882fe85e5a1cfc5440eac6498fc48f4\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--stat"
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "exit_code": 0,
+      "stdout": " planning/ARCHITECTURE_DECISIONS.md | 25 +++++++++++++++++++++++++\n 1 file changed, 25 insertions(+)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--cached",
+        "--stat"
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "worktree",
+        "list",
+        "--porcelain"
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "exit_code": 0,
+      "stdout": "worktree /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0\nHEAD 51a10416d882fe85e5a1cfc5440eac6498fc48f4\nbranch refs/heads/main\n\nworktree /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B\nHEAD 51a10416d882fe85e5a1cfc5440eac6498fc48f4\nbranch refs/heads/dev/wp-01b-definition-fact-registry\n\n",
+      "stderr": ""
+    }
+  ],
+  "no_commit_push": true
+}
