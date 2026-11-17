@@ -1,21 +1,23 @@
 # WP-01 Implementation Plan — Domain Model and Contract Foundation
 
-状态：WP-00-R1 / PROPOSED / PENDING_USER_APPROVAL；本文件不构成实施授权。
-修订范围：仅文档；原计划及原始启动包逐字节归档于 `planning/review_evidence/WP-00-R1/before/`。  
+状态：WP-00-R2 / PROPOSED / PENDING_USER_APPROVAL；本文件不构成实施授权。
+修订范围：仅文档；基线 main / `46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`。R2 修改前字节归档于 `planning/review_evidence/WP-00-R2/before/`；R1 历史证据禁止修改。
 审查日期：2026-11-17（Asia/Shanghai）。工作包：WP-00 Bootstrap Review。  
 证据等级：`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。
 
 ## 1. 目标、范围与审批边界
 
-初轮获授权的工作是阅读、初始化审查和编写本计划，唯一项目内变更为本文件。本次 R1 获授权有限修订本计划、四份受影响规格及 ADR，并保留文档证据；本次不是代码实施。没有 WP-01 代码、依赖安装、数据库、模型调用、Git 初始化、分支操作、提交、推送或远端资源操作。
+本次仅授权 WP-00-R2 架构契约文档整改及审计证据，计划修改 README、四份规格、计划/ADR/依赖/测试策略/roadmap 共十个文档。禁止代码实现、pyproject、安装依赖、运行测试/服务/模型/GPU/外部 API、改分支、初始化 Git、commit/push；不修改需求平台、AGENTS 或 R1 证据。
 
 WP-01 的建议目标：建立独立 Runtime 的 Python 包、严格 Pydantic v2 契约、版本与摘要原语、Fact Schema Registry、类型化 Rule AST 及纯类型校验接口、可重复生成的 JSON Schema 和对应测试。WP-01 只建设 Domain Model、内存 Fact Registry、Rule AST 静态类型检查、JSON Schema 生成和 CPU-only 测试。所有建议均为 PROPOSED，用户审批状态保持 PENDING_USER_APPROVAL。
 
 非目标：Bundle 编译/打包/验签/完整引用闭包解析（WP-02）、数据库或 ORM、API/OpenAPI 服务、持久调度和节点执行器（WP-03）、Provider/Tool 调用（WP-04）、规则运行时求值和真实巡检（WP-05）、回放执行（WP-06）、Compose 部署与 UI。已有 JIMU 需求平台及 V4 不进入依赖图。WP-01 可以定义后续工作包使用的数据结构，不能据此实现相应服务。
 
-审批循环：Plan → Challenge → 用户 Approval → Execute → Verify → Review → Decide。先由用户批准第 10 节 D01–D10 决策候选和 WP-01 范围，再明确测试/依赖准备授权，才可实施。本次依据用户授权将冲突修订为一致的候选契约，并保留修改前原文；不能把候选契约视为已批准规范。WP-00-R1 到此只提交可审查文档。
+审批循环：Plan → Challenge → 用户 Approval → Execute → Verify → Review → Decide。先由用户批准第 10/13 节 D01–D15 决策候选和 WP-01 范围，再明确测试/依赖准备授权，才可实施。本次依据用户授权将冲突修订为一致的候选契约，并保留修改前原文；不能把候选契约视为已批准规范。WP-00-R2 到此只提交可审查文档。
 
-## 2. 启动包、环境与仓库证据
+## 2. 启动包与仓库证据（初轮历史及 R2 当前基线）
+
+R2 实际核对：当前分支 main；HEAD=`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`，初始工作区 clean，origin 指向指定 GitHub 仓库。`git status --short --branch`、`git rev-parse --show-toplevel HEAD`、`git remote -v` 均 exit 0；36 个已跟踪文件。无需 Git 初始化/fetch/pull/reset，本轮均未执行。以下无 Git/环境探测是初轮历史，不是当前状态；R2 未重跑依赖/驱动探测。
 
 已完整依次阅读：`AGENTS.md`、`README.md`、`specs/01` 至 `04` 四份规格书、`planning/ARCHITECTURE_DECISIONS.md`、`DEVELOPMENT_ROADMAP.md`、`DEPENDENCIES.md`、`TEST_STRATEGY.md`，随后阅读非机动车违停目录全部四个文件，再查询 Git 和目录。另核对 `PACKAGE_MANIFEST.json`。
 
@@ -51,7 +53,7 @@ examples/nonmotor_vehicle_illegal_parking/
 | `rg --files --hidden -g '!.git/**'` | 0 | 列出上述 15 个文件 |
 | `ls -la` | 0 | 当前目录没有 `.git` |
 
-因此分支、HEAD、dirty/clean 均为不可获取，不能报告为 clean，也不能把父目录的其他工程当作本项目仓库。Git 初始化需要后续明确授权，不能由本轮自动执行。
+初轮当时分支、HEAD、dirty/clean 均为不可获取，不能报告为 clean，也不能把父目录的其他工程当作本项目仓库。Git 初始化需要后续明确授权，不能由本轮自动执行。
 
 只读环境探测使用 `python3` 标准库 `sys`、`platform`、`importlib.metadata`：Python 3.12.3，GCC 13.3.0，Linux 6.8.0-149-generic x86_64，glibc 2.39；当前解释器未安装 Pydantic、pytest、jsonschema、Ruff、mypy。该信息不是目标 GPU 主机兼容性结论。未探测驱动/CUDA、未安装依赖、未运行服务。
 
@@ -63,7 +65,7 @@ examples/nonmotor_vehicle_illegal_parking/
 
 Domain Model 已具备实现基础：核心概念、主要字段、基数、状态域和不可变性已有说明；尚未达到“可无歧义冻结为模型”的程度。缺少的字段类型、联合分支、摘要身份、操作符语义和策略结构必须先冻结，不能以 `dict[str, Any]` 或任意字符串占位。
 
-### 3.2 C01–C11 逐项处理状态（R1）
+### 3.2 C01–C11 逐项处理状态（R1 历史摘要；R2 的细化以 §13 为准）
 
 以下“候选已对齐”只表示文档歧义已处理，**不表示用户已批准、代码已实现或测试通过**。C01–C11 均为 `RESOLVED_IN_CANDIDATE / PENDING_USER_APPROVAL`；后续 WP 的行为验证保持未实施。
 
@@ -104,15 +106,17 @@ src/jimu_runtime/
   domain/
     __init__.py
     base.py                 # 严格/不可变配置，持久根契约基类
-    enums.py                # 分域枚举、schema/producer/node kind
+    enums.py                # ArtifactKind、PolicyKind、分域状态/producer/node 枚举
     primitives.py           # ID、版本、SHA-256、时间、约束数值
     references.py           # ContentRef / IdentitySelector / SchemaRef，运行记录引用
     values.py               # 有判别字段的值与类型代数
-    policies.py             # typed policies；禁止任意配置字典
+    policies.py             # 01 §14 全部 typed policies；无默认行为或任意字典
     geometry.py             # 原图 XYXY、尺寸、变换 provenance
     definitions/
       ontology.py           # Entity / Region
-      capabilities.py       # Profile / Facet / Question
+      capabilities.py       # Profile / Facet / Question / typed grounding bindings
+      prompts.py            # PromptTemplate / PromptVariable
+      resources.py          # Vocabulary / GeometryResource / StaticAsset descriptors
       tools.py              # Tool / ToolPlan / Step / Mapping
       models.py             # ModelBinding / provider policy
       rules.py              # Rule / RuleSet / applicability
@@ -121,7 +125,8 @@ src/jimu_runtime/
       task.py
       execution.py
       perception.py
-      facts.py
+      facts.py              # candidate Facts / AuthoritativeResultSelection
+      question_selection.py # N02 immutable selection record
       tools.py
       evidence.py
       invocations.py
@@ -157,7 +162,7 @@ tests/{unit,contract,negative,fixtures}/
 
 依赖方案建议：ADR-018 选 uv，Python 3.12 为 CPU 契约层候选；Pydantic 限定 v2 主版本。pytest、jsonschema、Ruff、一个类型检查器（建议 mypy）为开发依赖，Hypothesis 可选。实际有界范围与精确 patch 版本在批准后结合兼容性记录确定，写 pyproject 和 uv.lock；未验证前不填“已测试”版本，不安装 latest，不安装 GPU/服务依赖。
 
-`DEPENDENCIES.md` 的完整 GPU pinning 门槛与 WP-01 CPU-only lock 需明确适用范围：建议先验证 CPU 契约环境并记录 GPU 项 N/A/deferred，GPU worker 单独环境到 WP-04 再冻结；如果要求所有 GPU 项先过门槛，则 WP-01 锁文件也被阻塞，不能自行忽略该规定。当前 Python 能启动不代表未来 Pydantic 依赖矩阵已验收。
+`DEPENDENCIES.md` 已在 R2 明确两阶段门禁候选：WP-01 仅 CPU Python/Pydantic/pytest/jsonschema/Ruff/mypy 与独立 lock；WP-04 才冻结 GPU/driver/CUDA/PyTorch/vLLM/Transformers/SAM3/Grounding 及共驻矩阵。D01 仍待审批；本轮未安装/验证任何版本。
 
 ## 5. 待冻结 Pydantic Schema 清单
 
@@ -166,18 +171,18 @@ tests/{unit,contract,negative,fixtures}/
 | 模型组 | 待冻结模型 | 核心不变量/边界 |
 |---|---|---|
 | 基础 | ContractModel、PersistedContract、ArtifactIdentity、ContentRef、IdentitySelector、SchemaRef、RuntimeRecordRef、MediaRef、EvidenceRef、ClockProvenance、TraceContext、ValidationIssue | exact version/digest；错误路径；ContentRef/IdentitySelector 不混用，不把定义引用与运行记录 ID 混用 |
-| 枚举 | TaskStatus、ExecutionStatus、NodeRunStatus、AttemptStatus、FactStatus、DecisionResult、RuleTruth、CoverageStatus、DiscoveryOutcome、GroundingOutcome、ProducerKind、ScopeKind、NodeId、ReplayKind，以及显式 release/tool/validation 状态 | 原规格分域枚举保持独立；新增枚举值需审批，不复用字符串的含义 |
+| 枚举 | ArtifactKind、PolicyKind、TaskStatus、ExecutionStatus、NodeRunStatus、AttemptStatus、FactStatus、DecisionResult、RuleTruth、CoverageStatus、DiscoveryOutcome、GroundingOutcome、ProducerKind、ScopeKind、NodeId、ReplayKind，以及显式 release/tool/validation 状态 | 原规格分域枚举保持独立；新增枚举值需审批，不复用字符串的含义 |
 | 结构化值 | BoolValue、IntegerValue、NumberValue、StringValue、EnumValue、ListValue、RecordValue 及对应 TypeDefinition | kind 判别；有限类型与约束；无 Any、NaN/Infinity |
 | Ontology | EntityDefinition、RegionDefinition、AssetRef | 不是 Object；Region 不等于 polygon |
-| Capability | ProfileDefinition、FacetDefinition、QuestionDefinition、PrimaryFactOutput、Applicability、ContextFieldSelector | effective Questions 只由已声明集合冻结；Facet/Question 复用受类型/上下文约束 |
+| Capability | ProfileDefinition、FacetDefinition、QuestionDefinition、PrimaryFactOutput、ModelGroundingBinding、ToolGroundingBinding、ContextFieldSelector、QuestionSelectionPolicy | Release 固定 catalogue/policy；N02 记录确定集合；Facet 精确交集和 Profile context/scope 校验 |
 | Tool | ToolDefinition、ToolPlanDefinition、ToolStep、StepDependency、InputBinding、OutputBinding、ConditionalBranch、ResourceRequirements、ToolExecutionPolicy | 已注册 tool；有限 DAG 数据；条件只读合法上下文/Fact；无 N06 依赖 |
 | Model | ModelBinding、ProviderPolicy、DeploymentConstraint、FallbackPolicy、InvocationBudget、ContractRequirement | 配置身份与实际身份区分；不含 secret/请求任意配置 |
-| Rule | RuleDefinition、RuleSetDefinition、RulePolicy、EvidenceRequirement、ResultMapping、ConflictPolicy、FactSelector | 完整类型 AST；必需/可选适用性明确；无隐式顺序优先级 |
+| Rule | RuleDefinition、RuleSetDefinition、RulePolicy、ConflictPolicy、FactSelector | 完整类型 AST；必需/可选适用性明确；无隐式顺序优先级 |
 | Bundle/Release | BundleManifest、ArtifactInventoryEntry、SourceProvenance、CompatibilityRequirement、IntegrityEnvelope、ChecksumEntry、AdmissionReceipt、CapabilityReport、ReleaseRecord、ApprovalReceipt、ActivationRecord、ActivationScope | 仅数据契约；根摘要采用 D07 候选字段；技术准入、业务批准、激活分别记录；无编译/验签/激活实现 |
 | Intake | TaskSubmission、AcceptedTask、MediaAsset、TaskContext、ContextSnapshot、ContextValueProvenance、ExecutionCoverage、ProfileCoverage、MandatoryRuleCoverage、MandatoryRuleObligation | 一个 RGB 图片；可信元数据来源；UTC/时钟；接收请求与已解析 Release 分离 |
 | Execution | ExecutionRecord、NodeRun、Attempt、ExecutionEvent、ExecutionPins、ConfiguredModelPin、ActualDeploymentIdentity | immutable 输入/config 引用；Attempt 单调编号；不存在的 actual identity 不预填；无持久引擎 |
 | Perception | ObjectRecord、BBoxXYXY、ImageDimensions、CoordinateSystem、TransformRecord、GroundingRecord、ProfileGroundingResult | 原图坐标、正面积/范围；no_target/failed/partial 分开；Object 仅 execution 内身份 |
-| Fact | FactRecord、KnownFact、UnknownFact、ErrorFact、NotApplicableFact、NotEvaluatedFact、FactProducer、FactScope、FactResult | status 判别；scope 判别；类型/来源/证据；invalid value 不伪装成 known |
+| Fact | FactRecord、KnownFact、UnknownFact、ErrorFact、NotApplicableFact、NotEvaluatedFact、FactProducer、FactScope、FactResult、AuthoritativeResultSelection、ToolFactOutputDeclaration、ToolFactOutputMapping、FactSelector | status 判别；scope 判别；类型/来源/证据；invalid value 不伪装成 known |
 | Tool runtime | ToolExecution、ToolAttemptResult、ToolError、ToolResourceUsage | 配置 ref 与实际实现版本；输入输出 digest；failure 非负证据 |
 | Evidence | EvidenceAsset、EvidenceScope、StorageReference、RetentionPolicyRef、AssetStage | 元数据而非大字节；原图/变换关系；只定义 staged/finalized 状态契约，无上传流程 |
 | Model audit | ModelInvocation、InvocationIdentity、InvocationOutcome、InvocationError、UsageRecord | configured binding + 实际 provider/deployment/model；provider request ID；不在记录中写密钥 |
@@ -185,12 +190,22 @@ tests/{unit,contract,negative,fixtures}/
 | Replay | ArtifactReplayRequest、InferenceReplayRequest、ReplayRun | kind 判别；source/target pin；只建数据，无模型/工具执行 |
 | Node common | NodeInputEnvelope、NodeOutputEnvelope、NodeError、ArtifactOutputRef | task/execution/release/node/attempt/trace pin；错误、时间、输出有界 |
 | N01 | ContextBuildInput、ContextBuildOutput、ContextValidationReport | 不补造缺失上下文；required failure 明确 |
-| N02 | DiscoveryInput、DiscoveryOutput、ProfileHit、FilteredProfile | 注册 Profile + 固定 Questions + Invocation；额外 BBox/object_id/category 字段拒绝 |
-| N03 | GroundingInput、GroundingOutput | 独立按 Profile grounding；输出不允许修改 Questions |
+| N02 | DiscoveryInput、DiscoveryOutput、ProfileHit、FilteredProfile、QuestionSelectionRecord | 注册 Profile + policy 确定 effective_question_refs + selection ref；BBox/Object/category 字段拒绝 |
+| N03 | GroundingInput、GroundingOutput、ModelGroundingProvenance、ToolGroundingProvenance | 独立 grounding；原样继承 selection；模型/工具定位来源判别 |
 | N04 | ObservationInput、ObservationBatch、QuestionResult、QuestionValidationResult | 一 Object/整批 Attempt；一 Question 一个主 Fact（可为 Record）；显式 parse/关联可信度；批次诊断与合法 Fact 分开 |
 | N05 | ToolNodeInput、ToolNodeOutput、ToolPlanRunSummary | 仅绑定计划，引用 N04 validated Facts；无候选驱动选择字段 |
 | N06 | DecisionInput、DecisionOutput、MandatoryRuleCoverage | 候选与规则评估分离；完整性报告，缺失候选不改变 mandatory 集合 |
-| Registry/AST | FactSchemaDefinition、FactSchemaCatalogue、FactProducerDeclaration、OperatorDescriptor、TypeCheckResult 及第 7 节 AST 节点 | 纯合同和校验；完整 producer closure/DAG admission 属 WP-02 |
+| Registry/AST | FactSchemaDefinition、FactSchemaCatalogue、ProducerCatalogue、FactProducerDeclaration、QuestionProducerSelector、ToolProducerSelector、SystemProducerSelector、OperatorDescriptor、TypeCheckResult 及第 7 节 AST 节点 | 纯合同和校验；完整 producer closure/DAG admission 属 WP-02 |
+
+R2 新增清单（详见 01 §9–14，每个持久根均需生成 Schema 和正负 fixture）：
+
+| 模型组 | 新增/明确模型 | 契约依据 |
+|---|---|---|
+| Artifact/静态资源 | ArtifactKind、PromptTemplateDefinition、PromptVariable、VocabularyDefinition、GeometryResourceDefinition、StaticAssetDescriptor、ReviewReportRef、ExternalCapabilityRequirement、VersionConstraint、DeploymentRequirement | 01 §9/10；不引入独立 Discovery/Grounding Artifact 或 Registry 服务 |
+| Question selection | QuestionSelectionPolicy、QuestionSelectionRecord、ContextSelectionRule、ExcludedQuestionReason | 01 §11/14；mandatory/optional 分区、回退、配置/Invocation pin |
+| Policy Catalog | PolicyArtifact/PolicyKind、ApplicabilityPolicy、UnknownPolicy、QuestionValidationPolicy、EvidencePolicy、ToolExecutionPolicy、ToolFailurePolicy、ToolSkipPolicy、ResourceRequirements、ProviderPolicy、FallbackPolicy、RulePolicy、ConflictPolicy、CoveragePolicy、ContextProvenancePolicy、ExecutionPolicy | 01 §14 加上 QuestionSelectionPolicy，共 16 个封闭 policy 形状；无 Any/object 占位 |
+| Producer/authority | ProducerCatalogue、FactProducerDeclaration、QuestionProducer、ToolStepProducer、SystemProducer、ToolFactOutputDeclaration/Mapping、ProducerSelector union、AuthoritativeResultSelection、ActorRef | 01 §13；Question 1:1，Tool step 1:N，scope/key 冲突、Attempt 候选和显式 authority |
+| Schema/路径 | FactSchemaDefinition.semantic_key/type_definition/payload_schema_ref、RecordFieldRefExpr、ContextFieldSelector、InvocationContractSnapshot | fact_schema 定义与 value_schema 生成产物分离；同一 field_path 约定 |
 
 冻结时应为每个模型列必填/可选、默认值、长度/数量边界、错误码、样例及 JSON Schema 根名称。当前规格未给出的实体类型、保留策略等业务枚举不虚构为 CONFIRMED；以受约束标识和被引用的版本化词表治理，或在审批中列出有限初始值。
 
@@ -202,7 +217,7 @@ tests/{unit,contract,negative,fixtures}/
 4. 根 schema major 变化或值域/required 收紧视作不兼容；新增字段在 extra=forbid 的旧消费者中也可能不兼容，不能自动称为 minor 安全。未知 required feature/version fail closed。迁移说明必须包含旧记录读取/转换策略，不覆写历史证据。
 5. 内部 UTC aware 时间；接受边界保留 capture 原时间、offset/timezone 与时钟来源；拒绝 naive 时间。置信度只作来源元数据，取值范围需能力声明，不宣称校准概率。
 6. 发布定义与 Snapshot 使用不可变模型及不可变嵌套集合；Pydantic frozen 不能单独证明深层不可变。运行状态更新生成新值，历史版本不就地改写。
-7. scope 为 discriminated union：object 必有 object_id，execution 不得夹带 object_id；Rule 的 FactSelector 同时限定 fact_key、schema ref、scope/producer/主 Fact 及声明的 Record field_path，避免同名 Facts 歧义。
+7. scope 为 discriminated union：object 必有 object_id，execution 不得夹带 object_id；Rule 的 FactSelector 同时限定 fact_key、fact_schema_ref、scope/producer_selector/field_path，避免同名 Facts 歧义。
 8. V1 不启用通用 extensions。未来需要时单独冻结命名空间、有限值类型、大小上限、兼容策略；不能用开放 JSON 绕过额外字段校验。
 
 ## 6. Fact Schema Registry 设计要求
@@ -211,7 +226,7 @@ tests/{unit,contract,negative,fixtures}/
 
 建议 immutable key 为 `(schema_id, version, digest)`；相同 ID/version 不同 digest 必须拒绝，不能覆盖。`fact_key` 是用途标识，不替代 Schema 身份。Registry 按 Release 构造不可变快照，不采用进程全局可变单例。
 
-FactSchemaDefinition 应显式规定：schema_version、schema_id/version、payload type definition、scope、known/non-known 策略、单位/坐标系（适用时）、合法 producer kinds、证据与置信度元数据策略、有限集合/字段约束。Schema digest 不能把自己纳入被摘要内容；生成文件的字节摘要与逻辑 Bundle 摘要是不同概念。
+FactSchemaDefinition 应显式规定：schema_version、schema_id/version、semantic_key、type_definition、payload_schema_ref（value_schema）、scope、known/non-known 策略、单位/坐标系（适用时）、allowed_producer_kinds、证据与置信度元数据策略、有限集合/字段约束。Facet.fact_schema_refs 是该精确 Schema 的语义允许集合；Question 主 Schema 必须属于全部关联 Facet 的交集。Schema digest 不能把自己纳入被摘要内容；生成文件的字节摘要与逻辑 Bundle 摘要是不同概念。
 
 建议仅支持 JSON Schema 2020-12 的受限生成子集，由 Pydantic/受限 TypeDefinition 生成；禁止导入任意外部 Schema、remote `$ref`、可执行 validator 或插件代码。输出 `$schema`/`$id`、离线 `$defs`，记录生成器版本；不承诺 Pydantic 自定义跨字段校验能全自动变成 JSON Schema，必须用分支结构表达并测试，无法表达的语义由显式二阶段校验承担。
 
@@ -225,6 +240,8 @@ FactSchemaDefinition 应显式规定：schema_version、schema_id/version、payl
 - 多次 Attempt 的 Fact 全部保留，用显式选择的 authoritative attempt/result 引用消费；重复 producer、同 Question 主 Fact 多条无权威选择不能“最后一条胜出”。
 
 ### 6.3 接口与验证层次
+
+01 §13 是 Producer/authority 的唯一字段源：Question→primary 一条、ToolStep→多个命名输出，V1 N05 outputs 仅 object scope、execution Facts 为 system producer；value_path 静态解析 Tool IO；物理 Fact 候选不覆写，whole-batch/step authority 显式选择并 pin revision。同一 object-scope Profile/fact_key 或 execution-scope fact_key 的多 producer 冲突拒绝。Rule FactSelector 用同一 producer/schema/key/field_path，不能引用 derived catalogue 产生摘要环。
 
 接口建议为 `register(definition)`（仅构建阶段）、`freeze()`、`resolve(exact_ref)`、`validate_payload(ref, typed_value)`、`validate_fact(fact)`、`describe_type(ref)`、`compare_compatibility(old_ref, new_ref)`。返回有路径/错误码的诊断，不能直接泄漏 Provider 异常形状。
 
@@ -257,7 +274,7 @@ WP-01 实现 AST 结构及纯类型检查；Rule 执行引擎留 WP-05。结构�
 1. 校验 operator、arity、树深/节点数/集合大小预算（具体值审批后冻结并测试边界），拒绝额外字段与循环输入对象。
 2. 解析每个 Fact/context 引用到 exact Schema，检查 scope、producer/主 Fact是否唯一；验证 AST 所引用 Fact 与 required/optional dependency declarations 一致。
 3. 递归推导类型，检查常量、enum membership、单位与比较操作，拒绝 incompatible types。可解析缺 producer 的本地类型测试不能宣称完整 Bundle closure 通过。
-4. Rule condition 和 applicability 根必须 Boolean。区分 Rule 命中条件、适用性及 Tool 条件允许访问的输入，明确禁止 Tool 分支访问 candidate/Decision。
+4. 静态检查必须显式传入 input_domain：rule_applicability 只允许已声明 Context/Region/Profile 元数据（禁止 Object Facts）；rule_condition 可读验证 Fact/Context；tool_condition 可读先前已验证 Fact/Context。所有根 Boolean lifted T/F/U，所有域禁止 Candidate/Decision，不用一个无边界 AST resolver 代替。
 5. 策略必须覆盖 missing（无记录）、unknown、error、not_applicable、not_evaluated；missing 不是额外 FactStatus，不用 false 补齐。
 6. Predicate truth 使用 strong Kleene T/F/U；全表见 03 §8.3：not(U)=U，F AND U=F，T AND U=U，T OR U=T，F OR U=U。保留全部输入诊断。另有独立 safety guard：required Fact/证据缺失或无效时，即使 predicate 可简化为 F/T，Rule outcome 仍 blocked、effective result=uncertain；不能称此 guard 为另一张真值表。WP-01 仅定义该语义的数据类型/策略及静态类型检查，不实现真值求值器。
 7. 是否允许显式状态检查操作符应单独审批；首版建议不提供，以避免条件绕过 required Fact 政策。
@@ -284,6 +301,11 @@ WP-01 实现 AST 结构及纯类型检查；Rule 执行引擎留 WP-05。结构�
 | contract/test_object_identity.py | 同目标跨 Profile 两个独立 Object/Fact refs | 隐式 merge、跨 Profile Fact 引用、宣称 unique physical count |
 | contract/test_logic_policy.py | T/F/U 类型与 collect_all 策略 fixture、完整 mandatory trace | Boolean 强转 U、first_match、candidate-only 筛选字段/缺失必需诊断；不求值 AST |
 | contract/test_reference_shapes.py | ContentRef 与 IdentitySelector、有限 inventory 注入 | selector 用作执行 content ref、回向含 digest、缺/歧义/wrong-kind 目标；不计算 Bundle digest |
+| contract/test_artifact_bindings.py | 全部 25 ArtifactKind 的模型/路径/预期 ref kind，direct ModelBinding/Tool binding、Prompt variables、grounding union | 未定义 kind、假 Capability ref、purpose/schema mismatch、工具定位强塞 ModelInvocation |
+| contract/test_question_selection.py | A/B、mandatory union、optional partition/fallback/ordered set、selection pin | 未注册 Question、mandatory 漏选、N03 改集合、选择影响 required Tool/Rule、retry 换集合 |
+| contract/test_facet_schema.py | 多 Facet 精确交集、跨 Facet/Question 复用 | 仅形状相似不同 digest、semantic_key/unit/scope 不符、Profile context 不兼容 |
+| contract/test_policy_catalog.py | 16 个 policy subtype 的显式字段、各合法分支、默认禁止 | 缺字段、Any/额外配置、未定义 business 默认、非法 applicability Facts/Tool Candidate |
+| contract/test_producer_authority.py | Question 1:1、Tool step 1:N、路径/producer/schema、batch/step authority | key 冲突、重复 Attempt 异值、last-write-wins、跨 Attempt cherry-pick、Rule selector 无唯一 producer |
 | contract/test_json_schema.py | 每根 generated Schema 有效；Pydantic 和 jsonschema 双验样例 | 同组错误 fixture 均拒绝；无法 JSON 表达的语义单独标记，不谎称等价 |
 | contract/test_schema_generation.py | 两次生成字节完全一致、root index/version 清晰 | schema 漂移/缺文件失败；非手工更新生成产物 |
 | contract/test_import_boundaries.py | domain 只用允许依赖 | 静态 AST/import 检查禁止 infrastructure/SDK/GPU 导入；解析不触发 I/O |
@@ -329,13 +351,14 @@ uv run --locked mypy src/jimu_runtime
 
 | Gate | 验收证据 | 通过条件 |
 |---|---|---|
-| G0 授权 | 用户批准范围、D01–D10 的冻结/缩减方案及测试授权 | 阻塞项未解决时不得标记 WP-01 PASS |
+| G0 授权 | 用户批准范围、D01–D15 当前候选的冻结/缩减方案及测试授权 | 阻塞项未解决时不得标记 WP-01 PASS |
 | G1 清单完整 | 第 5 节每个根模型到文件/生成 Schema/fixture 的映射 | 无 Any 占位、无遗留未定义策略类型；必要缩减先获批准 |
 | G2 严格验证 | unit/contract/negative 的实际 pytest 报告 | 所有必需正例接受，负例拒绝；0 failed，必需测试不得 skip |
 | G3 Fact/AST | Registry + AST 类型检查报告 | 状态/value/scope/ref 不变量、全部注册签名、错误类型/未知 op/深度边界均覆盖 |
 | G4 可重复 Schema | --check 输出和两次字节比较 | 无差异；Schema 自检和双验证通过；语义层限制有独立测试 |
 | G5 依赖边界 | import 检查、Ruff、类型检查、依赖/锁文件 | domain 无禁用依赖，无网络/模型/GPU 副作用；CPU 环境可复建 |
 | G6 兼容与安全 | compatibility notes + approved 决策记录 | 摘要身份无循环、版本规则明确、secret/任意代码/无限配置不进入契约；无数据迁移 |
+| G10 R2 契约闭合 | §13 的 finite-definition 契约检查报告 | 25 ArtifactKind、16 typed policies、能力/Prompt refs、Question/Facet/producer/authority/input_domain 规则一致；未实现完整 compiler/执行器 |
 | G7 报告与停止 | WP-01 verification report | code 与 runtime 证据分列；限制明确；完成后停在 gate，不开始 WP-02 |
 | G8 Coverage/Identity | CPU-only 契约 fixtures | JEV no_hits、空 Objects、grounding no_target/failed/partial 均不能伪造 complete/no_violation；子集有效命中保留；同目标跨 Profile 独立 Objects/Facts |
 | G9 Rule/生命周期策略 | 策略模型、AST 静态检查及纯转移验证 | T/F/U 与 required guard 分离；仅 collect_all/full mandatory scan 策略；非运行 blocked/skipped 无假 Attempt；所有终态无出边；不实现 Rule 求值/worker |
@@ -346,9 +369,9 @@ WP-01 PASS 只表示领域/契约基础验收，不表示 Bundle 验签、工作
 
 ## 10. 风险、挑战与 OPEN 决策
 
-### 10.1 D01–D10 明确决策候选
+### 10.1 D01–D10 候选延续；D11–D15 及更新见 §13/ADR R2 表
 
-每项状态均为 **PROPOSED / PENDING_USER_APPROVAL**，没有实现或安装/测试授权。候选与 `ARCHITECTURE_DECISIONS.md` 的 R1 表一致。
+每项状态均为 **PROPOSED / PENDING_USER_APPROVAL**，没有实现或安装/测试授权。此处保留既有候选编号；D05 的反向 membership 解释由 R2 D15 细化，当前全集以 `ARCHITECTURE_DECISIONS.md` R2 表为准。
 
 | 决策 | 单一明确候选 | 冻结/授权门槛 |
 |---|---|---|
@@ -356,7 +379,7 @@ WP-01 PASS 只表示领域/契约基础验收，不表示 Bundle 验签、工作
 | D02 | 受限 scalar/list/closed Record；2020-12 离线生成子集；known 有值，非 known 无 value | Registry 与类型契约审批 |
 | D03 | 第 7 节 operator catalogue + strong Kleene T/F/U + required completeness guard；仅静态 typechecker | 不实现运行时 Rule evaluator |
 | D04 | mandatory 适用性全扫 + collect_all；未知不消除、有效违规不被其他未知擦除 | 全部 trace 与聚合契约审批；运行行为 WP-05 |
-| D05 | ContentRef（kind/ID/version/digest）与 IdentitySelector（kind/ID/version）分离；inventory 外部 pin，前向无环 | 回向 selector 不作可执行内容引用，完整闭包 WP-02 |
+| D05 | ContentRef（kind/ID/version/digest）与 IdentitySelector（kind/ID/version）分离；inventory 外部 pin，前向无环 | R2 D15 去掉多余反向 membership；显式 applicability selector 不执行内容，完整闭包 WP-02 |
 | D06 | 一 Question 一个主 Fact、Record 复合值；configured 先 pin / actual 追加审计；03 §9 显式状态表 | 无多输出替代方案、无假 Attempt、终态不覆写 |
 | D07 | 02 §2/4/5 自包含资源与语义闭包、M/C 排除/封帧根摘要候选 | 算法/验签/打包/closure 实现与 signature trust gate 留 WP-02 |
 | D08 | 每 Profile 一个 ContentRef ToolPlan；Question/Facet 复用满足 exact Schema/context/scope；Tool 条件 deterministic | typed policy、allowlist 和资源边界，不开放任意 map |
@@ -367,7 +390,7 @@ WP-01 PASS 只表示领域/契约基础验收，不表示 Bundle 验签、工作
 
 ### 10.1.1 ContentRef / IdentitySelector 与无循环摘要
 
-Profile → Entity/Facet/Question/ToolPlan 为 ContentRef；Question 的 applicable_profile_selectors 与 ToolPlan 的 applicable_profile_selector 为 IdentitySelector。Facet 不反嵌 Question 内容引用。Artifact 字节不含自身 digest 或 Bundle root。Manifest inventory 将所有身份（包括 selector 目标）绑定到唯一 digest；消费仅在 pinned inventory 解析。ContentRef 图 DAG，语义闭包可有 selector 回向关系，后者不是递归哈希边。Schema `$id` 是版本化身份，不嵌自己的 hash。WP-01 仅构建引用类型与注入目录的类型检查，不构建完整 compiler/hasher。
+R2 D15 候选：Profile → Entity/Facet/Question/ToolPlan/RuleSet 为 ContentRef；Question/ToolPlan 不再反向保存 Profile selector，关系仅正向权威、反向索引派生。IdentitySelector 仅用于显式 Profile/Region applicability 约束。Facet 不反嵌 Question 内容引用。Artifact 字节不含自身 digest 或 Bundle root。Manifest inventory 将所有身份（包括 selector 目标）绑定到唯一 digest；消费仅在 pinned inventory 解析。ContentRef 图 DAG，语义闭包可有 selector 回向关系，后者不是递归哈希边。Schema `$id` 是版本化身份，不嵌自己的 hash。WP-01 仅构建引用类型与注入目录的类型检查，不构建完整 compiler/hasher。
 
 ### 10.1.2 一 Question 一个主 Fact 与 Record
 
@@ -488,7 +511,9 @@ PY
 
 推荐下一步仅为用户审阅 D01–D08、确认边界与授权 WP-01。批准后只实施 WP-01；完成后重新报告文件、契约、命令及结果、runtime 证据、安全/迁移、限制和 PASS/CONDITIONAL/FAIL，再停止，不能自动进入 WP-02。
 
-## 12. WP-00-R1 修订交付与复审入口（当前）
+## 12. WP-00-R1 修订交付与复审入口（历史）
+
+本节是 R1 交付记录，不代表 R2 当前候选/工作区；R1 原文及历史证据不改。当前 R2 以 §13、修订规格与 ADR R2 表为准。
 
 ### 12.1 本次目标、文件与证据
 
@@ -564,3 +589,173 @@ WP-01 最终验收以 §9.2 G0–G9 为准，必须同时满足：
 本轮修订的文档自审：**CONDITIONAL**。C01–C11 已在候选文本中逐项对齐；D01–D10 全部 **PROPOSED / PENDING_USER_APPROVAL**；独立复审尚未发生，WP-01 未实施、未验收。没有 API key、模型成本、数据迁移或历史运行证据修改。依赖兼容、摘要/签名算法实现与真实运行行为仍 UNVERIFIED。
 
 `STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。下一步仅为独立复审和用户实施授权；本轮完成后停止。
+
+## 13. WP-00-R2 Architecture Contract Closure（当前复审入口）
+
+### 13.1 基线、范围、风险与历史保护
+
+基线为 main / `46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`，修改前 clean。
+本轮仅修改十个已存在文档并新增 R2 审计目录。无 Python 实现/pyproject，
+不安装、不测试、不调用模型/GPU/外部 API、不建分支、不初始化 Git、不 commit/push。
+AGENTS、原始 PACKAGE_MANIFEST 和 WP-00-R1 历史目录均不改。§11/12 是历史，
+不得把其中旧 Git 状态、反向 selectors 或旧验收范围当作当前契约。
+
+风险是引用/策略字段改名导致 R1 候选不兼容，以及“有类型”被误认为已实现执行器。
+控制是 before 原字节、精确 diff、当前字段统一于 Domain §9–14，并分开有限类型
+检查与完整图编译/实际调用。回滚仅可在另行选择后恢复 R2 before 中十个文档；
+保留 R1/R2 证据，不自动 reset/restore、删除或改写历史。
+
+### 13.2 R2-01 至 R2-08 整改矩阵
+
+以下“文档闭合”均为 `RESOLVED_IN_CANDIDATE / PENDING_USER_APPROVAL`，不是实现或
+功能测试结果。DM=specs/01，B=specs/02，N=specs/03，TA=specs/04；另有本计划与 ADR。
+
+| 项目 | R1 实际缺口 | R2 候选方案 | 实际修改文档 | 用户决策 |
+|---|---|---|---|---|
+| R2-01 | 两个 capability refs 无对应实体/kind，prompt 与 grounding provenance 不完整 | 25 个 ArtifactKind，复用 ModelBinding/ToolDefinition，PromptTemplate/grounding union/外部能力分离；不增独立 Capability Artifact | DM §3/9/10、B §2/5、N §4–6、TA、计划、ADR、README、测试策略 | D11 待批准 |
+| R2-02 | “configured Questions”未说明全量/子集、mandatory 与依据 | 比较 A/B，模式显式；建议初始 all_declared；B 仅显式选择 optional，mandatory 永远加入，fallback 与 selection record 明确 | DM §11/14、N §4–6、B 完整性、计划、ADR、README、roadmap、测试策略 | D12 模式/回退待批准 |
+| R2-03 | Facet Schema 与 Question 主 Schema 关系缺静态规则 | 保留 Facet allowlist；Question 主 Schema 在全部关联 Facet 精确交集中；semantic_key/unit/scope/context 复用检查 | DM §3.4/12、B §5、计划、ADR、测试策略 | D13 待批准 |
+| R2-04 | 抽象 policy 字段无完整类型和输入域 | 16 个封闭 PolicyArtifact 分支，必填/可选/枚举/无默认/范围/校验/效果表；applicability 无 Object Facts，Tool 无 N06 | DM §14、B、N、计划、ADR、roadmap、测试策略 | 认可 policy 形状；业务值保留 OPEN |
+| R2-05 | producer、Tool 多输出、唯一性、Attempt 权威未闭合 | ProducerCatalogue/Declaration、Tool value_path 映射、一对一/一对多、冲突域、whole-batch/step authority revision、FactSelector | DM §13、B §5、N §7/8、TA、计划、ADR、测试策略 | D06 的细化待批准 |
+| R2-06 | 保守 no_hits 可能高复核负担，但无替代评估 | 比较 A/B/C；保留 D09、推荐先 A 后离线评估 C；明确风险/复核/成本指标与置信区间，不编数据 | N §8.5、DM CoveragePolicy、TA、计划、ADR、测试策略 | D14；阈值/评测/自动放行另批 |
+| R2-07 | Q/ToolPlan 反向 selectors 造成双权威/版本耦合 | 比较 A/B/C，推荐 B，Profile 正向 ContentRef 唯一关系，反向派生；IdentitySelector 仅显式适用性 | DM §3/7/9、B §5、计划、ADR、测试策略 | D15 待批准；不重引 digest 环 |
+| R2-08 | DEPENDENCIES 仍要求 CPU 锁之前全 GPU 验证 | CPU Gate WP-01 与 GPU Gate WP-04 明确分开，禁止混依赖/伪报兼容 | DEPENDENCIES、TA、计划、ADR、roadmap | D01 仍 PROPOSED / PENDING_USER_APPROVAL |
+
+### 13.3 D01–D15 当前审批状态
+
+当前完整决策表在 `planning/ARCHITECTURE_DECISIONS.md` 的 R2 小节，旧 ADR/R1 表
+保持历史。D01–D15 **全部 PROPOSED / PENDING_USER_APPROVAL**；没有新 CONFIRMED。
+
+| 决策 | 当前主题 | 文档层状态 |
+|---|---|---|
+| D01 | CPU/GPU 两阶段依赖 | PROPOSED / PENDING_USER_APPROVAL |
+| D02 | typed Fact + exact Registry + value_schema | PROPOSED / PENDING_USER_APPROVAL |
+| D03 | typed AST / T-F-U / input_domain | PROPOSED / PENDING_USER_APPROVAL |
+| D04 | mandatory 全扫 + collect_all | PROPOSED / PENDING_USER_APPROVAL |
+| D05 | ContentRef/IdentitySelector、D15 细化 | PROPOSED / PENDING_USER_APPROVAL |
+| D06 | 单主 Fact/多 Tool Facts、authority、状态历史 | PROPOSED / PENDING_USER_APPROVAL |
+| D07 | Bundle 自包含/closure/摘要边界 | PROPOSED / PENDING_USER_APPROVAL |
+| D08 | ToolPlan/Question 复用与 typed guard | PROPOSED / PENDING_USER_APPROVAL |
+| D09 | Coverage 空集/partial 安全语义（保留） | PROPOSED / PENDING_USER_APPROVAL |
+| D10 | Profile-specific Object 身份（保留） | PROPOSED / PENDING_USER_APPROVAL |
+| D11 | ArtifactKind/直接能力绑定/Prompt/provenance | PROPOSED / PENDING_USER_APPROVAL |
+| D12 | QuestionSelectionPolicy/Record | PROPOSED / PENDING_USER_APPROVAL |
+| D13 | Facet–Schema 精确交集/复用 | PROPOSED / PENDING_USER_APPROVAL |
+| D14 | no_hits 策略与评测，保守 A 推荐 | PROPOSED / PENDING_USER_APPROVAL |
+| D15 | 正向 membership 唯一权威 | PROPOSED / PENDING_USER_APPROVAL |
+
+OPEN 是业务/部署待填值的状态，不是未经批准的默认：证据/retention、预算、clock
+tolerance、deployment IDs/versions、评测数据/样本数/风险和复核阈值。签名算法/信任、
+激活优先级/空间系统归属为后续 WP OPEN。它们不能用 Any 占位，也不能从 fixtures
+推成生产参数；不阻塞纯类型建模，但会阻塞使用该配置的 Bundle 准入。
+
+### 13.4 新旧契约、模型与兼容性
+
+- 不新增独立 DiscoveryCapability/GroundingCapability 实体或 Registry 服务。
+  Profile.discovery_capability_ref → discovery_binding_ref[model_binding]；
+  grounding_capability_ref → grounding_binding(model/tool discriminated union)。
+  新增 observation_binding_ref、question_selection_policy_ref、rule_set_refs。
+- 新增版本化 PromptTemplateDefinition/PromptVariable、25-kind ArtifactKind 表、
+  静态资源描述、ReviewReportRef/ExternalCapabilityRequirement 等封闭契约。
+  GroundingRecord.producer 改为模型/工具联合分支，Object 保存 selection ref/set。
+- 删除 Question.applicable_profile_selectors、ToolPlan.applicable_profile_selector
+  的候选字段，改由 Profile 正向关系与编译派生；剩余 applicability selectors
+  仍由 pinned inventory 解析。R1 历史字节不删。
+- Question 主 Fact 不改为多输出；Record fields 无独立 FactStatus。新增 semantic_key、
+  payload_schema_ref（value_schema），Facet allowlist 取精确交集。
+- 抽象 policy 字段统一为有类型 `_policy_ref` / `_requirements_ref`，目标为
+  PolicyArtifact 指定 policy_kind。Business 值必须明确提供，不能注入任意 map。
+- 新增 ProducerCatalogue、FactProducerDeclaration、ToolFactOutputDeclaration/
+  ToolFactOutputMapping、ProducerSelector、AuthoritativeResultSelection 等 Schema；
+  FactSelector 统一 scope/fact_key/fact_schema_ref/producer_selector/field_path。
+  每个候选 Fact 保留 source Attempt；消费选择明确 authority revision。
+
+R2 与 R1 是不向后兼容的**候选**形状变更；尚无已发布机器契约版本、服务或生产数据。
+文档 revision R2 不自动改成已批准 schema_version，也不宣称 SemVer 兼容。
+批准首次冻结前须确定 initial schema version；已发布制品如以后变更，需新 major/
+显式转换和读旧策略。原 examples 仍 illustrative，不自动补哈希或迁移数据。
+
+### 13.5 Domain → Bundle → Node → Fact → Rule → Decision 完整引用链
+
+1. 定义：Entity/Region Context Schema → Profile（Facet/Question/ToolPlan/RuleSet，
+   discovery_binding_ref、grounding_binding、observation_binding_ref）；Question →
+   Facet + FactSchemaDefinition → generated value_schema，及 PromptTemplate →
+   response_schema + declared variables/partials；所有内容目标在 ArtifactKind 表。
+2. BundleManifest inventory 固定这些 ContentRefs、全部 PolicyArtifact/资源、
+   ModelBinding IO、Tool IO 与 ProducerCatalogue。Profile 正向 membership、剩余
+   applicability selectors 语义闭包明确；无编译器反写定义，不含自己的 digest。
+   外部 model/tool implementation/review approval 属显式 trusted capability，不冒充
+   Bundle ArtifactKind。完整 compiler/admission 是 WP-02。
+3. Release pin Bundle digest + ExecutionPolicy/workflow version；Task acceptance pin
+   Release；Execution pin 同一输入/配置。N01 产生不可变 ContextSnapshot/来源记录，
+   N01 后 write-once context digest，不伪造创建时尚不存在的值。
+4. N02 以 discovery ModelBinding 和 pinned Profile catalogue/policy 产生 ProfileHit +
+   QuestionSelectionRecord/effective_question_refs。Mandatory producer completeness
+   由编译/准入独立检查；模型只能提出 optional 子集、无权减少 required 集合。
+5. N03 按 Profile 独立定位，模型/工具来源有不同 provenance；Object 继承同一 selection
+   ref/set，保留原图坐标/变换，跨 Profile 不合并。N04 对每个 Object 的有效 Questions
+   一次联合请求；整批 Attempt/source 响应与每 Question 一个主 Fact 独立留痕。
+6. N05 不看 N06，执行 Profile 固定 ToolPlan。每 step 的 tool_output_schema →
+   declared value_path → 每条 FactSchema 校验，一 step 可多 Fact，错误非负证据。
+7. FactProducerDeclaration 将 Question primary / ToolStep named output 固定到
+   schema/key/scope；Fact 候选和 Attempt 全留；AuthoritativeResultSelection 显式
+   选择 whole-batch/step revision。Rule FactSelector 匹配同一声明及 Record field_path。
+8. N06 的 Rule applicability 只读声明 Context/Region/Profile；condition_ast 可读验证
+   Facts。所有 mandatory Rules 全扫，候选只建议；T/F/U 与 required guard 分离，
+   collect_all 所有有效命中。Decision 固定 Rule/Fact/authority/evidence/engine refs。
+9. ExecutionCoverage 聚合执行义务/empty/partial，与状态和 Decision.result 分开；
+   no_hits/no_target/failure 不构成确定否定。D14 不启用其他自动放行协议。
+
+### 13.6 十三项架构一致性独立静态自审
+
+本表是写成后的第二遍人工契约追踪，不是 pytest、Pydantic 或 Schema 执行结果。
+
+| 项目 | 静态结论 | 证据落点 |
+|---|---|---|
+| Domain / Pydantic inventory | PASS（候选） | §5 新增清单覆盖 01 §9–14 模型 |
+| 每个 ContentRef kind 有定义 | PASS（候选） | 01 §9，运行记录/外部要求不冒充 ArtifactKind |
+| Bundle 配置资源闭包 | PASS（候选） | 02 §2/5，含 producer catalog/policies/Prompt/schema（runtime selected-set schema 有 invocation digest/evidence） |
+| N02 Question 集合确定 | PASS（候选） | 明确 policy/partition/ordered set/selection record |
+| N03 完全继承 | PASS（候选） | 03 §5，不因 grounding 修改 Questions |
+| N04 一 Object 一联合请求 | PASS（候选） | 03 §6，同一 selection 下整批 retry |
+| N05 独立于 N06 | PASS（候选） | 01 §13/14、03 §7，禁止 Candidate/Decision selectors |
+| Producer / Rule selector | PASS（候选） | 同 schema/key/scope/producer/field_path，显式 authority |
+| applicability / condition 输入域 | PASS（候选） | 01 §13.3/14、03 §8：前者禁止 Object Facts |
+| N06 mandatory 全扫 | PASS（候选） | 03 §8.2/8.3，mandatory Questions 依赖完整性 |
+| Coverage 空集/部分执行 | PASS（候选） | D09 不变；03 §8.4/8.5 与 typed CoveragePolicy |
+| Release / Execution pin 不可变 | PASS（候选） | 01 §4/7、02 §8，actual invocation 追加审计 |
+| WP-01 依赖/范围一致 | PASS（候选） | DEPENDENCIES CPU/GPU 两门禁、TA、roadmap、§4/9 |
+
+### 13.7 WP-01 最终门槛与阻塞项
+
+以 §9 G0–G10 为当前验收表：新增 G10 不扩大到实际 compiler/evaluator。
+必须获得用户对 D01–D15、有限交付/依赖/测试动作的明确审批；批准前不实施。
+纯域验收需：完整模型/生成 Schema 映射、strict extra/版本/引用类型、Registry 与
+Facet/producer/authority/input_domain 正负例、selection/grounding provenance/policy
+branches、无模型/基础设施依赖、重复生成一致、已授权 CPU-only 测试真实通过并留证。
+不得用静态 PASS 冒充这些未来功能 gate 已通过。
+
+当前需要拍板：D11 直接绑定与种类清单；D12 初始 all_declared 或显式 B 模式和回退；
+D13 Facet 交集约束；D15 去除反向 membership；D14 是否接受 A 作为 V1 保守行为
+（B/C 可延后）；D01/既有 D02–D10 候选整体冻结。场景参数与评测目标仍 OPEN，
+不要求本轮凭空填值。批准合同类型与批准真实 Bundle/自动放行部署是不同 gate。
+
+### 13.8 本次交付、证据和停止结论
+
+修改十个现有文档：README、specs/01–04、planning 的 WP-01_IMPLEMENTATION_PLAN、
+ARCHITECTURE_DECISIONS、DEPENDENCIES、TEST_STRATEGY、DEVELOPMENT_ROADMAP。
+新增 review_evidence/WP-00-R2：README、before_sha256、after_sha256、changes.patch
+以及只含这十份修改前字节的 before/。清单记录基线 SHA、每文件大小/SHA-256；
+protected_files 另记录 R1 证据/AGENTS/PACKAGE_MANIFEST 哈希，避免重写历史。
+审计文件本身不纳入 after 自身摘要，不形成自引用；diff 是文档 diff 不是代码提交。
+
+实际动作仅本地读取、编辑、复制、标准库字节哈希/difflib 和 Git 只读状态查询；
+这些属于 STATIC_REVIEW_ONLY，不是功能测试。未安装/运行依赖、pytest、Schema、
+lint/typechecker、服务、Provider、GPU；没有 DB 迁移/secret/外部平台修改。
+R2 HEAD 保持基线、修改留工作区，未创建分支、commit/push 或调用外部 API。
+
+**R2 文档自审：PASS（仅静态完整性/候选一致性）。整体审批状态：CONDITIONAL。**
+WP-01 已具备候选方案的审批材料，尚未批准实施、尚未完成任何功能验收。仍需用户及
+GPT Pro 独立复核上述决策/业务参数；真实依赖兼容、模型/发现质量、完整负例协议和
+GPU 能力均 UNVERIFIED。`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。
+本轮到此停止，不实施 WP-01、不安装、不测试、不提交、不推送。

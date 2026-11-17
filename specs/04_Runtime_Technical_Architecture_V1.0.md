@@ -4,14 +4,15 @@
 **Deployment:** Single RTX 4090 server, Docker Compose  
 **Inference:** Hybrid, remote-first
 
-**WP-00-R1 scope clarification (PROPOSED / PENDING_USER_APPROVAL):** WP-01 is
+**WP-00-R2 scope clarification (PROPOSED / PENDING_USER_APPROVAL):** WP-01 is
 limited to Domain Model, an in-memory Fact Schema Registry, Rule AST static type
 checking, generated JSON Schema and CPU-only tests. None of the services below,
 Rule runtime evaluation, Bundle compiler/admission, Provider adapters or durable
 scheduling is part of WP-01. CPU-only dependency compatibility/lock is a separate
 candidate from the later GPU worker matrix; no GPU compatibility is claimed by
 contract tests. This revision authorizes document changes only. Original bytes
-are retained under `planning/review_evidence/WP-00-R1/before/`.
+for R1 are retained under `planning/review_evidence/WP-00-R2/before/` (baseline
+`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`). R1 audit is unchanged.
 
 ## 1. Architecture shape
 
@@ -64,6 +65,13 @@ Claims durable jobs, advances node state, applies retry policies, enforces concu
 ### Model Gateway
 Routes by capability and approved ModelBinding. Adapters normalize provider responses into internal contracts. Records actual provider/model/deployment and request/response digest.
 
+Profile binds discovery/observation directly to ModelBinding. Grounding is a
+typed ModelBinding-or-Tool binding, with different ModelInvocation/ToolExecution
+provenance. There is no independent Capability registry service/artifact in WP-01.
+Question selection uses the pinned typed policy and audit record; model optional
+proposals cannot remove mandatory Questions. Definitions and schema inventory are
+01 §9–14; closure/admission is WP-02, execution/scheduling remains later WPs.
+
 ### Local vLLM process
 Serves explicitly configured local models. Must be isolated from API process and monitored for memory/health.
 
@@ -108,6 +116,7 @@ PostgreSQL stores:
 - ExecutionCoverage and per-Profile coverage provenance (separate from completion and business result);
 - ModelInvocation/ToolExecution metadata;
 - Evidence metadata and hashes;
+- QuestionSelectionRecord, ProducerCatalogue references and append-only AuthoritativeResultSelection revisions;
 - replay records.
 
 Object storage stores:
@@ -208,6 +217,13 @@ Do not claim throughput, P95, concurrency, GPU utilization or cost until measure
 - remote API quota/latency;
 - measured GPU memory;
 - representative task concurrency.
+
+D14 analysis (03 §8.5) retains D09's no_hits→uncertain policy. Review routing and
+automatic clearance are separate future operational policies, not an existing
+human-review service or a confidence threshold default. Secondary no_hits review
+would require a separately approved capability/policy inside the fixed N02
+responsibility, additional invocation audit/budgets and joint-miss evaluation.
+No negative-result shortcut or extra autonomous node is introduced by R2.
 
 ## 14. Future integration
 

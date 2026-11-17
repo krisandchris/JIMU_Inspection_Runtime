@@ -17,17 +17,26 @@ Gate: user approves repository layout, dependency approach and WP-01 plan.
 
 ## WP-01 — Domain Model and Contract Foundation
 
+WP-00-R2 clarification (PROPOSED / PENDING_USER_APPROVAL): domain contracts only,
+in-memory Fact Registry, AST static type checking, generated JSON Schema and
+CPU-only tests. This document does not authorize code/install/test execution.
+
 Deliver:
 - Python package skeleton;
 - strict Pydantic domain models;
 - explicit status enums;
-- ArtifactRef/version/digest primitives;
+- closed ArtifactKind / ContentRef / IdentitySelector/version/digest primitives;
 - Fact Schema Registry contract;
 - typed Rule AST model and operator registry interfaces;
 - generated JSON Schema;
 - domain and contract tests.
+- typed Policy Catalog, direct ModelBinding/Tool grounding bindings, PromptTemplate,
+  QuestionSelectionRecord, Facet Schema intersection, Fact producers/Tool output
+  mapping and AuthoritativeResultSelection data models (01 §9–14).
 
-Out of scope: database, API, model calls, GPU, UI.
+Out of scope: database, API, model calls, GPU, UI, Capability Registry/model
+scheduler, full Bundle compiler/admission/closure, Rule evaluator, no_hits
+secondary-review implementation. D01–D15 and bounded WP-01 require user approval.
 
 Acceptance:
 - all normative types validate;
@@ -37,6 +46,8 @@ Acceptance:
 - Rule AST rejects unsupported operators and incompatible operand types;
 - JSON Schema generated deterministically;
 - no dependency on FastAPI/SQLAlchemy/provider SDK in domain package.
+- CPU lock gate separate from WP-04 GPU matrix; selection/producer/input-domain/
+  policy negative fixtures and strict generated Schema agree with R2 contracts.
 
 ## WP-02 — Bundle Compiler, Admission and Release
 

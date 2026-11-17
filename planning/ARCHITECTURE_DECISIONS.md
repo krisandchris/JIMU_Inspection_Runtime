@@ -66,3 +66,70 @@ authorization is not WP-01 implementation, dependency installation or test autho
   starter bytes and the initial plan/evidence are retained in
   `planning/review_evidence/WP-00-R1/before/`; PACKAGE_MANIFEST.json remains the
   original distribution manifest, not a regenerated checksum of this revision.
+
+## WP-00-R2 — current candidate register (no approval inferred)
+
+Baseline: main at `46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`.
+R1 rows above remain history. Current candidate refinements are below; every
+D01–D15 has candidate_status=PROPOSED and approval_status=PENDING_USER_APPROVAL.
+None is CONFIRMED/IMPLEMENTED by this document. Business values marked OPEN must
+be explicitly configured before the corresponding Bundle/use is accepted.
+
+| ID | Current decision candidate / R2 qualification | Candidate status | Approval status |
+|---|---|---|---|
+| D01 | uv + Python 3.12/Pydantic v2, pytest/jsonschema/Ruff/mypy CPU lock gate in WP-01; independent GPU gate in WP-04; no installed/verified pins | PROPOSED | PENDING_USER_APPROVAL |
+| D02 | Typed scalar/list/closed Record, exact FactSchemaDefinition + generated value_schema, offline 2020-12; non-known value absent | PROPOSED | PENDING_USER_APPROVAL |
+| D03 | Allowlisted AST, T/F/U plus independent completeness guard; static input_domain disallows Facts in applicability | PROPOSED | PENDING_USER_APPROVAL |
+| D04 | All mandatory Rules scanned regardless of candidates; collect_all valid matches, blocked trace retained | PROPOSED | PENDING_USER_APPROVAL |
+| D05 | ContentRef is digest-pinned dependency; selectors never execute content; R2 D15 removes redundant reverse Profile membership without reintroducing digest cycles | PROPOSED | PENDING_USER_APPROVAL |
+| D06 | Question→one primary Fact; Tool step→declared many Facts (V1 N05 object-scoped; execution Facts from system producers); whole-batch/step authority explicit; configured vs actual identity distinct; R1 terminal-state rules retained | PROPOSED | PENDING_USER_APPROVAL |
+| D07 | Full typed config/resource closure, non-self-referential root; R2 adds producer catalogue and Fact definition/value schema distinction; full compiler/admission/signatures WP-02 | PROPOSED | PENDING_USER_APPROVAL |
+| D08 | One ToolPlan per Profile, typed guards/context/validated Facts only, Schema/Facet/context-compatible reuse | PROPOSED | PENDING_USER_APPROVAL |
+| D09 | Preserve none/partial coverage semantics and no_hits/no_target/failed distinctions; no implicit definite negative on empty Objects | PROPOSED | PENDING_USER_APPROVAL |
+| D10 | Profile-specific Object/Fact identity, no cross-Profile merging or unique-physical-object claims | PROPOSED | PENDING_USER_APPROVAL |
+| D11 | Closed ArtifactKind catalogue in 01 §9; reuse ModelBinding/ToolDefinition instead of independent capability artifacts; versioned PromptTemplate, typed grounding provenance | PROPOSED | PENDING_USER_APPROVAL |
+| D12 | Explicit QuestionSelectionPolicy: all_declared or mandatory_plus_optional; recommend initial all_declared; optional model/context subset only under explicit policy, mandatory union and configured conservative fallback | PROPOSED | PENDING_USER_APPROVAL |
+| D13 | Keep Facet.fact_schema_refs allowlists; Question primary Schema in every linked Facet intersection; exact semantic/schema/scope compatibility and Profile context checks | PROPOSED | PENDING_USER_APPROVAL |
+| D14 | Retain A conservative no_hits handling for first V1; evaluate C secondary review offline against B complete-negative protocol requirements before any auto-clear change | PROPOSED | PENDING_USER_APPROVAL |
+| D15 | Recommend B: Profile forward ContentRefs sole authoritative membership; remove Question/ToolPlan reverse Profile fields, derive indexes; selectors retained only for explicit applicability constraints | PROPOSED | PENDING_USER_APPROVAL |
+
+### D15 alternatives and compatibility
+
+| Alternative | Version/reuse effect | Closure / conflict handling |
+|---|---|---|
+| A retain exact reverse membership selectors as consistency check | New Profile version often forces unchanged Question/ToolPlan revision; shared Questions couple otherwise independent Profiles | No digest cycle but two relationship sources can disagree; admission must reject disagreement |
+| B forward-only membership (recommended) | Profile changes alone do not re-version reusable Questions/ToolPlans; semantic/context incompatibility still rejected | Forward closure + compiler-derived reverse index; one authority, no membership selector target obligations |
+| C optional non-authoritative reverse applicability selectors | Can express intentional restrictions but exact-version restrictions still couple reuse | They must never grant membership; conflicting restrictions can block valid forward refs, requiring explicit semantics |
+
+B removes applicable_profile_selectors from Question and applicable_profile_selector
+from ToolPlan in the R2 candidate. IdentitySelector survives as an applicability
+constraint over Profile/Region, with full inventory resolution for those remaining
+targets. This is a breaking candidate schema change, not a migration of historical
+published artifacts. R1 data remain immutable; any future importer must explicitly
+validate forward relationships and record conversion provenance, not silently drop
+meaningful restrictions. User may choose A/C instead; update contracts/tests before
+implementation in that case. D15 qualifies D05, not overwrites its historical row.
+
+### Policy and producer closure
+
+01 §14 is the authoritative typed Policy Catalog; it includes all 15 requested
+policies plus ExecutionPolicy. 01 §13 defines producer cardinality, collision
+domains, Tool output mapping and append-only authority selection. These complete
+D02/D03/D06/D08 contracts without creating new execution services. Registry/type
+checks over finite injected definitions are WP-01; graph admission, runtime leases,
+model selection/execution, Rule evaluation and review routing remain later WPs.
+
+### Remaining OPEN values and approval gates
+
+- D12: approve mode/fallback per initial Profile; no hidden default or model
+  reliability threshold. Required producer Questions cannot be optional.
+- D14: business risk/review-rate targets, independently labelled slices/sample
+  counts, protocol thresholds and second-review capability remain OPEN; no runtime
+  auto-clear protocol is enabled by R2. D09 is unchanged.
+- Evidence requirements/retention durations, actual provider/deployment identities,
+  resource limits and context clock tolerances remain OPEN configuration values,
+  represented by closed typed fields, never arbitrary objects or invented defaults.
+- D01 exact dependency versions, GPU compatibility, signing/trust, activation scope
+  precedence and spatial ownership remain UNVERIFIED or later-WP OPEN as before.
+- Approve D01–D15/current candidate revision and the bounded WP-01 work package
+  separately from dependency/test execution. R2 itself authorizes documents only.

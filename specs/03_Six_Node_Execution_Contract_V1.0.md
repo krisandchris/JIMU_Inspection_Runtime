@@ -4,10 +4,11 @@
 **Input:** One RGB image per Task  
 **Orchestration:** Deterministic state machine
 
-**Review revision:** WP-00-R1, PROPOSED / PENDING_USER_APPROVAL.
+**Review revision:** WP-00-R2, PROPOSED / PENDING_USER_APPROVAL.
 WP-01 builds data contracts/static type checks and CPU-only tests, not node,
-workflow or Rule evaluation execution. Originals are retained under
-`planning/review_evidence/WP-00-R1/before/`.
+workflow or Rule evaluation execution. R1 source commit is
+`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`; before bytes are in
+`planning/review_evidence/WP-00-R2/before/`. R1 historical evidence is unchanged.
 
 ## 1. Global invariants
 
@@ -74,10 +75,10 @@ Inputs:
 - original RGB image reference;
 - N01 ContextSnapshot;
 - applicable Profile catalog from pinned Bundle;
-- ModelBinding.
+- Profile.discovery_binding_ref (ModelBinding capability=profile_discovery), typed PromptTemplate and QuestionSelectionPolicy.
 
 Output:
-- ProfileHit records with registered Profile ref, configured Question refs, model-reported score/confidence, and invocation reference;
+- ProfileHit records with registered profile_ref, question_selection_ref, effective_question_refs, model-reported score/confidence and invocation reference;
 - excluded/filtered Profile reasons;
 - discovery invocation metadata.
 
@@ -90,12 +91,24 @@ Forbidden outputs:
 
 Questions are selected from the Profile's frozen configuration, not invented by the model. N02 is optimized for recall, but model confidence is not a recall guarantee. No-hit means no Profile was returned; it is not a final `no_violation` Decision.
 
+Release freezes Profile.question_refs and question_selection_policy_ref; it does
+not precompute every task's optional subset. D12 candidate supports all_declared
+or mandatory_plus_optional, requiring an explicit mode, exhaustive mandatory/
+optional partition and conservative fallback. Initial recommendation all_declared;
+model_advisory optional selection is an explicitly configured alternative, never
+a default or free-form Question generation. See 01 §11/14 for the complete fields.
+System includes all mandatory Questions regardless of proposal. Omission of an
+optional Question required by a mandatory Rule/Tool is a configuration error,
+not permission to bypass downstream work. SelectionRecord records pinned config,
+context, proposal, validation and actual invocation; no model-reported reason is
+treated as truth. N02 still emits no instance identifiers or boxes.
+
 ## 5. N03 — Grounding
 
 Inputs:
 - original image;
 - N02 ProfileHits;
-- Profile-specific grounding capability and Model/Tool binding.
+- Profile.grounding_binding (discriminated ModelBinding or ToolDefinition binding, 01 §10).
 
 Outputs:
 - zero or more Object records per Profile;
@@ -104,11 +117,13 @@ Outputs:
 - grounding provenance and scores;
 - visualization/evidence references;
 - explicit per-Profile grounding status, including no-target, failed and partial.
+- GroundingRecord producer branch model/tool, with corresponding ModelInvocation/ToolExecution provenance; no fake model invocation for tool-only localization.
 
 Rules:
 - Ground each Profile independently.
 - Do not perform N02 instance matching; N02 has no instances.
 - Do not modify Question selection.
+- Copy question_selection_ref and effective_question_refs unchanged from ProfileHit into ProfileGroundingResult/Object. Validate equality with SelectionRecord; no localization-based reselection or cross-Profile reuse.
 - Do not decide violation.
 - Preserve localization failure records; do not silently drop a Profile hit.
 - Object IDs are unique within an Execution, not persistent real-world identities.
@@ -132,6 +147,7 @@ Inputs:
 - Context View built only from each Question's allowlist;
 - Prompt Compiler output;
 - generated response schema.
+- Profile.observation_binding_ref and the N02-pinned question_selection_ref/effective_question_refs; exact Question prompt/primary-Fact contracts compose the joint response schema.
 
 Output:
 - one ObservationBatch per Object/request;
@@ -197,6 +213,15 @@ Rules:
 - Tool failure is never negative evidence.
 - Persist actual implementation/model version and input/output digests.
 
+Tool output_schema_ref validates the normalized ToolResult envelope. Each declared
+fact_output_mappings entry extracts one typed value_path and validates that value
+against its own FactSchemaDefinition (01 §13); one step can produce many declared
+Facts, not one unrestricted JSON Fact. Whole-step failure is not negative evidence.
+AuthoritativeResultSelection selects an explicit step Attempt/output group;
+N04 authority selects a whole Object observation batch. Consumers resolve these
+pinned revisions, not the last stored Fact. WP-01 models the records and static
+paths only; execution/persistence enforcement remains later WPs.
+
 ## 8. N06 — Candidate Prediction and Rule Decision
 
 ### 8.1 Candidate prediction
@@ -214,6 +239,12 @@ applicable → evaluated/blocked; inapplicable → skipped with deterministic re
 unknown applicability → blocked/unresolved, never silently excluded. A high-recall
 candidate gate is not an alternative V1 execution mode; later optimization needs
 a separately approved version and measured evidence.
+
+Rule applicability uses only declared Context/Region/Profile metadata. Object
+Facts belong to condition_ast, never applicability. Rule FactSelectors match the
+Question primary output or named Tool step output and declared Record field_path;
+actual operands use pinned authoritative selection revisions. Tool guards may use
+validated upstream Facts and context, never Candidate/Decision (01 §13.3/14).
 
 Rule Engine:
 1. resolve RuleSet and applicability;
@@ -306,6 +337,45 @@ is empty. Discovery partial prevents complete coverage. All task-scope aggregati
 retains Object/Profile provenance and does not claim unique-vehicle counts (D10).
 Execution.completed can coexist with coverage.none/summary.uncertain when a
 successful invocation found nothing; infrastructure failure is tracked separately.
+
+### 8.5 no_hits operational tradeoffs and pending D14
+
+D09 stays unchanged: current V1 no_hits/no_target/empty required scope gives
+uncertain, not confirmed absence. An uncertain result is an input to a future
+review/routing policy; it does not assert that a human-review service already
+exists. Normal clean images can therefore increase the unresolved/review workload.
+
+| Candidate | False acceptance / miss risk | Review load and compute | Annotation/evaluation/config needs |
+|---|---|---|---|
+| A conservative | Does not auto-clear no_hits; cannot recover targets missed by discovery, but avoids treating that miss as no_violation | Potentially high unresolved/review fraction; no extra inference pass | Representative positive/negative/no_hits slices and review capacity; simplest policy |
+| B independently validated complete-negative protocol | Could permit definite negatives only under reviewed scope/quality protocol, never from raw JEV confidence; residual miss risk must be bounded | May reduce review load; protocol can require more computation | Independent labelled target/violation truth, slice-level confidence bounds, versioned protocol and drift/revalidation gates; highest proof/config burden |
+| C independent second review on no_hits | May recover first-stage misses; independence cannot be assumed, correlated misses remain | Additional model/tool calls for no_hits cases; possible reduction in review if validated, otherwise unresolved | Paired labelled first/second outputs, joint-miss analysis, costs and quota, explicit binding/policy/budgets; more config |
+
+Recommendation: retain A for first accepted V1 and evaluate C offline, comparing
+against B's acceptance requirements before any auto-clear change. D14 remains
+PROPOSED / PENDING_USER_APPROVAL; B/C are not supported CoveragePolicy modes in
+the current candidate. They require a separately approved policy/protocol version
+and Runtime capability. C, if later approved, must be an explicitly configured
+N02 internal secondary capability with independent invocations/audit, not a new
+autonomous workflow node; N02 output stays Profile/Question-only, and N03 still
+grounds independently. No implicit fallback API or detector is called now.
+
+Required measured metrics (no measurements or thresholds are claimed):
+- no_hits_fraction = discovery no_hits tasks / all eligible tasks;
+- no_hits_target_miss = labelled relevant-target images among no_hits / all no_hits;
+- violation_miss_rate = labelled violating tasks not detected / all labelled violating tasks;
+- false_acceptance_rate = labelled violating tasks auto-cleared / all labelled violating tasks;
+- auto_clear_risk = labelled violating tasks auto-cleared / all auto-cleared tasks;
+- unresolved_or_review_fraction, auto_clear_coverage, per-Profile/scene/lighting/
+  occlusion slice recall, secondary recovered positives and joint-miss rate;
+- invocation count/task, no_hits conditional extra calls, measured latency P50/P95,
+  provider cost/task and reviewed minutes/image, all with actual version pins.
+
+Report denominators and confidence intervals (recommend a stated 95% convention),
+including zero-event upper bounds; zero samples is undefined, not perfect accuracy.
+Dataset/dedup rules, independent truth review, per-slice minimum sample counts,
+maximum acceptable risk/review fraction and protocol thresholds are business OPEN
+decisions. No score or synthetic fixture substitutes for labelled evaluation.
 
 ## 9. Task and execution state machines
 

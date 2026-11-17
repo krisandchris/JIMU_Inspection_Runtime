@@ -3,10 +3,11 @@
 **Status:** Proposed normative delivery contract  
 **Depends on:** Runtime Domain Model V1.0
 
-**Review revision:** WP-00-R1. These clarified contracts are PROPOSED /
+**Review revision:** WP-00-R2. These clarified contracts are PROPOSED /
 PENDING_USER_APPROVAL. WP-01 defines domain contracts only; packaging, closure
 admission, digest calculation and signing implementations remain WP-02.
-Original bytes: `planning/review_evidence/WP-00-R1/before/`.
+R1 source commit: `46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`.
+R1 bytes: `planning/review_evidence/WP-00-R2/before/`; R1 audit unchanged.
 
 ## 1. Purpose
 
@@ -33,7 +34,8 @@ bundle/
   prompts/response_contracts/*.schema.json
   schemas/attributes/*.schema.json
   schemas/context/*.schema.json
-  schemas/facts/*.schema.json
+  schemas/facts/definitions/*.json
+  schemas/values/*.schema.json
   schemas/tools/inputs/*.schema.json
   schemas/tools/outputs/*.schema.json
   schemas/objects/*.schema.json
@@ -42,6 +44,8 @@ bundle/
   policies/evidence.json
   policies/coverage.json
   policies/resources.json
+  policies/registry.json
+  facts/producers.json
   vocabularies/*.json
   resources/geometry/*
   resources/assets/*
@@ -49,6 +53,14 @@ bundle/
 ```
 
 Paths are relative, normalized POSIX paths. Reject absolute paths, `..`, duplicate paths, symlinks and archive path traversal. Define maximum archive size, expanded size, file count and individual file size in deployment policy.
+
+The closed ArtifactKind/path catalogue is 01 §9; no independent Capability
+Artifact is introduced. policies/execution.json, evidence.json, coverage.json and
+resources.json hold named typed PolicyArtifacts (policy_kind=execution/evidence/
+coverage/resource_requirements); policies/registry.json may hold other subtypes.
+Each policy identity appears once only, even when referenced by multiple owners.
+fact_schema artifacts are registry definitions; value_schema artifacts are their
+generated payload schemas. Both are pinned and included, never hand-divergent.
 
 Each declared reference must resolve within this immutable package, including
 prompt partials, response schemas, context schemas, Tool IO schemas, vocabularies,
@@ -106,13 +118,13 @@ Avoid self-referential hashing. The exact canonicalization, signature algorithm,
 
 ## 5. Compiler pipeline
 
-1. Resolve approved source artifacts.
+1. Resolve approved source artifacts, requiring a known ArtifactKind and the correct kind per referencing field (01 §9).
 2. Resolve exact versions and digests recursively.
 3. Validate every artifact against its schema.
-4. Validate full semantic reference closure (both ContentRefs and IdentitySelector targets), then require an acyclic forward ContentRef graph. Resolve each selector exactly once against pinned manifest inventory; never embed resolved back-reference digests into artifact bytes.
-5. Validate Profile → Entity/Facet/Question/ToolPlan relations.
+4. Validate full semantic closure of ContentRefs and remaining explicit applicability IdentitySelectors, then require an acyclic ContentRef graph. Resolve selectors against pinned inventory; derive Question/ToolPlan reverse membership solely from Profile forward refs (D15), never serialize it back into artifact bytes.
+5. Validate Profile → Entity/Facet/Question/ToolPlan/RuleSet and ModelBinding/Tool capability bindings; prompt variables/response contracts; Facet allowlist intersection; Profile QuestionSelectionPolicy partition and mandatory producer completeness.
 6. Validate ToolPlan DAG acyclicity and typed input/output mappings.
-7. Build Fact producer/consumer graph.
+7. Build typed ProducerCatalogue from Question primary outputs and Tool step output mappings; validate collision domains, conditional availability and exact selector/Schema resolution (01 §13).
 8. Validate Rule required Facts have valid producers and compatible schemas.
 9. Validate Rule AST operator and operand types.
 10. Validate ModelBinding capabilities and configured fallback policy.
@@ -129,6 +141,22 @@ Question one-primary-Fact cardinality and Rule AST compatibility. Missing,
 ambiguous, wrong-kind or wrong-digest selector targets reject the Bundle. Compiler
 and admission independently perform these checks; WP-01 only defines the records
 and checks types against injected finite registries, not a Bundle closure engine.
+
+For each potentially applicable mandatory Rule and required Tool input, every
+required Question producer must be mandatory in the Profile's selection policy.
+Admission repeats this completeness check independent of model candidate/optional
+selection. Rule applicability is typechecked with input_domain=rule_applicability
+(no Object Facts), Rule conditions with rule_condition, Tool guards with
+tool_condition. Manifest-rooted ProducerCatalogue may reference Profile/Question/
+ToolPlan; those definitions never content-reference that derived catalogue.
+This prevents Profile→Rule→catalogue→Profile digest cycles.
+
+Runtime external capabilities (deployment implementations/review approvals) are
+checked against trusted local registries, not downloaded from Bundle URLs. Full
+configuration closure includes all typed policy refs, prompt partials, generated
+schemas, response contracts, vocabulary/static assets and producer declarations;
+type names alone do not constitute resources. The capability/path table is the
+single authority for allowed ArtifactKinds; unknown required kind rejects.
 
 ## 6. Runtime admission
 

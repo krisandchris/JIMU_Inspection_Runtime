@@ -66,3 +66,22 @@ This package distinguishes:
 ## 7. Important limitation
 
 Examples are illustrative contracts, not production evidence, trained model outputs, measured GPU capacity, or verified provider compatibility. Concrete model names, model versions, quantization, concurrency, latency and throughput remain deployment decisions until tested on the target host.
+
+## 8. WP-00-R2 review candidate
+
+R2 baseline: main at `46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`.
+Status: PROPOSED / PENDING_USER_APPROVAL; STATIC_REVIEW_ONLY / TEST_NOT_RUN /
+RUNTIME_NOT_RUN. No WP-01 implementation is authorized.
+
+Domain §9–14 provides the ArtifactKind/ref catalogue, ModelBinding/Tool capability
+bindings, PromptTemplate, QuestionSelectionPolicy/Record, Facet Schema intersection,
+producer/output/authority models and typed Policy Catalog. Release pins Question
+catalogue/policy; N02 records the effective set, N03 inherits it, N04 sends one
+joint request per Object. N05 stays independent of N06 and mandatory Rules retain
+full scanning. D09 no_hits conservatism is unchanged; alternatives require
+independent evaluation and business approval.
+
+Current D01–D15 candidates are in planning/ARCHITECTURE_DECISIONS.md;
+WP-01 scope/acceptance and R2 report are in planning/WP-01_IMPLEMENTATION_PLAN.md
+§13. R2 before/after hashes and diff are under planning/review_evidence/WP-00-R2/.
+R1 historical evidence and the original PACKAGE_MANIFEST remain unchanged.
