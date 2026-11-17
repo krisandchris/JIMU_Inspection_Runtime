@@ -1,0 +1,994 @@
+--- before/planning/ARCHITECTURE_DECISIONS.md
++++ after/planning/ARCHITECTURE_DECISIONS.md
+@@ -29,3 +29,40 @@
+ | ADR-023 | Question reuse | PROPOSED | Reuse allowed only with schema/context compatibility | Validate at Bundle compile |
+ | ADR-024 | ToolPlan conditional branches | PROPOSED | Only deterministic branches over declared context/validated Facts | No LLM-authored runtime graph |
+ | ADR-025 | Result transport | OPEN | Callback + query/reconciliation; transport choice later | Define after task/result contracts |
++
++## WP-00-R1 — D01–D10 decision candidates
++
++Revision date: 2026-11-17. Original ADR-001–025 rows above are preserved as the
++starter decision history. The following table refines recommendations without
++changing any candidate to CONFIRMED. Candidate status and user approval are
++separate: **every D row is PROPOSED / PENDING_USER_APPROVAL**. Document revision
++authorization is not WP-01 implementation, dependency installation or test authorization.
++
++| ID | Related ADR / issue | Concrete decision candidate | Candidate status | User approval |
++|---|---|---|---|---|
++| D01 | ADR-018; CPU boundary | uv, Python 3.12 candidate, Pydantic v2; bounded CPU dependencies with separate lock/matrix; no GPU/service dependencies in WP-01 | PROPOSED | PENDING_USER_APPROVAL |
++| D02 | ADR-021; C07 | Offline generated JSON Schema 2020-12 restricted subset; typed scalar/list/closed Record; known requires value, all non-known forbid value and retain reason | PROPOSED | PENDING_USER_APPROVAL |
++| D03 | ADR-012; C08 | Typed allowlisted AST; strong Kleene T/F/U predicates plus separate required-input/evidence completeness guard; no arbitrary code or implicit false; WP-01 static type checker only | PROPOSED | PENDING_USER_APPROVAL |
++| D04 | ADR-011; C08 | Full mandatory Rule scan including applicability trace; collect_all valid simultaneous matches/categories; unresolved mandatory work blocks no_violation but does not erase valid violations | PROPOSED | PENDING_USER_APPROVAL |
++| D05 | C02 | ContentRef = kind/ID/exact version/digest; IdentitySelector = kind/ID/exact version, reverse applicability only; pinned Bundle inventory resolves selectors; content dependency graph acyclic | PROPOSED | PENDING_USER_APPROVAL |
++| D06 | C03/C04/C05 | One primary Fact per Question (Record for compound values); configured deployments pinned at creation, actual identities audited after invocation; explicit NodeRun/Attempt transitions and immutable terminal states | PROPOSED | PENDING_USER_APPROVAL |
++| D07 | ADR-009; C01/C09 | Self-contained config/resource closure; manifest/checksum exclusions and domain/length-framed root preimage in 02 §4; packaging/hash/signature/admission implementations and signature algorithm gates remain WP-02 | PROPOSED | PENDING_USER_APPROVAL |
++| D08 | ADR-023/024 | One ContentRef ToolPlan per Profile; Question/Facet reuse requires compatible exact schema/context/scope; deterministic typed Tool conditions, never N06; structured policies and bounded resources | PROPOSED | PENDING_USER_APPROVAL |
++| D09 | C10; Execution Coverage | Explicit discovery/per-Profile grounding/mandatory Rule/evidence coverage; complete/partial/none/not_applicable independent from lifecycle/result; empty/no_hits/no_target/failure cannot prove no_violation | PROPOSED | PENDING_USER_APPROVAL |
++| D10 | Cross-Profile Object Identity | Object identity scoped by Execution and Profile; same visible target under multiple Profiles remains distinct Objects; no implicit merge, Fact sharing, unique-physical-object counts or N02 alignment | PROPOSED | PENDING_USER_APPROVAL |
++
++### Approval and compatibility gates
++
++- D01–D10 specify one candidate each; there is no automatic fallback to the
++  superseded multi-Fact Question, ambiguous digest reference or linear state chart.
++- User approval must name the candidate revision/scope. Until then WP-01 is blocked
++  for implementation; resolving the text does not close the approval gate.
++- Exact dependency versions remain UNVERIFIED. CPU/GPU matrix separation is a
++  D01 candidate, not permission to bypass the existing dependency policy.
++- Signatures/trust/activation precedence, deployment identity permissions, spatial
++  ownership and real model/GPU choices remain later-WP OPEN decisions. They do not
++  authorize placeholder Any/config maps in WP-01 domain contracts.
++- Non-backward-compatible shapes are described in WP-01 plan §12. Original
++  starter bytes and the initial plan/evidence are retained in
++  `planning/review_evidence/WP-00-R1/before/`; PACKAGE_MANIFEST.json remains the
++  original distribution manifest, not a regenerated checksum of this revision.
+--- before/planning/WP-01_IMPLEMENTATION_PLAN.md
++++ after/planning/WP-01_IMPLEMENTATION_PLAN.md
+@@ -1,18 +1,19 @@
+ # WP-01 Implementation Plan — Domain Model and Contract Foundation
+ 
+-状态：PROPOSED，等待用户审批；本文件不构成实施授权。  
++状态：WP-00-R1 / PROPOSED / PENDING_USER_APPROVAL；本文件不构成实施授权。
++修订范围：仅文档；原计划及原始启动包逐字节归档于 `planning/review_evidence/WP-00-R1/before/`。  
+ 审查日期：2026-11-17（Asia/Shanghai）。工作包：WP-00 Bootstrap Review。  
+ 证据等级：`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。
+ 
+ ## 1. 目标、范围与审批边界
+ 
+-本轮获授权的工作是阅读、初始化审查和编写本计划。唯一项目内变更为本文件。没有 WP-01 代码、依赖安装、数据库、模型调用、Git 初始化、分支操作、提交、推送或远端资源操作。
+-
+-WP-01 的建议目标：建立独立 Runtime 的 Python 包、严格 Pydantic v2 契约、版本与摘要原语、Fact Schema Registry、类型化 Rule AST 及纯类型校验接口、可重复生成的 JSON Schema 和对应测试。所有建议均为 PROPOSED，不能把本计划中的建议视为已经解决 OPEN 决策。
++初轮获授权的工作是阅读、初始化审查和编写本计划，唯一项目内变更为本文件。本次 R1 获授权有限修订本计划、四份受影响规格及 ADR，并保留文档证据；本次不是代码实施。没有 WP-01 代码、依赖安装、数据库、模型调用、Git 初始化、分支操作、提交、推送或远端资源操作。
++
++WP-01 的建议目标：建立独立 Runtime 的 Python 包、严格 Pydantic v2 契约、版本与摘要原语、Fact Schema Registry、类型化 Rule AST 及纯类型校验接口、可重复生成的 JSON Schema 和对应测试。WP-01 只建设 Domain Model、内存 Fact Registry、Rule AST 静态类型检查、JSON Schema 生成和 CPU-only 测试。所有建议均为 PROPOSED，用户审批状态保持 PENDING_USER_APPROVAL。
+ 
+ 非目标：Bundle 编译/打包/验签/完整引用闭包解析（WP-02）、数据库或 ORM、API/OpenAPI 服务、持久调度和节点执行器（WP-03）、Provider/Tool 调用（WP-04）、规则运行时求值和真实巡检（WP-05）、回放执行（WP-06）、Compose 部署与 UI。已有 JIMU 需求平台及 V4 不进入依赖图。WP-01 可以定义后续工作包使用的数据结构，不能据此实现相应服务。
+ 
+-审批循环：Plan → Challenge → 用户 Approval → Execute → Verify → Review → Decide。先解决第 10 节的 WP-01 阻塞项并明确测试/依赖安装授权，再开始实施。存在冲突的规格保持原样并在本文件报告；不为绕过冲突自行选定规范。WP-00 到此只提交可审查方案。
++审批循环：Plan → Challenge → 用户 Approval → Execute → Verify → Review → Decide。先由用户批准第 10 节 D01–D10 决策候选和 WP-01 范围，再明确测试/依赖准备授权，才可实施。本次依据用户授权将冲突修订为一致的候选契约，并保留修改前原文；不能把候选契约视为已批准规范。WP-00-R1 到此只提交可审查文档。
+ 
+ ## 2. 启动包、环境与仓库证据
+ 
+@@ -41,7 +42,7 @@
+   decision-result.json
+ ```
+ 
+-清单列出的 14 个文件均存在，字节数及 SHA-256 全部吻合；清单本身为第 15 个文件。没有 Python 实现、测试目录、`pyproject.toml` 或锁文件。
++初轮检查时，清单列出的 14 个文件均存在，字节数及 SHA-256 全部吻合；清单本身为第 15 个文件。本次原文在修改前归档，原 PACKAGE_MANIFEST 不重写；修订后规格/ADR 的哈希变化由独立 before/after 证据记录，不再宣称当前文件仍符合原分发清单。没有 Python 实现、测试目录、`pyproject.toml` 或锁文件。
+ 
+ | 只读命令 | 退出码 | 实际结果 |
+ |---|---:|---|
+@@ -62,25 +63,23 @@
+ 
+ Domain Model 已具备实现基础：核心概念、主要字段、基数、状态域和不可变性已有说明；尚未达到“可无歧义冻结为模型”的程度。缺少的字段类型、联合分支、摘要身份、操作符语义和策略结构必须先冻结，不能以 `dict[str, Any]` 或任意字符串占位。
+ 
+-### 3.2 冲突、歧义及缺口登记
+-
+-以下引用均指项目内文件章节；“建议”不修改原规格的规范地位。
+-
+-| 编号 | 来源与问题 | 分类/影响 | 建议与冻结门槛 |
++### 3.2 C01–C11 逐项处理状态（R1）
++
++以下“候选已对齐”只表示文档歧义已处理，**不表示用户已批准、代码已实现或测试通过**。C01–C11 均为 `RESOLVED_IN_CANDIDATE / PENDING_USER_APPROVAL`；后续 WP 的行为验证保持未实施。
++
++| 编号 | 原问题 | R1 候选解决方案及落点 | WP-01 / 后续边界 |
+ |---|---|---|---|
+-| C01 | 02 §3–4：根摘要计算包括 manifest payload，仅明确排除 signature，但 manifest 中仍有 `integrity.root_digest`；checksums 是否包含 manifest/自身也未定义 | 算法自引用风险；阻塞 Bundle 身份契约 | 明确 payload 文件集合；建议 checksums 排除自身和 manifest，根输入排除 root_digest 与签名；定义带域标识的确定性输入格式及固定测试向量。未批准前不实现摘要/签名算法 |
+-| C02 | 01 §3.3/3.7/7：Profile 精确 pin ToolPlan，ToolPlan 又要求 profile_ref；Question 的 applicable_profile_refs 也可能回指 Profile；精确引用包含摘要 | 相互内容寻址可能循环，无法直接计算摘要 | 冻结“所有权引用”和“适用性身份选择器”的区别；建议仅前向依赖含完整 digest，回向适用性用版本化身份，Bundle inventory 为这些身份绑定 digest。必须显式批准此对引用规则的解释，测试无循环生成；不能默默删 digest |
+-| C03 | 01 §3.5 Question 有多个 output_fact_schema_refs；03 §6 QuestionResult 使用单个 fact_key/schema_ref | 结果基数不明确，阻塞 N04/Fact 模型 | 建议一 QuestionResult 含多个按输出槽标识的 FactResult；按 Question 独立验证，明确槽内失败是否影响其他槽；替代方案为 V1 强制每 Question 仅一个输出。二选一审批 |
+-| C04 | 01 §4.2 要 Execution pin 实际模型身份；03 §6 实际身份只有调用后才知道 | 时间约束歧义，可能要求创建时写入不存在的值 | 配置绑定/部署约束创建时 pin；实际身份由不可变 Invocation 关联，Execution 保留审计关系；禁止预填或覆写成“最新模型” |
+-| C05 | 01 §6、03 §9 的 NodeRun 线性图将 blocked/skipped 放在 running 后；03 §3/7 要依赖失败直接阻塞后继 | 非完整转移表，容易伪造运行/Attempt | 冻结显式合法边，允许尚未运行的 pending/ready → blocked/skipped；不生成虚假运行记录。持久化并发防护留 WP-03 |
+-| C06 | 01 §2 将 Release 列于定义上下文；AGENTS 将其列于运行时 | 分类差异，非字段硬冲突 | Release 是发布桥梁：不可变引用定义闭包，执行时固定它；单独模块，不允许 Fact 反写定义 |
+-| C07 | 01 §4.4 允许 typed union 或按 Fact JSON Schema 校验；02 §9 要声明 dialect；ADR-021 尚为 PROPOSED | Fact 数据类型与扩展方式未冻结 | 采用第 6 节受限类型代数生成 Schema，拒绝任意动态 Schema/网络 `$ref`；审批 D02 |
+-| C08 | 01 §3.8、03 §8 要 conflict/result policy，但未定义多命中、mandatory、未知与错误完整语义 | Rule/Decision 模型不完整 | 冻结结构化 Policy、每 Rule 结果及聚合关系；默认全扫 mandatory，未知不强制为 false；见 D03/D04 |
+-| C09 | 02 §2 列出 facts/objects/decisions Schema，无 context、工具输入输出、prompt template 的明确承载位置；01/03 要引用它们 | “self-contained”闭包缺口 | WP-01 定义可区分的引用种类和契约；WP-02 冻结完整目录及 prompt/context/tool schema 资源位置，不允许运行时查需求平台补齐 |
+-| C10 | 03 §4 no-hit 非最终 no_violation，但 §8 主要讨论 Object；空 Object/部分 grounding 的执行级结果未定义 | 空集 vacuous truth 可造成误报无违规 | 定义 coverage 与失败原因，不用空匹配直接生成 no_violation；WP-01 保留显式 coverage/result 结构，聚合政策需审批 |
+-| C11 | 01/02 要严格、版本化持久契约，03 通用节点信封未列 schema_version | 字段列表非完整模式，不能直接照抄 | 依 AGENTS 所有外部持久根记录加 schema_version，嵌套纯值由根版本治理；不把模型默认配置当成版本字段 |
+-
+-这些问题已在规划阶段报告；停止相应实现决策，不擅自修订四份规格。解决方案需要用户在 WP-01 审批中确认，涉及 WP-02 的部分在后续工作包再次冻结。
++| C01 | root_digest、manifest/checksums 自引用 | 02 §4 排除自身和 manifest 的 payload 清单；M 排除 root_digest/signatures；JCS + domain/长度封帧的 root preimage | WP-01 定义字段/引用；算法实现、固定测试向量/验签 WP-02 |
++| C02 | Profile↔Question/ToolPlan digest 循环 | 01 §7 ContentRef / IdentitySelector；inventory 在外部 pin selector targets；前向 content graph 必须无环 | WP-01 引用类型和有限目录类型校验；完整闭包/摘要 WP-02 |
++| C03 | Question 多输出与单 FactResult 不一致 | 01 §3.5、03 §6：一 Question 一个主 Fact，复合数据为受限 Record；取消多输出槽 | WP-01 模型、Registry、Record 字段路径类型检查 |
++| C04 | Execution 创建时无法知道 actual deployment | 01 §4.2、03 §2：先 pin configured bindings/constraints；实际 Invocation 事后追加，Context digest N01 后 write-once | WP-01 数据不变量；真实调用/持久绑定后续 WP |
++| C05 | blocked/skipped 必须 running 后进入的线性图 | 03 §9 两张合法转移表；未运行 pending/ready 可 blocked/skipped/cancelled，无虚假 Attempt；retry 保持 NodeRun running | WP-01 纯状态合法性；lease/fencing/recovery WP-03 |
++| C06 | Release 被误列为定义实体 | 01 §2 分开 Bundle 配置聚合与 runtime Release bridge | WP-01 领域模块职责明确，release 控制器不实现 |
++| C07 | Fact 值与 Schema dialect 未冻结 | 01 §4.4、计划 §6：typed scalar/list/closed Record，2020-12 离线生成子集；非 known 不带 value | WP-01 Registry/Schema 基础 |
++| C08 | 真值/mandatory/多命中无明确策略 | 03 §8.2–8.3：strong Kleene T/F/U + 独立 required completeness guard；mandatory 全扫；collect_all | WP-01 AST/静态检查和策略数据；求值/全扫执行 WP-05 |
++| C09 | 自包含缺 prompt/context/tool IO 等资源 | 02 §2/5：完整资源目录；ContentRef 和 selector 语义目标均闭包；外部能力明示 | WP-01 引用契约；完整 compiler/admission WP-02 |
++| C10 | 空 Objects/未命中/失败被误判无违规 | 01 §4.8、03 §8.4、D09：独立 Coverage，保留 grounding/discovery 原因和子集结果，不能空集推出 no_violation | WP-01 coverage 数据与一致性 fixtures；运行聚合 WP-05 |
++| C11 | 节点/外部持久记录缺 schema_version | 01 §8、03 §2 所有独立持久根显式 schema_version，嵌套值由根版本覆盖 | WP-01 全根生成 Schema 和版本负例 |
+ 
+ ### 3.3 示例审查
+ 
+@@ -107,7 +106,7 @@
+     base.py                 # 严格/不可变配置，持久根契约基类
+     enums.py                # 分域枚举、schema/producer/node kind
+     primitives.py           # ID、版本、SHA-256、时间、约束数值
+-    references.py           # ArtifactRef、SchemaRef、资源/运行记录引用
++    references.py           # ContentRef / IdentitySelector / SchemaRef，运行记录引用
+     values.py               # 有判别字段的值与类型代数
+     policies.py             # typed policies；禁止任意配置字典
+     geometry.py             # 原图 XYXY、尺寸、变换 provenance
+@@ -127,6 +126,7 @@
+       evidence.py
+       invocations.py
+       decisions.py
++      coverage.py           # 执行覆盖，与 lifecycle/result 独立
+       replay.py
+     nodes/
+       envelopes.py
+@@ -165,16 +165,16 @@
+ 
+ | 模型组 | 待冻结模型 | 核心不变量/边界 |
+ |---|---|---|
+-| 基础 | ContractModel、PersistedContract、ArtifactIdentity、ArtifactRef、SchemaRef、RuntimeRecordRef、MediaRef、EvidenceRef、ClockProvenance、TraceContext、ValidationIssue | exact version/digest；错误路径；不能把定义引用与运行记录 ID 混用 |
+-| 枚举 | TaskStatus、ExecutionStatus、NodeRunStatus、AttemptStatus、FactStatus、DecisionResult、ProducerKind、ScopeKind、NodeId、ReplayKind，以及显式 release/tool/validation 状态 | 原规格分域枚举保持独立；新增枚举值需审批，不复用字符串的含义 |
++| 基础 | ContractModel、PersistedContract、ArtifactIdentity、ContentRef、IdentitySelector、SchemaRef、RuntimeRecordRef、MediaRef、EvidenceRef、ClockProvenance、TraceContext、ValidationIssue | exact version/digest；错误路径；ContentRef/IdentitySelector 不混用，不把定义引用与运行记录 ID 混用 |
++| 枚举 | TaskStatus、ExecutionStatus、NodeRunStatus、AttemptStatus、FactStatus、DecisionResult、RuleTruth、CoverageStatus、DiscoveryOutcome、GroundingOutcome、ProducerKind、ScopeKind、NodeId、ReplayKind，以及显式 release/tool/validation 状态 | 原规格分域枚举保持独立；新增枚举值需审批，不复用字符串的含义 |
+ | 结构化值 | BoolValue、IntegerValue、NumberValue、StringValue、EnumValue、ListValue、RecordValue 及对应 TypeDefinition | kind 判别；有限类型与约束；无 Any、NaN/Infinity |
+ | Ontology | EntityDefinition、RegionDefinition、AssetRef | 不是 Object；Region 不等于 polygon |
+-| Capability | ProfileDefinition、FacetDefinition、QuestionDefinition、QuestionOutputSlot、Applicability、ContextFieldSelector | effective Questions 只由已声明集合冻结；Facet/Question 复用受类型/上下文约束 |
++| Capability | ProfileDefinition、FacetDefinition、QuestionDefinition、PrimaryFactOutput、Applicability、ContextFieldSelector | effective Questions 只由已声明集合冻结；Facet/Question 复用受类型/上下文约束 |
+ | Tool | ToolDefinition、ToolPlanDefinition、ToolStep、StepDependency、InputBinding、OutputBinding、ConditionalBranch、ResourceRequirements、ToolExecutionPolicy | 已注册 tool；有限 DAG 数据；条件只读合法上下文/Fact；无 N06 依赖 |
+ | Model | ModelBinding、ProviderPolicy、DeploymentConstraint、FallbackPolicy、InvocationBudget、ContractRequirement | 配置身份与实际身份区分；不含 secret/请求任意配置 |
+ | Rule | RuleDefinition、RuleSetDefinition、RulePolicy、EvidenceRequirement、ResultMapping、ConflictPolicy、FactSelector | 完整类型 AST；必需/可选适用性明确；无隐式顺序优先级 |
+-| Bundle/Release | BundleManifest、ArtifactInventoryEntry、SourceProvenance、CompatibilityRequirement、IntegrityEnvelope、ChecksumEntry、AdmissionReceipt、CapabilityReport、ReleaseRecord、ApprovalReceipt、ActivationRecord、ActivationScope | 仅契约；根摘要 C01 未决；技术准入、业务批准、激活分别记录；无编译/验签/激活实现 |
+-| Intake | TaskSubmission、AcceptedTask、MediaAsset、TaskContext、ContextSnapshot、ContextValueProvenance、CoverageReport | 一个 RGB 图片；可信元数据来源；UTC/时钟；接收请求与已解析 Release 分离 |
++| Bundle/Release | BundleManifest、ArtifactInventoryEntry、SourceProvenance、CompatibilityRequirement、IntegrityEnvelope、ChecksumEntry、AdmissionReceipt、CapabilityReport、ReleaseRecord、ApprovalReceipt、ActivationRecord、ActivationScope | 仅数据契约；根摘要采用 D07 候选字段；技术准入、业务批准、激活分别记录；无编译/验签/激活实现 |
++| Intake | TaskSubmission、AcceptedTask、MediaAsset、TaskContext、ContextSnapshot、ContextValueProvenance、ExecutionCoverage、ProfileCoverage、MandatoryRuleCoverage、MandatoryRuleObligation | 一个 RGB 图片；可信元数据来源；UTC/时钟；接收请求与已解析 Release 分离 |
+ | Execution | ExecutionRecord、NodeRun、Attempt、ExecutionEvent、ExecutionPins、ConfiguredModelPin、ActualDeploymentIdentity | immutable 输入/config 引用；Attempt 单调编号；不存在的 actual identity 不预填；无持久引擎 |
+ | Perception | ObjectRecord、BBoxXYXY、ImageDimensions、CoordinateSystem、TransformRecord、GroundingRecord、ProfileGroundingResult | 原图坐标、正面积/范围；no_target/failed/partial 分开；Object 仅 execution 内身份 |
+ | Fact | FactRecord、KnownFact、UnknownFact、ErrorFact、NotApplicableFact、NotEvaluatedFact、FactProducer、FactScope、FactResult | status 判别；scope 判别；类型/来源/证据；invalid value 不伪装成 known |
+@@ -187,7 +187,7 @@
+ | N01 | ContextBuildInput、ContextBuildOutput、ContextValidationReport | 不补造缺失上下文；required failure 明确 |
+ | N02 | DiscoveryInput、DiscoveryOutput、ProfileHit、FilteredProfile | 注册 Profile + 固定 Questions + Invocation；额外 BBox/object_id/category 字段拒绝 |
+ | N03 | GroundingInput、GroundingOutput | 独立按 Profile grounding；输出不允许修改 Questions |
+-| N04 | ObservationInput、ObservationBatch、QuestionResult、QuestionValidationResult | 一 Object/整批 Attempt；多输出 C03 待决；显式 parse/关联可信度；批次诊断与合法 Fact 分开 |
++| N04 | ObservationInput、ObservationBatch、QuestionResult、QuestionValidationResult | 一 Object/整批 Attempt；一 Question 一个主 Fact（可为 Record）；显式 parse/关联可信度；批次诊断与合法 Fact 分开 |
+ | N05 | ToolNodeInput、ToolNodeOutput、ToolPlanRunSummary | 仅绑定计划，引用 N04 validated Facts；无候选驱动选择字段 |
+ | N06 | DecisionInput、DecisionOutput、MandatoryRuleCoverage | 候选与规则评估分离；完整性报告，缺失候选不改变 mandatory 集合 |
+ | Registry/AST | FactSchemaDefinition、FactSchemaCatalogue、FactProducerDeclaration、OperatorDescriptor、TypeCheckResult 及第 7 节 AST 节点 | 纯合同和校验；完整 producer closure/DAG admission 属 WP-02 |
+@@ -197,12 +197,12 @@
+ ### 类型与版本策略
+ 
+ 1. `extra="forbid"` 覆盖所有外部对象，严格标量校验，不能把 `"false"` 转 bool 或把 bool 当 integer。明确 JSON 文本解析与 Python 输入的允许范围，写双入口测试。
+-2. schema_version、artifact version、Bundle version、runtime/workflow/operator implementation version 分开。建议 SemVer 精确引用，禁止 `latest`、范围和隐式默认版本；兼容范围只出现在明确的 compatibility 对象。
++2. schema_version、artifact version、Bundle version、runtime/workflow/operator implementation version 分开。建议 SemVer 精确引用，V1 候选使用稳定的 major.minor.patch（非负整数、无前导零），禁止 `latest`、范围和隐式默认版本；兼容范围只出现在明确的 compatibility 对象。
+ 3. SHA-256 建议小写 64 位十六进制，摘要算法单独标识；错误长度、占位符或 mismatch 拒绝。JSON Schema `$id` 与引用身份稳定且版本化，离线解析。
+ 4. 根 schema major 变化或值域/required 收紧视作不兼容；新增字段在 extra=forbid 的旧消费者中也可能不兼容，不能自动称为 minor 安全。未知 required feature/version fail closed。迁移说明必须包含旧记录读取/转换策略，不覆写历史证据。
+ 5. 内部 UTC aware 时间；接受边界保留 capture 原时间、offset/timezone 与时钟来源；拒绝 naive 时间。置信度只作来源元数据，取值范围需能力声明，不宣称校准概率。
+ 6. 发布定义与 Snapshot 使用不可变模型及不可变嵌套集合；Pydantic frozen 不能单独证明深层不可变。运行状态更新生成新值，历史版本不就地改写。
+-7. scope 为 discriminated union：object 必有 object_id，execution 不得夹带 object_id；Rule 的 FactSelector 同时限定 fact_key、schema ref、scope/producer/输出槽，避免同名 Facts 歧义。
++7. scope 为 discriminated union：object 必有 object_id，execution 不得夹带 object_id；Rule 的 FactSelector 同时限定 fact_key、schema ref、scope/producer/主 Fact 及声明的 Record field_path，避免同名 Facts 歧义。
+ 8. V1 不启用通用 extensions。未来需要时单独冻结命名空间、有限值类型、大小上限、兼容策略；不能用开放 JSON 绕过额外字段校验。
+ 
+ ## 6. Fact Schema Registry 设计要求
+@@ -220,9 +220,9 @@
+ - 建议类型代数：bool、integer、finite number（默认 IEEE-754，有单位可选）、bounded string、closed string enum、bounded homogeneous list、closed record；嵌套深度/数量有限，不支持任意递归、union 自由拼装或 Any。
+ - 显式 `kind` 判别；枚举包含其 schema 身份；number/integer 不静默互转，不能把 bool 作为 number。几何通过特定 record Schema 表达并附 coordinate system，不把未校验字典作为 payload。
+ - `known` 必须有合法 value；known false、0、空字符串等按 Schema 合法性保留，不以 truthiness 判断缺失。
+-- 建议所有非 known 分支均不允许 value 字段，并要求结构化 reason；error 附错误分类/validation issue，not_applicable 必有适用性依据，not_evaluated 记录跳过原因。与 01 §4.4 的可选 null/value policy 相比，这是需批准的 V1 收窄。
++- 所有非 known 分支均不允许 value 字段（含 null），并要求结构化 reason；error 附错误分类/validation issue，not_applicable 必有适用性依据，not_evaluated 记录跳过原因。01 §4.4 已同步为此候选，审批仍待用户确认。
+ - 传输失败/整批 parse 失败只产生 Attempt/batch 错误，不凭空制造每项 Fact。单项非法在关联可信时可产生 status=error 的结果；原始非法响应作为受控诊断证据，不能写入 typed value。
+-- 多次 Attempt 的 Fact 全部保留，用显式选择的 authoritative attempt/result 引用消费；重复 producer、同槽多条无权威选择不能“最后一条胜出”。
++- 多次 Attempt 的 Fact 全部保留，用显式选择的 authoritative attempt/result 引用消费；重复 producer、同 Question 主 Fact 多条无权威选择不能“最后一条胜出”。
+ 
+ ### 6.3 接口与验证层次
+ 
+@@ -240,6 +240,7 @@
+ |---|---|---|
+ | Literal | typed scalar/list 常量 | 自带明确类型；闭合 enum 必须是合法成员 |
+ | FactRefExpr | exact FactSelector | Registry 解析 value 类型；不存在是静态错误 |
++| RecordFieldRefExpr | FactSelector + 声明的 field_path 元组 | 逐层验证 closed Record 字段与类型；禁止任意 JSONPath；可选字段缺失在未来求值中为 U |
+ | ContextRefExpr | 已声明 allowlist selector + SchemaRef | 仅确定性适用性/Tool 条件所需上下文；任意路径拒绝 |
+ | eq / ne | 同类型可比较值 | Boolean；enum schema identity 必须一致，单位必须兼容 |
+ | lt / le / gt / ge | 同类型 numeric、同单位 | Boolean；不允许字符串/enum 排序或隐式单位换算 |
+@@ -254,19 +255,19 @@
+ WP-01 实现 AST 结构及纯类型检查；Rule 执行引擎留 WP-05。结构校验不等于可执行性证明，类型检查需显式读取 Registry/Context 类型环境：
+ 
+ 1. 校验 operator、arity、树深/节点数/集合大小预算（具体值审批后冻结并测试边界），拒绝额外字段与循环输入对象。
+-2. 解析每个 Fact/context 引用到 exact Schema，检查 scope、producer/输出槽是否唯一；验证 AST 所引用 Fact 与 required/optional dependency declarations 一致。
++2. 解析每个 Fact/context 引用到 exact Schema，检查 scope、producer/主 Fact是否唯一；验证 AST 所引用 Fact 与 required/optional dependency declarations 一致。
+ 3. 递归推导类型，检查常量、enum membership、单位与比较操作，拒绝 incompatible types。可解析缺 producer 的本地类型测试不能宣称完整 Bundle closure 通过。
+ 4. Rule condition 和 applicability 根必须 Boolean。区分 Rule 命中条件、适用性及 Tool 条件允许访问的输入，明确禁止 Tool 分支访问 candidate/Decision。
+ 5. 策略必须覆盖 missing（无记录）、unknown、error、not_applicable、not_evaluated；missing 不是额外 FactStatus，不用 false 补齐。
+-6. 建议首版严格传播：任一声明 required 输入非 known，则 Rule blocked 并映射 uncertain；仅所有必需输入 known 且证据齐全时产生确定 true/false。逻辑 all/any 不以短路吞掉 required 的 unknown/error。可选依赖须单独显式策略；不得映射缺失/error 为确定 no_violation。
++6. Predicate truth 使用 strong Kleene T/F/U；全表见 03 §8.3：not(U)=U，F AND U=F，T AND U=U，T OR U=T，F OR U=U。保留全部输入诊断。另有独立 safety guard：required Fact/证据缺失或无效时，即使 predicate 可简化为 F/T，Rule outcome 仍 blocked、effective result=uncertain；不能称此 guard 为另一张真值表。WP-01 仅定义该语义的数据类型/策略及静态类型检查，不实现真值求值器。
+ 7. 是否允许显式状态检查操作符应单独审批；首版建议不提供，以避免条件绕过 required Fact 政策。
+-8. RuleEvaluation 分开保存 execution outcome（evaluated/skipped/blocked）、predicate result（true/false/indeterminate）与 matched 标记/引用；matched 不是替代 succeeded 的生命周期状态。
++8. RuleEvaluation 分开保存 execution outcome（evaluated/skipped/blocked）、predicate truth（true/false/unknown）与 matched 标记/引用；matched 不是替代 succeeded 的生命周期状态。
+ 9. N06 V1 对所有适用 mandatory Rules 做完整性扫描，候选为空/候选调用失败也不能抑制该集合。保存 applicable/evaluated/skipped/blocked/matched，以及 required Facts/evidence 和 engine version。
+-10. RuleSet 的同时命中策略、优先级与执行级 coverage 聚合由明确 policy 冻结；不按存储顺序、置信度或 LLM 结果自行决策。缺少必要事实/证据的 Rule 不给出确定 no_violation。
++10. RuleSet conflict_policy 候选为 collect_all：保留全部证据有效的匹配 Rules 与 category 集合，绝不提前停止；V1 不支持排他/优先胜出模式。单 Object 有有效匹配即 violation，同时保留其他 blocked/unknown 与 partial coverage；无匹配且有未决 mandatory 工作为 uncertain；所有适用 mandatory 完整且 false 才 no_violation；确定无适用 mandatory 为 not_applicable。Execution 空集与部分覆盖遵守 D09，不能借 Object 级结果掩盖未执行范围。
+ 
+ ## 8. 测试计划、边界与执行授权
+ 
+-以下全部是待批准的 WP-01 测试；本轮没有执行 pytest 或 Schema 功能测试。测试使用确定性 CPU fixtures，无网络、真实图像上传、模型、工具执行或外部数据库。
++以下全部是待批准的 WP-01 测试；本轮没有执行 pytest 或 Schema 功能测试。测试使用确定性 CPU fixtures，无网络、真实图像上传、模型、工具执行或外部数据库。本次计划修订明确禁止执行这些测试；未来仍需单独实施/测试授权。
+ 
+ | 测试组/建议文件 | 正向与边界 | 负向/回归 |
+ |---|---|---|
+@@ -278,7 +279,11 @@
+ | unit/test_rule_typecheck.py | 每操作符所有允许签名、嵌套逻辑 | 未注册 op、错误 arity、enum/单位/schema mismatch、非 bool 根、未知 Fact、越界预算、非法上下文/N06 selector |
+ | contract/test_definitions.py | 每个定义模型完整最小正例 round-trip | ToolPlan 任意 shell/code 字段、ModelBinding 无政策 fallback、缺必需字段 |
+ | contract/test_runtime.py | Task/Execution/Attempt/Object/Fact/Evidence/Decision 等所有根 | 非法 pin、scope 不匹配、bbox 越界/零面积、错误坐标来源、策略遗漏 |
+-| contract/test_nodes.py | 每个节点输入输出 fixture | N02 BBox/Object/category；N03 修改 Questions；N04 槽重复/未声明 Question；N05 候选依赖字段；N06 trace 缺必需项 |
++| contract/test_nodes.py | 每个节点输入输出 fixture | N02 BBox/Object/category；N03 修改 Questions；N04 重复主 Fact/未声明 Question/多输出槽；N05 候选依赖字段；N06 trace 缺必需项 |
++| contract/test_coverage.py | JEV no_hits、空 Objects、grounding no_target/failed/partial、子集违规保留 | none/partial 伪装 complete/no_violation、缺 per-Profile 原因、coverage 与 lifecycle 混用 |
++| contract/test_object_identity.py | 同目标跨 Profile 两个独立 Object/Fact refs | 隐式 merge、跨 Profile Fact 引用、宣称 unique physical count |
++| contract/test_logic_policy.py | T/F/U 类型与 collect_all 策略 fixture、完整 mandatory trace | Boolean 强转 U、first_match、candidate-only 筛选字段/缺失必需诊断；不求值 AST |
++| contract/test_reference_shapes.py | ContentRef 与 IdentitySelector、有限 inventory 注入 | selector 用作执行 content ref、回向含 digest、缺/歧义/wrong-kind 目标；不计算 Bundle digest |
+ | contract/test_json_schema.py | 每根 generated Schema 有效；Pydantic 和 jsonschema 双验样例 | 同组错误 fixture 均拒绝；无法 JSON 表达的语义单独标记，不谎称等价 |
+ | contract/test_schema_generation.py | 两次生成字节完全一致、root index/version 清晰 | schema 漂移/缺文件失败；非手工更新生成产物 |
+ | contract/test_import_boundaries.py | domain 只用允许依赖 | 静态 AST/import 检查禁止 infrastructure/SDK/GPU 导入；解析不触发 I/O |
+@@ -309,7 +314,8 @@
+ 
+ | 阶段 | 文件 | 动作/边界 |
+ |---|---|---|
+-| 本轮 WP-00 | planning/WP-01_IMPLEMENTATION_PLAN.md | 仅新增本计划；其他原始 15 个文件保持原字节 |
++| 初轮 WP-00（历史） | planning/WP-01_IMPLEMENTATION_PLAN.md | 当时仅新增计划；初始证据保留于 §11 和 R1 before 副本 |
++| 本轮 WP-00-R1 | 本计划、specs/01–04、planning/ARCHITECTURE_DECISIONS.md | 仅六个现有文档修订；新增 review_evidence 文档审计包，无代码 |
+ | WP-01 待批准 | pyproject.toml、uv.lock（若选 uv）、.gitignore | 有界依赖、可重建 CPU 环境；无模型权重/秘密 |
+ | WP-01 待批准 | src/jimu_runtime/** | 第 4/5 节的领域模型、纯 Registry 和类型检查器；不得加入 API/ORM/Provider/调度实现 |
+ | WP-01 待批准 | scripts/generate_schemas.py、schemas/generated/*.schema.json、schemas/generated/index.json | 从 models 生成；每个可持久根可定位；生成器具备 --write/--check |
+@@ -323,7 +329,7 @@
+ 
+ | Gate | 验收证据 | 通过条件 |
+ |---|---|---|
+-| G0 授权 | 用户批准范围、D01–D08 的冻结/缩减方案及测试授权 | 阻塞项未解决时不得标记 WP-01 PASS |
++| G0 授权 | 用户批准范围、D01–D10 的冻结/缩减方案及测试授权 | 阻塞项未解决时不得标记 WP-01 PASS |
+ | G1 清单完整 | 第 5 节每个根模型到文件/生成 Schema/fixture 的映射 | 无 Any 占位、无遗留未定义策略类型；必要缩减先获批准 |
+ | G2 严格验证 | unit/contract/negative 的实际 pytest 报告 | 所有必需正例接受，负例拒绝；0 failed，必需测试不得 skip |
+ | G3 Fact/AST | Registry + AST 类型检查报告 | 状态/value/scope/ref 不变量、全部注册签名、错误类型/未知 op/深度边界均覆盖 |
+@@ -331,29 +337,52 @@
+ | G5 依赖边界 | import 检查、Ruff、类型检查、依赖/锁文件 | domain 无禁用依赖，无网络/模型/GPU 副作用；CPU 环境可复建 |
+ | G6 兼容与安全 | compatibility notes + approved 决策记录 | 摘要身份无循环、版本规则明确、secret/任意代码/无限配置不进入契约；无数据迁移 |
+ | G7 报告与停止 | WP-01 verification report | code 与 runtime 证据分列；限制明确；完成后停在 gate，不开始 WP-02 |
++| G8 Coverage/Identity | CPU-only 契约 fixtures | JEV no_hits、空 Objects、grounding no_target/failed/partial 均不能伪造 complete/no_violation；子集有效命中保留；同目标跨 Profile 独立 Objects/Facts |
++| G9 Rule/生命周期策略 | 策略模型、AST 静态检查及纯转移验证 | T/F/U 与 required guard 分离；仅 collect_all/full mandatory scan 策略；非运行 blocked/skipped 无假 Attempt；所有终态无出边；不实现 Rule 求值/worker |
+ 
+ WP-01 PASS 只表示领域/契约基础验收，不表示 Bundle 验签、工作流、真实推理、GPU 容量、业务质量或生产可用。Schema tests 是 code evidence；本轮 `RUNTIME_NOT_RUN`，未来 WP-01 若仅做内存测试仍不能写服务 `RUNTIME_VERIFIED`。
+ 
+-回滚：本轮只需删除新增计划即可回到初始字节快照，不自动执行删除。未来 WP-01 在隔离工作目录/获准仓库中实施，保存变更前清单；回退仅撤销本 WP 新增/修改文件，不使用破坏性全目录 reset，不动外部工程、历史证据或已存在用户修改；没有 DB 或 Release 激活需要回滚。
++回滚：R1 可按 review_evidence 的 before 副本恢复六个文档，保留证据包；不自动执行回滚或删除。初轮只新增计划的历史事实见 §11。未来 WP-01 在隔离工作目录/获准仓库中实施，保存变更前清单；回退仅撤销本 WP 新增/修改文件，不使用破坏性全目录 reset，不动外部工程、历史证据或已存在用户修改；没有 DB 或 Release 激活需要回滚。
+ 
+ ## 10. 风险、挑战与 OPEN 决策
+ 
+-### 10.1 WP-01 审批前必须处理
+-
+-以下是建议决议，不把既有 OPEN 自动关闭；选择不同方案须同步调整影响文件和测试。
+-
+-| 决策 | 对应现有 ADR/缺口 | 建议 | 阻塞范围 |
+-|---|---|---|---|
+-| D01 | ADR-018；依赖兼容 policy | uv + CPU-only Python 3.12 候选；批准独立 CPU lock 与 GPU 后续矩阵；授权有界依赖准备和相关测试 | 包骨架、锁、验证可执行性 |
+-| D02 | ADR-021；01 §8 | 受限类型代数 + Registry + typed discriminated payload；2020-12 子集；非 known 无 value | Fact/Question/Tool/Rule 类型及 Schema |
+-| D03 | ADR-012 | 冻结第 7 节 operator catalogue、strict propagation、AST 预算及诊断 | AST/interface/typechecker 和负例 |
+-| D04 | 01 §8、ADR-011 | V1 全扫 mandatory；多违规建议保留每 Rule 命中并明确 aggregate policy；空/部分覆盖不默认为 no_violation | RuleSet/Decision/coverage 枚举及策略 |
+-| D05 | C02 | 冻结 identity selector 与 content dependency ref 的区别及外部 inventory pinning 规则；不可违反精确引用原则 | Profile/Question/ToolPlan/ArtifactRef 摘要可构造性 |
+-| D06 | C03/C04/C05 | 选择 Question 多输出形状；配置预先 pin/actual 事后审计；明确未运行节点 blocked/skipped 转移 | N04、Execution 和 lifecycle 契约 |
+-| D07 | C01；ADR-009 | 根摘要非自引用的输入集合/字段排除和 canonicalization 标识；若首版冻结 IntegrityEnvelope，先冻结字段布局 | BundleManifest/IntegrityEnvelope 的冻结；签名算法实现仍 WP-02 |
+-| D08 | 01 §8、ADR-023/024；策略字段无类型 | V1 每 Profile pin 一个 ToolPlan；Question/Facet 复用需 exact Schema/context 兼容；typed applicability/context schemas/producer selectors；冻结结构化最小 policies | Definition、ContextSnapshot、Rule/Tool inputs 的可验证类型 |
+-
+-审批还应确认测试预算的具体数值、基础 ID/版本语法及各闭合枚举集合；不能在实现时以无限制默认值填充。Git 仓库创建是交付溯源的独立待授权事项，不影响本轮规划，也不自动授权分支/远端/提交。
++### 10.1 D01–D10 明确决策候选
++
++每项状态均为 **PROPOSED / PENDING_USER_APPROVAL**，没有实现或安装/测试授权。候选与 `ARCHITECTURE_DECISIONS.md` 的 R1 表一致。
++
++| 决策 | 单一明确候选 | 冻结/授权门槛 |
++|---|---|---|
++| D01 | uv + Python 3.12 候选 + Pydantic v2；独立 CPU-only 有界依赖/lock/matrix，GPU 后续独立 | 用户批准 CPU/GPU 门槛分离；版本未验证，依赖安装仍需授权 |
++| D02 | 受限 scalar/list/closed Record；2020-12 离线生成子集；known 有值，非 known 无 value | Registry 与类型契约审批 |
++| D03 | 第 7 节 operator catalogue + strong Kleene T/F/U + required completeness guard；仅静态 typechecker | 不实现运行时 Rule evaluator |
++| D04 | mandatory 适用性全扫 + collect_all；未知不消除、有效违规不被其他未知擦除 | 全部 trace 与聚合契约审批；运行行为 WP-05 |
++| D05 | ContentRef（kind/ID/version/digest）与 IdentitySelector（kind/ID/version）分离；inventory 外部 pin，前向无环 | 回向 selector 不作可执行内容引用，完整闭包 WP-02 |
++| D06 | 一 Question 一个主 Fact、Record 复合值；configured 先 pin / actual 追加审计；03 §9 显式状态表 | 无多输出替代方案、无假 Attempt、终态不覆写 |
++| D07 | 02 §2/4/5 自包含资源与语义闭包、M/C 排除/封帧根摘要候选 | 算法/验签/打包/closure 实现与 signature trust gate 留 WP-02 |
++| D08 | 每 Profile 一个 ContentRef ToolPlan；Question/Facet 复用满足 exact Schema/context/scope；Tool 条件 deterministic | typed policy、allowlist 和资源边界，不开放任意 map |
++| D09 | 独立 ExecutionCoverage：complete/partial/none/not_applicable；no_hits/no_target/failure/partial 不推导 no_violation | 01 §4.8、03 §8.4；不把执行覆盖当模型召回率 |
++| D10 | Execution 内按 Profile 独立 Object 身份；跨 Profile 同目标不 merge、不共享 Fact、不宣称物理唯一计数 | 后续如关联需新版本独立合同，无 N02 实例对齐 |
++
++基础约束候选：定义 ID 为 `[a-z][a-z0-9_.-]{0,127}`；版本为稳定 major.minor.patch；SHA-256 为小写 64 位 hex；AST 根为深度 1、最大深度 32、节点数 512、逻辑/in 列表最多 64；Fact 容器根为深度 1（Record/list 每嵌套一层加 1），最大深度 8、每 Record 最多 64 字段、list 最多 256 项、string 最多 4096 字符。单个 Schema 可声明更小上限；这些是待审批的安全边界，不是性能测量结论。单位不隐式转换，未识别 required 类型/operator/feature 拒绝。
++
++### 10.1.1 ContentRef / IdentitySelector 与无循环摘要
++
++Profile → Entity/Facet/Question/ToolPlan 为 ContentRef；Question 的 applicable_profile_selectors 与 ToolPlan 的 applicable_profile_selector 为 IdentitySelector。Facet 不反嵌 Question 内容引用。Artifact 字节不含自身 digest 或 Bundle root。Manifest inventory 将所有身份（包括 selector 目标）绑定到唯一 digest；消费仅在 pinned inventory 解析。ContentRef 图 DAG，语义闭包可有 selector 回向关系，后者不是递归哈希边。Schema `$id` 是版本化身份，不嵌自己的 hash。WP-01 仅构建引用类型与注入目录的类型检查，不构建完整 compiler/hasher。
++
++### 10.1.2 一 Question 一个主 Fact 与 Record
++
++QuestionDefinition 用 primary_fact_key + primary_fact_schema_ref，QuestionResult 只有一个主 Fact；不再支持 output_fact_schema_refs[] 或 QuestionOutputSlot。Record 必须声明字段、required/optional 与类型，禁止额外字段和任意递归 map；必填字段非法导致整个 Question Fact error，不能伪造字段级独立 FactStatus。若要独立 unknown/error，拆成多个 Questions。AST 的 RecordFieldRefExpr 仅访问已声明路径；路径不存在/类型不匹配静态拒绝。Retry 保留历史 Fact 并显式选择权威 Attempt，不将历史多条解释为单次多输出。
++
++### 10.1.3 NodeRun / Attempt 转移摘要
++
++完整 guard 表见 03 §9；此处列所有合法边，终态无出边：
++
++| 对象 | 合法边 |
++|---|---|
++| NodeRun | pending→ready；pending/ready→blocked/skipped/cancelled；ready→running；running→succeeded/failed/cancelled |
++| Attempt | created→running/cancelled/superseded；running→succeeded/failed/timed_out/cancelled/superseded |
++
++未运行的 blocked/skipped 不创建 invocation Attempt/started_at。retryable Attempt 失败后 NodeRun 保持 running，新 Attempt 编号递增；terminal NodeRun 再执行需新 identity。Late response 追加审计，不改终态。WP-01 只做数据/纯转移合法性，持久 lease/fencing 不在范围内。
+ 
+ ### 10.2 可延后且不得阻塞纯契约基础的决策
+ 
+@@ -380,7 +409,9 @@
+ | 当前 Python 可用等于依赖兼容 | 未装依赖，必须真实锁定/测试；GPU 矩阵独立且未验证 |
+ | 示例可直接作正向合约 | 保留原文作 illustrative 回归，创建独立规范 fixtures；不宽松迁就占位内容 |
+ 
+-## 11. 本轮验证证据与独立自审
++## 11. 初轮 WP-00 验证证据与独立自审（历史保留）
++
++本节为初轮证据，不代表 R1 当前状态；命令未在 R1 重跑，D01–D08 等编号是历史引用。原计划全文和原始启动包字节均保存在 review_evidence 的 before 副本。当前契约及授权以 §1–10、§12 为准。
+ 
+ ### 11.1 实际执行的检查
+ 
+@@ -456,3 +487,80 @@
+ **WP-00 总结论：CONDITIONAL。** 规划交付可供审批；启动包内容完整，但仓库未初始化且若干契约存在阻塞歧义。**WP-01 尚未实施、尚未验收**，不得据本次自审标记其 PASS。
+ 
+ 推荐下一步仅为用户审阅 D01–D08、确认边界与授权 WP-01。批准后只实施 WP-01；完成后重新报告文件、契约、命令及结果、runtime 证据、安全/迁移、限制和 PASS/CONDITIONAL/FAIL，再停止，不能自动进入 WP-02。
++
++## 12. WP-00-R1 修订交付与复审入口（当前）
++
++### 12.1 本次目标、文件与证据
++
++本次仅按用户十项修订要求更新文档，未进行 WP-01 实施。六个现有文件发生变更：
++
++- `planning/WP-01_IMPLEMENTATION_PLAN.md`
++- `planning/ARCHITECTURE_DECISIONS.md`
++- `specs/01_Runtime_Domain_Model_V1.0.md`
++- `specs/02_Runtime_Bundle_Specification_V1.0.md`
++- `specs/03_Six_Node_Execution_Contract_V1.0.md`
++- `specs/04_Runtime_Technical_Architecture_V1.0.md`
++
++新增 `planning/review_evidence/WP-00-R1/` 文档审计包：`before/` 保存修改前全部 16 个项目文件（15 个原始启动文件及初版计划），`before_sha256.json` 保存修改前大小/哈希，`after_sha256.json` 保存这 16 个路径的修订后大小/哈希，`changes.patch` 保存六个修订文件的完整 unified diff，`README.md` 说明证据边界。证据包不是 Runtime Bundle，不改变原始 PACKAGE_MANIFEST，不自我重写其哈希，也不包含实现文件。
++
++本轮重新读取现有规格/规划/示例，`git status --short --branch` 和 `git rev-parse --show-toplevel --abbrev-ref HEAD HEAD` 均 exit 128（当前仍未识别为 Git 仓库），`rg --files --hidden -g '!.git/**'` exit 0（修订前 16 文件）。没有初始化 Git。
++
++文件复制、文档编辑、哈希清单及 diff 由 Python 标准库/文档补丁完成；未执行任何测试命令或测试断言。读取/diff 是 `STATIC_REVIEW_ONLY`，不作为功能测试证据。初轮 §11 的测试/哈希命令保持为历史，未在本轮重跑。
++
++### 12.2 新旧契约差异与兼容性
++
++| 项目 | 初始/初版计划 | R1 单一候选 |
++|---|---|---|
++| Question 输出 | output_fact_schema_refs[]；初版计划建议多槽 | primary_fact_key + primary_fact_schema_ref；一次 Question 一个主 Fact，复合 Record；取消多槽 |
++| Record | 受限结构化值概念，未明确 Question 基数关系 | 声明字段、required、类型与边界；无额外字段/字段独立状态；RecordFieldRefExpr 静态路径检查 |
++| Fact 状态 | 非 known null/value policy 可选 | 非 known 禁止 value（含 null）；reason 保留 unknown/error/not_applicable/not_evaluated 原语义 |
++| AST 真值 | 初版严格传播但无完整真值表 | strong Kleene 九行表 + not(U)=U；required/证据 completeness guard 独立于 predicate truth |
++| 规则完整性/冲突 | 默认全扫，但仍列 candidate gate 替代项；多命中待定 | V1 mandatory 全量适用性扫描，未知适用性显式 blocked；collect_all 全部有效命中，无优先胜出/提前终止 |
++| 引用 | ArtifactRef 被理解为全含 digest，双向可能循环 | ContentRef 为执行/内容依赖；IdentitySelector 为反向适用性身份；inventory 外部 pin，前向无环 |
++| Bundle | 缺 prompt/context/tool IO 资源；root preimage 可能自引用 | 补全目录与传递闭包；payload 排除 manifest/checksums，M 排除 root/signatures，domain + 长度封帧 |
++| Execution pins | actual deployment 与 context digest 好像创建时即存在 | 创建时 pin 配置/约束，N01 后 Context digest write-once，调用后追加实际 identity 审计 |
++| NodeRun/Attempt | 线性图，pre-start blocked/skipped 不清楚 | 03 §9 完整允许边与 guard；NodeRun 内 Attempt 重试，终态不改，late response 独立追加 |
++| Release | 定义聚合与 runtime 分类混淆 | Bundle 是配置聚合，Release/Activation 属 runtime 发布桥梁 |
++| Coverage | 空集/失败没有独立执行级语义 | D09 显式 scope/coverage/summary；空/未命中/失败/部分无权证明无违规 |
++| Object | Execution 内唯一，但跨 Profile 同目标未说明 | D10 按 Profile 独立观察，不合并、不共享 Fact、不宣称物理唯一计数 |
++| 持久版本 | 通用信封未列 schema_version | 所有独立外部持久根显式版本，额外字段拒绝 |
++
++这些形状与旧 illustrative 示例不向后兼容。没有已实现服务或生产数据迁移；不重写示例，不为兼容简写放宽验证。若将来要导入旧形状，必须独立显式转换、标明 source/version 并经验证，不能凭空补 digest、trusted metadata 或未知值。
++
++### 12.3 新增 CPU-only 测试用例及归属
++
++以下为测试计划补充，本次 **TEST_NOT_RUN**：
++
++| 场景 fixture | WP-01 只验证的数据/类型不变量 | 后续运行验证 |
++|---|---|---|
++| JEV no_hits + Objects=[] | discovery=no_hits、coverage=none、summary=uncertain；no_violation/complete 负例拒绝 | WP-05 真实发现能力，不能由 fixture 证明 |
++| JEV failed | 原始 failure 与 uncertain/none 保留，不伪造成功/absence | WP-03/04/05 超时和恢复 |
++| Profile hit + grounding no_target | grounding/no_target 留痕，空 Object 不自动 no_violation | WP-05 grounding/absence 质量 |
++| Grounding failed 全部无 Object | failed 与 no_target 区分；profile-scoped blocked obligations 无虚假 object_id | WP-03/05 后继阻塞 |
++| 一 Profile 成功、一 Profile 失败/未被 discovery 返回 | partial，expected scope 不缩成 hits；子集记录仍可引用 | WP-05 运行覆盖汇总 |
++| 部分 coverage + 一个有效命中 | summary violation + coverage partial，其他 blocked/unknown 仍在 trace | WP-05 全量扫描/聚合求值 |
++| 部分 coverage + 零有效命中 | summary uncertain，不能假报 no_violation | WP-05 执行级结果 |
++| 完整非空 Objects、全部 mandatory 已评估 false | complete/no_violation 数据正例；truth/证据/trace 不完整则拒绝 | WP-05 确定性规则执行 |
++| 上下文确定排除全部检查义务 | not_applicable + 显式排除依据；不得用 no_hits 代替依据 | WP-05 适用性执行 |
++| 同车辆跨 Profile 两次 grounding | 两个 object_id、独立 Profile/Fact/Decision 引用；混用引用负例 | 未来关联能力需独立新合同 |
++| F AND U / T OR U | RuleTruth/policy/诊断 fixture 合法，required guard 字段与 blocked 结果一致；不执行 AST | WP-05 真值表 evaluator 与 guard 行为 |
++| pending→blocked / ready→skipped / terminal→running | 前两条有效且无虚假 invocation Attempt；后一条无效；created/running Attempt 边全覆盖 | WP-03 持久状态/fencing |
++
++WP-01 不实现 N06 扫描循环、Rule evaluator、空集运行聚合器、跨 Profile 关联器、Bundle hasher/compiler/admission、Provider/Tool worker；CPU-only domain consistency validators 不代表这些运行能力已实现。
++
++### 12.4 最终验收标准与当前审查结论
++
++WP-01 最终验收以 §9.2 G0–G9 为准，必须同时满足：
++
++1. 用户批准 D01–D10 和限定工作范围，安装/测试动作有明确授权。
++2. Domain/Registry/AST static checker/JSON Schema 的契约清单完整、strict、版本化、typed、无 Any 占位；一 Question 一个主 Fact 与 Record/schema/scope 不变量有正负例。
++3. ContentRef/IdentitySelector 字段与用途严格区分，注入的有限目录可做类型解析；不把完整闭包/摘要计算偷偷加入 WP-01。
++4. T/F/U、required guard、full mandatory scan、collect_all、Coverage 及 Profile-specific identity 有清晰数据模型、静态检查及契约 fixtures；无 runtime evaluator/服务实现。
++5. NodeRun/Attempt 全部合法边和非法边有 CPU-only 纯校验；终态无出边、重试/late response 形状不覆写历史。
++6. 每个根模型生成 JSON Schema，重复生成字节一致；Pydantic/JSON Schema 双验证通过；无法由 JSON Schema 表达的跨引用语义另作显式域校验。
++7. 已授权 CPU-only 单元/Schema/负向测试实际通过（0 failed，必需用例不 skip），质量/导入边界检查通过，精确命令/版本/exit code/结果留证。
++8. 无 DB/API/模型调用/GPU/Rule 求值/部署/平台修改/迁移/提交；交付兼容说明与 WP-01 验证报告后停止，不进入 WP-02。
++
++本轮修订的文档自审：**CONDITIONAL**。C01–C11 已在候选文本中逐项对齐；D01–D10 全部 **PROPOSED / PENDING_USER_APPROVAL**；独立复审尚未发生，WP-01 未实施、未验收。没有 API key、模型成本、数据迁移或历史运行证据修改。依赖兼容、摘要/签名算法实现与真实运行行为仍 UNVERIFIED。
++
++`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。下一步仅为独立复审和用户实施授权；本轮完成后停止。
+--- before/specs/01_Runtime_Domain_Model_V1.0.md
++++ after/specs/01_Runtime_Domain_Model_V1.0.md
+@@ -3,6 +3,10 @@
+ **Status:** Proposed normative contract baseline  
+ **Depends on:** README.md, AGENTS.md  
+ **Scope:** Native runtime domain, independent of the existing requirements platform.
++
++**Review revision:** WP-00-R1, 2026-11-17. Revised contracts below are decision
++candidates: PROPOSED / PENDING_USER_APPROVAL, not implementation authorization.
++Original bytes are retained in `planning/review_evidence/WP-00-R1/before/`.
+ 
+ ## 1. Design rules
+ 
+@@ -24,7 +28,7 @@
+ | Tooling | Tool, ToolPlan | Registered executable capabilities and deterministic tool DAG |
+ | Decision | Rule, RuleSet | Typed rule predicates, applicability and conflict policy |
+ | Model | ModelBinding | Logical model capability to approved provider/deployment policy |
+-| Release | Bundle, Release, Activation | Immutable executable configuration and activation scope |
++| Configuration package | Bundle | Immutable definition closure; no activation state |
+ 
+ ### 2.2 Execution context
+ 
+@@ -39,6 +43,7 @@
+ | Decision | CandidatePrediction, Decision, RuleEvaluation | Candidate generation and deterministic final result |
+ | Model audit | ModelInvocation | Actual provider/model/deployment invocation audit |
+ | Replay | ReplayRun | Artifact replay and inference replay |
++| Release bridge | Release, Activation | Runtime records pinning admitted configuration; approval and activation are separate |
+ 
+ ## 3. Entity definitions
+ 
+@@ -109,15 +114,23 @@
+ - `question_id`, `version`
+ - `objective`
+ - `prompt_template_ref`
+-- `applicable_profile_refs[]`
++- `applicable_profile_selectors[]` (IdentitySelector, not ContentRef)
+ - `facet_refs[]`
+ - `context_allowlist[]`
+-- `output_fact_schema_refs[]`
++- `primary_fact_key`
++- `primary_fact_schema_ref` (exact ContentRef; exactly one primary output)
+ - `evidence_policy`
+ - `unknown_policy`
+ - `validation_policy`
+ 
+-A Question never makes a final violation decision. The VLM output is untrusted until schema validation. Each Question result becomes an independently addressable Fact record.
++A Question never makes a final violation decision. For each Object and authoritative
++observation Attempt, one Question has exactly one primary Fact result. Compound
++observations use a restricted Record value in that Fact, not multiple output slots.
++Record fields do not have independent Fact status; an invalid required field makes
++the entire primary Fact error. Separate independently uncertain observations into
++separate Questions. Transport/whole-envelope parse failure creates no fabricated
++Facts. Retry history can contain multiple immutable Facts; consumption selects an
++explicit authoritative Attempt. VLM output remains untrusted until validation.
+ 
+ ### 3.6 Tool
+ 
+@@ -141,7 +154,7 @@
+ 
+ Required fields:
+ - `tool_plan_id`, `version`
+-- `profile_ref`
++- `applicable_profile_selector` (IdentitySelector; reverse applicability only)
+ - `steps[]`
+ - explicit dependency edges
+ - input/output mappings
+@@ -199,10 +212,11 @@
+ One actual run of a Task. A Task may have multiple Executions for retry/replay/version comparison. Every Execution pins:
+ - Release ID and Bundle digest
+ - runtime and workflow versions
+-- configured and actual model deployment identities
++- configured ModelBinding ContentRefs, deployment constraints and Tool versions at creation
++- append-only ModelInvocation references recording actual provider/deployment/model versions after invocation
+ - Tool versions
+ - input digest
+-- context snapshot digest
++- context snapshot digest attached once N01 resolves it; unavailable before then, never invented
+ 
+ ### 4.3 Object
+ 
+@@ -216,6 +230,14 @@
+ - evidence references
+ 
+ Object IDs are unique within an Execution. They are not globally stable identities across images.
++
++V1 identity is Profile-specific: the same visible vehicle grounded under two
++Profiles produces two Object records with distinct object_ids. Each record owns its
++own Facts, Questions and Decisions. No IoU-based merging, cross-Profile Fact reuse,
++global physical identity, or N02 instance alignment is implied. Object/Fact/Decision
++references must agree on execution_id and profile_ref. Cross-Profile deduplication
++is deferred to a separately versioned association contract; V1 counts are counts
++of Profile observations, not unique physical vehicles (D10).
+ 
+ ### 4.4 Fact
+ 
+@@ -232,7 +254,16 @@
+ - evidence references
+ - creation time and trace IDs
+ 
+-Do not use an unrestricted `Any` as the persisted value contract. Use a discriminated union or resolve the declared Fact JSON Schema and validate the payload before persistence. `known` requires a valid value. Non-known states must follow the schema's null/value policy and include a reason where required.
++Use a discriminated typed value validated against the exact registered Fact Schema;
++unrestricted Any and arbitrary imported JSON Schema are forbidden. The V1 type
++algebra is bool, integer, finite number, bounded string, closed enum, bounded
++homogeneous list, and closed Record. Records have declared named fields, required
++flags and bounded nesting; undeclared fields and arbitrary recursive maps are
++rejected. JSON Schema dialect candidate: 2020-12, generated restricted subset,
++offline references only. `known` requires a valid value. All other statuses forbid
++the value field (including null) and require a structured reason. Business enum
++`unknown` must not duplicate FactStatus. Record field selection in AST uses a
++declared field path and exact schema, not arbitrary JSONPath or code.
+ 
+ ### 4.5 ToolExecution
+ 
+@@ -269,6 +300,30 @@
+ 
+ A candidate prediction is not a final Decision.
+ 
++CandidatePrediction contains category identifiers, not selected Rule identities.
++RuleEvaluation stores outcome (evaluated/skipped/blocked), predicate truth
++(true/false/unknown), required-input/evidence completeness and reason separately.
++Matched Rule references are retained as a set; storage order has no priority.
++See 03 §8 for three-valued logic and collect_all aggregation.
++
++### 4.8 ExecutionCoverage (D09)
++
++Coverage is distinct from Task/Execution completion and from Decision.result.
++ExecutionCoverage records schema_version, execution_id, pinned applicability scope,
++discovery outcome (hits/no_hits/failed/partial/not_evaluated), per-Profile grounding
++outcome (objects/no_target/failed/partial/not_evaluated), Object refs/counts,
++expected/evaluated/blocked/unresolved mandatory Rule refs and missing evidence.
++It includes coverage_status (complete/partial/none/not_applicable), reasons and
++execution-scoped summary_result using DecisionResult, with matched Rule/Object refs.
++All externally stored per-Profile coverage roots also carry schema_version.
++
++Coverage measures execution over the configured scope, not empirical discovery
++recall or proof of physical absence. Empty Objects, JEV no_hits, grounding no_target
++or failure cannot establish no_violation. Successful subset results are preserved;
++any missing required coverage prevents a global no_violation. A valid matched
++Rule still establishes violation while coverage remains partial. Detailed cases
++and aggregation constraints are in 03 §8.4.
++
+ ## 5. Relationship cardinalities
+ 
+ - Entity 1:N Profile.
+@@ -278,7 +333,7 @@
+ - RuleSet 1:N Rule references.
+ - Rule consumes N Facts; Fact has one authoritative producer record, though derived Facts may reference multiple inputs.
+ - Task 1:N Execution.
+-- Execution 1:N NodeRun, Object, Fact, ToolExecution, ModelInvocation and Decision.
++- Execution 1:N NodeRun; Execution 0:N Object, Fact, ToolExecution, ModelInvocation and Decision, plus one execution coverage summary (empty collections are valid data, not negative evidence).
+ - Object 1:N object-scoped Fact, ToolExecution and Evidence.
+ - Decision N:1 Rule references and N:M Fact/Evidence references.
+ 
+@@ -308,16 +363,26 @@
+ 
+ - Definition identity is `(artifact_id, version)`.
+ - Published artifacts are immutable.
+-- Exact references include a content digest.
++- ContentRef includes kind, artifact_id, exact version and SHA-256 digest. SchemaRef is a constrained ContentRef. Legacy ArtifactRef means ContentRef, never an optional-digest reference.
++- IdentitySelector includes kind, artifact_id and exact version, with no digest/range/latest. It expresses reverse applicability/membership only, not content to execute. Bundle inventory binds every selector to exactly one ContentRef before use.
++- Profile owns ContentRefs to Entity, Facet, Question and ToolPlan. Question/ToolPlan reverse Profile applicability uses IdentitySelector. Facets do not embed Question back-references; a published artifact does not embed its own digest or Bundle root digest.
++- The forward ContentRef graph must be acyclic; selectors are not hashing edges. Complete semantic closure includes selector targets too: manifest inventory pins their content externally. Missing, ambiguous or kind-mismatched targets are hard errors. No unpinned content is executed and no selector is resolved against a global latest catalogue.
+ - Bundle freezes the transitive dependency closure.
+ - Execution pins one Release and Bundle digest.
+ - Runtime implementation versions are separately recorded from configured artifact versions.
+ - Deprecation prevents new activation/use according to policy but does not erase history.
+ 
+-## 8. OPEN decisions
++## 8. Decision candidates awaiting approval
+ 
+ - Whether Region geometry is in this service or a spatial subsystem.
+-- Whether a Profile can select among multiple ToolPlans by declared context.
+-- Cross-Entity Question/Facet reuse constraints.
+-- Rule conflict semantics for simultaneous violations.
+-- Final Fact value union implementation and JSON Schema dialect enforcement details.
++- D08 candidate: one exact ToolPlan per Profile version; declared conditions only over typed context/validated Facts, never N06 output.
++- D08 candidate: Question/Facet reuse only with compatible exact output Schema, context allowlist and producer scopes for every referencing Profile.
++- D02/D06 candidate: one primary Fact per Question, restricted Record values, non-known values absent, offline 2020-12 subset.
++- D03/D04 candidate: strong Kleene three-valued predicates, required-input/evidence safety guard, mandatory full scan and collect_all matches (03 §8).
++- D05/D09/D10 candidates: ContentRef/IdentitySelector split, explicit ExecutionCoverage, Profile-specific Object identity.
++
++All candidates remain PROPOSED / PENDING_USER_APPROVAL; detailed D01–D10 are
++tracked in planning/ARCHITECTURE_DECISIONS.md. Region geometry ownership remains
++OPEN. Required structured policies cannot be replaced by arbitrary config maps.
++Every externally persisted root has explicit schema_version and extra=forbid;
++nested value records inherit the root's version unless stored independently.
+--- before/specs/02_Runtime_Bundle_Specification_V1.0.md
++++ after/specs/02_Runtime_Bundle_Specification_V1.0.md
+@@ -2,6 +2,11 @@
+ 
+ **Status:** Proposed normative delivery contract  
+ **Depends on:** Runtime Domain Model V1.0
++
++**Review revision:** WP-00-R1. These clarified contracts are PROPOSED /
++PENDING_USER_APPROVAL. WP-01 defines domain contracts only; packaging, closure
++admission, digest calculation and signing implementations remain WP-02.
++Original bytes: `planning/review_evidence/WP-00-R1/before/`.
+ 
+ ## 1. Purpose
+ 
+@@ -24,15 +29,40 @@
+   rules/registry.json
+   rules/sets.json
+   models/bindings.json
++  prompts/templates/*.json
++  prompts/response_contracts/*.schema.json
++  schemas/attributes/*.schema.json
++  schemas/context/*.schema.json
+   schemas/facts/*.schema.json
++  schemas/tools/inputs/*.schema.json
++  schemas/tools/outputs/*.schema.json
+   schemas/objects/*.schema.json
+   schemas/decisions/*.schema.json
+   policies/execution.json
+   policies/evidence.json
++  policies/coverage.json
++  policies/resources.json
++  vocabularies/*.json
++  resources/geometry/*
++  resources/assets/*
+   checksums.json
+ ```
+ 
+ Paths are relative, normalized POSIX paths. Reject absolute paths, `..`, duplicate paths, symlinks and archive path traversal. Define maximum archive size, expanded size, file count and individual file size in deployment policy.
++
++Each declared reference must resolve within this immutable package, including
++prompt partials, response schemas, context schemas, Tool IO schemas, vocabularies,
++policy resources, geometry and static assets needed for execution. Optional
++resources may be absent only when no enabled configuration references them.
++Geometry resources are data, not executable spatial code. Device/Camera registry
++records and task images are trusted runtime inputs, not hidden Bundle config.
++
++Model weights, Tool executable implementations, credentials, trust keys and
++deployment endpoints are explicit external capabilities, not bundled resources.
++ModelBinding/Tool ContentRefs declare contracts and version constraints;
++admission resolves them against a trusted allowlist/capability report. Self-contained
++means configuration closure without consulting the requirements platform or
++fetching remote schemas/templates, not bundling weights or implementation code.
+ 
+ ## 3. Manifest contract
+ 
+@@ -43,10 +73,10 @@
+ - `compiler_version`
+ - `created_at`
+ - `source`: source system, source artifact IDs/versions/digests
+-- `artifacts[]`: artifact ID, version, digest, path, kind
++- `artifacts[]`: ContentRef identity/digest, path, optional JSON Pointer for artifacts stored in an aggregate JSON file; exactly one entry per kind/ID/version
+ - `compatibility`: supported Runtime version range and required capabilities
+ - `required_capabilities[]`
+-- `integrity`: hash algorithm, root digest, signature metadata
++- `integrity`: hash_algorithm, canonicalization_id, root_digest, signatures[] envelope
+ 
+ All normative models use strict Pydantic v2 (`extra="forbid"`). JSON Schema is generated from those models and checked in CI. Do not maintain a separate hand-edited schema that can drift.
+ 
+@@ -54,14 +84,23 @@
+ 
+ Use SHA-256 for file digests and a deterministic manifest/checksum construction.
+ 
+-1. Reject duplicate or unsafe paths.
+-2. Canonicalize each JSON document using a specified canonical JSON algorithm (recommend RFC 8785/JCS; implementation choice must be verified).
+-3. Compute SHA-256 for each payload file.
+-4. Sort normalized relative paths lexicographically.
+-5. Build `checksums.json` from `(path, size, sha256)` entries.
+-6. Compute the root digest over the canonical checksum manifest and the canonical manifest payload with the integrity signature field excluded.
+-7. Sign the root digest separately using an approved signing algorithm and key ID.
+-8. Verify signature against a trusted key registry; never trust a public key supplied only by the Bundle itself.
++Candidate algorithm ID: `jcs-sha256-v1`. No implementation or test vector has
++been validated in this review; its acceptance belongs to WP-02.
++
++1. Reject duplicate/unsafe paths, duplicate JSON keys and unsupported JSON numbers. Payload set P contains every package file except manifest.json and checksums.json; no undeclared extras are allowed.
++2. JSON payloads are stored as RFC 8785/JCS canonical UTF-8 bytes; non-JSON resources use exact stored bytes. File size/hash refer to these stored bytes. No newline normalization of non-JSON resources is implied.
++3. Build checksums.json as a versioned object with entries `(path, size, sha256)` for exactly P, sorted lexicographically by normalized path. It never includes itself or manifest.json.
++4. Let C be canonical UTF-8 bytes of checksums.json. Let M be canonical UTF-8 bytes of manifest with only `integrity.root_digest` and `integrity.signatures` removed. hash_algorithm and canonicalization_id remain covered. All other manifest metadata remains covered.
++5. Root digest = SHA256(domain || u64be(len(M)) || M || u64be(len(C)) || C), where domain is ASCII `JIMU-RUNTIME-BUNDLE-ROOT-v1` followed by one zero byte; u64be is an unsigned 8-byte big-endian length. The length framing and domain prevent ambiguous concatenation.
++6. Store the root_digest in manifest; store detached signature envelopes under integrity.signatures. Sign the domain-separated root digest with an approved algorithm/key; signature preimage/envelope, algorithms and rotation/revocation remain WP-02 approval gates. Keys/trust never come solely from the Bundle. Unsigned content cannot be activated as an accepted signed Release.
++7. Runtime recomputes payload inventory, checksums, M/C and root independently, then validates signatures against external trust. ZIP ordering, compression metadata and signature bytes are not logical configuration identity.
++
++Artifact ContentRef.digest is SHA-256 of the artifact's own canonical JSON value
++(or exact binary resource bytes), not the enclosing aggregate-file hash. Aggregate
++file hashes remain in checksums; JSON Pointers must uniquely identify inventory
++members. Artifacts do not contain their own digest. Forward ContentRefs include
++dependency digests; reverse IdentitySelectors contain no digests, so leaf-first
++hashing terminates. JSON Schema `$id` uses versioned identity, never its own hash.
+ 
+ Avoid self-referential hashing. The exact canonicalization, signature algorithm, key rotation and signature envelope must be frozen before implementation. ZIP compression metadata is not the logical Bundle identity.
+ 
+@@ -70,7 +109,7 @@
+ 1. Resolve approved source artifacts.
+ 2. Resolve exact versions and digests recursively.
+ 3. Validate every artifact against its schema.
+-4. Validate reference closure.
++4. Validate full semantic reference closure (both ContentRefs and IdentitySelector targets), then require an acyclic forward ContentRef graph. Resolve each selector exactly once against pinned manifest inventory; never embed resolved back-reference digests into artifact bytes.
+ 5. Validate Profile → Entity/Facet/Question/ToolPlan relations.
+ 6. Validate ToolPlan DAG acyclicity and typed input/output mappings.
+ 7. Build Fact producer/consumer graph.
+@@ -83,6 +122,13 @@
+ 14. Emit a compile report with errors/warnings and deterministic Bundle digest.
+ 
+ A Rule depending on a Fact with no producer is a hard compile error. A required Tool or model capability that cannot be satisfied is a hard error. Optional capabilities may be absent only when an explicit policy defines the resulting behavior.
++
++Closure also validates all prompt/context/Tool IO/schema/policy resources and their
++transitive references, per-Profile producer scopes, declared Record field paths,
++Question one-primary-Fact cardinality and Rule AST compatibility. Missing,
++ambiguous, wrong-kind or wrong-digest selector targets reject the Bundle. Compiler
++and admission independently perform these checks; WP-01 only defines the records
++and checks types against injected finite registries, not a Bundle closure engine.
+ 
+ ## 6. Runtime admission
+ 
+--- before/specs/03_Six_Node_Execution_Contract_V1.0.md
++++ after/specs/03_Six_Node_Execution_Contract_V1.0.md
+@@ -3,6 +3,11 @@
+ **Status:** Proposed normative execution contract  
+ **Input:** One RGB image per Task  
+ **Orchestration:** Deterministic state machine
++
++**Review revision:** WP-00-R1, PROPOSED / PENDING_USER_APPROVAL.
++WP-01 builds data contracts/static type checks and CPU-only tests, not node,
++workflow or Rule evaluation execution. Originals are retained under
++`planning/review_evidence/WP-00-R1/before/`.
+ 
+ ## 1. Global invariants
+ 
+@@ -19,18 +24,25 @@
+ ## 2. Generic Node envelope
+ 
+ Input:
++- schema_version (explicit on every independently persisted envelope/record)
+ - task_id, execution_id, release_id, bundle_digest
+ - node_run_id, attempt_id, trace_id
+ - upstream artifact references and digests
+ - exact node config reference
+ 
+ Output:
++- schema_version
+ - node_id, node_run_id, attempt_id
+ - status
+ - output artifact references and digests
+ - error code/class/retryability
+ - started_at, finished_at, duration
+ - trace_id
++
++The invocation envelope requires attempt_id. A NodeRun skipped/blocked/cancelled
++before invocation uses a separate lifecycle record with no fabricated attempt_id
++or started_at. Actual model identities are appended in ModelInvocation after the
++call; creation pins configured bindings/constraints, never invented actual values.
+ 
+ Use strict typed contracts. A generic envelope does not replace node-specific schemas.
+ 
+@@ -100,6 +112,7 @@
+ - Do not decide violation.
+ - Preserve localization failure records; do not silently drop a Profile hit.
+ - Object IDs are unique within an Execution, not persistent real-world identities.
++- Object identity is Profile-specific: overlapping detections across Profiles remain separate records and cannot implicitly share Facts or Decisions (D10; 01 §4.3).
+ 
+ Coordinate contract:
+ - origin top-left;
+@@ -129,13 +142,21 @@
+ 
+ Each QuestionResult includes:
+ - question_ref;
+-- fact_key/schema_ref;
++- exactly one primary fact_key/schema_ref and one primary Fact result;
+ - status;
+ - typed value if known;
+ - reason when required;
+ - model-reported confidence if available;
+ - evidence references;
+ - validation status.
++
++QuestionDefinition declares primary_fact_key and primary_fact_schema_ref, not an
++output-schema list. Compound observations are one closed Record value. Invalid
++required Record fields invalidate that Question's entire Fact; valid other
++Question results may survive under trustworthy association. Duplicate/missing
++Question association is diagnosed, never silently overwritten. Optional Record
++fields may be absent per Schema but do not carry independent Fact status; use
++separate Questions for independently uncertain observations.
+ 
+ Error semantics:
+ - transport failure: request Attempt failed; no fabricated Facts;
+@@ -186,11 +207,13 @@
+ 
+ The Runtime must determine all Rules applicable to the Object's Profile and scene from the pinned Bundle. Candidate predictions may prioritize evaluation, but may not be the sole filter for mandatory Rules.
+ 
+-At minimum:
+-- evaluate all mandatory applicable Rules, or
+-- use a separately validated high-recall candidate gate with a defined safety fallback and measured slice-level recall threshold.
+-
+-V1 safe default: evaluate all applicable mandatory Rules. Optimize later only with evidence.
++V1 requires a full scan of all mandatory Rules in the pinned Profile/scene scope.
++Candidate scores, empty candidates, candidate failure and early matches cannot
++filter or stop this scan. Each mandatory Rule gets an applicability trace:
++applicable → evaluated/blocked; inapplicable → skipped with deterministic reason;
++unknown applicability → blocked/unresolved, never silently excluded. A high-recall
++candidate gate is not an alternative V1 execution mode; later optimization needs
++a separately approved version and measured evidence.
+ 
+ Rule Engine:
+ 1. resolve RuleSet and applicability;
+@@ -211,6 +234,79 @@
+ 
+ Decision records evaluated, skipped, blocked and matched Rules, required Facts, evidence and Rule Engine version.
+ 
++### 8.3 Three-valued predicates and simultaneous matches (D03/D04)
++
++Predicate truth is T/F/U (true/false/unknown), separate from FactStatus and
++RuleEvaluation outcome. Known valid operands use typed comparisons. Missing
++records and unknown/error/not_applicable/not_evaluated operands produce U with
++their original distinct reasons preserved; applicability is established separately.
++There is no implicit false conversion. Logical expressions use strong Kleene:
++
++| A | B | all(A,B) | any(A,B) |
++|---|---|---|---|
++| T | T | T | T |
++| T | F | F | T |
++| T | U | U | T |
++| F | T | F | T |
++| F | F | F | F |
++| F | U | F | U |
++| U | T | U | T |
++| U | F | F | U |
++| U | U | U | U |
++
++not(T)=F; not(F)=T; not(U)=U. all/any require nonempty argument lists.
++Complete operand diagnostics are retained even if the truth value is already
++determined. Before a definitive Rule result, a separate safety guard requires all
++declared required Facts and evidence to be available/valid. Thus F AND U may have
++predicate F but a missing required Fact still yields outcome=blocked and effective
++result=uncertain. This guard is not a different truth table. Optional inputs obey
++the declared typed policy; they cannot conceal missing mandatory inputs.
++
++V1 conflict_policy candidate is `collect_all`: retain every evidence-valid matched
++Rule and category, with no winner, implicit priority or early termination. Duplicate
++categories are presented as a set while all matched Rule refs remain. Mutually
++exclusive/winner-takes-all RuleSets are unsupported V1 capabilities and must be
++rejected, not resolved by storage order or a model.
++
++Per Object: any valid match → violation (even if another Rule is blocked, recorded
++with incomplete coverage); no match plus blocked/U/unresolved mandatory work →
++uncertain; complete applicable mandatory evaluation with every effective result
++false → no_violation; deterministic proof that no mandatory Rule applies →
++not_applicable. Optional advisory outcomes cannot veto a mandatory valid match.
++All mandatory Rules are still scanned after a match. Rule evaluation implementation
++and behavioral truth-table tests belong to WP-05, not WP-01.
++
++### 8.4 Execution Coverage and empty-object cases (D09)
++
++ExecutionCoverage is required even when no Object Decision exists. Expected scope
++is resolved from pinned configuration and trusted context, not just N02 hits.
++No candidate/model score proves complete physical-scene recall.
++
++| Case | coverage_status | Execution summary constraint |
++|---|---|---|
++| Context deterministically excludes every configured inspection obligation | not_applicable | not_applicable with exclusion evidence; not inferred from empty detection |
++| JEV succeeds with no_hits, no Objects | none | uncertain; record successful discovery/no_hits, not confirmed absence |
++| JEV failure before usable hits | none | uncertain with failure; Execution may failed, a different status domain |
++| Hit Profile grounds no_target, no Objects | none for that Profile | uncertain; retain no_target, do not rewrite as grounding failed or negative evidence |
++| Grounding failed for all hit Profiles | none | uncertain; downstream object nodes blocked/skipped with reason |
++| Some Profiles/Objects succeed, others grounding partial/failed or required evidence missing | partial | violation if any valid match; otherwise uncertain; preserve successful subset Decisions |
++| Nonempty grounded Objects, all in-scope obligations and mandatory evidence/evaluations complete | complete | violation if any valid match; otherwise no_violation only with complete false results; all deterministically inapplicable → not_applicable |
++| Unexpected empty Object list without matching per-Profile reasons | invalid report | reject contract; never infer complete/no_violation |
++
++complete means completed configured execution obligations, not measured recall.
++Expected/observed Profile identities, per-Profile grounding status/Object refs,
++mandatory applicable/evaluated/blocked/unresolved refs and reasons must reconcile.
++An eligible Profile omitted by discovery remains an uncovered obligation unless
++trusted deterministic applicability excludes it. It is not removed from expected
++scope because N02 did not return it. A MandatoryRuleObligation identifies the
++Profile scope before Object creation and the Object scope where available; empty
++grounding does not require a fabricated object_id to record blocked coverage.
++No-target/no-hits never becomes complete merely because the remaining Object loop
++is empty. Discovery partial prevents complete coverage. All task-scope aggregation
++retains Object/Profile provenance and does not claim unique-vehicle counts (D10).
++Execution.completed can coexist with coverage.none/summary.uncertain when a
++successful invocation found nothing; infrastructure failure is tracked separately.
++
+ ## 9. Task and execution state machines
+ 
+ Task:
+@@ -219,11 +315,39 @@
+ Execution:
+ `initialized → running → completed|partial_failed|failed|cancelled`.
+ 
+-NodeRun:
+-`pending → ready → running → succeeded|failed|blocked|skipped|cancelled`.
+-
+-Attempt:
+-`created → running → succeeded|failed|timed_out|cancelled|superseded`.
++NodeRun permitted transitions (all unlisted edges rejected):
++
++| From | To | Guard |
++|---|---|---|
++| pending | ready | required dependencies/context available |
++| pending / ready | blocked | prerequisite unavailable; structured reason; no invocation Attempt |
++| pending / ready | skipped | configured deterministic inapplicability/empty-object fanout; reason; no invocation Attempt |
++| pending / ready | cancelled | cancellation before start; no invocation Attempt |
++| ready | running | first Attempt claimed/started |
++| running | succeeded | authoritative successful output validated |
++| running | failed | nonretryable failure or retry budget exhausted |
++| running | cancelled | cancellation fenced and recorded |
++| succeeded / failed / blocked / skipped / cancelled | none | terminal immutable |
++
++Retryable Attempt failure keeps NodeRun running; a new Attempt uses a strictly
++increasing attempt_number. No running→ready or failed→running reset. A terminal
++NodeRun retry/replay requires a new explicit run identity linked to its predecessor.
++Failures after a Node starts are failed (not pre-start blocked/skipped).
++
++Attempt permitted transitions (all unlisted edges rejected):
++
++| From | To | Guard |
++|---|---|---|
++| created | running | valid claim/fencing token, actual invocation starts |
++| created | cancelled / superseded | pre-start cancellation or replaced claim |
++| running | succeeded | validated response and authoritative commit rights |
++| running | failed / timed_out | normalized failure / elapsed deadline |
++| running | cancelled / superseded | cancellation or loss of authoritative lease/fence |
++| succeeded / failed / timed_out / cancelled / superseded | none | terminal immutable |
++
++Late responses append invocation/late-artifact records; they cannot rewrite a
++terminal Attempt to superseded or succeeded. Worker fencing/lease enforcement is
++WP-03 behavior. WP-01 only models transitions/guards and tests pure validity.
+ 
+ Fact and Decision use their own enums as specified in Domain Model.
+ 
+@@ -259,3 +383,6 @@
+ - duplicate Task submission returns same accepted identity.
+ - cancellation and late response preserve audit history.
+ - artifact replay performs no model/tool invocation.
++- empty Object/JEV no_hits/grounding no_target/failed/partial coverage never fabricates no_violation; retain subset violations and distinct coverage/status domains.
++- overlapping cross-Profile detections keep distinct Object IDs and cannot silently merge Facts.
++- pending/ready blocked/skipped creates no fake Attempt; retries retain terminal Attempt history; late results never rewrite terminal state.
+--- before/specs/04_Runtime_Technical_Architecture_V1.0.md
++++ after/specs/04_Runtime_Technical_Architecture_V1.0.md
+@@ -3,6 +3,15 @@
+ **Status:** Proposed architecture baseline  
+ **Deployment:** Single RTX 4090 server, Docker Compose  
+ **Inference:** Hybrid, remote-first
++
++**WP-00-R1 scope clarification (PROPOSED / PENDING_USER_APPROVAL):** WP-01 is
++limited to Domain Model, an in-memory Fact Schema Registry, Rule AST static type
++checking, generated JSON Schema and CPU-only tests. None of the services below,
++Rule runtime evaluation, Bundle compiler/admission, Provider adapters or durable
++scheduling is part of WP-01. CPU-only dependency compatibility/lock is a separate
++candidate from the later GPU worker matrix; no GPU compatibility is claimed by
++contract tests. This revision authorizes document changes only. Original bytes
++are retained under `planning/review_evidence/WP-00-R1/before/`.
+ 
+ ## 1. Architecture shape
+ 
+@@ -37,7 +46,12 @@
+ | Telemetry | OpenTelemetry + Prometheus/Grafana | Trace/metrics correlation |
+ | Deployment | Docker Compose | Single-host V1 |
+ 
+-Exact versions are intentionally not hardcoded. They must be selected after testing the target NVIDIA driver, CUDA runtime, PyTorch, vLLM, Transformers, model code and SAM3 dependencies. Commit lock files and container image digests after compatibility validation.
++Exact versions are intentionally not hardcoded. GPU worker versions must be
++selected after testing the target NVIDIA driver, CUDA runtime, PyTorch, vLLM,
++Transformers, model code and SAM3 dependencies. D01 separately proposes a
++CPU-only contract environment/matrix for WP-01; it must not claim GPU validation.
++Lock files and accepted image digests follow the applicable compatibility gate;
++Git commits still require separate user authorization.
+ 
+ ## 3. Process boundaries
+ 
+@@ -91,6 +105,7 @@
+ - Bundle/Release/activation;
+ - Task/Execution/NodeRun/Attempt/Event;
+ - Object/Fact/Decision metadata;
++- ExecutionCoverage and per-Profile coverage provenance (separate from completion and business result);
+ - ModelInvocation/ToolExecution metadata;
+ - Evidence metadata and hashes;
+ - replay records.

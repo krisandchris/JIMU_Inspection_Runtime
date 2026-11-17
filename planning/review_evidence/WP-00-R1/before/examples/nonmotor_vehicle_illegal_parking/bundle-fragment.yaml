@@ -1,0 +1,59 @@
+bundle:
+  bundle_id: city-inspection
+  bundle_version: 1.0.0
+  schema_version: 1.0.0
+
+entity:
+  entity_id: nonmotor_vehicle
+  version: 1.0.0
+  entity_type: physical_object
+
+profile:
+  profile_id: nonmotor_vehicle
+  version: 1.0.0
+  entity_ref: {id: nonmotor_vehicle, version: 1.0.0}
+  question_refs:
+    - {id: vehicle_type, version: 1.0.0}
+    - {id: parking_state, version: 1.0.0}
+    - {id: parking_position, version: 1.0.0}
+  tool_plan_ref: {id: nonmotor_vehicle_geometry, version: 1.0.0}
+
+questions:
+  - question_id: vehicle_type
+    output_fact:
+      fact_key: vehicle_type
+      schema: enum[electric_bicycle,bicycle,tricycle,other,unknown]
+  - question_id: parking_state
+    output_fact:
+      fact_key: parking_state
+      schema: enum[parked,unparked,unknown]
+  - question_id: parking_position
+    output_fact:
+      fact_key: parking_position
+      schema: enum[inside_parking_area,outside_parking_area,over_boundary,unknown]
+
+tool_plan:
+  tool_plan_id: nonmotor_vehicle_geometry
+  version: 1.0.0
+  steps:
+    - step_id: wheel_segmentation
+      tool_id: sam3_wheel_segmentation
+    - step_id: tactile_paving_segmentation
+      tool_id: tactile_paving_segmentation
+    - step_id: wheel_boundary_geometry
+      tool_id: wheel_boundary_geometry
+      depends_on: [wheel_segmentation, tactile_paving_segmentation]
+
+rule:
+  rule_id: nonmotor_vehicle_illegal_parking
+  version: 1.0.0
+  applicable_profiles: [nonmotor_vehicle]
+  required_facts: [parking_state, wheel_boundary_relation]
+  condition_ast:
+    all:
+      - fact: {key: parking_state, operator: eq, value: parked}
+      - fact:
+          key: wheel_boundary_relation
+          operator: in
+          value: [outside_parking_area, blocking_tactile_paving]
+  on_missing_or_unknown: uncertain

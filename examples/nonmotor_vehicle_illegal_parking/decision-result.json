@@ -1,0 +1,23 @@
+{
+  "execution_id": "exec-demo-0001",
+  "object_id": "obj-demo-001",
+  "candidate_prediction": {
+    "candidate_rule_ids": ["nonmotor_vehicle_illegal_parking"],
+    "model_invocation_id": "model-call-demo-001",
+    "advisory_only": true
+  },
+  "rule_evaluations": [
+    {
+      "rule_id": "nonmotor_vehicle_illegal_parking",
+      "status": "matched",
+      "fact_refs": ["fact-parking-state-001", "fact-wheel-boundary-001"]
+    }
+  ],
+  "decision": {
+    "result": "violation",
+    "violation_category": "nonmotor_vehicle_illegal_parking",
+    "evidence_refs": ["evidence-original-001", "evidence-wheel-mask-001", "evidence-boundary-mask-001", "evidence-geometry-001"],
+    "rule_engine_version": "REPLACE_WITH_ACTUAL_VERSION"
+  },
+  "note": "Illustrative only. Do not treat this fixture as a real inference result."
+}
