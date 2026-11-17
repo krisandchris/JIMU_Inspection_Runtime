@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "task",
+    "execution",
+    "node_run",
+    "attempt",
+    "object",
+    "fact",
+    "evidence",
+    "tool_execution",
+    "model_invocation",
+    "decision",
+    "release",
+    "activation",
+    "context_snapshot",
+    "grounding_record",
+    "question_selection_record",
+    "authoritative_result_selection",
+    "execution_coverage",
+    "profile_eligibility_evaluation",
+    "rule_set_applicability_evaluation",
+    "rule_applicability_evaluation",
+    "applicability_trace",
+    "unresolved_obligation",
+    "replay_run",
+    "execution_event",
+    "candidate_prediction",
+    "observation_batch"
+  ],
+  "title": "RuntimeRecordKind",
+  "type": "string"
+}

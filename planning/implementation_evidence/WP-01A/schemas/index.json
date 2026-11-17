@@ -1,0 +1,280 @@
+{
+  "scope": "WP-01A foundation Schema evidence only; not Fact payload projection or a Bundle generator",
+  "dialect": "https://json-schema.org/draft/2020-12/schema",
+  "pydantic_version": "2.12.5",
+  "semantic_validation": "Bare Value schemas validate structural algebra. Use ValueContract/validate_typed_value with a caller-owned TypeDefinition for closed Record fields, enum membership, item contracts, bounds and depth. JSON Schema numeric mathematics do not distinguish Python float/int identity.",
+  "schemas": [
+    {
+      "name": "ContentRef",
+      "source_module": "jimu_runtime.domain.references",
+      "path": "ContentRef.schema.json",
+      "sha256": "165372a27b380658cec0ae1752c03907db2c168237f1a498d7d42948c6a8c25f",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "IdentitySelector",
+      "source_module": "jimu_runtime.domain.references",
+      "path": "IdentitySelector.schema.json",
+      "sha256": "1b9514ee6457a9f8ad45c8f4aa360fec8a1fe20c71a20b1bfcb50a69cf810052",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "RuntimeRecordRef",
+      "source_module": "jimu_runtime.domain.references",
+      "path": "RuntimeRecordRef.schema.json",
+      "sha256": "234745273fdf31b5e1cca81d0048f16357db3365a42b062203605c27aff33b33",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "SchemaRef",
+      "source_module": "jimu_runtime.domain.references",
+      "path": "SchemaRef.schema.json",
+      "sha256": "7c7c5c44267a80abf674af5aab5d341372ec98e47f503ebfb243b87a71060616",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "BooleanValue",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "BooleanValue.schema.json",
+      "sha256": "73411dfde592ffd2fdd293923dfd46735a00772382158c035a74f45dbf4e962f",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "IntegerValue",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "IntegerValue.schema.json",
+      "sha256": "125f746f9372fd2b64730ac93d291c1b1076432964706c70a30a936f87c520fe",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "NumberValue",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "NumberValue.schema.json",
+      "sha256": "962f00706c5523199bc66f5075ff594fc96f046094df38eb9d91c705c6acca8a",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "StringValue",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "StringValue.schema.json",
+      "sha256": "2c51c34e2741240044655e39e3b259e61b33401994a032285ca1463725fc7323",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "EnumValue",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "EnumValue.schema.json",
+      "sha256": "7d133e7c76fdc583347cc4ccb83d6db607ddde2cc81d7124ab8f359acfe7d37c",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "ListValue",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "ListValue.schema.json",
+      "sha256": "b578d733161c81ceb41ec1158771eaa42ec8f30e2ccbb5439bcf46a268335d57",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "RecordValue",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "RecordValue.schema.json",
+      "sha256": "7a79ff95db801bb940d2be3d0e2c90af233519c15dcc08bdfdba0f5f07f1b0e1",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "BooleanTypeDefinition",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "BooleanTypeDefinition.schema.json",
+      "sha256": "27a7e216910b045239b2fd607c21564cb69bb25498e04790acc27e28ac009b22",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "IntegerTypeDefinition",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "IntegerTypeDefinition.schema.json",
+      "sha256": "5289890b44f1dd63666f8f9f69f5d1e77e6ddecc9bafc14eb2cdbc6830080cfd",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "NumberTypeDefinition",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "NumberTypeDefinition.schema.json",
+      "sha256": "3790bab53636020ad0d6ec1c1c1e0bb6e9eee2d5da93518319e2caa9676d1d3b",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "StringTypeDefinition",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "StringTypeDefinition.schema.json",
+      "sha256": "3d75daa25d3070a003a4707c81987c92821c8a6ae533ac2df1f0c87661e07deb",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "EnumTypeDefinition",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "EnumTypeDefinition.schema.json",
+      "sha256": "df66f7db992dfbf847218c0d9192c90c01f96950ace9e2643dc0f3bfc02c5ba8",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "ListTypeDefinition",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "ListTypeDefinition.schema.json",
+      "sha256": "23d4064e12b257914779859e3caf4462bb6e9638ce523bd01925df59a1ccecfd",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "RecordTypeDefinition",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "RecordTypeDefinition.schema.json",
+      "sha256": "f679eca29cf1198338f5511f83859af446557dc43368f9099272c066b26c2c2a",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "RecordFieldDefinition",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "RecordFieldDefinition.schema.json",
+      "sha256": "6636a8d0df26fac8e97d93beaaa3fb4f004f4812cf7910d06e057c1f1fbbb657",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "ValueContract",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "ValueContract.schema.json",
+      "sha256": "a131699dba47dddf9d1c0c257528aebd763922528809696ba97a1f46dd73090c",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "Value",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "Value.schema.json",
+      "sha256": "621e77e7411f2dd36705cd28a8f9c8bfaba0459b2cd61cc128e05a07f125b481",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "TypeDefinition",
+      "source_module": "jimu_runtime.domain.values",
+      "path": "TypeDefinition.schema.json",
+      "sha256": "86ce1ab820e5290817b99288304147119e40f803104075ab730d49cece6adf68",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "ArtifactKind",
+      "source_module": "jimu_runtime.domain.enums",
+      "path": "ArtifactKind.schema.json",
+      "sha256": "1fdb023b8f93a77f63f206800fd57cb52a60caf1f0bda14ba374840ed4f198a1",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "RuntimeRecordKind",
+      "source_module": "jimu_runtime.domain.enums",
+      "path": "RuntimeRecordKind.schema.json",
+      "sha256": "0104e7e07baad78644121bd8a4815159bdfc06b2815f19cdcd356fc9a6371d10",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "TaskStatus",
+      "source_module": "jimu_runtime.domain.enums",
+      "path": "TaskStatus.schema.json",
+      "sha256": "80c20dc8036e37f9999e2ff7ce1945ec49b592344d86309372d15ec44a962917",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "ExecutionStatus",
+      "source_module": "jimu_runtime.domain.enums",
+      "path": "ExecutionStatus.schema.json",
+      "sha256": "d4ca1250ead0e092edbd8fdedcf42dee2ba03040eee9f44f036fd2fc57091498",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "NodeRunStatus",
+      "source_module": "jimu_runtime.domain.enums",
+      "path": "NodeRunStatus.schema.json",
+      "sha256": "b41577476299dc8e7eec5235e46020d550add037beb4ca2259071a5088099e61",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "AttemptStatus",
+      "source_module": "jimu_runtime.domain.enums",
+      "path": "AttemptStatus.schema.json",
+      "sha256": "0d20e02d18cb87c373e6f2b04ee01e5d81b171890dabd8725cf1b481431677b1",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "FactStatus",
+      "source_module": "jimu_runtime.domain.enums",
+      "path": "FactStatus.schema.json",
+      "sha256": "0414f08291a7e04585b037a2a57b58c53d3c22da824f066a42bcfaa227baa699",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "DecisionResult",
+      "source_module": "jimu_runtime.domain.enums",
+      "path": "DecisionResult.schema.json",
+      "sha256": "cfce2e069526175a874de41efff180efee64a25e095e22a9bf82be73f02fe286",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "Version",
+      "source_module": "jimu_runtime.domain.primitives",
+      "path": "Version.schema.json",
+      "sha256": "43659ebb02cec340c750b35fe70a6334ac5da6c1be405a25c969e6fbeb3eea49",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "Digest",
+      "source_module": "jimu_runtime.domain.primitives",
+      "path": "Digest.schema.json",
+      "sha256": "edc005c6bb9af87ade08879c0994ec4712ff67d4419b4d71ad085fda4e7bf1ca",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "ArtifactId",
+      "source_module": "jimu_runtime.domain.primitives",
+      "path": "ArtifactId.schema.json",
+      "sha256": "61f16027e7e095c8dec84ad0697173cb7ef76fed6548c954658460e6f7bfe187",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    },
+    {
+      "name": "RecordId",
+      "source_module": "jimu_runtime.domain.primitives",
+      "path": "RecordId.schema.json",
+      "sha256": "d68bc90a052a7b6b9c0456197840a89cc15c8e13350c2acae7a5e06a4954c13f",
+      "draft_2020_12_valid": true,
+      "repeatable_bytes": true
+    }
+  ]
+}

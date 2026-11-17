@@ -1,0 +1,59 @@
+{
+  "review_type": "local independent second-pass source/test/scope review; external GPT-6 review pending",
+  "unresolved_C0_C1_C2": [],
+  "findings": [
+    {
+      "id": "WP01A-F01",
+      "severity": "C2",
+      "status": "RESOLVED",
+      "problem": "Python dictionary wire strings rejected by Enum Literal constraints",
+      "resolution": "Decode only exact registered ArtifactKind strings before checking Literal allowlists; reject foreign enum instances.",
+      "regressions": [
+        "test_reference_roundtrip_and_input_order",
+        "test_schema_ref_is_a_constrained_content_ref",
+        "test_selector_only_allows_declared_applicability_targets",
+        "test_status_domains_reject_foreign_enums"
+      ],
+      "original_evidence": "Early static probe exited 1; retained in static_checks.txt. Final suites pass."
+    },
+    {
+      "id": "WP01A-F02",
+      "severity": "C2",
+      "status": "RESOLVED",
+      "problem": "Tuple max_length applied after a BeforeValidator emitted ineffective maxLength instead of array maxItems",
+      "resolution": "Apply bounds to the tuple schema before the sequence-normalizing validator.",
+      "regressions": [
+        "test_schema_and_pydantic_reject_structural_invalid_values",
+        "test_type_container_limits_are_real_json_schema_constraints"
+      ],
+      "original_evidence": "First pytest: 296 passed, 4 failed; list length failure preserved in test_results.txt."
+    },
+    {
+      "id": "WP01A-F03",
+      "severity": "C2",
+      "status": "RESOLVED",
+      "problem": "JSON Schema regex engine could accept trailing newline where Pydantic rejected exact Version/ID text",
+      "resolution": "Expose the existing no-whitespace constraint through Pydantic field Schema metadata without changing the accepted lexical contract.",
+      "regressions": [
+        "test_schema_and_pydantic_reject_invalid_lexical_forms",
+        "test_invalid_version",
+        "test_invalid_identity"
+      ],
+      "original_evidence": "First pytest: three trailing-newline Schema failures; preserved in test_results.txt."
+    },
+    {
+      "id": "WP01A-F04",
+      "severity": "C2",
+      "status": "RESOLVED",
+      "problem": "Machine-level uv extra indexes caused initial lock source to differ from project-declared PyPI",
+      "resolution": "Give the project index priority and regenerate only this new lock without machine configuration; preserve every selected package version. Verify normal locked sync and a new no-config public-index rebuild.",
+      "regressions": [
+        "test_only_cpu_contract_runtime_dependency_declared"
+      ],
+      "observed_initial_registry": "https://mirrors.aliyun.com/pypi/simple/",
+      "final_registry": "https://pypi.org/simple",
+      "package_version_changes": [],
+      "original_evidence": "Index configuration hostnames were inspected without printing credentials; final source is asserted by the contract test and visible in uv.lock. Exact normalization/sync/rebuild commands are retained."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "$defs": {
+    "RuntimeRecordKind": {
+      "enum": [
+        "task",
+        "execution",
+        "node_run",
+        "attempt",
+        "object",
+        "fact",
+        "evidence",
+        "tool_execution",
+        "model_invocation",
+        "decision",
+        "release",
+        "activation",
+        "context_snapshot",
+        "grounding_record",
+        "question_selection_record",
+        "authoritative_result_selection",
+        "execution_coverage",
+        "profile_eligibility_evaluation",
+        "rule_set_applicability_evaluation",
+        "rule_applicability_evaluation",
+        "applicability_trace",
+        "unresolved_obligation",
+        "replay_run",
+        "execution_event",
+        "candidate_prediction",
+        "observation_batch"
+      ],
+      "title": "RuntimeRecordKind",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Record identity, interpreted within its owning root's pinned scope.\n\nIn particular an Object ID is Execution-local: this nested ref must not be\nresolved globally or reused across Executions. Scope/existence checks belong\nto the later owning record contracts, not a hidden resolver in this model.",
+  "properties": {
+    "record_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Record Id",
+      "type": "string"
+    },
+    "record_kind": {
+      "$ref": "#/$defs/RuntimeRecordKind"
+    }
+  },
+  "required": [
+    "record_kind",
+    "record_id"
+  ],
+  "title": "RuntimeRecordRef",
+  "type": "object"
+}

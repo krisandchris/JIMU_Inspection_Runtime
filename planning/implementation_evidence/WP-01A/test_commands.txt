@@ -1,0 +1,32 @@
+DEPENDENCY uv lock --python /usr/bin/python3
+DEPENDENCY uv sync --locked --group dev --python /usr/bin/python3
+STATIC uv run --locked python -c 'from jimu_runtime.domain.values import ValueContract; from jimu_runtime.domain.references import IdentitySelector; print(ValueContract.model_validate({"type_definition":{"kind":"bool"},"value":{"kind":"bool","value":False}}).stable_json()); print(IdentitySelector.model_validate({"artifact_kind":"profile","artifact_id":"vehicle","version_selector":"1.0.0"}))'
+STATIC uv run --locked ruff check --fix .
+STATIC uv run --locked ruff format .
+TEST uv run --locked pytest -q
+STATIC uv run --locked mypy src/jimu_runtime
+DEPENDENCY uv lock --python /usr/bin/python3
+DEPENDENCY uv sync --locked --group dev --python /usr/bin/python3
+STATIC uv run --locked ruff format .
+STATIC uv run --locked mypy src/jimu_runtime
+TEST uv run --locked pytest -q
+STATIC uv run --locked ruff format .
+STATIC uv run --locked ruff check .
+STATIC uv run --locked ruff format --check .
+STATIC uv run --locked mypy src/jimu_runtime
+TEST uv run --locked pytest -q --junitxml=planning/implementation_evidence/WP-01A/pytest_results.xml
+DEPENDENCY env UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp01a-rebuild-DNnmdf/.venv uv sync --locked --group dev --python /usr/bin/python3
+STATIC uv run --locked python /tmp/jimu_wp01a_schema_snapshot.py
+TEST env UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp01a-rebuild-DNnmdf/.venv uv run --locked pytest -q --junitxml=planning/implementation_evidence/WP-01A/pytest_rebuild_results.xml
+DEPENDENCY uv lock --python /usr/bin/python3
+DEPENDENCY uv sync --locked --group dev --python /usr/bin/python3
+DEPENDENCY uv lock --no-config --default-index https://pypi.org/simple --python /usr/bin/python3
+DEPENDENCY uv sync --locked --group dev --python /usr/bin/python3
+DEPENDENCY env UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp01a-public-rebuild-13O2pv/.venv uv sync --no-config --locked --group dev --python /usr/bin/python3
+STATIC uv run --locked ruff check .
+STATIC uv run --locked ruff format --check .
+STATIC uv run --locked mypy src/jimu_runtime
+DEPENDENCY uv lock --no-config --default-index https://pypi.org/simple --check
+TEST uv run --locked pytest -q --junitxml=planning/implementation_evidence/WP-01A/pytest_final_results.xml
+TEST env UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp01a-public-rebuild-13O2pv/.venv uv run --no-config --locked pytest -q --junitxml=planning/implementation_evidence/WP-01A/pytest_rebuild_public_index_results.xml
+STATIC uv run --locked python /tmp/jimu_wp01a_schema_snapshot.py

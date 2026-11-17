@@ -1,0 +1,32 @@
+{
+  "$defs": {
+    "BoundedString": {
+      "maxLength": 4096,
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "const": "enum",
+      "title": "Kind",
+      "type": "string"
+    },
+    "members": {
+      "items": {
+        "$ref": "#/$defs/BoundedString"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "title": "Members",
+      "type": "array"
+    }
+  },
+  "required": [
+    "kind",
+    "members"
+  ],
+  "title": "EnumTypeDefinition",
+  "type": "object"
+}
