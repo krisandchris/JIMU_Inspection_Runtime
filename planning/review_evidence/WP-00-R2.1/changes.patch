@@ -1,0 +1,888 @@
+--- before/specs/01_Runtime_Domain_Model_V1.0.md
++++ after/specs/01_Runtime_Domain_Model_V1.0.md
+@@ -4,10 +4,10 @@
+ **Depends on:** README.md, AGENTS.md  
+ **Scope:** Native runtime domain, independent of the existing requirements platform.
+ 
+-**Review revision:** WP-00-R2, based on commit `46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`. Revised contracts below are decision
++**Review revision:** WP-00-R2.1, based on commit `40af8a17855b27063da94b3c9891272f3e3fc4e3`. Revised contracts below are decision
+ candidates: PROPOSED / PENDING_USER_APPROVAL, not implementation authorization.
+-R1 bytes are retained in `planning/review_evidence/WP-00-R2/before/`.
+-R1 audit history is unchanged. Sections 9–14 complete the R2 candidate contract;
++R2 bytes are retained in `planning/review_evidence/WP-00-R2.1/before/`.
++R1/R2 audit history is unchanged. F01–F05 only refine existing R2 contracts;
+ none of these recommendations grants implementation authorization.
+ 
+ ## 1. Design rules
+@@ -200,6 +200,63 @@
+ 
+ Rule AST is a typed, allowlisted data structure. It is never Python source and never evaluated with `eval`/`exec`.
+ 
++### 3.8.1 F01 — three-level applicability and trace
++
++Effective applicability is Profile.applicability_policy_ref AND
++RuleSet.applicability_policy_ref AND Rule.applicability_policy_ref. None overrides
++an ancestor or grants membership; Profile's forward RuleSet/Rule refs remain the
++authority. Resolve all policies against the same pinned ContextSnapshot and
++declared Context/Region/Profile metadata. No Object Facts, N02 model candidates,
++N06 candidates/Decisions or discovery confidence are legal applicability inputs.
++T/F/U below abbreviate the existing RuleTruth string values true/false/unknown;
++not_evaluated is an evaluation status with no truth value, not a fourth truth.
++
++Evaluate the required gates in Profile → RuleSet → Rule order. False is an
++evidence-backed exclusion at the first false gate; unknown at an active required
++gate creates an unresolved/blocked obligation and stops that chain. Descendants
++behind either gate are not_evaluated, not false. A later false diagnostic cannot
++erase an already unresolved parent. This conservative execution guard is distinct
++from the strong-Kleene truth table within each policy's AST (03 §8.3).
++
++| Profile | RuleSet | Rule | Effective gate / obligation |
++|---|---|---|---|
++| F | not_evaluated | not_evaluated | F; exclude Profile obligations, retain Profile exclusion evidence |
++| U | not_evaluated | not_evaluated | U; Profile unresolved, descendants blocked by ancestor |
++| T | F | not_evaluated | F; skip this RuleSet's Rules with ancestor exclusion, not other RuleSets |
++| T | U | not_evaluated | U; this RuleSet's obligations unresolved/blocked |
++| T | T | F | F; skip Rule with its specific exclusion evidence |
++| T | T | U | U; this Rule unresolved/blocked |
++| T | T | T | T; Rule condition proceeds subject to required Fact/evidence guard |
++
++ApplicabilityTrace is an immutable versioned Runtime record: applicability_trace_id,
++execution_id, target_ref (ContentRef[profile/rule_set/rule]), profile_ref,
++context_snapshot_ref/digest, levels[] and effective_truth (T/F/U), disposition
++(included/excluded/unresolved), decisive_level and created_at. Each
++ApplicabilityLevelTrace contains level (profile/rule_set/rule), target_ref,
++policy_ref, evaluation_status (evaluated/not_evaluated), truth (T/F/U, required
++only if evaluated), declared_input_refs, reason_code, reason_evidence_refs and
++validation_issues. reason_code is included_by_policy/excluded_by_policy/
++metadata_unknown/metadata_invalid/ancestor_excluded/ancestor_unresolved.
++False/U entries require reason evidence/diagnostics; not_evaluated entries forbid
++truth and include decisive_ancestor_ref referencing the
++decisive ancestor instead. A Profile target has one level, RuleSet target two,
++Rule target three; no fabricated child policy/result for a Profile-level trace.
++
++ExecutionCoverage keeps excluded and unresolved obligations separately with their
++applicability_trace_refs; RuleEvaluation/Decision retain corresponding traces and
++skipped/blocked Rule refs. Zero obligations is not_applicable only when every
++relevant exclusion is proven; any required unresolved branch prevents definite
++no_violation. Mandatory scanning covers the complete configured hierarchy and
++records ancestor-based exclusions/blocks even when no Object exists. It does not
++run a Rule condition behind a false/unknown required gate. D09 no_hits semantics,
++collect_all and valid violations under partial coverage are unchanged.
++
++The workflow evaluates the Profile metadata gate after N01 context resolution,
++before including the Profile in N02's catalogue; N01 itself remains a Context
++Builder. RuleSet/Rule gates control decision obligations, not N05 ToolPlan selection.
++N05 retains its own pre-bound plan and declared context/Fact guards; a decision
++exclusion cannot retroactively select or cancel Tool steps.
++
+ ### 3.9 ModelBinding
+ 
+ Separates logical capability from actual provider/deployment.
+@@ -216,6 +273,56 @@
+ - allowed deployment/version constraints
+ 
+ Credentials are never part of a ModelBinding or Bundle.
++
++### 3.9.1 F02 — Remote Primary and explicit local exceptions
++
++ProviderPolicy has routing_mode=remote_primary/local_primary_exception,
++primary_deployment_id, deployments[] and selection=primary_then_explicit_fallback.
++All fields are explicit: primary_deployment_id identifies exactly one registered
++DeploymentRequirement; other entries are fallback-only, not automatic eligible
++alternatives. remote_primary requires that primary's provider_kind=remote.
++An unavailable/timed-out primary produces a failure unless FallbackPolicy
++explicitly permits that trigger and exact from/to transition; order alone never
++authorizes switching models, providers or deployment versions. A retry of the same
++approved deployment is not permission for a model-changing fallback.
++If several transitions are explicitly permitted for the actual trigger, target
++order follows deployments[] only within that authorized, compatible and evaluated
++set; list order never grants permission or bypasses the checks.
++
++local_primary_exception requires a local primary and a LocalPrimaryException:
++exception_id/version, applicable_capabilities[], reason (explicit_local_capability/
++privacy_restriction/unavailable_remote_capability), bounded rationale, approval_ref
++(ReviewReportRef), valid_from and valid_until. It applies only to declared
++ModelBinding capabilities and approved validity/scope; absence, expiry or mismatched
++capability rejects the local-primary configuration. Approval is verified against
++trusted Runtime review authority at admission; Bundle text is not self-approval.
++valid_from/valid_until are aware UTC timestamps with valid_from < valid_until.
++remote_primary forbids this exception field. This candidate shape permits review
++of exceptions; no local-primary exception is approved by R2.1.
++
++Every fallback transition requires exact IO contract compatibility and independent
++quality evaluation with versioned ReviewReportRef covering source/target model,
++capability and approved scope. A timeout cannot create an exception or evaluation.
++ModelInvocation records configured_provider (ConfiguredProviderIdentity: binding_ref,
++provider_policy_ref, primary_deployment_id, provider_id, provider_kind, logical_model_id), and
++actual_provider (ActualProviderIdentity: provider_id, deployment_id, provider_kind,
++model_id, model_version when resolved, version_resolution=reported/registry_verified/unavailable
++and evidence/reason). A
++ProviderRouteTrace records selected deployment, routing_mode, optional exception
++identity, fallback_policy_ref, trigger and evaluated transition when used.
++Its route_kind=primary/fallback determines fields: fallback requires from/to
++deployment IDs, normalized trigger_error and evaluation_refs; primary forbids
++fallback-trigger fields. DeploymentRequirement includes provider_id explicitly.
++actual_provider is absent only before dispatch/no dispatch; unresolved actual
++model_version is explicitly unavailable with reason, never copied from the
++configured expected version. Attempt/provider request IDs preserve actual calls.
++
++This is Model Gateway routing, not Tool Worker scheduling. SAM3/geometry/local
++vision Tools run under their ToolDefinition, implementation allowlist and resource
++budgets; they do not require a Remote Primary model call or LocalPrimaryException.
++If a Tool explicitly invokes the Model Gateway through a ModelBinding, that nested
++gateway call follows its own ProviderPolicy and is independently audited. Tool
++weights/CPU/GPU placement alone do not imply a gateway routing decision.
+ 
+ ## 4. Runtime records
+ 
+@@ -290,13 +397,32 @@
+ 
+ ### 4.5 ToolExecution
+ 
+-Records one actual Tool invocation:
+-- Tool ref and actual implementation version
+-- input/output references and digests
+-- Object/Execution scope
+-- Attempt and status
+-- timing, resource usage and error class
+-- generated Fact references and Evidence references
++Records one actual Tool invocation, with explicit schema_version,
++tool_execution_id, execution_id, profile_ref, tool_ref, node_run_ref, attempt_ref,
++input_refs, output_refs (immutable typed refs/digests), actual_implementation_version,
++scope (execution/object), status/timing/resource/error provenance,
++generated_fact_refs, evidence_refs and invocation_origin. object_ref is required
++only for object scope. Runtime refs and actual implementation are not interchangeable
++with definition ContentRefs. All parent execution/node/Attempt/Profile identities
++must agree. Actual version is recorded when resolved; before dispatch it is absent
++with implementation_version_resolution=not_dispatched. Other unresolved cases use
++implementation_version_resolution=unavailable plus reason; resolved requires the
++actual version. It is never an invented placeholder or configured expected version.
++
++invocation_origin is a discriminated union:
++
++| Origin branch | Required fields / parent identity | Output/Fact invariants |
++|---|---|---|
++| GroundingBindingOrigin, kind=grounding_binding | node_id=N03; grounding_binding (ToolGroundingBinding) must equal pinned Profile binding and common tool_ref; scope=execution, profile_ref fixed, object_ref forbidden (Objects do not exist yet) | normalized grounding outputs/evidence feed GroundingRecord; generated_fact_refs must be empty; no ToolPlan step/declaration identity |
++| ToolPlanStepOrigin, kind=tool_plan_step | node_id=N05; tool_plan_ref, step_id, producer_declaration_ids[]; pinned Profile.tool_plan_ref and step.tool_ref agree with common refs; V1 scope=object with object_ref | named outputs map via matching FactProducerDeclaration; failure/evidence-only step may yield no Facts; cannot claim GroundingRecord as automatic Tool Fact |
++
++The owning node_run_ref must have the branch's node_id, and attempt_ref must
++belong to that actual invocation under the same node. Retries have new identities;
++tool_execution_id cannot identify both origins. N03 produces GroundingRecord and
++Object refs; N05 independently executes its bound step, even when tool_ref is the
++same as N03. N05 producer/Fact source must reference a tool_plan_step invocation;
++no implicit cache/reuse/producer promotion of N03 localization. WP-01 models this
++union and reference invariants only, not Tool execution or scheduling (F05).
+ 
+ ### 4.6 EvidenceAsset
+ 
+@@ -596,10 +722,11 @@
+ mandatory_question_refs, proposed_optional_question_refs, selected_optional_question_refs,
+ effective_question_refs, excluded_question_reasons[], method
+ (all_declared/context_rules/model_advisory/fallback), context_snapshot_ref/digest,
+-node_run_id/attempt_id, optional model_invocation_ref, structured validation_issues,
++node_run_id/attempt_id, discovery_model_invocation_ref, conditionally required
++model_invocation_ref (see F03 below), structured validation_issues,
+ fallback_applied and created_at. Reasons are bounded model-reported metadata,
+ not proof of truth or hidden reasoning. Context rules have exact policy refs;
+-model proposals reference the actual N02 invocation (same request when possible),
++model proposals reference the actual N02 invocation (shared by explicit policy),
+ not unverifiable confidence alone. Ordered effective set follows Profile catalogue
+ order, has no duplicates and is nonempty for a hit Profile. ProfileHit stores
+ question_selection_ref + effective_question_refs, and any repeated set must match.
+@@ -619,6 +746,69 @@
+ explains non-evaluation. Optional-dependent advisory Rules may be blocked/unknown
+ without converting their omitted Facts to false. Unknown context eligibility
+ cannot demote a mandatory Question.
++
++### 11.1 F03 — selection evidence branches and explicit extra calls
++
++QuestionSelectionRecord is discriminated by method; common fields above remain.
++discovery_model_invocation_ref identifies the actual N02 discovery invocation
++supporting the trustworthy ProfileHit, not a fictitious selection call. A selection
++record cannot invent a hit after complete discovery transport/association failure.
++That failure remains an N02 Attempt diagnostic without a fabricated ProfileHit.
++
++| method | Selection-call fields | Required evidence / constraints |
++|---|---|---|
++| all_declared | model_invocation_ref and selection_invocation_mode forbidden | configured complete set + pinned policy/context; fallback_applied=false; discovery still has its own real audit |
++| context_rules | model_invocation_ref and selection_invocation_mode forbidden | declared context-rule refs and deterministic reasons; fallback_applied=false; no selection model call |
++| model_advisory | model_invocation_ref and selection_invocation_mode required | actual ModelInvocation with optional_question_proposal purpose, same execution/N02/Profile proposal association, actual Attempt/provider audit; fallback_applied=false |
++| fallback | model_invocation_ref and selection_invocation_mode forbidden; fallback_evidence required, fallback_applied=true | triggered_method, trigger_attempt_ref, fallback_reason, diagnostic_refs and dispatched (bool); trigger_invocation_ref required iff dispatched, otherwise forbidden; never label a fallback result as an accepted model proposal |
++
++FallbackSelectionEvidence.triggered_method is context_rules/model_advisory;
++fallback_reason is context_unknown/selection_review_unavailable/invalid_proposal/
++selection_transport_failure/additional_budget_unavailable. The actual failed
++operation/Attempt or failed selection-validation subresult is preserved. A partial
++selection validation failure does not rewrite a successful transport Attempt as
++failed. If a shared N02 response has trustworthy ProfileHit association but invalid
++Question proposals, fallback may include all optional Questions under the pinned
++policy. An entire invalid discovery envelope cannot be repaired into a hit.
++Fallback retains configured call policy/mode, the failed proposal/diagnostics and
++actual invocation ref when one exists; it cannot reference the successful discovery
++call as the trigger of an undispatched failed context/extra-call operation.
++
++QuestionSelectionPolicy.selection_call_policy is required only when
++optional_source=model_advisory; it is otherwise forbidden. SelectionCallPolicy is
++the union of SharedN02SelectionCallPolicy and AdditionalSelectionCallPolicy:
++- mode=shared_n02: no additional-call fields. Recommend this mode; both Profile
++  discovery and optional proposals come from the same N02 ModelInvocation.
++  model_invocation_ref must equal discovery_model_invocation_ref and that invocation
++  records both purposes (profile_discovery, optional_question_proposal).
++- mode=explicit_additional: requires proposal_binding_ref (ContentRef[model_binding],
++  profile_discovery-compatible proposal contract), additional_resource_requirements_ref
++  (ContentRef[policy], ResourceRequirements) and positive bounded
++  max_additional_invocations_per_execution (including retries). It requires explicit
++  configuration approval, not an implicit repair call. Each actual additional call
++  has a distinct invocation ID, purpose=optional_question_proposal, its own Attempt,
++  provider/version/request evidence and a link to the supporting discovery invocation.
++  A different mode/ref/budget or unregistered additional call is invalid.
++
++The named union branches are AllDeclaredSelectionRecord, ContextRuleSelectionRecord,
++ModelAdvisorySelectionRecord and FallbackSelectionRecord. ModelAdvisorySelectionRecord
++fields (the method=model_advisory QuestionSelectionRecord
++branch) record selection_invocation_mode=shared_n02/explicit_additional matching
++the pinned policy. No automatic extra call is permitted for all_declared,
++context_rules or fallback. Exhausted/absent additional budget takes the configured
++conservative fallback/block path; it does not silently spend another request.
++N03/N04 inherit the same effective set; one Object still has one normal joint N04
++request. WP-01 defines this union and reference validation, not an N02 call engine.
++
++ModelInvocation.purposes is a nonempty closed set of profile_discovery/
++optional_question_proposal/object_grounding/object_observation/candidate_prediction/
++vision_auxiliary, constrained by its ModelBinding capability. An explicit additional
++proposal invocation requires source_discovery_invocation_ref (distinct real ID);
++a shared invocation has both purposes and no self-referencing source field.
++ProfileHit.invocation_ref agrees with discovery_model_invocation_ref; proposal and
++fallback references are validated against actual recorded execution/node/Attempt
++associations, not merely syntactically valid IDs. Finite fixtures do not prove a
++real provider call occurred.
+ 
+ ## 12. Facet–Schema and reuse checks (D13)
+ 
+@@ -636,6 +826,80 @@
+ Question/FactSchema version or identity; (6) producer and FactSelector resolve the
+ same exact Schema, including Record field paths. Shape equality is insufficient.
+ WP-01 checks finite injected definitions; full Bundle graph checking is WP-02.
++
++### 12.1 F04 — independent TypeDefinition projection to value_schema
++
++FactSchemaDefinition adds required value_schema_generation
++(ValueSchemaGenerationSpec): projection_profile_version, generator_id,
++generator_version, schema_dialect=2020-12, canonicalization_id=JCS and global_limits
++(GlobalTypeLimits: string_max_length, list_max_items, record_max_fields, max_depth,
++all explicit positive bounded integers within approved contract limits). It is a
++closed data record, not executable code.
++Only the registered projection profile is accepted. No environment-global mutable
++limits, parent identity/digest or installed-library-default options are inputs.
++
++TypeDefinitionProjection is the following normalized, finite type tree:
++- Keep only kind and payload constraints: bool; integer/finite-number bounds;
++  string min_length/max_length; enum unique string members; list item type and
++  min_items/max_items; Record fields (name, required, recursively projected type).
++  Payload `kind` tags are part of this projection and agree with typed Value models.
++  Numeric bounds are inclusive minimum/maximum when supplied; they must preserve
++  exact meaning under canonical serialization or reject, never round silently.
++- Fill omitted structural size lower bounds (string/list only) with 0 and omitted upper size bounds with
++  the explicit global_limits; do not invent business enum members or values.
++  Record field required flags and item/field types must be explicit, not inferred.
++  Duplicate fields/members, nonfinite numbers, inconsistent/over-limit constraints,
++  recursive types, unsupported keys or arbitrary schema/code refs reject input.
++- Sort Record fields by UTF-8 byte order of exact field names and enum members
++  by UTF-8 byte order of their exact strings (no locale-dependent sorting);
++  nested bounds normalize identically. Record fields are closed (extra forbidden).
++  No arbitrary Unicode/text rewriting or unit conversion is performed. Semantic
++  enum identity remains a Registry/Fact-envelope check, not a parent-digest literal
++  inside the generated payload Schema.
++- Exclude parent schema_version/schema_id/version, semantic_key, producer/scope/policy metadata,
++  payload_schema_ref, timestamps, parent ContentRef/digest and Bundle digest.
++  They are not payload type constraints. If a value-level unit/dimension is needed,
++  it must be an explicitly declared payload Record field, not an ambient input.
++
++ValueSchemaGenerationInput contains only normalized TypeDefinitionProjection plus
++ValueSchemaGenerationSpec. For fixed generation spec, semantically identical
++normalized trees must emit identical Schema content and canonical UTF-8 bytes,
++regardless of Record/member source order or parent definition metadata. Generator
++version/profile/limits are explicit inputs; changing them requires compatibility
++analysis and may change the output. No current implementation is asserted.
++
++Generation mapping is data, not a hand-maintained parallel Schema: each type emits
++a closed object with required kind/value, kind.const fixed to the registered Value
++tag; value is boolean/integer/number/bounded string/closed enum/array/closed Record
++as appropriate. Record properties recursively contain the projected typed Value
++schemas, required names follow explicit flags, and all extra fields are forbidden.
++Finite JSON parsing and constraints remain mandatory; cross-Fact identity and
++status/scope/producer rules stay outside this payload Schema. Nested types are
++inlined deterministically; no parent `$ref` is emitted.
++
++The projection contract fixes `$schema` to 2020-12. If `$id` is emitted, it is
++`urn:jimu:value-schema:<projection_profile_version>:<input_sha256>` where input_sha256
++is over canonical ValueSchemaGenerationInput, not the generated Schema's own hash.
++The profile fixes this emission mode (V1 emits that `$id`); no random titles,
++timestamps, path-dependent definitions or parent name/version/digest are injected.
++
++Required dependency order:
++1. Normalize the type tree and form independent generation input.
++2. Generate canonical value_schema bytes; compute its independent SHA-256 under
++   the artifact digest contract, and assign its versioned inventory identity from
++   the generation input (not the parent).
++3. Set FactSchemaDefinition.payload_schema_ref to that exact ContentRef[value_schema].
++4. Only then canonicalize/hash the complete FactSchemaDefinition. Neither child
++   bytes nor its generation input contains the parent's resulting digest.
++
++Multiple parent definitions with the same normalized type and generation spec can
++share one value_schema; semantic meaning/scope/producer compatibility is still
++checked by exact FactSchema refs, never replaced by shape equality. Bundle compiler
++and admission must reject a supplied payload_schema_ref whose bytes do not match
++this derivation. WP-01 defines projection/generation models, generated payload
++Schema content and repeatability/negative CPU contract tests after authorization;
++it does not implement canonical Bundle packaging/root hashing/signatures or graph
++admission. Those complete artifact/Bundle digest operations remain WP-02.
+ 
+ ## 13. Fact producer, output mapping and authority contracts
+ 
+@@ -789,8 +1053,8 @@
+ 
+ | Policy / scope / purpose | Required fields and enum values | Optional fields / default rule | Validation and execution effect |
+ |---|---|---|---|
+-| ApplicabilityPolicy; Profile/Rule/RuleSet | input_domain=rule_applicability; context_allowlist[]; identity_constraints[] (IdentitySelector[profile/region]); condition_ast; on_unknown=block | description only; no default. Empty identity_constraints means unrestricted identity within declared scope, not absent policy | Context/Region/Profile metadata only; no Object Facts/selection/candidates. False skips with proof; U blocks/unresolved; true includes obligation |
+-| QuestionSelectionPolicy; Profile/N02 | mode=all_declared/mandatory_plus_optional; mandatory_question_refs[]; optional_question_refs[]; optional_source=all/context_rules/model_advisory; fallback=include_all_optional/block_profile; ordering=profile_order | context_selection_rules[] required iff context_rules (question_ref + ApplicabilityPolicy ref); proposal_schema_ref (response_schema) and selection_review_ref (ReviewReportRef) required iff model_advisory; no default mode | Disjoint exhaustive partition; all_declared requires optional_source=all; required producer Questions mandatory. Invalid/uncertain optional selection or unavailable/inapplicable independent selection review applies fallback, never drops mandatory |
++| ApplicabilityPolicy; Profile/Rule/RuleSet | input_domain=rule_applicability; context_allowlist[]; identity_constraints[] (IdentitySelector[profile/region]); condition_ast; on_unknown=block | description only; no default. Empty identity_constraints means unrestricted identity within declared scope, not absent policy | Context/Region/Profile metadata only; no Object Facts/selection/candidates. F01 ordered Profile→RuleSet→Rule gates; false excludes with evidence, active U blocks descendants; no U-to-F conversion |
++| QuestionSelectionPolicy; Profile/N02 | mode=all_declared/mandatory_plus_optional; mandatory_question_refs[]; optional_question_refs[]; optional_source=all/context_rules/model_advisory; fallback=include_all_optional/block_profile; ordering=profile_order | context_selection_rules[] required iff context_rules (question_ref + ApplicabilityPolicy ref); proposal_schema_ref (response_schema), selection_review_ref (ReviewReportRef) and selection_call_policy (F03) required iff model_advisory; no default mode | Disjoint exhaustive partition; all_declared requires optional_source=all; required producer Questions mandatory. Invalid/uncertain optional selection or unavailable/inapplicable independent selection review applies fallback, never drops mandatory |
+ | UnknownPolicy; Question Fact | insufficient_visibility=unknown; transport_failure=no_fact; envelope_failure=no_fact; item_validation_failure=error; non_known_value=forbidden; reason_required=true | none; no defaults | Preserve distinctions and original diagnostics, no implicit false/null known value |
+ | QuestionValidationPolicy; Question/N04 | coercion=forbid; extra_fields=forbid; association=exact_question_ref; missing_item=error; invalid_record=whole_fact_error; sibling_retention=trusted_envelope_only | max_string_chars/max_items may tighten global bounds; no implicit widening | Validate each primary Fact independently only if association trustworthy; cannot invent per-Question follow-up calls |
+ | EvidencePolicy; Question/Tool/Rule | required_evidence_types[]; allowed_evidence_types[]; on_missing=block_result; original_media_required (bool); retention_class; retention_duration_seconds; access_scope=project/task | transform_required_for_derived=true required when derived types allowed; no default class/required types | Required subset allowed; hash/MIME/scope/transform provenance required; unavailable mandatory evidence yields uncertain, never negative evidence. Retention duration/inspection-specific evidence set OPEN until business config approved |
+@@ -798,7 +1062,7 @@
+ | ToolFailurePolicy; ToolPlan step | requirement=required/optional; required_descendants=block; fact_failure=error; optional_continuation=allow_if_consumer_policy/block | none; no defaults | Required evidence absence remains explicit; optional continuation cannot produce definitive mandatory result with missing required inputs |
+ | ToolSkipPolicy; ToolPlan step | condition_ast (tool_condition) or explicit literal true; on_false=skip_with_reason; on_unknown=block; on_missing_input=block | none; no defaults | Context + declared validated upstream Facts only; no Candidate/Decision; skipping required producer cannot erase mandatory coverage |
+ | ResourceRequirements; model/tool/execution | resource_class=cpu/remote/gpu; max_concurrency; timeout_ms; input_byte_limit; output_byte_limit | gpu_memory_limit_bytes + worker_pool_id required iff gpu; remote_quota_id required iff remote; no guessed capacity | Strict positive limits; deployment admission must validate values, not assume RTX4090 capacity; CPU core does not load workers |
+-| ProviderPolicy; ModelBinding | deployments[] (ordered nonempty DeploymentRequirement: deployment_id, provider_kind=remote/local, actual_version_constraints, required_features[]); selection=ordered_first_eligible | none; no default deployment/URL | Resolve only trusted registered deployments, maintain configured vs actual identity; moving to another entry needs explicit FallbackPolicy permission |
++| ProviderPolicy; ModelBinding | routing_mode=remote_primary/local_primary_exception; primary_deployment_id; deployments[] (nonempty DeploymentRequirement: provider_id, deployment_id, provider_kind=remote/local, actual_version_constraints, required_features[]); selection=primary_then_explicit_fallback | local_primary_exception (LocalPrimaryException) required iff local mode, otherwise forbidden; no default route/URL | Remote primary required in remote mode; all other entries fallback-only. Local primary needs reviewed capability-scoped exception. Timeout/order never authorizes switching; exact compatible evaluated transition required (F02) |
+ | FallbackPolicy; ModelBinding | mode=disabled/explicit_evaluated; trigger_errors[] (transport/timeout/rate_limit/unavailable); allowed_transitions[] (from/to deployment IDs); contract_compatibility=exact | evaluation_refs[] required iff explicit_evaluated; disabled requires empty triggers/transitions; no default fallback | All endpoints declared in ProviderPolicy; each transition independently reviewed/evaluated; no unreviewed model substitution or Fact coercion |
+ | RulePolicy; Rule | mandatory (bool); missing=unknown; unknown=unknown; error=unknown; not_applicable=unknown; not_evaluated=unknown; required_guard=block_unavailable; scan=all_mandatory; true_result=violation; false_result=no_violation; unknown_result=uncertain | none; no default mandatory flag | Applicability false is separate; T/F/U plus guard before effective result; all required Facts/evidence available for definitive Rule result |
+ | ConflictPolicy; RuleSet | mode=collect_all; early_exit=false; category_dedup=set; preserve_rule_refs=true | none; no default | Keep all valid matches/provenance. Exclusive/priority winner modes unsupported V1 |
+--- before/specs/02_Runtime_Bundle_Specification_V1.0.md
++++ after/specs/02_Runtime_Bundle_Specification_V1.0.md
+@@ -3,11 +3,11 @@
+ **Status:** Proposed normative delivery contract  
+ **Depends on:** Runtime Domain Model V1.0
+ 
+-**Review revision:** WP-00-R2. These clarified contracts are PROPOSED /
++**Review revision:** WP-00-R2.1. These clarified contracts are PROPOSED /
+ PENDING_USER_APPROVAL. WP-01 defines domain contracts only; packaging, closure
+ admission, digest calculation and signing implementations remain WP-02.
+-R1 source commit: `46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`.
+-R1 bytes: `planning/review_evidence/WP-00-R2/before/`; R1 audit unchanged.
++R2 source commit: `40af8a17855b27063da94b3c9891272f3e3fc4e3`.
++R2 bytes: `planning/review_evidence/WP-00-R2.1/before/`; R1/R2 audit unchanged.
+ 
+ ## 1. Purpose
+ 
+@@ -62,6 +62,14 @@
+ fact_schema artifacts are registry definitions; value_schema artifacts are their
+ generated payload schemas. Both are pinned and included, never hand-divergent.
+ 
++F04 generation is defined in 01 §12.1. ValueSchemaGenerationInput is the normalized
++type projection + explicit generation spec only. Generate value_schema content and
++its independent digest first, then set FactSchemaDefinition.payload_schema_ref,
++then hash that parent. No child input, `$id`, `$ref` or bytes include the parent's
++identity/digest or Bundle digest. The input-derived `$id` is not a self-digest.
++Two parents with the same normalized type/spec may share one payload Schema;
++semantic compatibility still uses exact FactSchemaDefinition refs.
++
+ Each declared reference must resolve within this immutable package, including
+ prompt partials, response schemas, context schemas, Tool IO schemas, vocabularies,
+ policy resources, geometry and static assets needed for execution. Optional
+@@ -128,6 +136,10 @@
+ 8. Validate Rule required Facts have valid producers and compatible schemas.
+ 9. Validate Rule AST operator and operand types.
+ 10. Validate ModelBinding capabilities and configured fallback policy.
++    Require ProviderPolicy.primary_deployment_id and remote_primary constraints
++    (01 §3.9.1), or an explicit trusted capability-scoped LocalPrimaryException.
++    Validate each fallback transition's exact contract and independently reviewed
++    quality report; an ordered eligible local deployment is never sufficient.
+ 11. Validate scene/Region applicability.
+ 12. Validate Runtime capability compatibility.
+ 13. Package files and calculate integrity data.
+@@ -157,6 +169,19 @@
+ schemas, response contracts, vocabulary/static assets and producer declarations;
+ type names alone do not constitute resources. The capability/path table is the
+ single authority for allowed ArtifactKinds; unknown required kind rejects.
++
++R2.1 adds no ArtifactKind or resource-directory change. SelectionCallPolicy's
++explicit additional binding/resource refs, local-primary exception approval refs,
++and generation spec must be included/validated under their existing artifact or
++trusted external-review categories. Selection runtime Invocation/Attempt evidence
++and ToolExecution origins are runtime records, not missing Bundle resources.
++
++Compiler/admission independently regenerate payload Schema from the declared
++projection/profile/generator inputs and compare exact canonical content/digest to
++payload_schema_ref; parent back-references or drift reject. Fixed-generation-input
++repeatability and projection/Schema contracts belong to authorized CPU WP-01
++work; complete artifact graph digest resolution, file inventory/root hash,
++signatures and admission remain WP-02. No digest implementation/test ran in R2.1.
+ 
+ ## 6. Runtime admission
+ 
+--- before/specs/03_Six_Node_Execution_Contract_V1.0.md
++++ after/specs/03_Six_Node_Execution_Contract_V1.0.md
+@@ -4,11 +4,11 @@
+ **Input:** One RGB image per Task  
+ **Orchestration:** Deterministic state machine
+ 
+-**Review revision:** WP-00-R2, PROPOSED / PENDING_USER_APPROVAL.
++**Review revision:** WP-00-R2.1, PROPOSED / PENDING_USER_APPROVAL.
+ WP-01 builds data contracts/static type checks and CPU-only tests, not node,
+-workflow or Rule evaluation execution. R1 source commit is
+-`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`; before bytes are in
+-`planning/review_evidence/WP-00-R2/before/`. R1 historical evidence is unchanged.
++workflow or Rule evaluation execution. R2 source commit is
++`40af8a17855b27063da94b3c9891272f3e3fc4e3`; before bytes are in
++`planning/review_evidence/WP-00-R2.1/before/`. R1/R2 historical evidence is unchanged.
+ 
+ ## 1. Global invariants
+ 
+@@ -103,6 +103,17 @@
+ context, proposal, validation and actual invocation; no model-reported reason is
+ treated as truth. N02 still emits no instance identifiers or boxes.
+ 
++F03 (01 §11.1): all_declared/context_rules records have no selection
++model_invocation_ref; discovery_model_invocation_ref still audits real discovery.
++model_advisory requires a real proposal invocation: prefer shared_n02, with the
++same ID as discovery and both invocation purposes. A separate optional-proposal
++call requires explicit_additional policy, exact binding/resource refs, a bounded
++additional-call budget including retries, distinct invocation/Attempt identity and
++actual provider audit. It is not a hidden repair. FallbackSelectionEvidence records
++triggered method, actual failed operation/Attempt, reason and diagnostic refs, plus
++trigger_invocation_ref iff dispatched; no fabricated call when selection failed
++before dispatch. Whole discovery failure does not become a ProfileHit by fallback.
++
+ ## 5. N03 — Grounding
+ 
+ Inputs:
+@@ -118,6 +129,7 @@
+ - visualization/evidence references;
+ - explicit per-Profile grounding status, including no-target, failed and partial.
+ - GroundingRecord producer branch model/tool, with corresponding ModelInvocation/ToolExecution provenance; no fake model invocation for tool-only localization.
++- ToolExecution.invocation_origin.kind=grounding_binding, node_id=N03, same execution/Profile/binding and actual Attempt; object_ref absent, generated_fact_refs empty (F05, 01 §4.5).
+ 
+ Rules:
+ - Ground each Profile independently.
+@@ -222,6 +234,14 @@
+ pinned revisions, not the last stored Fact. WP-01 models the records and static
+ paths only; execution/persistence enforcement remains later WPs.
+ 
++Every N05 ToolExecution has invocation_origin.kind=tool_plan_step with tool_plan_ref,
++step_id and matching producer_declaration_ids, node_run_ref=N05 and actual attempt_ref,
++object_ref, input/output refs and resolved actual implementation version. The same
++tool_ref called in N03 and N05 has distinct tool_execution_id/origin/Attempt audit.
++N03 localization output feeds GroundingRecord; only N05's declared step origin can
++produce mapped Tool Facts for FactProducerDeclaration. Tool reuse never promotes
++N03 output to N05 evidence/authority silently. No Tool runtime is built in WP-01.
++
+ ## 8. N06 — Candidate Prediction and Rule Decision
+ 
+ ### 8.1 Candidate prediction
+@@ -245,6 +265,20 @@
+ Question primary output or named Tool step output and declared Record field_path;
+ actual operands use pinned authoritative selection revisions. Tool guards may use
+ validated upstream Facts and context, never Candidate/Decision (01 §13.3/14).
++
++F01 hierarchy is Profile AND RuleSet AND Rule, evaluated in that parent-first
++order on the same pinned ContextSnapshot (01 §3.8.1). Profile false excludes that
++Profile's obligations with trace; RuleSet false skips only its Rules; Rule false
++records the specific Rule exclusion. Unknown at any active required gate blocks
++that branch as unresolved; descendants are not_evaluated with ancestor reason,
++never false. A lower false diagnostic cannot erase a required unknown parent.
++Only T/T/T enters condition evaluation. Strong-Kleene AST logic within each gate
++is unchanged, with the conservative required-gate guard applied separately.
++No gate reads Object Facts, N02/N06 candidates or Decisions. ApplicabilityTrace
++records per-level target/policy/input refs, evaluation status, truth when evaluated,
++reason/evidence, decisive ancestor and effective disposition. Mandatory scanning
++retains skipped/blocked refs even for empty-object branches via ExecutionCoverage.
++RuleSet/Rule exclusions do not change N05's independently bound ToolPlan.
+ 
+ Rule Engine:
+ 1. resolve RuleSet and applicability;
+--- before/specs/04_Runtime_Technical_Architecture_V1.0.md
++++ after/specs/04_Runtime_Technical_Architecture_V1.0.md
+@@ -4,15 +4,15 @@
+ **Deployment:** Single RTX 4090 server, Docker Compose  
+ **Inference:** Hybrid, remote-first
+ 
+-**WP-00-R2 scope clarification (PROPOSED / PENDING_USER_APPROVAL):** WP-01 is
++**WP-00-R2.1 scope clarification (PROPOSED / PENDING_USER_APPROVAL):** WP-01 is
+ limited to Domain Model, an in-memory Fact Schema Registry, Rule AST static type
+ checking, generated JSON Schema and CPU-only tests. None of the services below,
+ Rule runtime evaluation, Bundle compiler/admission, Provider adapters or durable
+ scheduling is part of WP-01. CPU-only dependency compatibility/lock is a separate
+ candidate from the later GPU worker matrix; no GPU compatibility is claimed by
+ contract tests. This revision authorizes document changes only. Original bytes
+-for R1 are retained under `planning/review_evidence/WP-00-R2/before/` (baseline
+-`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`). R1 audit is unchanged.
++for R2 are retained under `planning/review_evidence/WP-00-R2.1/before/` (baseline
++`40af8a17855b27063da94b3c9891272f3e3fc4e3`). R1/R2 audit is unchanged.
+ 
+ ## 1. Architecture shape
+ 
+@@ -83,13 +83,28 @@
+ 
+ ## 4. Remote-first hybrid inference
+ 
+-- Remote API is primary where configured and quality/cost/privacy policy permits.
++- Model Gateway routing requires an explicit Remote Primary deployment under ProviderPolicy.routing_mode=remote_primary; routing begins with that primary, not the first eligible entry of any provider kind.
+ - Local vLLM is used only for explicitly assigned capabilities, approved fallback, privacy-sensitive workloads or unavailable remote capability.
+ - Do not silently substitute a different model.
+ - Fallback requires compatible schema, validated quality and explicit policy.
+ - Record configured binding and actual invocation separately.
+ - Secrets are injected at deployment and never enter Bundle or logs.
+ - Remote requests need timeout, bounded retries, rate limits, request IDs and provider error normalization.
++
++F02: local_primary_exception requires a capability-scoped, validity-bounded and
++externally approved LocalPrimaryException (01 §3.9.1). It is an explicit architecture
++exception, never inferred from a timeout, outage, lower cost or idle GPU. Other
++configured deployments are fallback-only; the exact transition must be authorized
++for its trigger, IO compatible and independently quality-evaluated. No silent model
++change after timeout. ModelInvocation stores configured_provider, actual_provider
++and ProviderRouteTrace including the exception/transition evidence when relevant;
++unknown actual versions are labelled unavailable, not copied from configuration.
++
++SAM3/geometry/local vision Tool placement follows ToolDefinition/worker budgets,
++not model-provider primary order. A local Tool does not need to call a cloud model
++first or obtain a Model Gateway exception solely for its GPU/CPU placement. Only
++an explicitly nested ModelBinding gateway call follows that binding's routing
++policy. WP-01 models these contracts; no routing, Tool scheduler or real API is run.
+ 
+ ## 5. RTX 4090 resource management
+ 
+--- before/planning/ARCHITECTURE_DECISIONS.md
++++ after/planning/ARCHITECTURE_DECISIONS.md
+@@ -133,3 +133,29 @@
+   precedence and spatial ownership remain UNVERIFIED or later-WP OPEN as before.
+ - Approve D01–D15/current candidate revision and the bounded WP-01 work package
+   separately from dependency/test execution. R2 itself authorizes documents only.
++
++## WP-00-R2.1 — F01–F05 limited closure
++
++Baseline: main / `40af8a17855b27063da94b3c9891272f3e3fc4e3`.
++This revision refines five existing contracts only; it creates no D16/new
++architecture programme. All D01–D15 remain **PROPOSED / PENDING_USER_APPROVAL**.
++ADR-004 cloud-first is already CONFIRMED; F02 supplies its missing contract
++enforcement, without approving a local-primary exception or changing D status.
++R1/R2 historical audit directories and decision history remain unchanged.
++
++| Closure | Affected decisions | Candidate clarification / approval gate |
++|---|---|---|
++| F01 | D03/D04/D09 | Profile AND RuleSet AND Rule, parent-first trace; active required UNKNOWN blocks, never becomes false; context metadata only. Scope/trace semantics await contract approval |
++| F02 | ADR-004, D11 | Remote Primary required for normal gateway routing; fallback needs exact transition/contract/independent quality evidence. Local Primary requires separately approved capability-scoped validity-bounded exception. Tool Worker scheduling is separate |
++| F03 | D12 | Selection methods have conditional evidence; model_advisory requires a real ModelInvocation, preferably the shared N02 call. Additional call only under explicit binding/budget/identity/audit; fallback retains actual failed operation/Attempt/reason |
++| F04 | D02/D07 | Independent normalized TypeDefinition projection + fixed generation spec; value_schema gets content/digest before parent ref/digest; no parent input. WP-01 schema contracts/generation vs WP-02 complete Bundle integrity stay separate |
++| F05 | D06/D11 | ToolExecution.invocation_origin union grounding_binding/tool_plan_step; N03 GroundingRecord never automatically supplies N05 Fact producers; same Tool calls have distinct origin/Attempt identities |
++
++No decision is promoted to CONFIRMED by this patch. D09 conservative no_hits,
++D12 A/B modes, D13 exact Facet intersection, D15 forward-only membership,
++single primary Question Fact, multiple declared Tool Facts, mandatory full scan,
++collect_all, reference separation and CPU/GPU gates are retained. User approval
++must cover current F01–F05 field/semantics plus bounded WP-01 implementation;
++real fallback/local-primary exceptions additionally need reviewed deployment
++configuration and independent quality evidence, never inferred from approval
++of a schema. No model/Tool routing or Rule execution code is implemented here.
+--- before/planning/WP-01_IMPLEMENTATION_PLAN.md
++++ after/planning/WP-01_IMPLEMENTATION_PLAN.md
+@@ -1,23 +1,25 @@
+ # WP-01 Implementation Plan — Domain Model and Contract Foundation
+ 
+-状态：WP-00-R2 / PROPOSED / PENDING_USER_APPROVAL；本文件不构成实施授权。
+-修订范围：仅文档；基线 main / `46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`。R2 修改前字节归档于 `planning/review_evidence/WP-00-R2/before/`；R1 历史证据禁止修改。
++状态：WP-00-R2.1 / PROPOSED / PENDING_USER_APPROVAL；本文件不构成实施授权。
++修订范围：仅文档；基线 main / `40af8a17855b27063da94b3c9891272f3e3fc4e3`。R2 修改前字节归档于 `planning/review_evidence/WP-00-R2.1/before/`；R1/R2 历史证据禁止修改。
+ 审查日期：2026-11-17（Asia/Shanghai）。工作包：WP-00 Bootstrap Review。  
+ 证据等级：`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。
+ 
+ ## 1. 目标、范围与审批边界
+ 
+-本次仅授权 WP-00-R2 架构契约文档整改及审计证据，计划修改 README、四份规格、计划/ADR/依赖/测试策略/roadmap 共十个文档。禁止代码实现、pyproject、安装依赖、运行测试/服务/模型/GPU/外部 API、改分支、初始化 Git、commit/push；不修改需求平台、AGENTS 或 R1 证据。
++本次仅授权 WP-00-R2.1 的 F01–F05 最后契约闭合及审计证据；只改四份 specs、ADR、本计划、TEST_STRATEGY 共七个文档。不重新规划系统、不新增决策编号。禁止代码实现、pyproject、安装依赖、运行测试/服务/模型/GPU/外部 API、改分支、初始化 Git、commit/push；不修改需求平台、AGENTS、原始分发清单或 R1/R2 证据；不 git reset/restore。
+ 
+ WP-01 的建议目标：建立独立 Runtime 的 Python 包、严格 Pydantic v2 契约、版本与摘要原语、Fact Schema Registry、类型化 Rule AST 及纯类型校验接口、可重复生成的 JSON Schema 和对应测试。WP-01 只建设 Domain Model、内存 Fact Registry、Rule AST 静态类型检查、JSON Schema 生成和 CPU-only 测试。所有建议均为 PROPOSED，用户审批状态保持 PENDING_USER_APPROVAL。
+ 
+ 非目标：Bundle 编译/打包/验签/完整引用闭包解析（WP-02）、数据库或 ORM、API/OpenAPI 服务、持久调度和节点执行器（WP-03）、Provider/Tool 调用（WP-04）、规则运行时求值和真实巡检（WP-05）、回放执行（WP-06）、Compose 部署与 UI。已有 JIMU 需求平台及 V4 不进入依赖图。WP-01 可以定义后续工作包使用的数据结构，不能据此实现相应服务。
+ 
+-审批循环：Plan → Challenge → 用户 Approval → Execute → Verify → Review → Decide。先由用户批准第 10/13 节 D01–D15 决策候选和 WP-01 范围，再明确测试/依赖准备授权，才可实施。本次依据用户授权将冲突修订为一致的候选契约，并保留修改前原文；不能把候选契约视为已批准规范。WP-00-R2 到此只提交可审查文档。
+-
+-## 2. 启动包与仓库证据（初轮历史及 R2 当前基线）
+-
+-R2 实际核对：当前分支 main；HEAD=`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`，初始工作区 clean，origin 指向指定 GitHub 仓库。`git status --short --branch`、`git rev-parse --show-toplevel HEAD`、`git remote -v` 均 exit 0；36 个已跟踪文件。无需 Git 初始化/fetch/pull/reset，本轮均未执行。以下无 Git/环境探测是初轮历史，不是当前状态；R2 未重跑依赖/驱动探测。
++审批循环：Plan → Challenge → 用户 Approval → Execute → Verify → Review → Decide。先由用户批准第 10/13/14 节 D01–D15 决策候选和 WP-01 范围，再明确测试/依赖准备授权，才可实施。本次依据用户授权将冲突修订为一致的候选契约，并保留修改前原文；不能把候选契约视为已批准规范。WP-00-R2.1 到此只提交可审查文档。
++
++## 2. 启动包与仓库证据（R2.1 当前基线及早期历史）
++
++R2.1 开始前实际核对：main / `40af8a17855b27063da94b3c9891272f3e3fc4e3`，工作区 clean，50 个已跟踪文件。`git status --short --branch` 与 `git rev-parse --show-toplevel HEAD` 均 exit 0。无 pull/reset/restore/init/分支操作；以下 R2 和初轮信息仅为历史。
++
++R2 当时核对：分支 main；HEAD=`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`，初始工作区 clean，origin 指向指定 GitHub 仓库。`git status --short --branch`、`git rev-parse --show-toplevel HEAD`、`git remote -v` 均 exit 0；36 个已跟踪文件。无需 Git 初始化/fetch/pull/reset，本轮均未执行。以下无 Git/环境探测是初轮历史，不是当前状态；R2 未重跑依赖/驱动探测。
+ 
+ 已完整依次阅读：`AGENTS.md`、`README.md`、`specs/01` 至 `04` 四份规格书、`planning/ARCHITECTURE_DECISIONS.md`、`DEVELOPMENT_ROADMAP.md`、`DEPENDENCIES.md`、`TEST_STRATEGY.md`，随后阅读非机动车违停目录全部四个文件，再查询 Git 和目录。另核对 `PACKAGE_MANIFEST.json`。
+ 
+@@ -171,31 +173,31 @@
+ | 模型组 | 待冻结模型 | 核心不变量/边界 |
+ |---|---|---|
+ | 基础 | ContractModel、PersistedContract、ArtifactIdentity、ContentRef、IdentitySelector、SchemaRef、RuntimeRecordRef、MediaRef、EvidenceRef、ClockProvenance、TraceContext、ValidationIssue | exact version/digest；错误路径；ContentRef/IdentitySelector 不混用，不把定义引用与运行记录 ID 混用 |
+-| 枚举 | ArtifactKind、PolicyKind、TaskStatus、ExecutionStatus、NodeRunStatus、AttemptStatus、FactStatus、DecisionResult、RuleTruth、CoverageStatus、DiscoveryOutcome、GroundingOutcome、ProducerKind、ScopeKind、NodeId、ReplayKind，以及显式 release/tool/validation 状态 | 原规格分域枚举保持独立；新增枚举值需审批，不复用字符串的含义 |
++| 枚举 | ArtifactKind、PolicyKind、TaskStatus、ExecutionStatus、NodeRunStatus、AttemptStatus、FactStatus、DecisionResult、RuleTruth、CoverageStatus、DiscoveryOutcome、GroundingOutcome、ProducerKind、ScopeKind、NodeId、ReplayKind、ApplicabilityLevel/EvaluationStatus/Disposition、ProviderRoutingMode/RouteKind、SelectionInvocationMode、ToolInvocationOriginKind、ProviderVersionResolution/ImplementationVersionResolution，以及显式 release/tool/validation 状态 | 原规格分域枚举保持独立；新增枚举值需审批，不复用字符串的含义 |
+ | 结构化值 | BoolValue、IntegerValue、NumberValue、StringValue、EnumValue、ListValue、RecordValue 及对应 TypeDefinition | kind 判别；有限类型与约束；无 Any、NaN/Infinity |
+ | Ontology | EntityDefinition、RegionDefinition、AssetRef | 不是 Object；Region 不等于 polygon |
+ | Capability | ProfileDefinition、FacetDefinition、QuestionDefinition、PrimaryFactOutput、ModelGroundingBinding、ToolGroundingBinding、ContextFieldSelector、QuestionSelectionPolicy | Release 固定 catalogue/policy；N02 记录确定集合；Facet 精确交集和 Profile context/scope 校验 |
+ | Tool | ToolDefinition、ToolPlanDefinition、ToolStep、StepDependency、InputBinding、OutputBinding、ConditionalBranch、ResourceRequirements、ToolExecutionPolicy | 已注册 tool；有限 DAG 数据；条件只读合法上下文/Fact；无 N06 依赖 |
+-| Model | ModelBinding、ProviderPolicy、DeploymentConstraint、FallbackPolicy、InvocationBudget、ContractRequirement | 配置身份与实际身份区分；不含 secret/请求任意配置 |
++| Model | ModelBinding、ProviderPolicy、DeploymentRequirement、VersionConstraint、FallbackPolicy、LocalPrimaryException | 配置身份与实际身份区分；不含 secret/请求任意配置 |
+ | Rule | RuleDefinition、RuleSetDefinition、RulePolicy、ConflictPolicy、FactSelector | 完整类型 AST；必需/可选适用性明确；无隐式顺序优先级 |
+ | Bundle/Release | BundleManifest、ArtifactInventoryEntry、SourceProvenance、CompatibilityRequirement、IntegrityEnvelope、ChecksumEntry、AdmissionReceipt、CapabilityReport、ReleaseRecord、ApprovalReceipt、ActivationRecord、ActivationScope | 仅数据契约；根摘要采用 D07 候选字段；技术准入、业务批准、激活分别记录；无编译/验签/激活实现 |
+ | Intake | TaskSubmission、AcceptedTask、MediaAsset、TaskContext、ContextSnapshot、ContextValueProvenance、ExecutionCoverage、ProfileCoverage、MandatoryRuleCoverage、MandatoryRuleObligation | 一个 RGB 图片；可信元数据来源；UTC/时钟；接收请求与已解析 Release 分离 |
+ | Execution | ExecutionRecord、NodeRun、Attempt、ExecutionEvent、ExecutionPins、ConfiguredModelPin、ActualDeploymentIdentity | immutable 输入/config 引用；Attempt 单调编号；不存在的 actual identity 不预填；无持久引擎 |
+ | Perception | ObjectRecord、BBoxXYXY、ImageDimensions、CoordinateSystem、TransformRecord、GroundingRecord、ProfileGroundingResult | 原图坐标、正面积/范围；no_target/failed/partial 分开；Object 仅 execution 内身份 |
+ | Fact | FactRecord、KnownFact、UnknownFact、ErrorFact、NotApplicableFact、NotEvaluatedFact、FactProducer、FactScope、FactResult、AuthoritativeResultSelection、ToolFactOutputDeclaration、ToolFactOutputMapping、FactSelector | status 判别；scope 判别；类型/来源/证据；invalid value 不伪装成 known |
+-| Tool runtime | ToolExecution、ToolAttemptResult、ToolError、ToolResourceUsage | 配置 ref 与实际实现版本；输入输出 digest；failure 非负证据 |
++| Tool runtime | ToolExecution、GroundingBindingOrigin、ToolPlanStepOrigin、ToolResult、ToolOutputState、ToolAttemptResult、ToolError、ToolResourceUsage | 配置 ref 与实际实现版本；输入输出 digest；failure 非负证据 |
+ | Evidence | EvidenceAsset、EvidenceScope、StorageReference、RetentionPolicyRef、AssetStage | 元数据而非大字节；原图/变换关系；只定义 staged/finalized 状态契约，无上传流程 |
+-| Model audit | ModelInvocation、InvocationIdentity、InvocationOutcome、InvocationError、UsageRecord | configured binding + 实际 provider/deployment/model；provider request ID；不在记录中写密钥 |
+-| Decision | CandidatePrediction、CandidateCategory、DecisionRecord、RuleEvaluation、RuleEvaluationOutcome、ConflictResolutionTrace、ExplanationTrace | 全量 applicable/evaluated/skipped/blocked/matched 引用；候选仅 advisory；coverage 不全不能静默 no_violation |
++| Model audit | ModelInvocation、InvocationIdentity、ConfiguredProviderIdentity、ActualProviderIdentity、ProviderRouteTrace、InvocationOutcome、InvocationError、UsageRecord | configured binding + 实际 provider/deployment/model；provider request ID；不在记录中写密钥 |
++| Decision | CandidatePrediction、CandidateCategory、DecisionRecord、RuleEvaluation、RuleEvaluationOutcome、ApplicabilityTrace、ApplicabilityLevelTrace、ConflictResolutionTrace、ExplanationTrace | 全量 applicable/evaluated/skipped/blocked/matched 引用；候选仅 advisory；coverage 不全不能静默 no_violation |
+ | Replay | ArtifactReplayRequest、InferenceReplayRequest、ReplayRun | kind 判别；source/target pin；只建数据，无模型/工具执行 |
+ | Node common | NodeInputEnvelope、NodeOutputEnvelope、NodeError、ArtifactOutputRef | task/execution/release/node/attempt/trace pin；错误、时间、输出有界 |
+ | N01 | ContextBuildInput、ContextBuildOutput、ContextValidationReport | 不补造缺失上下文；required failure 明确 |
+-| N02 | DiscoveryInput、DiscoveryOutput、ProfileHit、FilteredProfile、QuestionSelectionRecord | 注册 Profile + policy 确定 effective_question_refs + selection ref；BBox/Object/category 字段拒绝 |
++| N02 | DiscoveryInput、DiscoveryOutput、ProfileHit、FilteredProfile、QuestionSelectionRecord、AllDeclaredSelectionRecord、ContextRuleSelectionRecord、ModelAdvisorySelectionRecord、FallbackSelectionRecord、FallbackSelectionEvidence、SelectionCallPolicy、SharedN02SelectionCallPolicy、AdditionalSelectionCallPolicy | 注册 Profile + policy 确定 effective_question_refs + selection ref；BBox/Object/category 字段拒绝 |
+ | N03 | GroundingInput、GroundingOutput、ModelGroundingProvenance、ToolGroundingProvenance | 独立 grounding；原样继承 selection；模型/工具定位来源判别 |
+ | N04 | ObservationInput、ObservationBatch、QuestionResult、QuestionValidationResult | 一 Object/整批 Attempt；一 Question 一个主 Fact（可为 Record）；显式 parse/关联可信度；批次诊断与合法 Fact 分开 |
+ | N05 | ToolNodeInput、ToolNodeOutput、ToolPlanRunSummary | 仅绑定计划，引用 N04 validated Facts；无候选驱动选择字段 |
+ | N06 | DecisionInput、DecisionOutput、MandatoryRuleCoverage | 候选与规则评估分离；完整性报告，缺失候选不改变 mandatory 集合 |
+-| Registry/AST | FactSchemaDefinition、FactSchemaCatalogue、ProducerCatalogue、FactProducerDeclaration、QuestionProducerSelector、ToolProducerSelector、SystemProducerSelector、OperatorDescriptor、TypeCheckResult 及第 7 节 AST 节点 | 纯合同和校验；完整 producer closure/DAG admission 属 WP-02 |
++| Registry/AST | FactSchemaDefinition、ValueSchemaGenerationSpec、GlobalTypeLimits、TypeDefinitionProjection、ValueSchemaGenerationInput、FactSchemaCatalogue、ProducerCatalogue、FactProducerDeclaration、QuestionProducerSelector、ToolProducerSelector、SystemProducerSelector、OperatorDescriptor、TypeCheckResult 及第 7 节 AST 节点 | 纯合同和校验；完整 producer closure/DAG admission 属 WP-02 |
+ 
+ R2 新增清单（详见 01 §9–14，每个持久根均需生成 Schema 和正负 fixture）：
+ 
+@@ -206,6 +208,21 @@
+ | Policy Catalog | PolicyArtifact/PolicyKind、ApplicabilityPolicy、UnknownPolicy、QuestionValidationPolicy、EvidencePolicy、ToolExecutionPolicy、ToolFailurePolicy、ToolSkipPolicy、ResourceRequirements、ProviderPolicy、FallbackPolicy、RulePolicy、ConflictPolicy、CoveragePolicy、ContextProvenancePolicy、ExecutionPolicy | 01 §14 加上 QuestionSelectionPolicy，共 16 个封闭 policy 形状；无 Any/object 占位 |
+ | Producer/authority | ProducerCatalogue、FactProducerDeclaration、QuestionProducer、ToolStepProducer、SystemProducer、ToolFactOutputDeclaration/Mapping、ProducerSelector union、AuthoritativeResultSelection、ActorRef | 01 §13；Question 1:1，Tool step 1:N，scope/key 冲突、Attempt 候选和显式 authority |
+ | Schema/路径 | FactSchemaDefinition.semantic_key/type_definition/payload_schema_ref、RecordFieldRefExpr、ContextFieldSelector、InvocationContractSnapshot | fact_schema 定义与 value_schema 生成产物分离；同一 field_path 约定 |
++
++R2.1 字段覆盖补充（与以上完整清单合并，不另建新运行服务）：
++
++| F 项 | 明确的 Schema / 字段 | 唯一字段来源 |
++|---|---|---|
++| F01 | ApplicabilityTrace/ApplicabilityLevelTrace：三级 target/policy/input refs、evaluation_status/truth、decisive_level/disposition、ancestor reason；Coverage/Decision 的 applicability_trace_refs | Domain §3.8.1 |
++| F02 | ProviderPolicy.routing_mode/primary_deployment_id/selection、LocalPrimaryException、ConfiguredProviderIdentity/ActualProviderIdentity、ProviderRouteTrace；DeploymentRequirement.provider_id | Domain §3.9.1/§14 |
++| F03 | QuestionSelectionRecord 的 method 联合分支；discovery_model_invocation_ref、条件必填 model_invocation_ref/selection_invocation_mode、FallbackSelectionEvidence；ModelInvocation.purposes/source_discovery_invocation_ref；SelectionCallPolicy shared/explicit_additional（含 binding/resource/budget refs） | Domain §11.1 |
++| F04 | FactSchemaDefinition.value_schema_generation；ValueSchemaGenerationSpec/GlobalTypeLimits、TypeDefinitionProjection、ValueSchemaGenerationInput；payload_schema_ref 仍指独立 value_schema | Domain §12.1 |
++| F05 | ToolExecution 公共 refs/actual-version resolution；invocation_origin=GroundingBindingOrigin/ToolPlanStepOrigin；N03 不能成为 N05 producer | Domain §4.5 |
++
++不新增 ArtifactKind/PolicyKind：仍是 25 种制品、16 个 Policy 子类型。新增 trace/union/
++生成输入是既有领域契约的精化；外部持久根显式 schema_version，嵌套分支由根版本治理。
++本节是 WP-01 完整 Schema 清单：基础表、R2 资源/Policy/producer 表和 R2.1 字段表共同
++构成生成器 root index 的清单；不得只实现最后五项而漏掉既有清单。
+ 
+ 冻结时应为每个模型列必填/可选、默认值、长度/数量边界、错误码、样例及 JSON Schema 根名称。当前规格未给出的实体类型、保留策略等业务枚举不虚构为 CONFIRMED；以受约束标识和被引用的版本化词表治理，或在审批中列出有限初始值。
+ 
+@@ -226,14 +243,14 @@
+ 
+ 建议 immutable key 为 `(schema_id, version, digest)`；相同 ID/version 不同 digest 必须拒绝，不能覆盖。`fact_key` 是用途标识，不替代 Schema 身份。Registry 按 Release 构造不可变快照，不采用进程全局可变单例。
+ 
+-FactSchemaDefinition 应显式规定：schema_version、schema_id/version、semantic_key、type_definition、payload_schema_ref（value_schema）、scope、known/non-known 策略、单位/坐标系（适用时）、allowed_producer_kinds、证据与置信度元数据策略、有限集合/字段约束。Facet.fact_schema_refs 是该精确 Schema 的语义允许集合；Question 主 Schema 必须属于全部关联 Facet 的交集。Schema digest 不能把自己纳入被摘要内容；生成文件的字节摘要与逻辑 Bundle 摘要是不同概念。
++FactSchemaDefinition 应显式规定：schema_version、schema_id/version、semantic_key、type_definition、payload_schema_ref（value_schema）、scope、known/non-known 策略、单位/坐标系（适用时）、allowed_producer_kinds、证据与置信度元数据策略、有限集合/字段约束。Facet.fact_schema_refs 是该精确 Schema 的语义允许集合；Question 主 Schema 必须属于全部关联 Facet 的交集。F04 的 projection/generation spec 先生成独立 value_schema，child digest 获得后才构造 parent ref/digest（Domain §12.1）。父身份、摘要、Bundle 摘要不进入生成输入或 child Schema；枚举身份由 Registry/Fact envelope 校验，不在 child 中固化父 digest。Schema digest 不能把自己纳入被摘要内容；生成文件的字节摘要与逻辑 Bundle 摘要是不同概念。
+ 
+ 建议仅支持 JSON Schema 2020-12 的受限生成子集，由 Pydantic/受限 TypeDefinition 生成；禁止导入任意外部 Schema、remote `$ref`、可执行 validator 或插件代码。输出 `$schema`/`$id`、离线 `$defs`，记录生成器版本；不承诺 Pydantic 自定义跨字段校验能全自动变成 JSON Schema，必须用分支结构表达并测试，无法表达的语义由显式二阶段校验承担。
+ 
+ ### 6.2 值与状态
+ 
+ - 建议类型代数：bool、integer、finite number（默认 IEEE-754，有单位可选）、bounded string、closed string enum、bounded homogeneous list、closed record；嵌套深度/数量有限，不支持任意递归、union 自由拼装或 Any。
+-- 显式 `kind` 判别；枚举包含其 schema 身份；number/integer 不静默互转，不能把 bool 作为 number。几何通过特定 record Schema 表达并附 coordinate system，不把未校验字典作为 payload。
++- 显式 `kind` 判别；枚举的 schema 身份由 Fact envelope/Registry 保留；number/integer 不静默互转，不能把 bool 作为 number。几何通过特定 record Schema 表达并附 coordinate system，不把未校验字典作为 payload。
+ - `known` 必须有合法 value；known false、0、空字符串等按 Schema 合法性保留，不以 truthiness 判断缺失。
+ - 所有非 known 分支均不允许 value 字段（含 null），并要求结构化 reason；error 附错误分类/validation issue，not_applicable 必有适用性依据，not_evaluated 记录跳过原因。01 §4.4 已同步为此候选，审批仍待用户确认。
+ - 传输失败/整批 parse 失败只产生 Attempt/batch 错误，不凭空制造每项 Fact。单项非法在关联可信时可产生 status=error 的结果；原始非法响应作为受控诊断证据，不能写入 typed value。
+@@ -279,7 +296,7 @@
+ 6. Predicate truth 使用 strong Kleene T/F/U；全表见 03 §8.3：not(U)=U，F AND U=F，T AND U=U，T OR U=T，F OR U=U。保留全部输入诊断。另有独立 safety guard：required Fact/证据缺失或无效时，即使 predicate 可简化为 F/T，Rule outcome 仍 blocked、effective result=uncertain；不能称此 guard 为另一张真值表。WP-01 仅定义该语义的数据类型/策略及静态类型检查，不实现真值求值器。
+ 7. 是否允许显式状态检查操作符应单独审批；首版建议不提供，以避免条件绕过 required Fact 政策。
+ 8. RuleEvaluation 分开保存 execution outcome（evaluated/skipped/blocked）、predicate truth（true/false/unknown）与 matched 标记/引用；matched 不是替代 succeeded 的生命周期状态。
+-9. N06 V1 对所有适用 mandatory Rules 做完整性扫描，候选为空/候选调用失败也不能抑制该集合。保存 applicable/evaluated/skipped/blocked/matched，以及 required Facts/evidence 和 engine version。
++9. F01 按 Profile→RuleSet→Rule 三层 AND gate 和保守 required-unknown guard 留 trace；每层只读同一 Context/Region/Profile 元数据，false 排除对应子树，active unknown 保留 unresolved，不能下层 false 消除上层 unknown。N06 V1 对所有适用 mandatory Rules 做完整性扫描，候选为空/候选调用失败也不能抑制该集合。保存 applicable/evaluated/skipped/blocked/matched，以及 required Facts/evidence 和 engine version。
+ 10. RuleSet conflict_policy 候选为 collect_all：保留全部证据有效的匹配 Rules 与 category 集合，绝不提前停止；V1 不支持排他/优先胜出模式。单 Object 有有效匹配即 violation，同时保留其他 blocked/unknown 与 partial coverage；无匹配且有未决 mandatory 工作为 uncertain；所有适用 mandatory 完整且 false 才 no_violation；确定无适用 mandatory 为 not_applicable。Execution 空集与部分覆盖遵守 D09，不能借 Object 级结果掩盖未执行范围。
+ 
+ ## 8. 测试计划、边界与执行授权
+@@ -306,6 +323,7 @@
+ | contract/test_facet_schema.py | 多 Facet 精确交集、跨 Facet/Question 复用 | 仅形状相似不同 digest、semantic_key/unit/scope 不符、Profile context 不兼容 |
+ | contract/test_policy_catalog.py | 16 个 policy subtype 的显式字段、各合法分支、默认禁止 | 缺字段、Any/额外配置、未定义 business 默认、非法 applicability Facts/Tool Candidate |
+ | contract/test_producer_authority.py | Question 1:1、Tool step 1:N、路径/producer/schema、batch/step authority | key 冲突、重复 Attempt 异值、last-write-wins、跨 Attempt cherry-pick、Rule selector 无唯一 producer |
++| contract/test_final_closure.py | F01–F05 正例/条件分支/显式 refs、投影生成重复性 | TEST_STRATEGY §2.3 的五组负例；有限合成 refs 不能证明真实调用/审批/路由 |
+ | contract/test_json_schema.py | 每根 generated Schema 有效；Pydantic 和 jsonschema 双验样例 | 同组错误 fixture 均拒绝；无法 JSON 表达的语义单独标记，不谎称等价 |
+ | contract/test_schema_generation.py | 两次生成字节完全一致、root index/version 清晰 | schema 漂移/缺文件失败；非手工更新生成产物 |
+ | contract/test_import_boundaries.py | domain 只用允许依赖 | 静态 AST/import 检查禁止 infrastructure/SDK/GPU 导入；解析不触发 I/O |
+@@ -359,6 +377,7 @@
+ | G5 依赖边界 | import 检查、Ruff、类型检查、依赖/锁文件 | domain 无禁用依赖，无网络/模型/GPU 副作用；CPU 环境可复建 |
+ | G6 兼容与安全 | compatibility notes + approved 决策记录 | 摘要身份无循环、版本规则明确、secret/任意代码/无限配置不进入契约；无数据迁移 |
+ | G10 R2 契约闭合 | §13 的 finite-definition 契约检查报告 | 25 ArtifactKind、16 typed policies、能力/Prompt refs、Question/Facet/producer/authority/input_domain 规则一致；未实现完整 compiler/执行器 |
++| G11 R2.1 最后闭合 | 五项类型/引用负例及生成重复性报告 | 三级 gate/Remote Primary/选择证据/独立 value_schema/Tool origin 均符合 §14；只做 Domain/Registry/静态类型/Schema，运行执行仍后续 WP |
+ | G7 报告与停止 | WP-01 verification report | code 与 runtime 证据分列；限制明确；完成后停在 gate，不开始 WP-02 |
+ | G8 Coverage/Identity | CPU-only 契约 fixtures | JEV no_hits、空 Objects、grounding no_target/failed/partial 均不能伪造 complete/no_violation；子集有效命中保留；同目标跨 Profile 独立 Objects/Facts |
+ | G9 Rule/生命周期策略 | 策略模型、AST 静态检查及纯转移验证 | T/F/U 与 required guard 分离；仅 collect_all/full mandatory scan 策略；非运行 blocked/skipped 无假 Attempt；所有终态无出边；不实现 Rule 求值/worker |
+@@ -371,7 +390,7 @@
+ 
+ ### 10.1 D01–D10 候选延续；D11–D15 及更新见 §13/ADR R2 表
+ 
+-每项状态均为 **PROPOSED / PENDING_USER_APPROVAL**，没有实现或安装/测试授权。此处保留既有候选编号；D05 的反向 membership 解释由 R2 D15 细化，当前全集以 `ARCHITECTURE_DECISIONS.md` R2 表为准。
++每项状态均为 **PROPOSED / PENDING_USER_APPROVAL**，没有实现或安装/测试授权。此处保留既有候选编号；D05 的反向 membership 解释由 R2 D15 细化，当前全集以 `ARCHITECTURE_DECISIONS.md` R2 表及 R2.1 的 F01–F05 限定澄清为准；状态不变。
+ 
+ | 决策 | 单一明确候选 | 冻结/授权门槛 |
+ |---|---|---|
+@@ -590,7 +609,9 @@
+ 
+ `STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。下一步仅为独立复审和用户实施授权；本轮完成后停止。
+ 
+-## 13. WP-00-R2 Architecture Contract Closure（当前复审入口）
++## 13. WP-00-R2 Architecture Contract Closure（历史复审入口；R2.1 见 §14）
++
++本节保留 R2 交付记录，其完整原字节在 R2.1 before 副本；当前 F01–F05 以 §14 和修订规格为准。
+ 
+ ### 13.1 基线、范围、风险与历史保护
+ 
+@@ -759,3 +780,98 @@
+ GPT Pro 独立复核上述决策/业务参数；真实依赖兼容、模型/发现质量、完整负例协议和
+ GPU 能力均 UNVERIFIED。`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。
+ 本轮到此停止，不实施 WP-01、不安装、不测试、不提交、不推送。
++
++## 14. WP-00-R2.1 Final Contract Closure（当前）
++
++### 14.1 有限范围与基线
++
++本轮只处理 F01–F05，不重做 R2 规划。开始前 main/HEAD/工作区符合预期：
++`40af8a17855b27063da94b3c9891272f3e3fc4e3`、clean、50 个 tracked files。
++仅修改本计划、ADR、TEST_STRATEGY、specs/01–04 七份文档。AGENTS、README、
++DEPENDENCIES、roadmap、原始 PACKAGE_MANIFEST、examples、R1/R2 审计全部不改。
++本轮不建分支、不 reset/restore、不 commit/push；不实施/安装/测试/模型/GPU。
++
++### 14.2 F01–F05 逐项交付
++
++DM=specs/01，B=specs/02，N=specs/03，TA=specs/04；P=本计划，T=测试策略。
++每项状态均 **RESOLVED_IN_CANDIDATE / PENDING_USER_APPROVAL**，不是功能通过。
++
++| 项目 | 原问题 | 修订方案 | 实际文件 | 审批要求 |
++|---|---|---|---|---|
++| F01 | Profile/RuleSet/Rule 三层未定义组合/优先/trace | 三层 AND、parent-first gate、active U 阻塞；false 只排除对应子树；not_evaluated 无 truth；metadata-only；ApplicabilityTrace 连接 Coverage/Decision | DM §3.8.1/14，N §8.2，P §5/7/9/14，T §2.3 | D03/D04/D09 细化，待用户批准；不以 child false 擦掉 parent unknown |
++| F02 | ordered_first_eligible 不能保证云优先 | remote_primary + primary_deployment_id；其他 deployments 仅显式 fallback；LocalPrimaryException 明确 scope/approval/有效期；configured/actual provider 与路由 trace；Tool Worker 独立 | DM §3.9.1/14，B §5，TA §4，ADR R2.1，P | 已确认 remote-first 的约束落实；具体字段及任何 local exception/真实 fallback 仍须审批/兼容/独立评测 |
++| F03 | 可选 model_invocation_ref 无方法分支约束 | all/context 无选择调用；model 必有实际 Invocation；shared 同 ID 双 purpose；额外调用必须显式 policy/budget/binding/新 ID；fallback 保留触发 Attempt/失败原因/有条件派发证据 | DM §11.1/14，N §4，P §5/8/14，T §2.3 | D12 A/B 不变；仅细化证据合同，额外调用未获运行授权 |
++| F04 | TypeDefinition→value_schema 的独立输入/摘要顺序未冻结 | 规范化 type 投影 + 固定 generation spec；child 先生成/独立 digest，parent 后引用/摘要；生成器不读 parent ID/digest；同输入重复生成同 canonical 内容 | DM §12.1，B §2/5，P §5/6/8/14，T §2.3 | D02/D07 细化；WP-01 Schema 内容/重复性，WP-02 完整 Bundle integrity，均尚未实现 |
++| F05 | N03 Tool 与 N05 Step 的 ToolExecution 来源不可判别 | common refs/实际版本 + origin union；N03 grounding_binding 无 Object/Fact，N05 tool_plan_step 带 plan/step/declaration/Object；同 Tool 不同 audit ID/Attempt | DM §4.5，N §5/7，P §5/8/14，T §2.3 | D06/D11 细化，待批；N03 不自动成为 N05 producer |
++
++### 14.3 D01–D15 与不变项
++
++D01–D15 **逐项均保持 PROPOSED / PENDING_USER_APPROVAL**（完整主题表仍见
++§13.3 与 ADR R2 表，R2.1 附记仅澄清五项，无 D16/新决策编号）。没有将任何候选
++提升为 CONFIRMED；ADR-004 remote-first 原已确认，其强制约束不能被“候选”字样削弱。
++具体 LocalPrimaryException 必须独立获批；本轮不批准任何例外。
++
++D09 no_hits 保守、D12 A/B、D13 精确 Facet 交集、D15 正向权威、一个 Question 一个
++主 Fact、Step 多 Tool Facts、mandatory 全扫、collect_all、两类引用、CPU WP-01 /
++GPU WP-04 两阶段门禁全部保留。F01 的 RuleSet/Rule gate 不改变 N05 的预绑定计划。
++
++### 14.4 完整 Schema 清单、负向计划与最终验收
++
++**完整 WP-01 Schema 清单以 §5 的全部表为准**：基础/枚举/typed Value；Entity/Region；
++Profile/Facet/Question 与 grounding bindings；Tool/ToolPlan/step mappings；ModelBinding/
++Provider/Fallback；Rule/RuleSet/AST；Bundle/Release 数据；Task/Context/Execution/NodeRun/
++Attempt；Object/Grounding；Fact/producer/authority；ToolExecution；Evidence/ModelInvocation；
++Decision/Coverage/Replay；六节点 I/O；Prompt/static resources；16 typed Policies；Registry/
++projection/generation。F01–F05 新增的 trace、条件联合与 generation input 已纳入该清单，
++不是另一套手工 JSON Schema。每个持久根显式版本，生成器 index 必须逐根映射。
++
++新增负向用例以 TEST_STRATEGY §2.3 为唯一详细列表，均 **TEST_NOT_RUN**：
++- F01：U→F、未知父被 child false 排除、not_evaluated 仍带 truth、缺祖先依据、非法 Facts/candidates。
++- F02：remote 模式 local primary、无效/过期/错 scope 例外、未授权 timeout 切换、无兼容/评测、假 actual version、混用 Tool scheduling。
++- F03：model 无实际/错 purpose/错 execution ref、shared 不同 ID、无预算隐形 extra call、fallback 缺触发/原因或伪造未派发调用、发现失败伪造命中。
++- F04：parent digest/ID 进入 input/child、Schema 与 projection 不符、重复/递归/非有限类型、环境可变参数、手工漂移或对不同生成版本误称同输出。
++- F05：缺公共 refs、origin 字段混合、错 N03/N05 parent、grounding 产生 Facts/带 Object、Step 无 plan/producer/Object、两个 origin 共用一个 invocation 身份。
++
++最终验收为既有 G0–G10 **加 G11**，范围不扩大。G11 要求类型/条件 refs/记录不变量
++和独立生成内容的 CPU-only 正负例及重复性真实通过；实际 routing/gate evaluator/
++Tool scheduler/调用预算执行、信任/评测验证、完整 Bundle hashing/admission 仍属后续 WP。
++用户授权之前不能执行任何这些测试，更不能从文档断言 gate 已通过。
++
++### 14.5 兼容性、风险与十项静态一致性复核
++
++R2.1 收紧候选输入：旧 ordered_first_eligible 替换为显式 Primary 路由；selection 的
++全局 optional model ref 替换为 method 分支条件；FactSchemaDefinition 增加 generation
++spec；ToolExecution 必须有 invocation_origin；适用性增加层级 trace。旧 R2 候选对象
++不能靠填默认值静默升级。首次正式 schema version 待批准冻结；已有制品如后续要迁移，
++必须显式转换/兼容说明，保留原文，不修改原始 Release/Execution 证据。本轮无 DB/数据迁移。
++
++独立自审在写成后按下表逐条人工追踪，不调用子代理、不作运行验证：
++
++| 检查 | 静态结论 / 落点 |
++|---|---|
++| 三级 applicability | PASS（候选）；DM 七行 gate 表/trace 与 N §8.2 一致，U 不当 F |
++| Remote Primary | PASS（候选）；DM/TA/Bundle 强制 primary 与显式例外/transition，Tool placement 独立 |
++| Selection 调用证据 | PASS（候选）；四 method 分支、shared/extra/fallback refs 与实际 ID/预算约束 |
++| parent/child 摘要 | PASS（候选）；DM §12.1 独立 projection input，B 保持 child-before-parent |
++| Tool 调用来源 | PASS（候选）；origin discriminated union，N03/N05/producer 关联区别明确 |
++| Bundle 引用闭包 | PASS（候选）；无新 ArtifactKind；inline generation/call spec 与既有 Policy/Binding/Review refs 完整 |
++| WP-01 Schema 清单 | PASS（候选）；§5 覆盖 trace/provider/selection/generation/Tool origin 新字段 |
++| 五组负向计划 | PASS（文档覆盖）；T §2.3，未执行 |
++| AGENTS / WP 范围 | PASS（静态）；AGENTS 不改、Domain/Registry/静态 AST/Schema/CPU-only 边界不变 |
++| R1/R2 历史保护 | 以 R2.1 before/after 哈希审计为证；禁止修改，非功能测试 |
++
++风险控制只针对这五项：不让 gate 优化隐藏 unknown、不以列表顺序冒充 fallback 许可、
++不伪造模型调用、不让 generator metadata 形成 parent digest 环、不把 N03 输出晋升为
++N05 producer。预算/质量/部署参数仍 OPEN；不凭空填写数值，不追加新业务设计。
++
++### 14.6 证据与停止结论
++
++`planning/review_evidence/WP-00-R2.1/` 含 README、before_sha256.json、after_sha256.json、
++changes.patch 和仅七个修改文件的 before 原字节；记录 R2 基线 SHA 和所有前后 SHA-256。
++另对其余 43 个 tracked files 做保护哈希（含 R1/R2 全部 34 个历史证据文件）。审计
++输出不把自身纳入摘要，避免自引用。字节/差异检查是 STATIC_REVIEW_ONLY，不是 Schema 测试。
++
++**R2.1 文档自审 PASS（仅候选契约完整性/静态一致性）；整体审批 CONDITIONAL。**
++F01–F05 已具备独立复审材料；D01–D15 和 WP-01 仍未批准。没有功能测试、依赖兼容、
++模型质量或运行时通过的声明。`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。
++完成即停止，等待 GPT-6 独立复审及用户审批；不实施、不安装、不测试、不 commit/push。
+--- before/planning/TEST_STRATEGY.md
++++ after/planning/TEST_STRATEGY.md
+@@ -2,9 +2,9 @@
+ 
+ ## 1. Test layers
+ 
+-WP-00-R2 is documentation-only: STATIC_REVIEW_ONLY / TEST_NOT_RUN /
++WP-00-R2.1 is documentation-only: STATIC_REVIEW_ONLY / TEST_NOT_RUN /
+ RUNTIME_NOT_RUN. Cases below are plans, not executed evidence. Baseline:
+-`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`. WP-01 is limited to CPU-only
++`40af8a17855b27063da94b3c9891272f3e3fc4e3`. WP-01 is limited to CPU-only
+ Domain/Fact Registry/AST static type checking/generated Schema tests; complete
+ Bundle validation is WP-02 and model/workflow/Rule execution tests are later WPs.
+ 
+@@ -67,6 +67,27 @@
+ remain OPEN; no performance data exist. Synthetic fixtures do not establish recall
+ or approve auto-clearing.
+ 
++## 2.3 F01–F05 final closure cases (planned only)
++
++All fixtures below are future authorized CPU-only model/Schema/static-reference
++tests, not executed in R2.1. Invocation, review, node and Tool records are synthetic
++finite catalogues, not proof of real calls, approval, evaluation quality or routing.
++
++| Closure | Planned positive fixtures | Required negative/regression fixtures |
++|---|---|---|
++| F01 hierarchy | Seven gate cases in 01 §3.8.1; Profile/RuleSet/Rule exclusion reasons; active U creates unresolved trace and not_evaluated descendants; skipped/blocked mandatory refs retained without Object | Replacing parent U with F; claiming excluded/complete/no_violation for unresolved parent; child truth present when not_evaluated; missing decisive ancestor/input/evidence; gate uses Object Facts, N02/N06 candidates/Decision; RuleSet exclusion changes N05 plan |
++| F02 provider | Explicit remote primary; typed capability-scoped LocalPrimaryException fixture; declared exact fallback with independent review refs; configured/actual provider/route records; local Tool placement is separate | Local as primary in remote mode; missing/expired/wrong-capability exception; implicit ordered-first local selection; timeout-triggered undeclared transition; missing exact IO compatibility/evaluation refs; actual identity copied from expected when unresolved; Tool placement used to bypass an explicit nested gateway policy |
++| F03 selection | All/context branches have discovery audit but no proposal call; shared model branch references same actual discovery/proposal Invocation; explicit extra call has distinct ID/binding/budget; fallback keeps trigger Attempt/reason and dispatched-dependent ref | model_advisory missing/dangling/wrong-purpose/wrong-execution Invocation; shared mode with distinct IDs; fake selection call in all/context; extra call without budget/policy or implicit retry budget; fallback missing trigger/reason or fake invocation when undispatched; invalid full discovery envelope repaired into hit |
++| F04 projection | Same normalized type/spec, repeated generation identical; Record/member ordering stable; changed parent ID/version/metadata does not change child; child-before-parent ref order represented; explicit generation version/limits | Parent digest/identity in generation input, child `$id`/`$ref` or content; supplied child Schema differs from projection; unsupported/duplicate/recursive type, nonfinite/rounded bound, ambient mutable limit; hand-edited schema drift; claiming changed generation version/spec guarantees identical output |
++| F05 Tool origin | Same tool_ref has distinct N03 execution and N05 execution with matching node/Attempt/origin; grounding has no Object or Facts; step maps declared multiple Fact outputs | Missing required common refs; unknown/mixed origin fields; N03 origin on N05 node or foreign Attempt; grounding generates N05 Facts; N03 includes pre-existing Object; step lacks Object/ToolPlan/step declaration; reusing one ToolExecution ID for both origins or wrong actual version provenance |
++
++WP-01 verifies contract shapes, generated Schema repeatability and reference/trace
++invariants only. Actual applicability evaluation/mandatory execution is later
++workflow/Rule work; trusted approval resolution and Bundle graph/artifact/root
++digests are WP-02; provider switching/Tool dispatch/real call budgets are WP-04+.
++Add cases to existing contract/negative suites; do not build those runtimes to
++satisfy WP-01. No schema generator or test command is run in this revision.
++
+ ## 3. Evidence report
+ 
+ Every run records:

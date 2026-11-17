@@ -3,11 +3,11 @@
 **Status:** Proposed normative delivery contract  
 **Depends on:** Runtime Domain Model V1.0
 
-**Review revision:** WP-00-R2. These clarified contracts are PROPOSED /
+**Review revision:** WP-00-R2.1. These clarified contracts are PROPOSED /
 PENDING_USER_APPROVAL. WP-01 defines domain contracts only; packaging, closure
 admission, digest calculation and signing implementations remain WP-02.
-R1 source commit: `46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`.
-R1 bytes: `planning/review_evidence/WP-00-R2/before/`; R1 audit unchanged.
+R2 source commit: `40af8a17855b27063da94b3c9891272f3e3fc4e3`.
+R2 bytes: `planning/review_evidence/WP-00-R2.1/before/`; R1/R2 audit unchanged.
 
 ## 1. Purpose
 
@@ -61,6 +61,14 @@ coverage/resource_requirements); policies/registry.json may hold other subtypes.
 Each policy identity appears once only, even when referenced by multiple owners.
 fact_schema artifacts are registry definitions; value_schema artifacts are their
 generated payload schemas. Both are pinned and included, never hand-divergent.
+
+F04 generation is defined in 01 §12.1. ValueSchemaGenerationInput is the normalized
+type projection + explicit generation spec only. Generate value_schema content and
+its independent digest first, then set FactSchemaDefinition.payload_schema_ref,
+then hash that parent. No child input, `$id`, `$ref` or bytes include the parent's
+identity/digest or Bundle digest. The input-derived `$id` is not a self-digest.
+Two parents with the same normalized type/spec may share one payload Schema;
+semantic compatibility still uses exact FactSchemaDefinition refs.
 
 Each declared reference must resolve within this immutable package, including
 prompt partials, response schemas, context schemas, Tool IO schemas, vocabularies,
@@ -128,6 +136,10 @@ Avoid self-referential hashing. The exact canonicalization, signature algorithm,
 8. Validate Rule required Facts have valid producers and compatible schemas.
 9. Validate Rule AST operator and operand types.
 10. Validate ModelBinding capabilities and configured fallback policy.
+    Require ProviderPolicy.primary_deployment_id and remote_primary constraints
+    (01 §3.9.1), or an explicit trusted capability-scoped LocalPrimaryException.
+    Validate each fallback transition's exact contract and independently reviewed
+    quality report; an ordered eligible local deployment is never sufficient.
 11. Validate scene/Region applicability.
 12. Validate Runtime capability compatibility.
 13. Package files and calculate integrity data.
@@ -157,6 +169,19 @@ configuration closure includes all typed policy refs, prompt partials, generated
 schemas, response contracts, vocabulary/static assets and producer declarations;
 type names alone do not constitute resources. The capability/path table is the
 single authority for allowed ArtifactKinds; unknown required kind rejects.
+
+R2.1 adds no ArtifactKind or resource-directory change. SelectionCallPolicy's
+explicit additional binding/resource refs, local-primary exception approval refs,
+and generation spec must be included/validated under their existing artifact or
+trusted external-review categories. Selection runtime Invocation/Attempt evidence
+and ToolExecution origins are runtime records, not missing Bundle resources.
+
+Compiler/admission independently regenerate payload Schema from the declared
+projection/profile/generator inputs and compare exact canonical content/digest to
+payload_schema_ref; parent back-references or drift reject. Fixed-generation-input
+repeatability and projection/Schema contracts belong to authorized CPU WP-01
+work; complete artifact graph digest resolution, file inventory/root hash,
+signatures and admission remain WP-02. No digest implementation/test ran in R2.1.
 
 ## 6. Runtime admission
 

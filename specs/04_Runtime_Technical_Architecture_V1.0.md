@@ -4,15 +4,15 @@
 **Deployment:** Single RTX 4090 server, Docker Compose  
 **Inference:** Hybrid, remote-first
 
-**WP-00-R2 scope clarification (PROPOSED / PENDING_USER_APPROVAL):** WP-01 is
+**WP-00-R2.1 scope clarification (PROPOSED / PENDING_USER_APPROVAL):** WP-01 is
 limited to Domain Model, an in-memory Fact Schema Registry, Rule AST static type
 checking, generated JSON Schema and CPU-only tests. None of the services below,
 Rule runtime evaluation, Bundle compiler/admission, Provider adapters or durable
 scheduling is part of WP-01. CPU-only dependency compatibility/lock is a separate
 candidate from the later GPU worker matrix; no GPU compatibility is claimed by
 contract tests. This revision authorizes document changes only. Original bytes
-for R1 are retained under `planning/review_evidence/WP-00-R2/before/` (baseline
-`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`). R1 audit is unchanged.
+for R2 are retained under `planning/review_evidence/WP-00-R2.1/before/` (baseline
+`40af8a17855b27063da94b3c9891272f3e3fc4e3`). R1/R2 audit is unchanged.
 
 ## 1. Architecture shape
 
@@ -83,13 +83,28 @@ Runs geometry, transformations and CPU-friendly post-processing where appropriat
 
 ## 4. Remote-first hybrid inference
 
-- Remote API is primary where configured and quality/cost/privacy policy permits.
+- Model Gateway routing requires an explicit Remote Primary deployment under ProviderPolicy.routing_mode=remote_primary; routing begins with that primary, not the first eligible entry of any provider kind.
 - Local vLLM is used only for explicitly assigned capabilities, approved fallback, privacy-sensitive workloads or unavailable remote capability.
 - Do not silently substitute a different model.
 - Fallback requires compatible schema, validated quality and explicit policy.
 - Record configured binding and actual invocation separately.
 - Secrets are injected at deployment and never enter Bundle or logs.
 - Remote requests need timeout, bounded retries, rate limits, request IDs and provider error normalization.
+
+F02: local_primary_exception requires a capability-scoped, validity-bounded and
+externally approved LocalPrimaryException (01 §3.9.1). It is an explicit architecture
+exception, never inferred from a timeout, outage, lower cost or idle GPU. Other
+configured deployments are fallback-only; the exact transition must be authorized
+for its trigger, IO compatible and independently quality-evaluated. No silent model
+change after timeout. ModelInvocation stores configured_provider, actual_provider
+and ProviderRouteTrace including the exception/transition evidence when relevant;
+unknown actual versions are labelled unavailable, not copied from configuration.
+
+SAM3/geometry/local vision Tool placement follows ToolDefinition/worker budgets,
+not model-provider primary order. A local Tool does not need to call a cloud model
+first or obtain a Model Gateway exception solely for its GPU/CPU placement. Only
+an explicitly nested ModelBinding gateway call follows that binding's routing
+policy. WP-01 models these contracts; no routing, Tool scheduler or real API is run.
 
 ## 5. RTX 4090 resource management
 

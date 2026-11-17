@@ -4,11 +4,11 @@
 **Input:** One RGB image per Task  
 **Orchestration:** Deterministic state machine
 
-**Review revision:** WP-00-R2, PROPOSED / PENDING_USER_APPROVAL.
+**Review revision:** WP-00-R2.1, PROPOSED / PENDING_USER_APPROVAL.
 WP-01 builds data contracts/static type checks and CPU-only tests, not node,
-workflow or Rule evaluation execution. R1 source commit is
-`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`; before bytes are in
-`planning/review_evidence/WP-00-R2/before/`. R1 historical evidence is unchanged.
+workflow or Rule evaluation execution. R2 source commit is
+`40af8a17855b27063da94b3c9891272f3e3fc4e3`; before bytes are in
+`planning/review_evidence/WP-00-R2.1/before/`. R1/R2 historical evidence is unchanged.
 
 ## 1. Global invariants
 
@@ -103,6 +103,17 @@ not permission to bypass downstream work. SelectionRecord records pinned config,
 context, proposal, validation and actual invocation; no model-reported reason is
 treated as truth. N02 still emits no instance identifiers or boxes.
 
+F03 (01 §11.1): all_declared/context_rules records have no selection
+model_invocation_ref; discovery_model_invocation_ref still audits real discovery.
+model_advisory requires a real proposal invocation: prefer shared_n02, with the
+same ID as discovery and both invocation purposes. A separate optional-proposal
+call requires explicit_additional policy, exact binding/resource refs, a bounded
+additional-call budget including retries, distinct invocation/Attempt identity and
+actual provider audit. It is not a hidden repair. FallbackSelectionEvidence records
+triggered method, actual failed operation/Attempt, reason and diagnostic refs, plus
+trigger_invocation_ref iff dispatched; no fabricated call when selection failed
+before dispatch. Whole discovery failure does not become a ProfileHit by fallback.
+
 ## 5. N03 — Grounding
 
 Inputs:
@@ -118,6 +129,7 @@ Outputs:
 - visualization/evidence references;
 - explicit per-Profile grounding status, including no-target, failed and partial.
 - GroundingRecord producer branch model/tool, with corresponding ModelInvocation/ToolExecution provenance; no fake model invocation for tool-only localization.
+- ToolExecution.invocation_origin.kind=grounding_binding, node_id=N03, same execution/Profile/binding and actual Attempt; object_ref absent, generated_fact_refs empty (F05, 01 §4.5).
 
 Rules:
 - Ground each Profile independently.
@@ -222,6 +234,14 @@ N04 authority selects a whole Object observation batch. Consumers resolve these
 pinned revisions, not the last stored Fact. WP-01 models the records and static
 paths only; execution/persistence enforcement remains later WPs.
 
+Every N05 ToolExecution has invocation_origin.kind=tool_plan_step with tool_plan_ref,
+step_id and matching producer_declaration_ids, node_run_ref=N05 and actual attempt_ref,
+object_ref, input/output refs and resolved actual implementation version. The same
+tool_ref called in N03 and N05 has distinct tool_execution_id/origin/Attempt audit.
+N03 localization output feeds GroundingRecord; only N05's declared step origin can
+produce mapped Tool Facts for FactProducerDeclaration. Tool reuse never promotes
+N03 output to N05 evidence/authority silently. No Tool runtime is built in WP-01.
+
 ## 8. N06 — Candidate Prediction and Rule Decision
 
 ### 8.1 Candidate prediction
@@ -245,6 +265,20 @@ Facts belong to condition_ast, never applicability. Rule FactSelectors match the
 Question primary output or named Tool step output and declared Record field_path;
 actual operands use pinned authoritative selection revisions. Tool guards may use
 validated upstream Facts and context, never Candidate/Decision (01 §13.3/14).
+
+F01 hierarchy is Profile AND RuleSet AND Rule, evaluated in that parent-first
+order on the same pinned ContextSnapshot (01 §3.8.1). Profile false excludes that
+Profile's obligations with trace; RuleSet false skips only its Rules; Rule false
+records the specific Rule exclusion. Unknown at any active required gate blocks
+that branch as unresolved; descendants are not_evaluated with ancestor reason,
+never false. A lower false diagnostic cannot erase a required unknown parent.
+Only T/T/T enters condition evaluation. Strong-Kleene AST logic within each gate
+is unchanged, with the conservative required-gate guard applied separately.
+No gate reads Object Facts, N02/N06 candidates or Decisions. ApplicabilityTrace
+records per-level target/policy/input refs, evaluation status, truth when evaluated,
+reason/evidence, decisive ancestor and effective disposition. Mandatory scanning
+retains skipped/blocked refs even for empty-object branches via ExecutionCoverage.
+RuleSet/Rule exclusions do not change N05's independently bound ToolPlan.
 
 Rule Engine:
 1. resolve RuleSet and applicability;

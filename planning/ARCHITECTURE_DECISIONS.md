@@ -133,3 +133,29 @@ model selection/execution, Rule evaluation and review routing remain later WPs.
   precedence and spatial ownership remain UNVERIFIED or later-WP OPEN as before.
 - Approve D01–D15/current candidate revision and the bounded WP-01 work package
   separately from dependency/test execution. R2 itself authorizes documents only.
+
+## WP-00-R2.1 — F01–F05 limited closure
+
+Baseline: main / `40af8a17855b27063da94b3c9891272f3e3fc4e3`.
+This revision refines five existing contracts only; it creates no D16/new
+architecture programme. All D01–D15 remain **PROPOSED / PENDING_USER_APPROVAL**.
+ADR-004 cloud-first is already CONFIRMED; F02 supplies its missing contract
+enforcement, without approving a local-primary exception or changing D status.
+R1/R2 historical audit directories and decision history remain unchanged.
+
+| Closure | Affected decisions | Candidate clarification / approval gate |
+|---|---|---|
+| F01 | D03/D04/D09 | Profile AND RuleSet AND Rule, parent-first trace; active required UNKNOWN blocks, never becomes false; context metadata only. Scope/trace semantics await contract approval |
+| F02 | ADR-004, D11 | Remote Primary required for normal gateway routing; fallback needs exact transition/contract/independent quality evidence. Local Primary requires separately approved capability-scoped validity-bounded exception. Tool Worker scheduling is separate |
+| F03 | D12 | Selection methods have conditional evidence; model_advisory requires a real ModelInvocation, preferably the shared N02 call. Additional call only under explicit binding/budget/identity/audit; fallback retains actual failed operation/Attempt/reason |
+| F04 | D02/D07 | Independent normalized TypeDefinition projection + fixed generation spec; value_schema gets content/digest before parent ref/digest; no parent input. WP-01 schema contracts/generation vs WP-02 complete Bundle integrity stay separate |
+| F05 | D06/D11 | ToolExecution.invocation_origin union grounding_binding/tool_plan_step; N03 GroundingRecord never automatically supplies N05 Fact producers; same Tool calls have distinct origin/Attempt identities |
+
+No decision is promoted to CONFIRMED by this patch. D09 conservative no_hits,
+D12 A/B modes, D13 exact Facet intersection, D15 forward-only membership,
+single primary Question Fact, multiple declared Tool Facts, mandatory full scan,
+collect_all, reference separation and CPU/GPU gates are retained. User approval
+must cover current F01–F05 field/semantics plus bounded WP-01 implementation;
+real fallback/local-primary exceptions additionally need reviewed deployment
+configuration and independent quality evidence, never inferred from approval
+of a schema. No model/Tool routing or Rule execution code is implemented here.

@@ -2,9 +2,9 @@
 
 ## 1. Test layers
 
-WP-00-R2 is documentation-only: STATIC_REVIEW_ONLY / TEST_NOT_RUN /
+WP-00-R2.1 is documentation-only: STATIC_REVIEW_ONLY / TEST_NOT_RUN /
 RUNTIME_NOT_RUN. Cases below are plans, not executed evidence. Baseline:
-`46388ce1d8f03e0b122b3038a5930eb0aa3ceb01`. WP-01 is limited to CPU-only
+`40af8a17855b27063da94b3c9891272f3e3fc4e3`. WP-01 is limited to CPU-only
 Domain/Fact Registry/AST static type checking/generated Schema tests; complete
 Bundle validation is WP-02 and model/workflow/Rule execution tests are later WPs.
 
@@ -66,6 +66,27 @@ measured latency/cost/review effort. Explicit denominators/confidence bounds and
 zero-sample undefined values are required. Minimum samples/risk/review thresholds
 remain OPEN; no performance data exist. Synthetic fixtures do not establish recall
 or approve auto-clearing.
+
+## 2.3 F01–F05 final closure cases (planned only)
+
+All fixtures below are future authorized CPU-only model/Schema/static-reference
+tests, not executed in R2.1. Invocation, review, node and Tool records are synthetic
+finite catalogues, not proof of real calls, approval, evaluation quality or routing.
+
+| Closure | Planned positive fixtures | Required negative/regression fixtures |
+|---|---|---|
+| F01 hierarchy | Seven gate cases in 01 §3.8.1; Profile/RuleSet/Rule exclusion reasons; active U creates unresolved trace and not_evaluated descendants; skipped/blocked mandatory refs retained without Object | Replacing parent U with F; claiming excluded/complete/no_violation for unresolved parent; child truth present when not_evaluated; missing decisive ancestor/input/evidence; gate uses Object Facts, N02/N06 candidates/Decision; RuleSet exclusion changes N05 plan |
+| F02 provider | Explicit remote primary; typed capability-scoped LocalPrimaryException fixture; declared exact fallback with independent review refs; configured/actual provider/route records; local Tool placement is separate | Local as primary in remote mode; missing/expired/wrong-capability exception; implicit ordered-first local selection; timeout-triggered undeclared transition; missing exact IO compatibility/evaluation refs; actual identity copied from expected when unresolved; Tool placement used to bypass an explicit nested gateway policy |
+| F03 selection | All/context branches have discovery audit but no proposal call; shared model branch references same actual discovery/proposal Invocation; explicit extra call has distinct ID/binding/budget; fallback keeps trigger Attempt/reason and dispatched-dependent ref | model_advisory missing/dangling/wrong-purpose/wrong-execution Invocation; shared mode with distinct IDs; fake selection call in all/context; extra call without budget/policy or implicit retry budget; fallback missing trigger/reason or fake invocation when undispatched; invalid full discovery envelope repaired into hit |
+| F04 projection | Same normalized type/spec, repeated generation identical; Record/member ordering stable; changed parent ID/version/metadata does not change child; child-before-parent ref order represented; explicit generation version/limits | Parent digest/identity in generation input, child `$id`/`$ref` or content; supplied child Schema differs from projection; unsupported/duplicate/recursive type, nonfinite/rounded bound, ambient mutable limit; hand-edited schema drift; claiming changed generation version/spec guarantees identical output |
+| F05 Tool origin | Same tool_ref has distinct N03 execution and N05 execution with matching node/Attempt/origin; grounding has no Object or Facts; step maps declared multiple Fact outputs | Missing required common refs; unknown/mixed origin fields; N03 origin on N05 node or foreign Attempt; grounding generates N05 Facts; N03 includes pre-existing Object; step lacks Object/ToolPlan/step declaration; reusing one ToolExecution ID for both origins or wrong actual version provenance |
+
+WP-01 verifies contract shapes, generated Schema repeatability and reference/trace
+invariants only. Actual applicability evaluation/mandatory execution is later
+workflow/Rule work; trusted approval resolution and Bundle graph/artifact/root
+digests are WP-02; provider switching/Tool dispatch/real call budgets are WP-04+.
+Add cases to existing contract/negative suites; do not build those runtimes to
+satisfy WP-01. No schema generator or test command is run in this revision.
 
 ## 3. Evidence report
 
