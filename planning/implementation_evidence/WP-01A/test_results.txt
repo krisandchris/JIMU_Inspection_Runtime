@@ -1,0 +1,180 @@
+
+$ uv run --locked pytest -q
+kind=test
+started_at=2026-11-17T10:10:38.122735+00:00
+finished_at=2026-11-17T10:10:39.496257+00:00
+exit_code=1
+.................................................F..F.FF................ [ 24%]
+........................................................................ [ 48%]
+........................................................................ [ 72%]
+........................................................................ [ 96%]
+............                                                             [100%]
+=================================== FAILURES ===================================
+_____ test_schema_and_pydantic_reject_structural_invalid_values[list-bad8] _____
+
+kind = 'list'
+bad = [{'kind': 'integer', 'value': 0}, {'kind': 'integer', 'value': 0}, {'kind': 'integer', 'value': 0}, {'kind': 'integer', 'value': 0}, {'kind': 'integer', 'value': 0}, {'kind': 'integer', 'value': 0}, ...]
+
+    @pytest.mark.parametrize(
+        "kind,bad",
+        [
+            ("integer", False),
+            ("integer", "0"),
+            ("bool", 0),
+            ("bool", "false"),
+            ("number", "0.0"),
+            ("string", False),
+            ("enum", 0),
+            ("string", "x" * 4097),
+            ("list", [{"kind": "integer", "value": 0}] * 257),
+            ("record", {f"f{i}": {"kind": "bool", "value": False} for i in range(65)}),
+        ],
+    )
+    def test_schema_and_pydantic_reject_structural_invalid_values(kind, bad):
+        payload = {"kind": kind, "value": bad}
+>       with pytest.raises(SchemaValidationError):
+E       Failed: DID NOT RAISE <class 'jsonschema.exceptions.ValidationError'>
+
+tests/contract/test_json_schema.py:138: Failed
+___ test_schema_and_pydantic_reject_invalid_lexical_forms[Annotated-1.2.3\n] ___
+
+primitive = typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=True, min_length=5, max_length=128, pattern='^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$')]
+bad = '1.2.3\n'
+
+    @pytest.mark.parametrize(
+        "primitive,bad",
+        [
+            (Version, "01.0.0"),
+            (Version, "1.2.3\n"),
+            (Version, "latest"),
+            (ArtifactId, "id\n"),
+            (RecordId, "ref\n"),
+            (Digest, "A" * 64),
+            (Digest, "a" * 63),
+        ],
+    )
+    def test_schema_and_pydantic_reject_invalid_lexical_forms(primitive, bad):
+>       with pytest.raises(SchemaValidationError):
+E       Failed: DID NOT RAISE <class 'jsonschema.exceptions.ValidationError'>
+
+tests/contract/test_json_schema.py:157: Failed
+____ test_schema_and_pydantic_reject_invalid_lexical_forms[Annotated-id\n] _____
+
+primitive = typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=True, min_length=1, max_length=128, pattern='^[a-z][a-z0-9_.-]{0,127}$')]
+bad = 'id\n'
+
+    @pytest.mark.parametrize(
+        "primitive,bad",
+        [
+            (Version, "01.0.0"),
+            (Version, "1.2.3\n"),
+            (Version, "latest"),
+            (ArtifactId, "id\n"),
+            (RecordId, "ref\n"),
+            (Digest, "A" * 64),
+            (Digest, "a" * 63),
+        ],
+    )
+    def test_schema_and_pydantic_reject_invalid_lexical_forms(primitive, bad):
+>       with pytest.raises(SchemaValidationError):
+E       Failed: DID NOT RAISE <class 'jsonschema.exceptions.ValidationError'>
+
+tests/contract/test_json_schema.py:157: Failed
+____ test_schema_and_pydantic_reject_invalid_lexical_forms[Annotated-ref\n] ____
+
+primitive = typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=True, min_length=1, max_length=128, pattern='^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$')]
+bad = 'ref\n'
+
+    @pytest.mark.parametrize(
+        "primitive,bad",
+        [
+            (Version, "01.0.0"),
+            (Version, "1.2.3\n"),
+            (Version, "latest"),
+            (ArtifactId, "id\n"),
+            (RecordId, "ref\n"),
+            (Digest, "A" * 64),
+            (Digest, "a" * 63),
+        ],
+    )
+    def test_schema_and_pydantic_reject_invalid_lexical_forms(primitive, bad):
+>       with pytest.raises(SchemaValidationError):
+E       Failed: DID NOT RAISE <class 'jsonschema.exceptions.ValidationError'>
+
+tests/contract/test_json_schema.py:157: Failed
+=========================== short test summary info ============================
+FAILED tests/contract/test_json_schema.py::test_schema_and_pydantic_reject_structural_invalid_values[list-bad8]
+FAILED tests/contract/test_json_schema.py::test_schema_and_pydantic_reject_invalid_lexical_forms[Annotated-1.2.3\n]
+FAILED tests/contract/test_json_schema.py::test_schema_and_pydantic_reject_invalid_lexical_forms[Annotated-id\n]
+FAILED tests/contract/test_json_schema.py::test_schema_and_pydantic_reject_invalid_lexical_forms[Annotated-ref\n]
+4 failed, 296 passed in 0.69s
+
+
+$ uv run --locked pytest -q
+kind=test
+started_at=2026-11-17T10:12:18.771008+00:00
+finished_at=2026-11-17T10:12:19.603435+00:00
+exit_code=0
+........................................................................ [ 22%]
+........................................................................ [ 45%]
+........................................................................ [ 68%]
+........................................................................ [ 91%]
+..........................                                               [100%]
+314 passed in 0.65s
+
+
+$ uv run --locked pytest -q --junitxml=planning/implementation_evidence/WP-01A/pytest_results.xml
+kind=test
+started_at=2026-11-17T10:15:23.852030+00:00
+finished_at=2026-11-17T10:15:24.703124+00:00
+exit_code=0
+........................................................................ [ 22%]
+........................................................................ [ 44%]
+........................................................................ [ 66%]
+........................................................................ [ 88%]
+....................................                                     [100%]
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/planning/implementation_evidence/WP-01A/pytest_results.xml -
+324 passed in 0.66s
+
+
+$ env UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp01a-rebuild-DNnmdf/.venv uv run --locked pytest -q --junitxml=planning/implementation_evidence/WP-01A/pytest_rebuild_results.xml
+kind=test
+started_at=2026-11-17T10:16:45.342973+00:00
+finished_at=2026-11-17T10:16:46.526822+00:00
+exit_code=0
+........................................................................ [ 22%]
+........................................................................ [ 44%]
+........................................................................ [ 66%]
+........................................................................ [ 88%]
+....................................                                     [100%]
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/planning/implementation_evidence/WP-01A/pytest_rebuild_results.xml -
+324 passed in 0.77s
+
+
+$ uv run --locked pytest -q --junitxml=planning/implementation_evidence/WP-01A/pytest_final_results.xml
+kind=test
+started_at=2026-11-17T10:21:17.030884+00:00
+finished_at=2026-11-17T10:21:17.874961+00:00
+exit_code=0
+........................................................................ [ 22%]
+........................................................................ [ 44%]
+........................................................................ [ 66%]
+........................................................................ [ 88%]
+....................................                                     [100%]
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/planning/implementation_evidence/WP-01A/pytest_final_results.xml -
+324 passed in 0.66s
+
+
+$ env UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp01a-public-rebuild-13O2pv/.venv uv run --no-config --locked pytest -q --junitxml=planning/implementation_evidence/WP-01A/pytest_rebuild_public_index_results.xml
+kind=test
+started_at=2026-11-17T10:21:17.030755+00:00
+finished_at=2026-11-17T10:21:18.267179+00:00
+exit_code=0
+........................................................................ [ 22%]
+........................................................................ [ 44%]
+........................................................................ [ 66%]
+........................................................................ [ 88%]
+....................................                                     [100%]
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/planning/implementation_evidence/WP-01A/pytest_rebuild_public_index_results.xml -
+324 passed in 0.82s
+

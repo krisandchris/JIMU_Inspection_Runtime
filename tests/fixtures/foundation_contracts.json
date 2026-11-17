@@ -1,0 +1,26 @@
+{
+  "fixture_version": "1.0.0",
+  "illustrative_only": true,
+  "content_ref": {"artifact_kind": "question", "artifact_id": "parking.state", "version": "1.0.0", "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+  "identity_selector": {"artifact_kind": "profile", "artifact_id": "nonmotor_vehicle", "version_selector": "1.0.0"},
+  "runtime_record_ref": {"record_kind": "execution", "record_id": "exec-fixture-001"},
+  "schema_ref": {"artifact_kind": "value_schema", "artifact_id": "parking.state.payload", "version": "1.0.0", "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "schema_dialect": "https://json-schema.org/draft/2020-12/schema"},
+  "values": [
+    {"type_definition": {"kind": "bool"}, "value": {"kind": "bool", "value": false}},
+    {"type_definition": {"kind": "integer", "minimum": 0, "maximum": 3}, "value": {"kind": "integer", "value": 0}},
+    {"type_definition": {"kind": "number", "minimum": 0, "maximum": 1}, "value": {"kind": "number", "value": 0.0}},
+    {"type_definition": {"kind": "string", "min_length": 0, "max_length": 8}, "value": {"kind": "string", "value": ""}},
+    {"type_definition": {"kind": "enum", "members": ["parked", "moving"]}, "value": {"kind": "enum", "value": "parked"}},
+    {"type_definition": {"kind": "list", "item_type": {"kind": "integer"}, "min_items": 0, "max_items": 2}, "value": {"kind": "list", "value": []}},
+    {"type_definition": {"kind": "record", "fields": [{"name": "parked", "required": true, "type_definition": {"kind": "bool"}}, {"name": "note", "required": false, "type_definition": {"kind": "string", "max_length": 8}}]}, "value": {"kind": "record", "value": {"parked": {"kind": "bool", "value": false}}}}
+  ],
+  "artifact_kinds": ["entity", "region", "profile", "facet", "question", "tool", "tool_plan", "rule", "rule_set", "model_binding", "fact_schema", "prompt_template", "response_schema", "attribute_schema", "context_schema", "tool_input_schema", "tool_output_schema", "object_schema", "decision_schema", "value_schema", "policy", "vocabulary", "geometry_resource", "static_asset", "fact_producer_catalog"],
+  "status_domains": {
+    "TaskStatus": ["created", "accepted", "queued", "running", "completed", "partial_failed", "failed", "cancelled"],
+    "ExecutionStatus": ["initialized", "running", "completed", "partial_failed", "failed", "cancelled"],
+    "NodeRunStatus": ["pending", "ready", "running", "succeeded", "failed", "blocked", "skipped", "cancelled"],
+    "AttemptStatus": ["created", "running", "succeeded", "failed", "timed_out", "cancelled", "superseded"],
+    "FactStatus": ["known", "unknown", "error", "not_applicable", "not_evaluated"],
+    "DecisionResult": ["violation", "no_violation", "uncertain", "not_applicable"]
+  }
+}

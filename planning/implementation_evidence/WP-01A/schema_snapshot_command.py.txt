@@ -1,0 +1,36 @@
+from pathlib import Path
+import hashlib,importlib.metadata,json,platform,subprocess,sys,tomllib
+from pydantic import TypeAdapter
+from jsonschema import Draft202012Validator
+from jimu_runtime.domain import references,values,enums,primitives
+
+e=Path('planning/implementation_evidence/WP-01A');out=e/'schemas';out.mkdir(exist_ok=True)
+modules=[(references,['ContentRef','IdentitySelector','RuntimeRecordRef','SchemaRef']),
+(values,['BooleanValue','IntegerValue','NumberValue','StringValue','EnumValue','ListValue','RecordValue','BooleanTypeDefinition','IntegerTypeDefinition','NumberTypeDefinition','StringTypeDefinition','EnumTypeDefinition','ListTypeDefinition','RecordTypeDefinition','RecordFieldDefinition','ValueContract','Value','TypeDefinition']),
+(enums,['ArtifactKind','RuntimeRecordKind','TaskStatus','ExecutionStatus','NodeRunStatus','AttemptStatus','FactStatus','DecisionResult']),
+(primitives,['Version','Digest','ArtifactId','RecordId'])]
+dialect='https://json-schema.org/draft/2020-12/schema';entries=[]
+for module,names in modules:
+ for name in names:
+  def generate():return {'$schema':dialect,**TypeAdapter(getattr(module,name)).json_schema()}
+  first=json.dumps(generate(),sort_keys=True,ensure_ascii=False,indent=2,allow_nan=False)+'\n'
+  second=json.dumps(generate(),sort_keys=True,ensure_ascii=False,indent=2,allow_nan=False)+'\n'
+  if first!=second:raise SystemExit('Non-repeatable Schema: '+name)
+  Draft202012Validator.check_schema(json.loads(first))
+  path=out/(name+'.schema.json');path.write_text(first)
+  entries.append({'name':name,'source_module':module.__name__,'path':path.name,'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'draft_2020_12_valid':True,'repeatable_bytes':True})
+(out/'index.json').write_text(json.dumps({'scope':'WP-01A foundation Schema evidence only; not Fact payload projection or a Bundle generator','dialect':dialect,'pydantic_version':importlib.metadata.version('pydantic'),'semantic_validation':'Bare Value schemas validate structural algebra. Use ValueContract/validate_typed_value with a caller-owned TypeDefinition for closed Record fields, enum membership, item contracts, bounds and depth. JSON Schema numeric mathematics do not distinguish Python float/int identity.','schemas':entries},indent=2)+'\n')
+print('Generated, checked and byte-compared foundation schemas:',len(entries))
+
+collect='import importlib.metadata,json;print(json.dumps({d.metadata["Name"].lower().replace("_","-"):d.version for d in importlib.metadata.distributions()},sort_keys=True))'
+primary=json.loads(subprocess.check_output([sys.executable,'-c',collect],text=True))
+rebuild_path=Path('/tmp/jimu_wp01a_rebuild_path.txt').read_text().strip()
+rebuild=json.loads(subprocess.check_output([rebuild_path+'/.venv/bin/python','-c',collect],text=True))
+if primary!=rebuild:raise SystemExit('Clean rebuild dependency versions differ')
+lock=Path('uv.lock');lock_hash=hashlib.sha256(lock.read_bytes()).hexdigest()
+(e/'dependency_versions.json').write_text(json.dumps({'primary_installed':primary,'clean_rebuild_installed':rebuild,'versions_identical':True,'clean_rebuild_environment':rebuild_path+'/.venv','lock_sha256':lock_hash,'lock_packages':[{ 'name':p['name'],'version':p['version']} for p in tomllib.loads(lock.read_text())['package']],'build_backend':'uv-build==0.9.15, pinned in both build-system and dev lock so build tool artifacts are locked too'},indent=2)+'\n')
+(e/'lock_sha256.txt').write_text(lock_hash+'  uv.lock\n')
+environment=json.loads((e/'environment.json').read_text());environment['tested_environment']={'python_version':platform.python_version(),'executable':sys.executable,'base_executable':getattr(sys,'_base_executable',None),'pydantic_version':importlib.metadata.version('pydantic'),'clean_rebuild_environment':rebuild_path+'/.venv','cpu_only':True}
+(e/'environment.json').write_text(json.dumps(environment,indent=2)+'\n')
+print('Primary/clean rebuild versions identical:',len(primary),'installed packages')
+print('Lock SHA-256:',lock_hash)

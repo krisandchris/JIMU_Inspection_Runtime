@@ -1,0 +1,331 @@
+
+$ uv lock --python /usr/bin/python3
+kind=dependency
+started_at=2026-11-17T10:05:44.242634+00:00
+finished_at=2026-11-17T10:05:45.022138+00:00
+exit_code=0
+Using CPython 3.12.3 interpreter at: /usr/bin/python3
+Resolved 21 packages in 740ms
+
+
+$ uv sync --locked --group dev --python /usr/bin/python3
+kind=dependency
+started_at=2026-11-17T10:05:47.547998+00:00
+finished_at=2026-11-17T10:05:49.187986+00:00
+exit_code=0
+Using CPython 3.12.3 interpreter at: /usr/bin/python3
+Creating virtual environment at: .venv
+Resolved 21 packages in 0.87ms
+   Building jimu-runtime @ file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0
+      Built jimu-runtime @ file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0
+Downloading mypy (12.7MiB)
+ Downloaded mypy
+Prepared 8 packages in 1.13s
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+Installed 20 packages in 422ms
+ + annotated-types==0.8.0
+ + attrs==26.1.0
+ + iniconfig==2.3.1
+ + jimu-runtime==0.1.0 (from file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0)
+ + jsonschema==4.25.1
+ + jsonschema-specifications==2025.9.1
+ + mypy==1.18.2
+ + mypy-extensions==1.2.0
+ + packaging==26.3
+ + pathspec==1.1.1
+ + pluggy==1.7.0
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + pygments==2.21.0
+ + pytest==8.4.2
+ + referencing==0.37.0
+ + rpds-py==2026.9.1
+ + ruff==0.14.14
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
+
+
+$ uv run --locked python -c 'from jimu_runtime.domain.values import ValueContract; from jimu_runtime.domain.references import IdentitySelector; print(ValueContract.model_validate({"type_definition":{"kind":"bool"},"value":{"kind":"bool","value":False}}).stable_json()); print(IdentitySelector.model_validate({"artifact_kind":"profile","artifact_id":"vehicle","version_selector":"1.0.0"}))'
+kind=static
+started_at=2026-11-17T10:06:46.520700+00:00
+finished_at=2026-11-17T10:06:46.794577+00:00
+exit_code=1
+{"type_definition":{"kind":"bool"},"value":{"kind":"bool","value":false}}
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/.venv/lib/python3.12/site-packages/pydantic/main.py", line 716, in model_validate
+    return cls.__pydantic_validator__.validate_python(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for IdentitySelector
+artifact_kind
+  Input should be <ArtifactKind.PROFILE: 'profile'> or <ArtifactKind.REGION: 'region'> [type=literal_error, input_value='profile', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/literal_error
+
+
+$ uv run --locked ruff check --fix .
+kind=static
+started_at=2026-11-17T10:10:34.498238+00:00
+finished_at=2026-11-17T10:10:34.515188+00:00
+exit_code=0
+All checks passed!
+
+
+$ uv run --locked ruff format .
+kind=static
+started_at=2026-11-17T10:10:34.544835+00:00
+finished_at=2026-11-17T10:10:34.561290+00:00
+exit_code=0
+8 files reformatted, 6 files left unchanged
+
+
+$ uv run --locked mypy src/jimu_runtime
+kind=static
+started_at=2026-11-17T10:10:38.122780+00:00
+finished_at=2026-11-17T10:10:40.447591+00:00
+exit_code=0
+Success: no issues found in 7 source files
+
+
+$ uv lock --python /usr/bin/python3
+kind=dependency
+started_at=2026-11-17T10:11:33.996967+00:00
+finished_at=2026-11-17T10:11:34.594959+00:00
+exit_code=0
+Resolved 22 packages in 587ms
+Added uv-build v0.9.15
+
+
+$ uv sync --locked --group dev --python /usr/bin/python3
+kind=dependency
+started_at=2026-11-17T10:11:34.624998+00:00
+finished_at=2026-11-17T10:11:34.857854+00:00
+exit_code=0
+Resolved 22 packages in 0.52ms
+   Building jimu-runtime @ file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0
+      Built jimu-runtime @ file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0
+Downloading uv-build (1.4MiB)
+ Downloaded uv-build
+Prepared 2 packages in 222ms
+Uninstalled 1 package in 0.30ms
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+Installed 2 packages in 1ms
+ ~ jimu-runtime==0.1.0 (from file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0)
+ + uv-build==0.9.15
+
+
+$ uv run --locked ruff format .
+kind=static
+started_at=2026-11-17T10:12:13.959428+00:00
+finished_at=2026-11-17T10:12:13.975485+00:00
+exit_code=0
+2 files reformatted, 12 files left unchanged
+
+
+$ uv run --locked mypy src/jimu_runtime
+kind=static
+started_at=2026-11-17T10:12:18.771003+00:00
+finished_at=2026-11-17T10:12:19.153797+00:00
+exit_code=0
+Success: no issues found in 7 source files
+
+
+$ uv run --locked ruff format .
+kind=static
+started_at=2026-11-17T10:14:24.996262+00:00
+finished_at=2026-11-17T10:14:25.028237+00:00
+exit_code=0
+2 files reformatted, 12 files left unchanged
+
+
+$ uv run --locked ruff check .
+kind=static
+started_at=2026-11-17T10:15:23.851981+00:00
+finished_at=2026-11-17T10:15:23.868055+00:00
+exit_code=0
+All checks passed!
+
+
+$ uv run --locked ruff format --check .
+kind=static
+started_at=2026-11-17T10:15:23.897537+00:00
+finished_at=2026-11-17T10:15:23.911990+00:00
+exit_code=0
+14 files already formatted
+
+
+$ uv run --locked mypy src/jimu_runtime
+kind=static
+started_at=2026-11-17T10:15:23.941600+00:00
+finished_at=2026-11-17T10:15:24.313191+00:00
+exit_code=0
+Success: no issues found in 7 source files
+
+
+$ env UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp01a-rebuild-DNnmdf/.venv uv sync --locked --group dev --python /usr/bin/python3
+kind=dependency
+started_at=2026-11-17T10:15:43.737011+00:00
+finished_at=2026-11-17T10:15:43.778607+00:00
+exit_code=0
+Using CPython 3.12.3 interpreter at: /usr/bin/python3
+Creating virtual environment at: /tmp/jimu-wp01a-rebuild-DNnmdf/.venv
+Resolved 22 packages in 0.78ms
+Installed 21 packages in 12ms
+ + annotated-types==0.8.0
+ + attrs==26.1.0
+ + iniconfig==2.3.1
+ + jimu-runtime==0.1.0 (from file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0)
+ + jsonschema==4.25.1
+ + jsonschema-specifications==2025.9.1
+ + mypy==1.18.2
+ + mypy-extensions==1.2.0
+ + packaging==26.3
+ + pathspec==1.1.1
+ + pluggy==1.7.0
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + pygments==2.21.0
+ + pytest==8.4.2
+ + referencing==0.37.0
+ + rpds-py==2026.9.1
+ + ruff==0.14.14
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
+ + uv-build==0.9.15
+
+
+$ uv run --locked python /tmp/jimu_wp01a_schema_snapshot.py
+kind=static
+started_at=2026-11-17T10:16:38.198801+00:00
+finished_at=2026-11-17T10:16:38.642964+00:00
+exit_code=0
+Generated, checked and byte-compared foundation schemas: 34
+Primary/clean rebuild versions identical: 21 installed packages
+Lock SHA-256: 41dd98a2aeaf55bd87a1097185c1142b8d0998cc5c9aab7ac5f7573afe284f52
+
+
+$ uv lock --python /usr/bin/python3
+kind=dependency
+started_at=2026-11-17T10:19:07.618077+00:00
+finished_at=2026-11-17T10:19:07.625398+00:00
+exit_code=0
+Resolved 22 packages in 0.60ms
+
+
+$ uv sync --locked --group dev --python /usr/bin/python3
+kind=dependency
+started_at=2026-11-17T10:19:07.655149+00:00
+finished_at=2026-11-17T10:19:07.666446+00:00
+exit_code=0
+Resolved 22 packages in 0.52ms
+   Building jimu-runtime @ file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0
+      Built jimu-runtime @ file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0
+Prepared 1 package in 2ms
+Uninstalled 1 package in 0.18ms
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+Installed 1 package in 0.45ms
+ ~ jimu-runtime==0.1.0 (from file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0)
+
+
+$ uv lock --no-config --default-index https://pypi.org/simple --python /usr/bin/python3
+kind=dependency
+started_at=2026-11-17T10:19:29.189047+00:00
+finished_at=2026-11-17T10:19:33.534724+00:00
+exit_code=0
+Resolved 22 packages in 4.32s
+
+
+$ uv sync --locked --group dev --python /usr/bin/python3
+kind=dependency
+started_at=2026-11-17T10:19:50.461745+00:00
+finished_at=2026-11-17T10:19:50.469946+00:00
+exit_code=0
+Resolved 22 packages in 0.58ms
+Audited 21 packages in 0.18ms
+
+
+$ env UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp01a-public-rebuild-13O2pv/.venv uv sync --no-config --locked --group dev --python /usr/bin/python3
+kind=dependency
+started_at=2026-11-17T10:20:22.140046+00:00
+finished_at=2026-11-17T10:20:26.784741+00:00
+exit_code=0
+Using CPython 3.12.3 interpreter at: /usr/bin/python3
+Creating virtual environment at: /tmp/jimu-wp01a-public-rebuild-13O2pv/.venv
+Resolved 22 packages in 0.52ms
+Downloading mypy (12.7MiB)
+Downloading ruff (10.7MiB)
+Downloading uv-build (1.4MiB)
+ Downloaded uv-build
+ Downloaded ruff
+ Downloaded mypy
+Prepared 10 packages in 4.60s
+Installed 21 packages in 12ms
+ + annotated-types==0.8.0
+ + attrs==26.1.0
+ + iniconfig==2.3.1
+ + jimu-runtime==0.1.0 (from file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0)
+ + jsonschema==4.25.1
+ + jsonschema-specifications==2025.9.1
+ + mypy==1.18.2
+ + mypy-extensions==1.2.0
+ + packaging==26.3
+ + pathspec==1.1.1
+ + pluggy==1.7.0
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + pygments==2.21.0
+ + pytest==8.4.2
+ + referencing==0.37.0
+ + rpds-py==2026.9.1
+ + ruff==0.14.14
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
+ + uv-build==0.9.15
+
+
+$ uv run --locked ruff check .
+kind=static
+started_at=2026-11-17T10:21:10.326250+00:00
+finished_at=2026-11-17T10:21:10.342040+00:00
+exit_code=0
+All checks passed!
+
+
+$ uv run --locked ruff format --check .
+kind=static
+started_at=2026-11-17T10:21:10.370900+00:00
+finished_at=2026-11-17T10:21:10.386367+00:00
+exit_code=0
+14 files already formatted
+
+
+$ uv run --locked mypy src/jimu_runtime
+kind=static
+started_at=2026-11-17T10:21:10.416818+00:00
+finished_at=2026-11-17T10:21:10.549423+00:00
+exit_code=0
+Success: no issues found in 7 source files
+
+
+$ uv lock --no-config --default-index https://pypi.org/simple --check
+kind=dependency
+started_at=2026-11-17T10:21:10.578724+00:00
+finished_at=2026-11-17T10:21:10.585963+00:00
+exit_code=0
+Resolved 22 packages in 0.51ms
+
+
+$ uv run --locked python /tmp/jimu_wp01a_schema_snapshot.py
+kind=static
+started_at=2026-11-17T10:21:58.781496+00:00
+finished_at=2026-11-17T10:21:59.225128+00:00
+exit_code=0
+Generated, checked and byte-compared foundation schemas: 34
+Primary/clean rebuild versions identical: 21 installed packages
+Lock SHA-256: e25b2408a2d4c92b3a6dc157b70b33c4dbbf01dfbb752577480c64000a5bd801
+
