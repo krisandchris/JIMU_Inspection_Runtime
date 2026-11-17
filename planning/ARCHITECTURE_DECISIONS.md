@@ -159,3 +159,34 @@ must cover current F01–F05 field/semantics plus bounded WP-01 implementation;
 real fallback/local-primary exceptions additionally need reviewed deployment
 configuration and independent quality evidence, never inferred from approval
 of a schema. No model/Tool routing or Rule execution code is implemented here.
+
+## WP-00-R2.1.1 — Applicability ownership and ordered gating
+
+Baseline: main / `2ae36ff0c074b1d0c07f99b7cc40a4f7e49a4ed9`.
+This limited clarification supersedes any reading of the earlier F01 "AND"
+shorthand as a flattened cross-level Strong Kleene expression. It does not alter
+decision history, add a business node/architecture layer, or approve WP-01.
+
+| Closure | Existing decisions refined | Candidate contract / approval requirement |
+|---|---|---|
+| R3-01 execution ownership | D03/D04/D09 | N01 only creates ContextSnapshot. After success, an internal deterministic Workflow Engine Pre-N02 Gate partitions the pinned configured Profiles into eligible/excluded/unresolved. N02 receives only eligible Profiles and does not generate gate exclusions. N06 inherits this fixed result and owns RuleSet/Rule applicability. N05 remains bound independently. User approval of these clarified records/ownership is still required |
+| R3-02 semantic boundary | D03/D04/D09 | Ordered Profile→RuleSet→Rule: FALSE proves subtree exclusion; UNKNOWN creates unresolved obligation and descendant not_evaluated without TruthValue; TRUE advances. Strong Kleene applies inside one AST only. Required Evidence Guard independently checks Facts/Evidence/Producer Authority with complete/blocked outcome. Child FALSE never erases parent UNKNOWN; condition UNKNOWN stays uncertain. No runtime evaluator is authorized |
+
+01 §3.8.1 defines the six Runtime schemas: ProfileEligibilityEvaluation,
+RuleSetApplicabilityEvaluation, RuleApplicabilityEvaluation, ApplicabilityTrace,
+ApplicabilityLevelTrace and UnresolvedObligation. They reuse RuntimeRecordRef and
+the existing obligation ledger, with no new ArtifactKind/PolicyKind/NodeId.
+Coverage retains excluded/blocked/unresolved/not_evaluated branches even without
+Objects. Decision traces link the same identities where a Decision actually exists.
+
+Empty eligible scope skips N02 with discovery not_evaluated; all proven excluded
+means not_applicable, any unresolved branch prevents no_violation. Actual no_hits
+over eligible Profiles retains D09 none/uncertain. This is not an automatic-clear
+exception or a change to pending D14.
+
+**D01, D02, D03, D04, D05, D06, D07, D08, D09, D10, D11, D12, D13, D14 and
+D15 each remain PROPOSED / PENDING_USER_APPROVAL**, with their R2 table topics
+unchanged. D12 A/B, D13 exact intersection, D15 forward-only authority, mandatory
+full scan, collect_all, immutable references and CPU WP-01/GPU WP-04 gates remain.
+No new decision or candidate is marked CONFIRMED. R1/R2/R2.1 audit directories
+and AGENTS.md are protected. STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN.

@@ -1,21 +1,23 @@
 # WP-01 Implementation Plan — Domain Model and Contract Foundation
 
-状态：WP-00-R2.1 / PROPOSED / PENDING_USER_APPROVAL；本文件不构成实施授权。
-修订范围：仅文档；基线 main / `40af8a17855b27063da94b3c9891272f3e3fc4e3`。R2 修改前字节归档于 `planning/review_evidence/WP-00-R2.1/before/`；R1/R2 历史证据禁止修改。
+状态：WP-00-R2.1.1 / PROPOSED / PENDING_USER_APPROVAL；本文件不构成实施授权。
+修订范围：仅 Applicability 文档；基线 main / `2ae36ff0c074b1d0c07f99b7cc40a4f7e49a4ed9`。R2.1 修改前字节归档于 `planning/review_evidence/WP-00-R2.1.1/before/`；R1/R2/R2.1 历史证据禁止修改。
 审查日期：2026-11-17（Asia/Shanghai）。工作包：WP-00 Bootstrap Review。  
 证据等级：`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。
 
 ## 1. 目标、范围与审批边界
 
-本次仅授权 WP-00-R2.1 的 F01–F05 最后契约闭合及审计证据；只改四份 specs、ADR、本计划、TEST_STRATEGY 共七个文档。不重新规划系统、不新增决策编号。禁止代码实现、pyproject、安装依赖、运行测试/服务/模型/GPU/外部 API、改分支、初始化 Git、commit/push；不修改需求平台、AGENTS、原始分发清单或 R1/R2 证据；不 git reset/restore。
+本次仅授权 WP-00-R2.1.1 的 R3-01 执行归属、R3-02 层级门控语义闭合及审计证据；只改 specs/01、specs/03、ADR、本计划、TEST_STRATEGY 五个文档。不重新规划系统、不新增架构层或决策编号。禁止代码实现、pyproject、安装依赖、运行测试/服务/模型/GPU/外部 API、改分支、初始化 Git、commit/push；不修改需求平台、AGENTS、原始分发清单或 R1/R2/R2.1 证据；不 git reset/restore/checkout 覆盖文件。
 
 WP-01 的建议目标：建立独立 Runtime 的 Python 包、严格 Pydantic v2 契约、版本与摘要原语、Fact Schema Registry、类型化 Rule AST 及纯类型校验接口、可重复生成的 JSON Schema 和对应测试。WP-01 只建设 Domain Model、内存 Fact Registry、Rule AST 静态类型检查、JSON Schema 生成和 CPU-only 测试。所有建议均为 PROPOSED，用户审批状态保持 PENDING_USER_APPROVAL。
 
 非目标：Bundle 编译/打包/验签/完整引用闭包解析（WP-02）、数据库或 ORM、API/OpenAPI 服务、持久调度和节点执行器（WP-03）、Provider/Tool 调用（WP-04）、规则运行时求值和真实巡检（WP-05）、回放执行（WP-06）、Compose 部署与 UI。已有 JIMU 需求平台及 V4 不进入依赖图。WP-01 可以定义后续工作包使用的数据结构，不能据此实现相应服务。
 
-审批循环：Plan → Challenge → 用户 Approval → Execute → Verify → Review → Decide。先由用户批准第 10/13/14 节 D01–D15 决策候选和 WP-01 范围，再明确测试/依赖准备授权，才可实施。本次依据用户授权将冲突修订为一致的候选契约，并保留修改前原文；不能把候选契约视为已批准规范。WP-00-R2.1 到此只提交可审查文档。
+审批循环：Plan → Challenge → 用户 Approval → Execute → Verify → Review → Decide。先由用户批准第 10/13/14/15 节 D01–D15 当前候选和 WP-01 范围，再明确测试/依赖准备授权，才可实施。本次保留修改前原文；不能把候选契约视为已批准规范。当前结果仅供 GPT-6 独立复审及用户审批。
 
-## 2. 启动包与仓库证据（R2.1 当前基线及早期历史）
+## 2. 启动包与仓库证据（R2.1.1 当前基线及早期历史）
+
+R2.1.1 开始前核对：main / `2ae36ff0c074b1d0c07f99b7cc40a4f7e49a4ed9`，工作区 clean，61 个已跟踪文件。R2.1 after 清单的 7 个修订文件及 43 个保护文件与当前字节一致，before 清单的原字节副本一致；没有 pull/reset/restore/init/分支操作。下文 R2.1/R2/初轮结果均为历史，不是本轮执行的测试。
 
 R2.1 开始前实际核对：main / `40af8a17855b27063da94b3c9891272f3e3fc4e3`，工作区 clean，50 个已跟踪文件。`git status --short --branch` 与 `git rev-parse --show-toplevel HEAD` 均 exit 0。无 pull/reset/restore/init/分支操作；以下 R2 和初轮信息仅为历史。
 
@@ -132,7 +134,7 @@ src/jimu_runtime/
       tools.py
       evidence.py
       invocations.py
-      decisions.py
+      decisions.py          # Applicability 六类记录/RuleEvaluation 数据，无 Gate Evaluator
       coverage.py           # 执行覆盖，与 lifecycle/result 独立
       replay.py
     nodes/
@@ -173,7 +175,7 @@ tests/{unit,contract,negative,fixtures}/
 | 模型组 | 待冻结模型 | 核心不变量/边界 |
 |---|---|---|
 | 基础 | ContractModel、PersistedContract、ArtifactIdentity、ContentRef、IdentitySelector、SchemaRef、RuntimeRecordRef、MediaRef、EvidenceRef、ClockProvenance、TraceContext、ValidationIssue | exact version/digest；错误路径；ContentRef/IdentitySelector 不混用，不把定义引用与运行记录 ID 混用 |
-| 枚举 | ArtifactKind、PolicyKind、TaskStatus、ExecutionStatus、NodeRunStatus、AttemptStatus、FactStatus、DecisionResult、RuleTruth、CoverageStatus、DiscoveryOutcome、GroundingOutcome、ProducerKind、ScopeKind、NodeId、ReplayKind、ApplicabilityLevel/EvaluationStatus/Disposition、ProviderRoutingMode/RouteKind、SelectionInvocationMode、ToolInvocationOriginKind、ProviderVersionResolution/ImplementationVersionResolution，以及显式 release/tool/validation 状态 | 原规格分域枚举保持独立；新增枚举值需审批，不复用字符串的含义 |
+| 枚举 | ArtifactKind、PolicyKind、TaskStatus、ExecutionStatus、NodeRunStatus、AttemptStatus、FactStatus、DecisionResult、RuleTruth、CoverageStatus、DiscoveryOutcome、GroundingOutcome、ProducerKind、ScopeKind、NodeId、ReplayKind、ApplicabilityLevel/EvaluationStatus/Disposition/ApplicabilityEvaluationOwner、ProviderRoutingMode/RouteKind、SelectionInvocationMode、ToolInvocationOriginKind、ProviderVersionResolution/ImplementationVersionResolution，以及显式 release/tool/validation 状态 | 原规格分域枚举保持独立；新增枚举值需审批，不复用字符串的含义 |
 | 结构化值 | BoolValue、IntegerValue、NumberValue、StringValue、EnumValue、ListValue、RecordValue 及对应 TypeDefinition | kind 判别；有限类型与约束；无 Any、NaN/Infinity |
 | Ontology | EntityDefinition、RegionDefinition、AssetRef | 不是 Object；Region 不等于 polygon |
 | Capability | ProfileDefinition、FacetDefinition、QuestionDefinition、PrimaryFactOutput、ModelGroundingBinding、ToolGroundingBinding、ContextFieldSelector、QuestionSelectionPolicy | Release 固定 catalogue/policy；N02 记录确定集合；Facet 精确交集和 Profile context/scope 校验 |
@@ -188,11 +190,12 @@ tests/{unit,contract,negative,fixtures}/
 | Tool runtime | ToolExecution、GroundingBindingOrigin、ToolPlanStepOrigin、ToolResult、ToolOutputState、ToolAttemptResult、ToolError、ToolResourceUsage | 配置 ref 与实际实现版本；输入输出 digest；failure 非负证据 |
 | Evidence | EvidenceAsset、EvidenceScope、StorageReference、RetentionPolicyRef、AssetStage | 元数据而非大字节；原图/变换关系；只定义 staged/finalized 状态契约，无上传流程 |
 | Model audit | ModelInvocation、InvocationIdentity、ConfiguredProviderIdentity、ActualProviderIdentity、ProviderRouteTrace、InvocationOutcome、InvocationError、UsageRecord | configured binding + 实际 provider/deployment/model；provider request ID；不在记录中写密钥 |
-| Decision | CandidatePrediction、CandidateCategory、DecisionRecord、RuleEvaluation、RuleEvaluationOutcome、ApplicabilityTrace、ApplicabilityLevelTrace、ConflictResolutionTrace、ExplanationTrace | 全量 applicable/evaluated/skipped/blocked/matched 引用；候选仅 advisory；coverage 不全不能静默 no_violation |
+| Applicability runtime | ProfileEligibilityEvaluation、RuleSetApplicabilityEvaluation、RuleApplicabilityEvaluation、ApplicabilityTrace、ApplicabilityLevelTrace、UnresolvedObligation | Policy 定义、执行记录、解释 trace、Coverage 聚合四者分开；Pre-N02/N06 归属、父级阻断和无 truth 的 not_evaluated；见 01 §3.8.1 |
+| Decision | CandidatePrediction、CandidateCategory、DecisionRecord、RuleEvaluation、RuleEvaluationOutcome、ConflictResolutionTrace、ExplanationTrace | 全量 applicable/evaluated/skipped/blocked/not_evaluated/matched 引用；独立 complete/blocked Required Evidence Guard 检查 Facts/Evidence/Producer Authority；不含 evaluator |
 | Replay | ArtifactReplayRequest、InferenceReplayRequest、ReplayRun | kind 判别；source/target pin；只建数据，无模型/工具执行 |
 | Node common | NodeInputEnvelope、NodeOutputEnvelope、NodeError、ArtifactOutputRef | task/execution/release/node/attempt/trace pin；错误、时间、输出有界 |
 | N01 | ContextBuildInput、ContextBuildOutput、ContextValidationReport | 不补造缺失上下文；required failure 明确 |
-| N02 | DiscoveryInput、DiscoveryOutput、ProfileHit、FilteredProfile、QuestionSelectionRecord、AllDeclaredSelectionRecord、ContextRuleSelectionRecord、ModelAdvisorySelectionRecord、FallbackSelectionRecord、FallbackSelectionEvidence、SelectionCallPolicy、SharedN02SelectionCallPolicy、AdditionalSelectionCallPolicy | 注册 Profile + policy 确定 effective_question_refs + selection ref；BBox/Object/category 字段拒绝 |
+| N02 | DiscoveryInput、DiscoveryOutput、ProfileHit、DiscoveryProfileDiagnostic、QuestionSelectionRecord、AllDeclaredSelectionRecord、ContextRuleSelectionRecord、ModelAdvisorySelectionRecord、FallbackSelectionRecord、FallbackSelectionEvidence、SelectionCallPolicy、SharedN02SelectionCallPolicy、AdditionalSelectionCallPolicy | 只接收 eligible_profiles/evaluation ref；DiscoveryProfileDiagnostic 替换含混 FilteredProfile，不生产 Profile eligibility 排除；Questions/selection 不变 |
 | N03 | GroundingInput、GroundingOutput、ModelGroundingProvenance、ToolGroundingProvenance | 独立 grounding；原样继承 selection；模型/工具定位来源判别 |
 | N04 | ObservationInput、ObservationBatch、QuestionResult、QuestionValidationResult | 一 Object/整批 Attempt；一 Question 一个主 Fact（可为 Record）；显式 parse/关联可信度；批次诊断与合法 Fact 分开 |
 | N05 | ToolNodeInput、ToolNodeOutput、ToolPlanRunSummary | 仅绑定计划，引用 N04 validated Facts；无候选驱动选择字段 |
@@ -222,7 +225,13 @@ R2.1 字段覆盖补充（与以上完整清单合并，不另建新运行服务
 不新增 ArtifactKind/PolicyKind：仍是 25 种制品、16 个 Policy 子类型。新增 trace/union/
 生成输入是既有领域契约的精化；外部持久根显式 schema_version，嵌套分支由根版本治理。
 本节是 WP-01 完整 Schema 清单：基础表、R2 资源/Policy/producer 表和 R2.1 字段表共同
-构成生成器 root index 的清单；不得只实现最后五项而漏掉既有清单。
+构成生成器 root index 的清单；R2.1.1 的六类 Applicability 记录已合并到基础表。
+字段以 01 §3.8.1/4.7/4.8、03 §3.1/4/8 为准：Gate aggregate 的三分区及 trace refs；
+RuleSet/Rule 记录的 parent refs/真实 N06 refs 或 ancestor projection；Trace 的 owner/
+source/decisive ancestor；UnresolvedObligation 与原 ledger 共用 obligation_id；Coverage
+和 Decision 引用选定 revision。ApplicabilityLevelTrace 是嵌套 trace，独立存储才有根版本；
+UnresolvedObligation 是现有 obligation 的类型分支，不建立重复账本。不增加 ArtifactKind/
+PolicyKind/NodeId；枚举集中定义 evaluation owner、reason code 和 N02 skip reason。
 
 冻结时应为每个模型列必填/可选、默认值、长度/数量边界、错误码、样例及 JSON Schema 根名称。当前规格未给出的实体类型、保留策略等业务枚举不虚构为 CONFIRMED；以受约束标识和被引用的版本化词表治理，或在审批中列出有限初始值。
 
@@ -293,10 +302,10 @@ WP-01 实现 AST 结构及纯类型检查；Rule 执行引擎留 WP-05。结构�
 3. 递归推导类型，检查常量、enum membership、单位与比较操作，拒绝 incompatible types。可解析缺 producer 的本地类型测试不能宣称完整 Bundle closure 通过。
 4. 静态检查必须显式传入 input_domain：rule_applicability 只允许已声明 Context/Region/Profile 元数据（禁止 Object Facts）；rule_condition 可读验证 Fact/Context；tool_condition 可读先前已验证 Fact/Context。所有根 Boolean lifted T/F/U，所有域禁止 Candidate/Decision，不用一个无边界 AST resolver 代替。
 5. 策略必须覆盖 missing（无记录）、unknown、error、not_applicable、not_evaluated；missing 不是额外 FactStatus，不用 false 补齐。
-6. Predicate truth 使用 strong Kleene T/F/U；全表见 03 §8.3：not(U)=U，F AND U=F，T AND U=U，T OR U=T，F OR U=U。保留全部输入诊断。另有独立 safety guard：required Fact/证据缺失或无效时，即使 predicate 可简化为 F/T，Rule outcome 仍 blocked、effective result=uncertain；不能称此 guard 为另一张真值表。WP-01 仅定义该语义的数据类型/策略及静态类型检查，不实现真值求值器。
+6. Predicate truth 使用 Strong Kleene T/F/U，仅在单个 Policy AST / Rule Condition AST 内；全表见 03 §8.3：not(U)=U，F AND U=F，T AND U=U，T OR U=T，F OR U=U。独立 Required Evidence Guard 检查 required Facts、Evidence 和已选 Producer/Attempt Authority，输出 complete/blocked 及原因，不输出 TruthValue。必需项缺失或 authority 歧义时，即使 predicate 可简化为 F/T，Rule outcome 仍 blocked/effective uncertain。WP-01 只定义类型/策略与静态检查，不实现求值器或 guard 执行器。
 7. 是否允许显式状态检查操作符应单独审批；首版建议不提供，以避免条件绕过 required Fact 政策。
 8. RuleEvaluation 分开保存 execution outcome（evaluated/skipped/blocked）、predicate truth（true/false/unknown）与 matched 标记/引用；matched 不是替代 succeeded 的生命周期状态。
-9. F01 按 Profile→RuleSet→Rule 三层 AND gate 和保守 required-unknown guard 留 trace；每层只读同一 Context/Region/Profile 元数据，false 排除对应子树，active unknown 保留 unresolved，不能下层 false 消除上层 unknown。N06 V1 对所有适用 mandatory Rules 做完整性扫描，候选为空/候选调用失败也不能抑制该集合。保存 applicable/evaluated/skipped/blocked/matched，以及 required Facts/evidence 和 engine version。
+9. R3-01/R3-02 按 Profile→RuleSet→Rule 有序 gate 留 trace，不把三级压成 AND AST。N01 只构建 Context；Workflow Engine 在成功 N01 后执行 Pre-N02 Profile Gate，N02 只收 eligible_profiles；N06 引用固定 Profile 结果并负责 RuleSet/Rule 两级。每层只读声明元数据，FALSE 排除子树，UNKNOWN 产生 unresolved obligation、后代 not_evaluated 且无 truth；只在父 TRUE 时到达子级。全 mandatory 范围用实际评估或祖先投影记录，不要求执行被阻断的子 policy；保存 excluded/unresolved/blocked/not_evaluated 原因，不改变 N05 ToolPlan。
 10. RuleSet conflict_policy 候选为 collect_all：保留全部证据有效的匹配 Rules 与 category 集合，绝不提前停止；V1 不支持排他/优先胜出模式。单 Object 有有效匹配即 violation，同时保留其他 blocked/unknown 与 partial coverage；无匹配且有未决 mandatory 工作为 uncertain；所有适用 mandatory 完整且 false 才 no_violation；确定无适用 mandatory 为 not_applicable。Execution 空集与部分覆盖遵守 D09，不能借 Object 级结果掩盖未执行范围。
 
 ## 8. 测试计划、边界与执行授权
@@ -324,6 +333,7 @@ WP-01 实现 AST 结构及纯类型检查；Rule 执行引擎留 WP-05。结构�
 | contract/test_policy_catalog.py | 16 个 policy subtype 的显式字段、各合法分支、默认禁止 | 缺字段、Any/额外配置、未定义 business 默认、非法 applicability Facts/Tool Candidate |
 | contract/test_producer_authority.py | Question 1:1、Tool step 1:N、路径/producer/schema、batch/step authority | key 冲突、重复 Attempt 异值、last-write-wins、跨 Attempt cherry-pick、Rule selector 无唯一 producer |
 | contract/test_final_closure.py | F01–F05 正例/条件分支/显式 refs、投影生成重复性 | TEST_STRATEGY §2.3 的五组负例；有限合成 refs 不能证明真实调用/审批/路由 |
+| contract/test_applicability_contract.py | 六类记录、完整层级 trace/分区、引用固定 ancestor、空 eligible skip 与真实 no_hits 分开 | TEST_STRATEGY §2.4 的正负例；拒绝父 U 被子 F 覆盖、not_evaluated 携 truth、越权输入/双重排除、Rule gate 改 N05；只校验预制记录和静态 AST 域 |
 | contract/test_json_schema.py | 每根 generated Schema 有效；Pydantic 和 jsonschema 双验样例 | 同组错误 fixture 均拒绝；无法 JSON 表达的语义单独标记，不谎称等价 |
 | contract/test_schema_generation.py | 两次生成字节完全一致、root index/version 清晰 | schema 漂移/缺文件失败；非手工更新生成产物 |
 | contract/test_import_boundaries.py | domain 只用允许依赖 | 静态 AST/import 检查禁止 infrastructure/SDK/GPU 导入；解析不触发 I/O |
@@ -378,6 +388,7 @@ uv run --locked mypy src/jimu_runtime
 | G6 兼容与安全 | compatibility notes + approved 决策记录 | 摘要身份无循环、版本规则明确、secret/任意代码/无限配置不进入契约；无数据迁移 |
 | G10 R2 契约闭合 | §13 的 finite-definition 契约检查报告 | 25 ArtifactKind、16 typed policies、能力/Prompt refs、Question/Facet/producer/authority/input_domain 规则一致；未实现完整 compiler/执行器 |
 | G11 R2.1 最后闭合 | 五项类型/引用负例及生成重复性报告 | 三级 gate/Remote Primary/选择证据/独立 value_schema/Tool origin 均符合 §14；只做 Domain/Registry/静态类型/Schema，运行执行仍后续 WP |
+| G12 R2.1.1 Applicability | §15 / TEST_STRATEGY §2.4 的模型、静态引用/类型与生成 Schema 证据 | 六类记录齐全，Pre-N02/N06 权限正确，三级有序且父 U 不被子 F 覆盖；三类语义分离；Coverage/Decision 保留祖先与未执行义务；无 Gate/Workflow evaluator |
 | G7 报告与停止 | WP-01 verification report | code 与 runtime 证据分列；限制明确；完成后停在 gate，不开始 WP-02 |
 | G8 Coverage/Identity | CPU-only 契约 fixtures | JEV no_hits、空 Objects、grounding no_target/failed/partial 均不能伪造 complete/no_violation；子集有效命中保留；同目标跨 Profile 独立 Objects/Facts |
 | G9 Rule/生命周期策略 | 策略模型、AST 静态检查及纯转移验证 | T/F/U 与 required guard 分离；仅 collect_all/full mandatory scan 策略；非运行 blocked/skipped 无假 Attempt；所有终态无出边；不实现 Rule 求值/worker |
@@ -781,7 +792,7 @@ GPT Pro 独立复核上述决策/业务参数；真实依赖兼容、模型/发�
 GPU 能力均 UNVERIFIED。`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。
 本轮到此停止，不实施 WP-01、不安装、不测试、不提交、不推送。
 
-## 14. WP-00-R2.1 Final Contract Closure（当前）
+## 14. WP-00-R2.1 Final Contract Closure（历史；Applicability 以 §15 为准）
 
 ### 14.1 有限范围与基线
 
@@ -875,3 +886,94 @@ changes.patch 和仅七个修改文件的 before 原字节；记录 R2 基线 SH
 F01–F05 已具备独立复审材料；D01–D15 和 WP-01 仍未批准。没有功能测试、依赖兼容、
 模型质量或运行时通过的声明。`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。
 完成即停止，等待 GPT-6 独立复审及用户审批；不实施、不安装、不测试、不 commit/push。
+
+## 15. WP-00-R2.1.1 Applicability Contract Closure（当前）
+
+### 15.1 目标、范围与逐项整改
+
+基线 main / `2ae36ff0c074b1d0c07f99b7cc40a4f7e49a4ed9`；初始 clean，61 个 tracked files。
+仅修改 specs/01、specs/03、ADR、本计划、TEST_STRATEGY 五份文档并新增 R2.1.1 审计包。
+AGENTS、Bundle/技术架构规格、依赖门禁、README、roadmap、examples、原始清单和
+R1/R2/R2.1 历史证据受保护。§14 保留 R2.1 历史；其中三级 AND 简写按本节解释。
+
+| 问题 | 解决方案 / 落点 | 状态 / 审批 |
+|---|---|---|
+| R3-01 执行归属 | N01 仅 Context；Workflow Pre-N02 Profile Gate 生成三分区/trace；N02 仅 eligible，不重做排除；N06 继承 Profile 结果，负责 RuleSet/Rule；N05 独立。Domain §3.8.1/4.8、Node §3.1/4/8、本计划 §5/7/9、测试 §2.4、ADR R2.1.1 | RESOLVED_IN_CANDIDATE / PENDING_USER_APPROVAL |
+| R3-02 层级与三值边界 | 有序 gate 的 F 证据排除、U unresolved/后代 NE、T 才推进；Strong Kleene 仅单 AST 内；Required Evidence Guard 独立。Domain §3.8.1/4.7/13.3/14、Node §8.2–8.4、同上计划/测试/ADR | RESOLVED_IN_CANDIDATE / PENDING_USER_APPROVAL |
+
+三种机制不可合并为通用 bool。Profile U + 子 RuleSet F、Profile F + 子 Rule F、
+RuleSet U + 子 Rule F 均不得执行子 policy；子 trace 只保留 decisive ancestor 和
+not_evaluated，无 TruthValue。全 T 才可进入 condition；condition U 仍 uncertain，
+完整 Evidence Guard 不能将其变为否定。WP-01 不实现任何 Gate/Workflow/Rule 求值器。
+
+### 15.2 Applicability Schema 和完整链路
+
+完整 Schema 清单以 §5 全部表为准，本轮六类记录为：
+
+| Schema | 职责 / 不变量 |
+|---|---|
+| ProfileEligibilityEvaluation | Workflow 所有；配置全集、三分区、applicability_traces，固定 Execution/Bundle/Snapshot，无 aggregate truth/假 NodeRun |
+| RuleSetApplicabilityEvaluation | N06 RuleSet 包装记录；固定父 Profile evaluation/目标 trace，实际评估才有真实 NodeRun/Attempt |
+| RuleApplicabilityEvaluation | 额外固定 Rule/父 RuleSet evaluation，不另写与 trace 冲突的 truth；未到达为 ancestor projection |
+| ApplicabilityTrace | 有序路径/decisive level；继承祖先 effective_truth 不意味着子级有 truth |
+| ApplicabilityLevelTrace | evaluated 才有 T/F/U、owner/source；NE 禁 truth，必有祖先；F 有依据、U 有诊断 |
+| UnresolvedObligation | 原义务账本 unresolved 类型分支，共用 obligation_id，不重复计数、不伪造 Object |
+
+Policy 定义仍在 policies.py；六类记录/trace 放 runtime/decisions.py；Coverage 仍在
+runtime/coverage.py。DiscoveryProfileDiagnostic 替换原含混 FilteredProfile，仅审计
+发现输出异常；Guard authority 字段归 RuleEvaluation。没有新 ArtifactKind/PolicyKind/
+NodeId/Registry 服务/架构层；RuntimeRecordRef 不成为 Bundle 配置依赖。
+
+Pinned Release/Bundle → Profile + ApplicabilityPolicy + 声明元数据 Schema
+→ N01 ContextSnapshot → Workflow Pre-N02 ProfileEligibilityEvaluation/Trace
+→ eligible_profiles → N02 ProfileHit + 固定 QuestionSelectionRecord/effective Questions
+→ N03 Object（原样继承 Questions）→ N04 一 Object 一次联合请求、独立主 Facts
+→ N05 Profile 预绑定 ToolPlan、声明 Tool Facts/authority
+→ N06 固定 Profile 前缀、RuleSet/Rule gates → Condition AST + 独立 Required Evidence
+Guard → collect_all Decision → ExecutionCoverage / 同一义务与 trace refs。
+
+Gate excluded/unresolved 分支直接进入 Coverage，不进入 N02 模型候选；eligible 为空
+则 N02 skipped/no_eligible_profiles、discovery not_evaluated，无调用/no_hits。全部证明
+排除为 not_applicable，有 unresolved 则 none/uncertain；真实 N02 no_hits 仍按 D09。
+混合分支保留有效违规和 partial coverage。空 Object 不造 Decision；Coverage 独立保存
+excluded/blocked/unresolved/NE 与祖先依据。mandatory 全扫要求完整记账，不执行被祖先
+停止的子 policy。RuleSet/Rule 不修改或取消 N05 ToolPlan。
+N01 失败未到 Gate 时保留上游 blocker，不要求虚构 evaluation ref；无适用性祖先阻断、
+仅因 no_hits/grounding 失败而未到 N06 时保留执行依赖原因，不伪造 applicability UNKNOWN。
+
+### 15.3 测试、验收与审批阻塞
+
+TEST_STRATEGY §2.4 新增 H01–H07、A01–A13 正负向 fixture，覆盖六条特殊路径、F/U
+依据、NE 无 truth、祖先/分区/输入域、N02 双重排除、空 eligible/no_hits、N05 独立、
+authority 和共享义务 ID。均为未来 CPU-only 模型/Schema/静态引用检查，TEST_NOT_RUN。
+
+WP-01 最终验收为 §9.2 **G0–G12 全部**：用户先批准范围、当前候选及依赖/测试；§5 全表
+具备严格模型源/显式根版本/生成 index/正负 fixture；Registry、AST 类型检查、值/引用/
+生命周期约束与 CPU 依赖边界经授权验证；Schema 重复生成一致；G12 六类模型、owner、
+ancestor、三机制分离和 Coverage/Decision 关联负例拒绝；兼容/安全与真实证据报告完整。
+不把实际 Gate/Workflow/Rule 执行或完整 Bundle compiler 纳入 WP-01，不开始 WP-02。
+
+D01–D15 逐项状态仍见 §13.3 / ADR R2 表：全部 **PROPOSED / PENDING_USER_APPROVAL**，
+无 CONFIRMED 提升、无 D16。D09 保守 no_hits、D12 A/B、D13 精确交集、D15 正向权威、
+mandatory 全扫/collect_all 和 CPU WP-01/GPU WP-04 门禁不变。阻塞仍为用户对候选契约
+和工作包的审批；不新增业务选择，已有部署/质量阈值 OPEN 值不得由默认值代填。
+
+### 15.4 兼容性、自审与停止
+
+相对 R2.1 新增三类 evaluation 包装及 UnresolvedObligation，精化两类 trace；增加
+eligibility/parent/owner/source/ancestor/authority refs；替换 N02 FilteredProfile 及其
+含混的排除职责。旧候选记录缺这些字段不能声称符合新契约；未来正式 schema version
+和显式转换须随 WP-01 审批冻结。无历史数据/DB 迁移、凭据或需求平台变更。
+
+写成后以输出反查 owner、输入域、父链和义务的第二遍独立静态自审：执行归属、三层
+顺序/NE、三机制分离、Coverage/Decision 空目标、六 Schema 覆盖、N03/N04/N05/N06
+原职责及配置闭包均 PASS（仅文档）。主要失败风险为祖先 U 被抹掉、伪造未执行记录、
+N02/N06 双写资格、混用 bool、空集当无违规；对应负例均已规划，实际运行效果未验证。
+AGENTS 与历史保护以摘要核对为证。回滚仅参考本轮 before/patch，不自动 restore/reset。
+
+证据：`planning/review_evidence/WP-00-R2.1.1/` 的五份 before 原字节、before/after SHA-256、
+完整 changes.patch 和 56 个保护文件哈希（含 45 个 R1/R2/R2.1 历史证据文件）。
+**文档自审 PASS；整体审批 CONDITIONAL / PENDING_USER_APPROVAL**。已具备独立复审和
+用户审批的材料条件，不等于 WP-01 已授权或验收。立即停止，等待 GPT-6 独立复审及用户。
+`STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。无代码、安装、测试、模型、
+服务、Commit 或 Push。

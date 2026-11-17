@@ -4,11 +4,11 @@
 **Depends on:** README.md, AGENTS.md  
 **Scope:** Native runtime domain, independent of the existing requirements platform.
 
-**Review revision:** WP-00-R2.1, based on commit `40af8a17855b27063da94b3c9891272f3e3fc4e3`. Revised contracts below are decision
+**Review revision:** WP-00-R2.1.1, based on commit `2ae36ff0c074b1d0c07f99b7cc40a4f7e49a4ed9`. Revised contracts below are decision
 candidates: PROPOSED / PENDING_USER_APPROVAL, not implementation authorization.
-R2 bytes are retained in `planning/review_evidence/WP-00-R2.1/before/`.
-R1/R2 audit history is unchanged. F01–F05 only refine existing R2 contracts;
-none of these recommendations grants implementation authorization.
+R2.1 bytes are retained in `planning/review_evidence/WP-00-R2.1.1/before/`.
+R1/R2/R2.1 audit history is unchanged. R3-01/R3-02 clarify applicability only;
+F01–F05 and all D01–D15 approval gates remain in force.
 
 ## 1. Design rules
 
@@ -200,23 +200,38 @@ of the candidate binding disables advisory prediction; mandatory scanning remain
 
 Rule AST is a typed, allowlisted data structure. It is never Python source and never evaluated with `eval`/`exec`.
 
-### 3.8.1 F01 — three-level applicability and trace
+### 3.8.1 F01 / R3-01 / R3-02 — applicability ownership and ordered gates
 
-Effective applicability is Profile.applicability_policy_ref AND
-RuleSet.applicability_policy_ref AND Rule.applicability_policy_ref. None overrides
+Profile → RuleSet → Rule is an ordered hierarchy of required gates, not a single
+flattened AND expression. All three must return TRUE before a Rule condition may
+be entered, subject to its separate Required Evidence Guard. No level overrides
 an ancestor or grants membership; Profile's forward RuleSet/Rule refs remain the
-authority. Resolve all policies against the same pinned ContextSnapshot and
-declared Context/Region/Profile metadata. No Object Facts, N02 model candidates,
-N06 candidates/Decisions or discovery confidence are legal applicability inputs.
-T/F/U below abbreviate the existing RuleTruth string values true/false/unknown;
-not_evaluated is an evaluation status with no truth value, not a fourth truth.
+authority. All levels pin the same Execution, Release/Bundle and ContextSnapshot.
+Inputs are declared ContextSnapshot/Region/Profile metadata only: no Object Facts,
+N02 Candidates/discovery results, N06 Candidates/Decisions or discovery confidence.
+T/F/U abbreviate RuleTruth=true/false/unknown. not_evaluated is an execution status
+with no truth field; it is not a fourth TruthValue or an alias for UNKNOWN.
 
-Evaluate the required gates in Profile → RuleSet → Rule order. False is an
-evidence-backed exclusion at the first false gate; unknown at an active required
-gate creates an unresolved/blocked obligation and stops that chain. Descendants
-behind either gate are not_evaluated, not false. A later false diagnostic cannot
-erase an already unresolved parent. This conservative execution guard is distinct
-from the strong-Kleene truth table within each policy's AST (03 §8.3).
+| Contract stage | Owner and allowed work | Durable result |
+|---|---|---|
+| N01 | Context Builder only; build/validate immutable ContextSnapshot | ContextBuildOutput; no Profile eligibility results |
+| Pre-N02 Profile Eligibility Gate | Workflow Engine internal deterministic precondition, after successful N01; resolve each configured Profile's pinned ApplicabilityPolicy | ProfileEligibilityEvaluation and Profile ApplicabilityTraces |
+| N02 | Discover only within eligible_profiles; never evaluate Profile eligibility or author its exclusion records | ProfileHits / no_hits and discovery diagnostics over eligible Profiles only |
+| N06 | Inherit the fixed Profile eligibility result; evaluate RuleSet then Rule applicability for reached branches | RuleSetApplicabilityEvaluation / RuleApplicabilityEvaluation and extended traces |
+
+The Pre-N02 Gate is not a seventh business node, NodeId, model call or new
+architecture layer. Its records are Workflow Engine execution evidence; they do
+not fabricate a Gate NodeRun/Attempt or become N01 outputs. If N01 fails required
+context validation, the Gate is not evaluated; existing lifecycle/coverage records
+retain that blocker rather than invented eligibility results. Policy-required
+metadata still unavailable in a valid Snapshot yields UNKNOWN at the Gate.
+
+At each reached level: FALSE excludes that level's subtree with decisive evidence;
+UNKNOWN creates an UnresolvedObligation and stops that chain; TRUE permits the
+next level. Descendants behind FALSE/UNKNOWN are not_evaluated with an ancestor
+reference, never independently false/unknown. Do not evaluate a later policy to
+erase an ancestor's result. Strong Kleene remains the expression semantics *inside
+one* Policy AST or Rule Condition AST; it does not combine these lifecycle gates.
 
 | Profile | RuleSet | Rule | Effective gate / obligation |
 |---|---|---|---|
@@ -226,7 +241,49 @@ from the strong-Kleene truth table within each policy's AST (03 §8.3).
 | T | U | not_evaluated | U; this RuleSet's obligations unresolved/blocked |
 | T | T | F | F; skip Rule with its specific exclusion evidence |
 | T | T | U | U; this Rule unresolved/blocked |
-| T | T | T | T; Rule condition proceeds subject to required Fact/evidence guard |
+| T | T | T | T; Rule condition may proceed subject to required Facts/Evidence/Producer Authority guard |
+
+Consequently P=U with an offered RS=F is still Profile unresolved and RS must not
+execute; P=F with an offered Rule=F records only the Profile exclusion; P=T,
+RS=U with an offered Rule=F keeps RS unresolved and Rule not_evaluated. Such
+offered child results are invalid execution records, not valid alternative traces.
+
+**Evaluation records (Runtime, not Policy definitions):**
+
+- ProfileEligibilityEvaluation: schema_version, evaluation_id, execution_id,
+  release_id, bundle_digest, context_snapshot_ref, workflow_version, evaluated_at,
+  configured_profile_refs, eligible_profiles, excluded_profiles,
+  unresolved_profiles and applicability_traces (a list of RuntimeRecordRef to
+  ApplicabilityTrace). All Profile refs are exact
+  ContentRef[profile] from the pinned scope. The three result lists are disjoint,
+  duplicate-free and exhaustive over configured_profile_refs, in configured order.
+  Each configured Profile has exactly one referenced Profile trace: evaluated
+  T/F/U maps respectively to eligible/excluded/unresolved. There is no aggregate
+  truth value. An empty configured scope is explicitly recorded, not inferred
+  from discovery. Independent persistence requires schema_version.
+- RuleSetApplicabilityEvaluation / RuleApplicabilityEvaluation: schema_version,
+  evaluation_id, execution_id, release_id, bundle_digest, context_snapshot_ref,
+  profile_eligibility_evaluation_ref, profile_ref, rule_set_ref, applicability_trace_ref,
+  recorded_at and object_ref only when associated with a real Object-scoped N06
+  invocation; Rule evaluation also requires rule_ref and
+  rule_set_applicability_evaluation_ref. Their result is the referenced target-level
+  trace, not a second separately writable truth. An actually evaluated level
+  requires its real N06 node_run_ref/attempt_ref. A not_evaluated descendant is an
+  ancestor projection with decisive_ancestor_ref; it has no fabricated invocation
+  refs or locally evaluated truth. Repeated N06 Attempts append distinct records;
+  an explicit selected evaluation revision is pinned by Decision/Coverage, never
+  last-write-wins. A projected record does not imply that N06 ran.
+
+Ancestor projections apply only to a chain stopped by an evaluated applicability
+ancestor. If no such ancestor exists and N06 is unreached because of no_hits,
+grounding failure or another upstream blocker, Coverage retains that dependency
+reason/ref without fabricating an applicability UNKNOWN or a child gate trace.
+
+The Gate aggregate owns the Profile partition. N06 may reference but must not
+rewrite it. RuleSet/Rule records wrap the target evaluation; ApplicabilityTrace
+explains the ordered path. ExecutionCoverage aggregates obligations; it is neither
+a Policy nor a second evaluator. These are RuntimeRecordRef targets, not new
+ArtifactKinds or Bundle configuration resources.
 
 ApplicabilityTrace is an immutable versioned Runtime record: applicability_trace_id,
 execution_id, target_ref (ContentRef[profile/rule_set/rule]), profile_ref,
@@ -237,25 +294,55 @@ policy_ref, evaluation_status (evaluated/not_evaluated), truth (T/F/U, required
 only if evaluated), declared_input_refs, reason_code, reason_evidence_refs and
 validation_issues. reason_code is included_by_policy/excluded_by_policy/
 metadata_unknown/metadata_invalid/ancestor_excluded/ancestor_unresolved.
-False/U entries require reason evidence/diagnostics; not_evaluated entries forbid
-truth and include decisive_ancestor_ref referencing the
-decisive ancestor instead. A Profile target has one level, RuleSet target two,
-Rule target three; no fabricated child policy/result for a Profile-level trace.
+Every evaluated level identifies evaluation_owner=pre_n02_gate/n06 and its
+source_evaluation_ref. Profile levels require the former; RuleSet/Rule levels the
+latter. Reused ancestor prefixes reference the original records rather than imply
+reevaluation. source_evaluation_ref is an ID-based RuntimeRecordRef, not a digest
+of a record that hashes the trace; no cyclic content addressing is introduced.
+FALSE requires nonempty exclusion reason and pinned-policy/declared-input evidence refs;
+UNKNOWN requires an unresolved reason and missing/invalid metadata diagnostics.
+not_evaluated entries forbid truth, local evaluation_owner/source_evaluation_ref
+and evaluated-input evidence; they require decisive_ancestor_ref pointing to the
+first decisive ancestor level in the same pinned chain. A Profile target has one
+level, RuleSet two, Rule three; no fabricated child result in a Profile trace.
+decisive_ancestor_ref is a RuntimeRecordRef to that ancestor's source evaluation;
+the inherited level/target/Profile refs must resolve its exact result. It is not
+an untyped path or a fabricated ID for an independently persisted child level.
+For descendant targets, effective_truth is the decisive *ancestor* truth with
+disposition excluded/unresolved; it is not a child truth or an AND reduction.
 
-ExecutionCoverage keeps excluded and unresolved obligations separately with their
-applicability_trace_refs; RuleEvaluation/Decision retain corresponding traces and
-skipped/blocked Rule refs. Zero obligations is not_applicable only when every
-relevant exclusion is proven; any required unresolved branch prevents definite
-no_violation. Mandatory scanning covers the complete configured hierarchy and
-records ancestor-based exclusions/blocks even when no Object exists. It does not
-run a Rule condition behind a false/unknown required gate. D09 no_hits semantics,
-collect_all and valid violations under partial coverage are unchanged.
+UnresolvedObligation is the typed unresolved branch of the existing obligation
+ledger, not another obligation count: schema_version when independently stored,
+obligation_id, execution_id, profile_ref, scope=profile/rule_set/rule, target_ref
+with matching kind, optional object_ref only when an actual Object exists,
+applicability_trace_ref, reason_code=metadata_unknown/metadata_invalid/
+ancestor_unresolved, nonempty diagnostic_refs and decisive_ancestor_ref iff
+ancestor-derived. RuleSet/Rule targets include their exact parent refs. The same
+obligation_id is used by MandatoryRuleObligation/Coverage/Decision references;
+one unresolved ancestor is not counted again as a new unresolved child policy.
+Descendant ledger entries carry not_evaluated plus the ancestor blocker.
 
-The workflow evaluates the Profile metadata gate after N01 context resolution,
-before including the Profile in N02's catalogue; N01 itself remains a Context
-Builder. RuleSet/Rule gates control decision obligations, not N05 ToolPlan selection.
-N05 retains its own pre-bound plan and declared context/Fact guards; a decision
-exclusion cannot retroactively select or cancel Tool steps.
+ExecutionCoverage keeps the Profile gate reference when evaluated and separate excluded,
+unresolved, blocked and not_evaluated obligations with trace/decisive-ancestor refs,
+even with no Objects/N06 invocation. Excluded branches are removed from execution
+obligations only with proof; unresolved branches remain blockers. Mandatory scanning
+accounts for the full configured hierarchy, by evaluated records or ancestor
+projections, not by running child policies/conditions behind stopped gates.
+Decision, when actually produced, preserves this ledger linkage and corresponding
+skipped/blocked/not_evaluated Rule refs; do not invent per-Object Decisions to hold
+Profile-level gaps. No unresolved required branch permits definite no_violation.
+
+If eligible_profiles is empty, N02 is skipped with reason=no_eligible_profiles
+and discovery outcome=not_evaluated, without a fabricated ModelInvocation/no_hits.
+All configured Profiles proven excluded gives not_applicable scope; any unresolved
+Profile gives none/uncertain. A nonempty eligible catalogue with a real discovery
+no_hits remains none/uncertain under D09. Exclusion and no_hits are different facts.
+Mixed eligible/unresolved scopes preserve successful work and unresolved coverage.
+
+N05 retains its pre-bound ToolPlan and own declared Context/validated-Fact guards.
+RuleSet/Rule applicability must not select, modify or cancel N05 steps. WP-01 only
+defines these models, finite-reference invariants and AST static type checks; no
+Gate Evaluator, Workflow Engine or Rule runtime is implemented in WP-01.
 
 ### 3.9 ModelBinding
 
@@ -451,7 +538,19 @@ A candidate prediction is not a final Decision.
 
 CandidatePrediction contains category identifiers, not selected Rule identities.
 RuleEvaluation stores outcome (evaluated/skipped/blocked), predicate truth
-(true/false/unknown), required-input/evidence completeness and reason separately.
+(true/false/unknown only when the condition was evaluated), required-input/evidence
+completeness and reason separately. not_evaluated Rule refs are retained separately
+from actually evaluated predicates. It pins ProfileEligibilityEvaluation and the
+selected RuleSet/Rule applicability records via ApplicabilityTrace references.
+Its Required Evidence Guard has outcome=complete/blocked, required_fact_refs,
+required_evidence_refs, authoritative_result_selection_refs and typed reasons
+(required_fact_unavailable/evidence_unavailable/producer_authority_unresolved).
+Each selected producer must match the declared producer/schema/Execution/Object
+scope and pinned authoritative Attempt revision. Missing, ambiguous or invalid
+authority blocks a definitive result; last-write-wins is forbidden. Guard outcome
+is not RuleTruth and does not decide applicability. Even a complete guard cannot
+convert a condition UNKNOWN into no_violation. These guard fields belong to
+RuleEvaluation, not to ApplicabilityPolicy or UnresolvedObligation metadata reasons.
 Matched Rule references are retained as a set; storage order has no priority.
 See 03 §8 for three-valued logic and collect_all aggregation.
 
@@ -465,6 +564,15 @@ expected/evaluated/blocked/unresolved mandatory Rule refs and missing evidence.
 It includes coverage_status (complete/partial/none/not_applicable), reasons and
 execution-scoped summary_result using DecisionResult, with matched Rule/Object refs.
 All externally stored per-Profile coverage roots also carry schema_version.
+It pins profile_eligibility_evaluation_ref when the Gate was evaluated, selected applicability evaluation refs,
+applicability_trace_refs and unresolved_obligations. The obligation ledger retains
+excluded/not_evaluated refs and decisive_ancestor_ref as well as existing
+evaluated/blocked/unresolved refs. A not_evaluated child has no TruthValue; its
+blocker remains the ancestor record, not a newly evaluated UNKNOWN. Parent
+obligations and derived child entries must reconcile without double counting.
+These records exist independently of per-Object Decisions and N06 execution.
+If N01 failed before the Gate, profile_eligibility_evaluation_ref is absent and
+the existing upstream lifecycle blocker/ref is required; no fake gate/trace.
 
 Coverage measures execution over the configured scope, not empirical discovery
 recall or proof of physical absence. Empty Objects, JEV no_hits, grounding no_target
@@ -1001,8 +1109,11 @@ AST checking receives an explicit input_domain:
 rule_applicability permits declared context/Region/Profile metadata only;
 rule_condition permits validated FactSelectors (including declared Record paths)
 and declared context; tool_condition permits declared context + validated Facts
-available before that step. Each root is Boolean lifted to T/F/U, with existing
-required-input safety guard. No input domain includes N06 Candidate/Decision;
+available before that step. Each root is Boolean lifted to T/F/U inside its AST.
+Ordered applicability gates are separate from that expression logic; the Required
+Evidence Guard independently protects definitive Rule results with validated
+Facts/Evidence/Producer Authority, not a generic AST or metadata gate. No input
+domain includes N06 Candidate/Decision;
 applicability cannot depend on Object Facts. Conditional producer availability is
 checked conservatively for mandatory consumers: unsupported/unproved completeness
 rejects the Bundle, rather than hiding obligations with the same condition.
@@ -1053,7 +1164,7 @@ evidence/Questions/producer obligations combine by union, never by a looser poli
 
 | Policy / scope / purpose | Required fields and enum values | Optional fields / default rule | Validation and execution effect |
 |---|---|---|---|
-| ApplicabilityPolicy; Profile/Rule/RuleSet | input_domain=rule_applicability; context_allowlist[]; identity_constraints[] (IdentitySelector[profile/region]); condition_ast; on_unknown=block | description only; no default. Empty identity_constraints means unrestricted identity within declared scope, not absent policy | Context/Region/Profile metadata only; no Object Facts/selection/candidates. F01 ordered Profile→RuleSet→Rule gates; false excludes with evidence, active U blocks descendants; no U-to-F conversion |
+| ApplicabilityPolicy; Profile/Rule/RuleSet | input_domain=rule_applicability; context_allowlist[]; identity_constraints[] (IdentitySelector[profile/region]); condition_ast; on_unknown=block | description only; no default. Empty identity_constraints means unrestricted identity within declared scope, not absent policy | Metadata only, no Facts/N02 Candidates/N06 Decisions. Profile owned by Pre-N02 Workflow Gate; RuleSet/Rule by N06. Ordered levels, not flattened AND; inside one AST use Strong Kleene. FALSE proves subtree exclusion; UNKNOWN unresolved, descendants not_evaluated without truth (3.8.1) |
 | QuestionSelectionPolicy; Profile/N02 | mode=all_declared/mandatory_plus_optional; mandatory_question_refs[]; optional_question_refs[]; optional_source=all/context_rules/model_advisory; fallback=include_all_optional/block_profile; ordering=profile_order | context_selection_rules[] required iff context_rules (question_ref + ApplicabilityPolicy ref); proposal_schema_ref (response_schema), selection_review_ref (ReviewReportRef) and selection_call_policy (F03) required iff model_advisory; no default mode | Disjoint exhaustive partition; all_declared requires optional_source=all; required producer Questions mandatory. Invalid/uncertain optional selection or unavailable/inapplicable independent selection review applies fallback, never drops mandatory |
 | UnknownPolicy; Question Fact | insufficient_visibility=unknown; transport_failure=no_fact; envelope_failure=no_fact; item_validation_failure=error; non_known_value=forbidden; reason_required=true | none; no defaults | Preserve distinctions and original diagnostics, no implicit false/null known value |
 | QuestionValidationPolicy; Question/N04 | coercion=forbid; extra_fields=forbid; association=exact_question_ref; missing_item=error; invalid_record=whole_fact_error; sibling_retention=trusted_envelope_only | max_string_chars/max_items may tighten global bounds; no implicit widening | Validate each primary Fact independently only if association trustworthy; cannot invent per-Question follow-up calls |
@@ -1064,7 +1175,7 @@ evidence/Questions/producer obligations combine by union, never by a looser poli
 | ResourceRequirements; model/tool/execution | resource_class=cpu/remote/gpu; max_concurrency; timeout_ms; input_byte_limit; output_byte_limit | gpu_memory_limit_bytes + worker_pool_id required iff gpu; remote_quota_id required iff remote; no guessed capacity | Strict positive limits; deployment admission must validate values, not assume RTX4090 capacity; CPU core does not load workers |
 | ProviderPolicy; ModelBinding | routing_mode=remote_primary/local_primary_exception; primary_deployment_id; deployments[] (nonempty DeploymentRequirement: provider_id, deployment_id, provider_kind=remote/local, actual_version_constraints, required_features[]); selection=primary_then_explicit_fallback | local_primary_exception (LocalPrimaryException) required iff local mode, otherwise forbidden; no default route/URL | Remote primary required in remote mode; all other entries fallback-only. Local primary needs reviewed capability-scoped exception. Timeout/order never authorizes switching; exact compatible evaluated transition required (F02) |
 | FallbackPolicy; ModelBinding | mode=disabled/explicit_evaluated; trigger_errors[] (transport/timeout/rate_limit/unavailable); allowed_transitions[] (from/to deployment IDs); contract_compatibility=exact | evaluation_refs[] required iff explicit_evaluated; disabled requires empty triggers/transitions; no default fallback | All endpoints declared in ProviderPolicy; each transition independently reviewed/evaluated; no unreviewed model substitution or Fact coercion |
-| RulePolicy; Rule | mandatory (bool); missing=unknown; unknown=unknown; error=unknown; not_applicable=unknown; not_evaluated=unknown; required_guard=block_unavailable; scan=all_mandatory; true_result=violation; false_result=no_violation; unknown_result=uncertain | none; no default mandatory flag | Applicability false is separate; T/F/U plus guard before effective result; all required Facts/evidence available for definitive Rule result |
+| RulePolicy; Rule | mandatory (bool); missing=unknown; unknown=unknown; error=unknown; not_applicable=unknown; not_evaluated=unknown; required_guard=block_unavailable; scan=all_mandatory; true_result=violation; false_result=no_violation; unknown_result=uncertain | none; no default mandatory flag | Applicability gates, AST truth and Required Evidence Guard are separate contracts. Definitive Rule result requires complete Facts/Evidence/Producer Authority; UNKNOWN condition is uncertain, never no_violation |
 | ConflictPolicy; RuleSet | mode=collect_all; early_exit=false; category_dedup=set; preserve_rule_refs=true | none; no default | Keep all valid matches/provenance. Exclusive/priority winner modes unsupported V1 |
 | CoveragePolicy; Release/Execution | no_hits=uncertain; no_target=uncertain; partial_without_match=uncertain; partial_with_match=violation; complete_negative=all_mandatory_false_with_required_evidence; absence_strategy=conservative | none; reviewed_protocol_ref forbidden in V1; alternate strategy requires a new approved version | Maintains D09; no Object/recall confidence alone permits auto-clear. B/C alternatives remain D14 pending evaluation/business approval |
 | ContextProvenancePolicy; ExecutionPolicy/N01 | fields[] (ContextFieldRequirement: field_path, schema_ref=context_schema, required, time_sensitive, allowed_sources[]); conflicting_sources=block; missing_required=block; internal_timezone=UTC; naive_time=reject | clock_tolerance_ms required for time-sensitive fields, otherwise absent; no default tolerance | Source enum=trusted_task_metadata/device_registry/camera_registry/region_definition/declared_derivation; derived fields require versioned derivation ID/inputs from allowlist; never invent context |

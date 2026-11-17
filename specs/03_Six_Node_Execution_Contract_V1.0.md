@@ -4,11 +4,11 @@
 **Input:** One RGB image per Task  
 **Orchestration:** Deterministic state machine
 
-**Review revision:** WP-00-R2.1, PROPOSED / PENDING_USER_APPROVAL.
+**Review revision:** WP-00-R2.1.1, PROPOSED / PENDING_USER_APPROVAL.
 WP-01 builds data contracts/static type checks and CPU-only tests, not node,
-workflow or Rule evaluation execution. R2 source commit is
-`40af8a17855b27063da94b3c9891272f3e3fc4e3`; before bytes are in
-`planning/review_evidence/WP-00-R2.1/before/`. R1/R2 historical evidence is unchanged.
+workflow or Rule evaluation execution. R2.1 source commit is
+`2ae36ff0c074b1d0c07f99b7cc40a4f7e49a4ed9`; before bytes are in
+`planning/review_evidence/WP-00-R2.1.1/before/`. R1/R2/R2.1 evidence is unchanged.
 
 ## 1. Global invariants
 
@@ -69,18 +69,58 @@ Rules:
 - Validate every value against the Bundle context schema.
 - A required context failure blocks downstream execution.
 
+### 3.1 Pre-N02 Profile Eligibility Gate — Workflow Engine precondition
+
+Contract chain: N01 ContextSnapshot → Pre-N02 Gate → N02 discovery of eligible
+Profiles → N03 grounding → N04 joint observation → N05 pre-bound Tool execution
+→ N06 RuleSet/Rule gates and Rule conditions. This internal deterministic check
+is not a seventh business node or a new architecture layer; N01 stays Context
+Builder only. WP-01 defines its data, not an evaluator or Workflow implementation.
+
+After N01 succeeds, the Workflow Engine reads the pinned Bundle's complete
+configured Profile scope and each Profile.applicability_policy_ref. It permits
+only declared ContextSnapshot/Region/Profile metadata, never Object Facts,
+N02 Candidates/hits, N06 Candidates/Decisions or model confidence. A required
+context failure before a valid Snapshot blocks this check; no fake gate result.
+
+ProfileEligibilityEvaluation outputs exactly the partition eligible_profiles,
+excluded_profiles, unresolved_profiles plus applicability_traces (typed
+RuntimeRecordRef list). Every configured Profile has one evaluated trace;
+TRUE/FALSE/UNKNOWN respectively chooses its partition. FALSE requires decisive
+metadata evidence; UNKNOWN requires unresolved diagnostics and keeps a required
+obligation. Output is immutable and pins ContextSnapshot, Release/Bundle and
+workflow version. The result is workflow evidence, not a Gate NodeRun/Attempt.
+
+N02 receives only eligible_profiles and the evaluation reference, never asks the
+model to re-decide eligibility, and never authors the Gate's exclusions. Excluded
+and unresolved branches remain in ExecutionCoverage, outside N02 discovery input.
+If the eligible set is empty, record N02 skipped/no_eligible_profiles, discovery
+not_evaluated and no invocation. All proven exclusions allow not_applicable;
+any unresolved Profile yields none/uncertain. By contrast, an actual N02 no_hits
+over a nonempty eligible set means uncovered discovery under unchanged D09.
+An unresolved branch cannot erase a valid match from another eligible Profile;
+the incomplete scope remains visible in coverage.
+
 ## 4. N02 — Omni-JEV Profile Discovery
 
 Inputs:
 - original RGB image reference;
 - N01 ContextSnapshot;
-- applicable Profile catalog from pinned Bundle;
+- eligible_profiles from ProfileEligibilityEvaluation, exact refs into the pinned Bundle;
+- profile_eligibility_evaluation_ref (same Execution/ContextSnapshot/Release pins);
 - Profile.discovery_binding_ref (ModelBinding capability=profile_discovery), typed PromptTemplate and QuestionSelectionPolicy.
 
 Output:
 - ProfileHit records with registered profile_ref, question_selection_ref, effective_question_refs, model-reported score/confidence and invocation reference;
-- excluded/filtered Profile reasons;
+- DiscoveryProfileDiagnostic records for invalid discovery proposals, scoped to
+  the eligible catalogue; never Profile eligibility exclusions;
 - discovery invocation metadata.
+
+DiscoveryProfileDiagnostic has diagnostic_id, execution_id, the actual discovery
+model_invocation_ref, raw_response_ref (EvidenceRef), nonempty validation_issues
+and reason_code=invalid_profile_proposal/noneligible_profile_proposal. It carries
+schema_version if independently persisted; invalid raw IDs remain untrusted
+response evidence, never unresolved ContentRefs or applicability exclusions.
 
 Forbidden outputs:
 - BBox;
@@ -88,6 +128,14 @@ Forbidden outputs:
 - instance-level identity or alignment;
 - violation category/decision;
 - arbitrary unregistered Question.
+- Profile eligibility partition/exclusion/UNKNOWN decisions owned by the Pre-N02 Gate.
+
+Every accepted ProfileHit must belong to eligible_profiles. An eligible Profile
+not returned is a discovery omission, not an inapplicable Profile. Rejected
+unregistered/noneligible proposals are validation diagnostics, never valid hits
+or new Profile exclusion records. N02 input does not include the excluded or
+unresolved partition as model candidates. N03 copies each hit's exact effective
+Question set; N04 still makes one normal-path joint request per Object.
 
 Questions are selected from the Profile's frozen configuration, not invented by the model. N02 is optimized for recall, but model confidence is not a recall guarantee. No-hit means no Profile was returned; it is not a final `no_violation` Decision.
 
@@ -266,28 +314,45 @@ Question primary output or named Tool step output and declared Record field_path
 actual operands use pinned authoritative selection revisions. Tool guards may use
 validated upstream Facts and context, never Candidate/Decision (01 §13.3/14).
 
-F01 hierarchy is Profile AND RuleSet AND Rule, evaluated in that parent-first
-order on the same pinned ContextSnapshot (01 §3.8.1). Profile false excludes that
-Profile's obligations with trace; RuleSet false skips only its Rules; Rule false
-records the specific Rule exclusion. Unknown at any active required gate blocks
-that branch as unresolved; descendants are not_evaluated with ancestor reason,
-never false. A lower false diagnostic cannot erase a required unknown parent.
-Only T/T/T enters condition evaluation. Strong-Kleene AST logic within each gate
-is unchanged, with the conservative required-gate guard applied separately.
-No gate reads Object Facts, N02/N06 candidates or Decisions. ApplicabilityTrace
-records per-level target/policy/input refs, evaluation status, truth when evaluated,
-reason/evidence, decisive ancestor and effective disposition. Mandatory scanning
-retains skipped/blocked refs even for empty-object branches via ExecutionCoverage.
-RuleSet/Rule exclusions do not change N05's independently bound ToolPlan.
+R3 hierarchy is ordered Profile → RuleSet → Rule on the same pinned Snapshot
+(01 §3.8.1). N06 consumes the selected ProfileEligibilityEvaluation; it does not
+re-evaluate Profile policies or generate the Profile gate's exclusion records.
+Only an eligible Profile's reached branches enter N06 RuleSet then Rule gates.
+RuleSetApplicabilityEvaluation and RuleApplicabilityEvaluation pin their parent
+evaluations and real N06 NodeRun/Attempt when actually evaluated. Descendant
+not_evaluated projections cite the decisive ancestor, without fabricated calls.
+
+At each reached level, FALSE excludes only its subtree with decisive evidence;
+UNKNOWN creates an UnresolvedObligation, descendants not_evaluated; TRUE advances.
+not_evaluated has no TruthValue. Child FALSE must never erase parent UNKNOWN:
+
+| Offered inputs | Required recorded path / consequence |
+|---|---|
+| P=U, lower RS=F | P unresolved; RS/Rule not_evaluated; reject the offered child result |
+| P=F, lower Rule=F | Only P exclusion evidence; all lower policies not_evaluated |
+| P=T, RS=U, lower Rule=F | RS unresolved; Rule not_evaluated, cannot override RS |
+| P=T, RS=T, Rule=U | Rule unresolved; condition not_evaluated |
+| P=T, RS=T, Rule=T | Condition may be evaluated, subject to separate required evidence guard |
+| All gates T, condition=U | Uncertain; never implicit no_violation |
+
+No gate reads Object Facts, N02 Candidates or N06 Decisions. ApplicabilityTrace
+keeps the fixed Profile prefix and per-level target/policy/input refs, owner,
+evaluated truth or not_evaluated status, reason/evidence and decisive ancestor.
+Mandatory scanning accounts for the entire configured scope, including
+ancestor-based exclusions and unresolved branches even when no Object/N06 call
+exists. ExecutionCoverage owns this execution-wide ledger; do not invent an
+Object Decision or N06 Attempt for a Profile stopped before discovery.
+N05 is already independently bound: no RuleSet/Rule result implicitly changes,
+cancels or prunes its ToolPlan. Its own Context/validated-Fact conditions remain.
 
 Rule Engine:
-1. resolve RuleSet and applicability;
-2. resolve required Fact refs and schema versions;
-3. apply missing/unknown/error policies;
-4. evaluate typed AST operators;
-5. resolve conflicts deterministically;
-6. validate required evidence;
-7. emit Decision and evaluation trace.
+1. inherit Profile eligibility and resolve ordered RuleSet/Rule gates;
+2. for reached Rules, resolve typed Fact/schema refs and pinned producer authority;
+3. apply declared missing/unknown/error policies and check Required Evidence Guard;
+4. evaluate typed Rule Condition AST where allowed, retaining predicate diagnostics;
+5. require complete Facts/Evidence/Producer Authority before any definitive result;
+6. collect every valid match and preserve all unresolved/skipped/blocked work;
+7. emit Decision and evaluation/coverage references without rewriting ancestors.
 
 Decision result:
 - `violation`
@@ -300,6 +365,14 @@ A Rule with required unknown/error Facts generally yields `uncertain` or an expl
 Decision records evaluated, skipped, blocked and matched Rules, required Facts, evidence and Rule Engine version.
 
 ### 8.3 Three-valued predicates and simultaneous matches (D03/D04)
+
+Three separate contracts must not be implemented as one generic boolean function:
+
+| Contract | Inputs / output | Boundary |
+|---|---|---|
+| Applicability Gate | Declared metadata; evaluated T/F/U plus ordered obligation/trace outcome | Parent FALSE/UNKNOWN stops descendants; ownership in §3.1/8.2 |
+| Strong Kleene expression semantics | Typed operands within one Policy AST or Rule Condition AST; T/F/U | Does not flatten Profile/RuleSet/Rule lifecycle or turn not_evaluated into truth |
+| Required Evidence Guard | Required validated Facts, Evidence and pinned authoritative Producer/Attempt selections; complete/blocked with typed reasons | No applicability decision or TruthValue; blocks a definitive result on missing/ambiguous authority or evidence |
 
 Predicate truth is T/F/U (true/false/unknown), separate from FactStatus and
 RuleEvaluation outcome. Known valid operands use typed comparisons. Missing
@@ -322,7 +395,11 @@ There is no implicit false conversion. Logical expressions use strong Kleene:
 not(T)=F; not(F)=T; not(U)=U. all/any require nonempty argument lists.
 Complete operand diagnostics are retained even if the truth value is already
 determined. Before a definitive Rule result, a separate safety guard requires all
-declared required Facts and evidence to be available/valid. Thus F AND U may have
+declared required Facts, Evidence and Producer Authority to be available/valid.
+Authority checks resolve the exact declared producer/schema/scope and selected
+authoritative Attempt revision, not the last stored Fact. Missing/ambiguous/stale
+selection blocks with its own reason; guard outcome is complete/blocked, not T/F/U.
+Thus F AND U inside a single AST may have
 predicate F but a missing required Fact still yields outcome=blocked and effective
 result=uncertain. This guard is not a different truth table. Optional inputs obey
 the declared typed policy; they cannot conceal missing mandatory inputs.
@@ -350,6 +427,9 @@ No candidate/model score proves complete physical-scene recall.
 | Case | coverage_status | Execution summary constraint |
 |---|---|---|
 | Context deterministically excludes every configured inspection obligation | not_applicable | not_applicable with exclusion evidence; not inferred from empty detection |
+| Pre-N02 has no eligible Profiles and at least one unresolved Profile | none | uncertain; discovery not_evaluated, no N02 call/no_hits; unresolved parent and descendant not_evaluated retained |
+| Pre-N02 proves all configured Profiles excluded | not_applicable | not_applicable; N02 skipped/no_eligible_profiles, discovery not_evaluated, never fabricated no_hits |
+| Some Profiles eligible, others unresolved | partial when some obligations completed, otherwise none | valid violation preserved; otherwise uncertain; excluded branches do not clear unresolved ones |
 | JEV succeeds with no_hits, no Objects | none | uncertain; record successful discovery/no_hits, not confirmed absence |
 | JEV failure before usable hits | none | uncertain with failure; Execution may failed, a different status domain |
 | Hit Profile grounds no_target, no Objects | none for that Profile | uncertain; retain no_target, do not rewrite as grounding failed or negative evidence |
@@ -361,9 +441,9 @@ No candidate/model score proves complete physical-scene recall.
 complete means completed configured execution obligations, not measured recall.
 Expected/observed Profile identities, per-Profile grounding status/Object refs,
 mandatory applicable/evaluated/blocked/unresolved refs and reasons must reconcile.
-An eligible Profile omitted by discovery remains an uncovered obligation unless
-trusted deterministic applicability excludes it. It is not removed from expected
-scope because N02 did not return it. A MandatoryRuleObligation identifies the
+An eligible Profile omitted by discovery remains an uncovered obligation. N02
+cannot reclassify it as excluded or remove it from expected scope because it
+was not returned; the Pre-N02 partition is fixed. A MandatoryRuleObligation identifies the
 Profile scope before Object creation and the Object scope where available; empty
 grounding does not require a fabricated object_id to record blocked coverage.
 No-target/no-hits never becomes complete merely because the remaining Object loop
@@ -371,6 +451,18 @@ is empty. Discovery partial prevents complete coverage. All task-scope aggregati
 retains Object/Profile provenance and does not claim unique-vehicle counts (D10).
 Execution.completed can coexist with coverage.none/summary.uncertain when a
 successful invocation found nothing; infrastructure failure is tracked separately.
+Coverage pins ProfileEligibilityEvaluation when evaluated, selected RuleSet/Rule evaluations,
+ApplicabilityTraces and the shared obligation identities. It separately retains
+excluded, unresolved, blocked and not_evaluated refs; every descendant projection
+references its decisive ancestor. No lower result replaces ancestor uncertainty
+and no unresolved required branch permits global no_violation. Where an Object
+Decision exists, it keeps these references and skipped/blocked/not_evaluated Rule
+refs; where none exists, Coverage alone preserves the gaps. Profile metadata
+exclusion is not discovery no_hits, confirmed absence or a Rule Condition FALSE.
+An upstream N01 failure retains its lifecycle blocker without a fabricated Gate
+reference. If no applicability ancestor stopped the chain but N06 is unreached
+(e.g. discovery no_hits/grounding failed), preserve that upstream reason; do not
+invent an UNKNOWN applicability trace just to represent execution not_evaluated.
 
 ### 8.5 no_hits operational tradeoffs and pending D14
 
@@ -490,3 +582,4 @@ Task → Execution → NodeRun → Attempt → ModelInvocation/ToolExecution →
 - empty Object/JEV no_hits/grounding no_target/failed/partial coverage never fabricates no_violation; retain subset violations and distinct coverage/status domains.
 - overlapping cross-Profile detections keep distinct Object IDs and cannot silently merge Facts.
 - pending/ready blocked/skipped creates no fake Attempt; retries retain terminal Attempt history; late results never rewrite terminal state.
+- R3-01/R3-02: Gate ownership/eligible-only N02, ordered parent blockers without child truth, separate AST logic and Facts/Evidence/Producer Authority guard; empty eligible is not no_hits and N05 remains independent. WP-01 verifies record/static-type fixtures only (TEST_STRATEGY §2.4); actual evaluators are later WPs. No test is executed in R2.1.1.
