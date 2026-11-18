@@ -1,0 +1,43 @@
+Actual final commands; copied from original command JSON, not replayed.
+
+01_versions
+cwd: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B
+uv run --locked --no-sync python -c 'import sys,platform,importlib.metadata as m; print(sys.version); print(platform.platform()); print({p:m.version(p) for p in ['"'"'pydantic'"'"','"'"'pytest'"'"','"'"'ruff'"'"','"'"'mypy'"'"','"'"'rfc8785'"'"','"'"'jsonschema'"'"']})'
+exit: 0
+started_at: 2026-11-17T18:15:35.778441+00:00
+ended_at: 2026-11-17T18:15:35.834766+00:00
+
+02_pytest
+cwd: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B
+uv run --locked --no-sync python -m pytest tests/unit tests/contract tests/negative -q --junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_03/logs/integration/run_20261117T181535_729429Z_c92df4e0/final_pytest.xml
+exit: 0
+started_at: 2026-11-17T18:15:35.899582+00:00
+ended_at: 2026-11-17T18:18:29.970555+00:00
+
+03_ruff
+cwd: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B
+uv run --locked --no-sync ruff check .
+exit: 0
+started_at: 2026-11-17T18:18:30.024375+00:00
+ended_at: 2026-11-17T18:18:30.072830+00:00
+
+04_format
+cwd: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B
+uv run --locked --no-sync ruff format --check src tests scripts
+exit: 0
+started_at: 2026-11-17T18:18:30.129166+00:00
+ended_at: 2026-11-17T18:18:30.143528+00:00
+
+05_mypy
+cwd: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B
+uv run --locked --no-sync mypy src/jimu_runtime
+exit: 0
+started_at: 2026-11-17T18:18:30.199133+00:00
+ended_at: 2026-11-17T18:18:30.351290+00:00
+
+06_schema_check
+cwd: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B
+uv run --locked --no-sync python scripts/generate_schemas.py --check
+exit: 0
+started_at: 2026-11-17T18:18:30.408857+00:00
+ended_at: 2026-11-17T18:18:37.061681+00:00

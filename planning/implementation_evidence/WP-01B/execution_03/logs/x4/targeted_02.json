@@ -1,0 +1,20 @@
+{
+  "argv": [
+    ".venv/bin/pytest",
+    "-q",
+    "tests/unit/test_b_condition_bindings.py",
+    "tests/contract/test_b_condition_bindings_schema.py",
+    "tests/negative/test_b_condition_bindings_invalid.py",
+    "tests/negative/test_b_definition_conditions_invalid.py",
+    "tests/unit/test_b_definition_relations.py",
+    "tests/contract/test_b_definition_catalogue.py",
+    "tests/negative/test_b_definition_relations_invalid.py",
+    "--junitxml=planning/implementation_evidence/WP-01B/execution_03/logs/x4/targeted_02.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start_utc": "2026-11-17T17:19:08.146754+00:00",
+  "end_utc": "2026-11-17T17:19:20.577103+00:00",
+  "exit_code": 1,
+  "stdout": ".............................................F.......................... [ 60%]\n................................................                         [100%]\n=================================== FAILURES ===================================\n_______ test_context_selection_rule_uses_its_actual_applicability_policy _______\n\n    def test_context_selection_rule_uses_its_actual_applicability_policy():\n        data = fixture()\n        profile = entry(data, \"profile\")[\"definition\"]\n        policy = next(\n            x[\"artifact\"][\"policy\"]\n            for x in data[\"input\"][\"policies\"]\n            if x[\"ref\"] == profile[\"question_selection_policy_ref\"]\n        )\n        policy.update(\n            selection_mode=\"context_rule\",\n            mandatory_question_refs=[],\n            optional_question_refs=profile[\"question_refs\"],\n            context_selection_rules=[\n                dict(\n                    question_ref=profile[\"question_refs\"][0],\n                    applicability_policy_ref=profile[\"applicability_policy_ref\"],\n                )\n            ],\n        )\n        # Existing literal spelling is authoritative; use the configured enum value below.\n>       from jimu_runtime.domain.definition_enums import QuestionSelectionMode\nE       ImportError: cannot import name 'QuestionSelectionMode' from 'jimu_runtime.domain.definition_enums' (/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/src/jimu_runtime/domain/definition_enums.py)\n\ntests/negative/test_b_definition_conditions_invalid.py:85: ImportError\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_03/logs/x4/targeted_02.xml -\n=========================== short test summary info ============================\nFAILED tests/negative/test_b_definition_conditions_invalid.py::test_context_selection_rule_uses_its_actual_applicability_policy\n1 failed, 119 passed in 12.19s\n",
+  "stderr": ""
+}

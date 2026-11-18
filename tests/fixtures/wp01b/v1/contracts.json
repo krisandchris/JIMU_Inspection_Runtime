@@ -1,0 +1,1546 @@
+{
+  "notice": "Synthetic finite relations; asserted content identities, no real provider or runtime evidence.",
+  "input": {
+    "definitions": [
+      {
+        "registration_kind": "vocabulary",
+        "ref": {
+          "artifact_kind": "vocabulary",
+          "artifact_id": "entity-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "vocabulary_id": "entity-type",
+          "semantic_domain": "entity.type",
+          "members": [
+            "synthetic"
+          ]
+        }
+      },
+      {
+        "registration_kind": "vocabulary",
+        "ref": {
+          "artifact_kind": "vocabulary",
+          "artifact_id": "lifecycle",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "vocabulary_id": "lifecycle",
+          "semantic_domain": "entity.lifecycle",
+          "members": [
+            "synthetic"
+          ]
+        }
+      },
+      {
+        "registration_kind": "vocabulary",
+        "ref": {
+          "artifact_kind": "vocabulary",
+          "artifact_id": "region-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "vocabulary_id": "region-type",
+          "semantic_domain": "region.type",
+          "members": [
+            "synthetic"
+          ]
+        }
+      },
+      {
+        "registration_kind": "vocabulary",
+        "ref": {
+          "artifact_kind": "vocabulary",
+          "artifact_id": "scene-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "vocabulary_id": "scene-type",
+          "semantic_domain": "region.scene",
+          "members": [
+            "synthetic"
+          ]
+        }
+      },
+      {
+        "registration_kind": "vocabulary",
+        "ref": {
+          "artifact_kind": "vocabulary",
+          "artifact_id": "tags",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "vocabulary_id": "tags",
+          "semantic_domain": "facet.tag",
+          "members": [
+            "synthetic"
+          ]
+        }
+      },
+      {
+        "registration_kind": "vocabulary",
+        "ref": {
+          "artifact_kind": "vocabulary",
+          "artifact_id": "retention",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "vocabulary_id": "retention",
+          "semantic_domain": "evidence.retention_class",
+          "members": [
+            "synthetic"
+          ]
+        }
+      },
+      {
+        "registration_kind": "vocabulary",
+        "ref": {
+          "artifact_kind": "vocabulary",
+          "artifact_id": "unit",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "vocabulary_id": "unit",
+          "semantic_domain": "unit",
+          "members": [
+            "synthetic"
+          ]
+        }
+      },
+      {
+        "registration_kind": "vocabulary",
+        "ref": {
+          "artifact_kind": "vocabulary",
+          "artifact_id": "coordinate",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "vocabulary_id": "coordinate",
+          "semantic_domain": "coordinate_system",
+          "members": [
+            "synthetic"
+          ]
+        }
+      },
+      {
+        "registration_kind": "entity",
+        "ref": {
+          "artifact_kind": "entity",
+          "artifact_id": "entity",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "entity_id": "entity",
+          "name": "Synthetic entity",
+          "entity_type": {
+            "vocabulary_ref": {
+              "artifact_kind": "vocabulary",
+              "artifact_id": "entity-type",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "member": "synthetic"
+          },
+          "description": "Synthetic fixture.",
+          "attribute_schema_refs": [
+            {
+              "artifact_kind": "attribute_schema",
+              "artifact_id": "facet-meta",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "lifecycle": {
+            "vocabulary_ref": {
+              "artifact_kind": "vocabulary",
+              "artifact_id": "lifecycle",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "member": "synthetic"
+          }
+        }
+      },
+      {
+        "registration_kind": "static_asset",
+        "ref": {
+          "artifact_kind": "static_asset",
+          "artifact_id": "asset",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "asset_id": "asset",
+          "data_path": "resources/assets/data/empty.bin",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "mime_type": "application/octet-stream",
+          "byte_size": 0
+        }
+      },
+      {
+        "registration_kind": "region",
+        "ref": {
+          "artifact_kind": "region",
+          "artifact_id": "region",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "region_id": "region",
+          "name": "Synthetic region",
+          "region_type": {
+            "vocabulary_ref": {
+              "artifact_kind": "vocabulary",
+              "artifact_id": "region-type",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "member": "synthetic"
+          },
+          "scene_type": {
+            "vocabulary_ref": {
+              "artifact_kind": "vocabulary",
+              "artifact_id": "scene-type",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "member": "synthetic"
+          },
+          "asset_refs": [
+            {
+              "artifact_kind": "static_asset",
+              "artifact_id": "asset",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "context_schema_ref": {
+            "artifact_kind": "context_schema",
+            "artifact_id": "region-context",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      },
+      {
+        "registration_kind": "facet",
+        "ref": {
+          "artifact_kind": "facet",
+          "artifact_id": "facet",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "facet_id": "facet",
+          "name": "Synthetic facet",
+          "description": "Synthetic observation dimension.",
+          "fact_schema_refs": [
+            {
+              "artifact_kind": "fact_schema",
+              "artifact_id": "primary",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "tags": [
+            {
+              "vocabulary_ref": {
+                "artifact_kind": "vocabulary",
+                "artifact_id": "tags",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "member": "synthetic"
+            }
+          ],
+          "metadata": [
+            {
+              "namespace": "synthetic",
+              "attribute_schema_ref": {
+                "artifact_kind": "attribute_schema",
+                "artifact_id": "facet-meta",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "value": {
+                "kind": "record",
+                "value": {
+                  "flag": {
+                    "kind": "bool",
+                    "value": false
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "registration_kind": "prompt_template",
+        "ref": {
+          "artifact_kind": "prompt_template",
+          "artifact_id": "prompt-question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "prompt_template_id": "prompt-question",
+          "purpose": "object_observation",
+          "template_text": "Synthetic literal.",
+          "variables": [],
+          "response_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "model-output",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "rendering_policy": "literal_substitution"
+        }
+      },
+      {
+        "registration_kind": "prompt_template",
+        "ref": {
+          "artifact_kind": "prompt_template",
+          "artifact_id": "prompt-discovery",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "prompt_template_id": "prompt-discovery",
+          "purpose": "profile_discovery",
+          "template_text": "Synthetic literal.",
+          "variables": [],
+          "response_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "model-output",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "rendering_policy": "literal_substitution"
+        }
+      },
+      {
+        "registration_kind": "prompt_template",
+        "ref": {
+          "artifact_kind": "prompt_template",
+          "artifact_id": "prompt-observation",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "prompt_template_id": "prompt-observation",
+          "purpose": "object_observation",
+          "template_text": "Synthetic literal.",
+          "variables": [],
+          "response_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "model-output",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "rendering_policy": "literal_substitution"
+        }
+      },
+      {
+        "registration_kind": "prompt_template",
+        "ref": {
+          "artifact_kind": "prompt_template",
+          "artifact_id": "prompt-grounding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "prompt_template_id": "prompt-grounding",
+          "purpose": "object_grounding",
+          "template_text": "Synthetic literal.",
+          "variables": [],
+          "response_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "model-output",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "rendering_policy": "literal_substitution"
+        }
+      },
+      {
+        "registration_kind": "model_binding",
+        "ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "discovery",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "model_binding_id": "discovery",
+          "version": "1.0.0",
+          "capability": "profile_discovery",
+          "logical_model_id": "logical",
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "resource_requirements_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "resources",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "input_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "model-input",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "output_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "model-output",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "prompt_template_ref": {
+            "artifact_kind": "prompt_template",
+            "artifact_id": "prompt-discovery",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      },
+      {
+        "registration_kind": "model_binding",
+        "ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "observation",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "model_binding_id": "observation",
+          "version": "1.0.0",
+          "capability": "object_observation",
+          "logical_model_id": "logical",
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "resource_requirements_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "resources",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "input_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "model-input",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "output_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "model-output",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "prompt_template_ref": {
+            "artifact_kind": "prompt_template",
+            "artifact_id": "prompt-observation",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      },
+      {
+        "registration_kind": "model_binding",
+        "ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "grounding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "model_binding_id": "grounding",
+          "version": "1.0.0",
+          "capability": "object_grounding",
+          "logical_model_id": "logical",
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "resource_requirements_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "resources",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "input_schema_ref": {
+            "artifact_kind": "tool_input_schema",
+            "artifact_id": "tool-input",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "output_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "model-output",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "prompt_template_ref": {
+            "artifact_kind": "prompt_template",
+            "artifact_id": "prompt-grounding",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      },
+      {
+        "registration_kind": "tool",
+        "ref": {
+          "artifact_kind": "tool",
+          "artifact_id": "tool",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "tool_id": "tool",
+          "tool_type": "grounding",
+          "provider_kind": "builtin",
+          "input_schema_ref": {
+            "artifact_kind": "tool_input_schema",
+            "artifact_id": "tool-input",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "output_schema_ref": {
+            "artifact_kind": "tool_output_schema",
+            "artifact_id": "tool-output",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "resource_requirements_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "resources",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "execution_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "execution",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "evidence_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "evidence",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "implementation_requirement": {
+            "family": "tool_implementation",
+            "capability_id": "synthetic-tool",
+            "contract_version": "1.0.0",
+            "allowed_implementation_versions": [
+              "1.0.0"
+            ],
+            "required_features": []
+          },
+          "capability_tags": [
+            "object_grounding"
+          ],
+          "fact_outputs": []
+        }
+      },
+      {
+        "registration_kind": "tool_plan",
+        "ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "plan",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "tool_plan_id": "plan",
+          "steps": []
+        }
+      },
+      {
+        "registration_kind": "question",
+        "ref": {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "question_id": "question",
+          "objective": "Synthetic primary observation.",
+          "prompt_template_ref": {
+            "artifact_kind": "prompt_template",
+            "artifact_id": "prompt-question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "facet_refs": [
+            {
+              "artifact_kind": "facet",
+              "artifact_id": "facet",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "context_allowlist": [
+            {
+              "source": "context_snapshot",
+              "schema_ref": {
+                "artifact_kind": "context_schema",
+                "artifact_id": "context",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+              },
+              "field_path": [
+                "scene"
+              ]
+            }
+          ],
+          "primary_fact_key": "primary",
+          "primary_fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "primary",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "evidence_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "evidence",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "unknown_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "unknown",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "validation_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "question_validation",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      },
+      {
+        "registration_kind": "profile",
+        "ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "version": "1.0.0",
+          "profile_id": "profile",
+          "entity_ref": {
+            "artifact_kind": "entity",
+            "artifact_id": "entity",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "discovery_binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "discovery",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "grounding_binding": {
+            "kind": "tool",
+            "tool_ref": {
+              "artifact_kind": "tool",
+              "artifact_id": "tool",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "input_bindings": [
+              {
+                "source": {
+                  "source_kind": "image",
+                  "selector": {
+                    "schema_ref": {
+                      "artifact_kind": "attribute_schema",
+                      "artifact_id": "image",
+                      "version": "1.0.0",
+                      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+                    },
+                    "field_path": []
+                  }
+                },
+                "target": {
+                  "schema_ref": {
+                    "artifact_kind": "tool_input_schema",
+                    "artifact_id": "tool-input",
+                    "version": "1.0.0",
+                    "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+                  },
+                  "field_path": [
+                    "image"
+                  ]
+                },
+                "required": true,
+                "on_missing": "block"
+              }
+            ]
+          },
+          "observation_binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "observation",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "facet_refs": [
+            {
+              "artifact_kind": "facet",
+              "artifact_id": "facet",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "question_selection_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "question_selection",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "rule_set_refs": [
+            {
+              "artifact_kind": "rule_set",
+              "artifact_id": "external-rule-set",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "tool_plan_ref": {
+            "artifact_kind": "tool_plan",
+            "artifact_id": "plan",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "applicability_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "external-applicability",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      }
+    ],
+    "descriptors": [
+      {
+        "descriptor_kind": "raw_dto",
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "context",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "record",
+          "fields": [
+            {
+              "name": "scene",
+              "required": true,
+              "type_definition": {
+                "kind": "string"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "descriptor_kind": "raw_dto",
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "region-context",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "record",
+          "fields": [
+            {
+              "name": "scene",
+              "required": true,
+              "type_definition": {
+                "kind": "string"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "descriptor_kind": "typed_value",
+        "schema_ref": {
+          "artifact_kind": "attribute_schema",
+          "artifact_id": "facet-meta",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "record",
+          "fields": [
+            {
+              "name": "flag",
+              "required": true,
+              "type_definition": {
+                "kind": "bool"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "descriptor_kind": "raw_dto",
+        "schema_ref": {
+          "artifact_kind": "attribute_schema",
+          "artifact_id": "image",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "string"
+        }
+      },
+      {
+        "descriptor_kind": "raw_dto",
+        "schema_ref": {
+          "artifact_kind": "attribute_schema",
+          "artifact_id": "profile-meta",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "record",
+          "fields": [
+            {
+              "name": "flag",
+              "required": true,
+              "type_definition": {
+                "kind": "bool"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "descriptor_kind": "raw_dto",
+        "schema_ref": {
+          "artifact_kind": "attribute_schema",
+          "artifact_id": "question-meta",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "record",
+          "fields": [
+            {
+              "name": "flag",
+              "required": true,
+              "type_definition": {
+                "kind": "bool"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "descriptor_kind": "raw_dto",
+        "schema_ref": {
+          "artifact_kind": "object_schema",
+          "artifact_id": "geometry",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "record",
+          "fields": [
+            {
+              "name": "flag",
+              "required": true,
+              "type_definition": {
+                "kind": "bool"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "descriptor_kind": "raw_dto",
+        "schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-input",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "record",
+          "fields": []
+        }
+      },
+      {
+        "descriptor_kind": "typed_value",
+        "schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "bool"
+        }
+      },
+      {
+        "descriptor_kind": "tool_input_record",
+        "schema_ref": {
+          "artifact_kind": "tool_input_schema",
+          "artifact_id": "tool-input",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "fields": [
+          {
+            "name": "image",
+            "required": true,
+            "representation": "raw_dto",
+            "type_definition": {
+              "kind": "string"
+            }
+          }
+        ]
+      },
+      {
+        "descriptor_kind": "tool_result",
+        "schema_ref": {
+          "artifact_kind": "tool_output_schema",
+          "artifact_id": "tool-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "payload_representation": "typed_value",
+        "payload_type": {
+          "kind": "bool"
+        },
+        "evidence_fields": [],
+        "output_declarations": []
+      }
+    ],
+    "fact_schema_refs": [
+      {
+        "artifact_kind": "fact_schema",
+        "artifact_id": "primary",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "policies": [
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "question_selection",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "question_selection",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "question_selection",
+            "mode": "all_declared",
+            "mandatory_question_refs": [
+              {
+                "artifact_kind": "question",
+                "artifact_id": "question",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "optional_question_refs": [],
+            "optional_source": "all",
+            "fallback": "include_all_optional",
+            "ordering": "profile_order"
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "unknown",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "unknown",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "unknown",
+            "insufficient_visibility": "unknown",
+            "transport_failure": "no_fact",
+            "envelope_failure": "no_fact",
+            "item_validation_failure": "error",
+            "non_known_value": "forbidden",
+            "reason_required": true
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "question_validation",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "question_validation",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "question_validation",
+            "coercion": "forbid",
+            "extra_fields": "forbid",
+            "association": "exact_question_ref",
+            "missing_item": "error",
+            "invalid_record": "whole_fact_error",
+            "sibling_retention": "trusted_envelope_only"
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "evidence",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "evidence",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "evidence",
+            "required_evidence_types": [],
+            "allowed_evidence_types": [
+              "original_image"
+            ],
+            "on_missing": "block_result",
+            "original_media_required": true,
+            "retention_class": {
+              "vocabulary_ref": {
+                "artifact_kind": "vocabulary",
+                "artifact_id": "retention",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "member": "synthetic"
+            },
+            "retention_duration_seconds": 100,
+            "access_scope": "task"
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "execution",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "execution",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "tool_execution",
+            "timeout_ms": 100,
+            "max_attempts": 1,
+            "max_concurrency": 1,
+            "input_byte_limit": 100,
+            "retryable_error_classes": [],
+            "whole_step_retry": true
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "failure",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "failure",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "tool_failure",
+            "requirement": "required",
+            "required_descendants": "block",
+            "fact_failure": "error",
+            "optional_continuation": "block"
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "resources",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "resources",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "resource_requirements",
+            "resource_class": "cpu",
+            "max_concurrency": 1,
+            "timeout_ms": 100,
+            "input_byte_limit": 100,
+            "output_byte_limit": 100
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "provider",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "provider",
+            "routing_mode": "remote_primary",
+            "primary_deployment_id": "remote-deployment",
+            "deployments": [
+              {
+                "provider_id": "provider",
+                "deployment_id": "remote-deployment",
+                "logical_model_id": "logical",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.0.0"
+                  ],
+                  "allowed_model_versions": [
+                    "1.0.0"
+                  ]
+                },
+                "required_features": [
+                  "structured_output"
+                ]
+              },
+              {
+                "provider_id": "provider",
+                "deployment_id": "local-deployment",
+                "logical_model_id": "logical",
+                "provider_kind": "local",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.0.0"
+                  ],
+                  "allowed_model_versions": [
+                    "1.0.0"
+                  ]
+                },
+                "required_features": [
+                  "structured_output"
+                ]
+              }
+            ],
+            "selection": "primary_then_explicit_fallback"
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "fallback",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "fallback",
+            "mode": "disabled",
+            "trigger_errors": [],
+            "allowed_transitions": [],
+            "contract_compatibility": "exact"
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "rule",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "rule",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "rule",
+            "mandatory": true,
+            "missing": "unknown",
+            "unknown": "unknown",
+            "error": "unknown",
+            "not_applicable": "unknown",
+            "not_evaluated": "unknown",
+            "required_guard": "block_unavailable",
+            "scan": "all_mandatory",
+            "true_result": "violation",
+            "false_result": "no_violation",
+            "unknown_result": "uncertain"
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "conflict",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "conflict",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "conflict",
+            "mode": "collect_all",
+            "early_exit": false,
+            "category_dedup": "set",
+            "preserve_rule_refs": true
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "coverage",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "coverage",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "coverage",
+            "no_hits": "uncertain",
+            "no_target": "uncertain",
+            "partial_without_match": "uncertain",
+            "partial_with_match": "violation",
+            "complete_negative": "all_mandatory_false_with_required_evidence",
+            "absence_strategy": "conservative"
+          }
+        }
+      },
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "external-applicability",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "external-applicability",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "applicability",
+            "input_domain": "rule_applicability",
+            "context_allowlist": [],
+            "identity_constraints": [],
+            "condition_ast": {
+              "kind": "literal",
+              "constant": {
+                "type_definition": {
+                  "kind": "bool"
+                },
+                "value": {
+                  "kind": "bool",
+                  "value": true
+                }
+              }
+            },
+            "on_unknown": "block"
+          }
+        }
+      }
+    ],
+    "use_contexts": [
+      {
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "region_ref": {
+          "artifact_kind": "region",
+          "artifact_id": "region",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "context_registrations": [
+          {
+            "source": "context_snapshot",
+            "schema_ref": {
+              "artifact_kind": "context_schema",
+              "artifact_id": "context",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            }
+          },
+          {
+            "source": "region_metadata",
+            "region_ref": {
+              "artifact_kind": "region",
+              "artifact_id": "region",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "schema_ref": {
+              "artifact_kind": "context_schema",
+              "artifact_id": "region-context",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            }
+          }
+        ],
+        "question_metadata_views": [
+          {
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "schema_ref": {
+              "artifact_kind": "attribute_schema",
+              "artifact_id": "question-meta",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            }
+          }
+        ],
+        "mapping_contexts": [],
+        "model_prompt_uses": [],
+        "image_reference_schema_ref": {
+          "artifact_kind": "attribute_schema",
+          "artifact_id": "image",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "object_geometry_schema_ref": {
+          "artifact_kind": "object_schema",
+          "artifact_id": "geometry",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "profile_metadata_schema_ref": {
+          "artifact_kind": "attribute_schema",
+          "artifact_id": "profile-meta",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        }
+      }
+    ],
+    "reviews": [],
+    "validation_at": "2026-11-17T00:00:00Z"
+  },
+  "fact_schemas": [
+    {
+      "ref": {
+        "artifact_kind": "fact_schema",
+        "artifact_id": "primary",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "definition": {
+        "schema_version": "1.0.0",
+        "schema_id": "primary",
+        "version": "1.0.0",
+        "semantic_key": "parking.state",
+        "scope": "object",
+        "type_definition": {
+          "kind": "bool"
+        },
+        "payload_schema_ref": {
+          "artifact_kind": "value_schema",
+          "artifact_id": "value-schema.81583b728cbcfd9b0e1f80aceb5baa0ee3aff0c7e1d6ac77a1570669d5d85205",
+          "version": "1.0.0",
+          "digest": "90f59fb56308c3c5ce8ca19577d9e88c4ac914a0a0c7dd9de2bc9c97b81131b1"
+        },
+        "value_schema_generation": {
+          "projection_profile_version": "1.0.0",
+          "generator_id": "jimu.value-schema",
+          "generator_version": "1.0.0",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+          "canonicalization_id": "JCS",
+          "global_limits": {
+            "string_max_length": 4096,
+            "list_max_items": 256,
+            "record_max_fields": 64,
+            "max_depth": 8
+          }
+        },
+        "allowed_producer_kinds": [
+          "vlm_question"
+        ],
+        "status_policy": {
+          "known_value": "required",
+          "non_known_value": "forbidden",
+          "non_known_reason": "required",
+          "error_diagnostics": "required",
+          "not_applicable_basis": "required",
+          "not_evaluated_reason": "required"
+        },
+        "units": {
+          "mode": "not_applicable"
+        },
+        "coordinate_system": {
+          "mode": "not_applicable"
+        },
+        "evidence_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "evidence",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "confidence_metadata_policy": {
+          "mode": "forbidden"
+        }
+      }
+    }
+  ]
+}

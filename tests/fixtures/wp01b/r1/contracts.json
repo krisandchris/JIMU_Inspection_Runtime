@@ -1,0 +1,157 @@
+{
+  "notice": "Synthetic Registry contract fixtures; no real model/tool or producer admission.",
+  "spec": {
+    "projection_profile_version": "1.0.0",
+    "generator_id": "jimu.value-schema",
+    "generator_version": "1.0.0",
+    "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+    "canonicalization_id": "JCS",
+    "global_limits": {
+      "string_max_length": 4096,
+      "list_max_items": 256,
+      "record_max_fields": 64,
+      "max_depth": 8
+    }
+  },
+  "fact_schema": {
+    "schema_version": "1.0.0",
+    "schema_id": "parked",
+    "version": "1.0.0",
+    "semantic_key": "parking.state",
+    "scope": "object",
+    "type_definition": {
+      "kind": "bool"
+    },
+    "payload_schema_ref": {
+      "artifact_kind": "value_schema",
+      "artifact_id": "placeholder",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "allowed_producer_kinds": [
+      "vlm_question"
+    ],
+    "status_policy": {
+      "known_value": "required",
+      "non_known_value": "forbidden",
+      "non_known_reason": "required",
+      "error_diagnostics": "required",
+      "not_applicable_basis": "required",
+      "not_evaluated_reason": "required"
+    },
+    "units": {
+      "mode": "not_applicable"
+    },
+    "coordinate_system": {
+      "mode": "not_applicable"
+    },
+    "evidence_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "image-evidence",
+      "version": "1.0.0",
+      "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "confidence_metadata_policy": {
+      "mode": "forbidden"
+    }
+  },
+  "values": [
+    [
+      {
+        "kind": "bool"
+      },
+      {
+        "kind": "bool",
+        "value": false
+      }
+    ],
+    [
+      {
+        "kind": "integer",
+        "minimum": 0,
+        "maximum": 2
+      },
+      {
+        "kind": "integer",
+        "value": 0
+      }
+    ],
+    [
+      {
+        "kind": "number",
+        "minimum": 0,
+        "maximum": 2
+      },
+      {
+        "kind": "number",
+        "value": 0.0
+      }
+    ],
+    [
+      {
+        "kind": "string",
+        "max_length": 4
+      },
+      {
+        "kind": "string",
+        "value": ""
+      }
+    ],
+    [
+      {
+        "kind": "enum",
+        "members": [
+          "parked",
+          "moving"
+        ]
+      },
+      {
+        "kind": "enum",
+        "value": "parked"
+      }
+    ],
+    [
+      {
+        "kind": "list",
+        "item_type": {
+          "kind": "integer"
+        },
+        "max_items": 2
+      },
+      {
+        "kind": "list",
+        "value": []
+      }
+    ],
+    [
+      {
+        "kind": "record",
+        "fields": [
+          {
+            "name": "required",
+            "required": true,
+            "type_definition": {
+              "kind": "bool"
+            }
+          },
+          {
+            "name": "optional",
+            "required": false,
+            "type_definition": {
+              "kind": "string"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "record",
+        "value": {
+          "required": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      }
+    ]
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_conditions.py",
+    "tests/contract/test_b_conditions_schema.py",
+    "tests/negative/test_b_conditions_invalid.py",
+    "tests/unit/test_b_complete_policies_binding.py",
+    "tests/contract/test_b_complete_policies.py",
+    "tests/negative/test_b_complete_policies_invalid.py",
+    "tests/unit/test_b_policies.py",
+    "tests/negative/test_b_policy_invalid.py",
+    "tests/contract/test_b_policy_contracts.py",
+    "-q",
+    "--junitxml=planning/implementation_evidence/WP-01B/execution_03/logs/x1/final_pytest_corrected.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:15:21.293550+00:00",
+  "end": "2026-11-17T17:15:27.676977+00:00",
+  "exit_code": 0,
+  "stdout": "........................................................................ [ 26%]\n........................................................................ [ 53%]\n........................................................................ [ 80%]\n.....................................................                    [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_03/logs/x1/final_pytest_corrected.xml -\n269 passed in 6.14s\n",
+  "stderr": ""
+}

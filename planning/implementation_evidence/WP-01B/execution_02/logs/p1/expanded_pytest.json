@@ -1,0 +1,19 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_policies.py",
+    "tests/contract/test_b_policy_contracts.py",
+    "tests/negative/test_b_policy_invalid.py",
+    "-q",
+    "--tb=short"
+  ],
+  "exit_code": 1,
+  "output": ".....................F.................................................. [ 63%]\n.........................................                                [100%]\n=================================== FAILURES ===================================\n__________ test_step_failure_requirement_and_nested_model_capability ___________\ntests/unit/test_b_policies.py:495: in test_step_failure_requirement_and_nested_model_capability\n    validate_tool_policy_bindings(tool, catalogue).aggregate_status == \"incomplete\"\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsrc/jimu_runtime/domain/validation/policies.py:570: in validate_tool_policy_bindings\n    return ValidationReport(scope=\"definition_relations\", checks=tuple(checks))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   pydantic_core._pydantic_core.ValidationError: 1 validation error for ValidationReport\nE     Value error, checks must contain unique check_id values [type=value_error, input_value={'scope': 'definition_rel...', related_refs=()),)))}, input_type=dict]\nE       For further information visit https://errors.pydantic.dev/2.12/v/value_error\n=========================== short test summary info ============================\nFAILED tests/unit/test_b_policies.py::test_step_failure_requirement_and_nested_model_capability\n1 failed, 112 passed in 1.52s\n",
+  "recorded_at": "2026-11-17T15:11:58.052682+00:00"
+}

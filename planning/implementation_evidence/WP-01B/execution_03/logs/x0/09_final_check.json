@@ -1,0 +1,24 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/contract/test_b_producer_ref.py",
+    "-q"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T17:05:47.440986+00:00",
+  "ended_at": "2026-11-17T17:05:47.956147+00:00",
+  "exit_code": 0,
+  "stdout": "...........                                                              [100%]\n11 passed in 0.33s\n",
+  "stderr": "",
+  "hashes": {
+    "src/jimu_runtime/domain/fact_selectors.py": "39bccead232229fe11ae59f7845408d679a457be01fc5b1b94ec22e2bc663617",
+    "src/jimu_runtime/domain/runtime/facts.py": "92999252da8653c114c7dc04a42e09aa2532b849000fa2067c16bd41b143d076",
+    "tests/contract/test_b_producer_ref.py": "f41dab89be54e117b4cbaab4f8fe0377c965ae61f5a7d3d1b2db8994c4afb0a4"
+  }
+}

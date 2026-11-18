@@ -1,0 +1,19 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_tool_plans.py",
+    "-q",
+    "--tb=short",
+    "-k",
+    "registry_unknown_vs_wrong_digest or registry_path_failure"
+  ],
+  "exit_code": 1,
+  "output": "FFFFF                                                                    [100%]\n=================================== FAILURES ===================================\n_ test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status[None-incomplete-registry.unknown_identity-definition] _\ntests/unit/test_b_tool_plans.py:451: in test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status\n    assert report.aggregate_status == status\nE   AssertionError: assert 'invalid' == 'incomplete'\nE     \nE     - incomplete\nE     + invalid\n_ test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status[None-incomplete-registry.unknown_identity-plan] _\ntests/unit/test_b_tool_plans.py:451: in test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status\n    assert report.aggregate_status == status\nE   AssertionError: assert 'invalid' == 'incomplete'\nE     \nE     - incomplete\nE     + invalid\n_ test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status[bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-invalid-registry.digest_mismatch-definition] _\ntests/unit/test_b_tool_plans.py:453: in test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status\n    assert any(issue.code == code for issue in issues)\nE   assert False\nE    +  where False = any(<generator object test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status.<locals>.<genexpr> at 0x78be4d402dc0>)\n_ test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status[bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-invalid-registry.digest_mismatch-plan] _\ntests/unit/test_b_tool_plans.py:453: in test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status\n    assert any(issue.code == code for issue in issues)\nE   assert False\nE    +  where False = any(<generator object test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status.<locals>.<genexpr> at 0x78be4d47b030>)\n__________ test_registry_path_failure_remains_invalid_with_typed_path __________\ntests/unit/test_b_tool_plans.py:473: in test_registry_path_failure_remains_invalid_with_typed_path\n    assert any(\nE   assert False\nE    +  where False = any(<generator object test_registry_path_failure_remains_invalid_with_typed_path.<locals>.<genexpr> at 0x78be4cd55380>)\n=========================== short test summary info ============================\nFAILED tests/unit/test_b_tool_plans.py::test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status[None-incomplete-registry.unknown_identity-definition]\nFAILED tests/unit/test_b_tool_plans.py::test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status[None-incomplete-registry.unknown_identity-plan]\nFAILED tests/unit/test_b_tool_plans.py::test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status[bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-invalid-registry.digest_mismatch-definition]\nFAILED tests/unit/test_b_tool_plans.py::test_registry_unknown_vs_wrong_digest_has_cross_catalogue_status[bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-invalid-registry.digest_mismatch-plan]\nFAILED tests/unit/test_b_tool_plans.py::test_registry_path_failure_remains_invalid_with_typed_path\n5 failed, 24 deselected in 0.25s\n",
+  "recorded_at": "2026-11-17T15:36:02.193987+00:00"
+}

@@ -1,0 +1,323 @@
+{
+  "facet": {
+    "schema_version": "1.0.0",
+    "facet_id": "synthetic.facet",
+    "version": "1.0.0",
+    "name": "Synthetic facet",
+    "description": "Synthetic shape only",
+    "fact_schema_refs": [
+      {
+        "artifact_kind": "fact_schema",
+        "artifact_id": "primary",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  },
+  "question": {
+    "schema_version": "1.0.0",
+    "question_id": "synthetic.question",
+    "version": "1.0.0",
+    "objective": "Synthetic observation objective",
+    "prompt_template_ref": {
+      "artifact_kind": "prompt_template",
+      "artifact_id": "synthetic.prompt",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "facet_refs": [
+      {
+        "artifact_kind": "facet",
+        "artifact_id": "synthetic.facet",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "context_allowlist": [
+      {
+        "source": "context_snapshot",
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "synthetic",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "field_path": [
+          "scene"
+        ]
+      }
+    ],
+    "primary_fact_key": "synthetic.primary",
+    "primary_fact_schema_ref": {
+      "artifact_kind": "fact_schema",
+      "artifact_id": "primary",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "evidence_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "evidence",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "unknown_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "unknown",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "validation_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "question_validation",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "profile": {
+    "schema_version": "1.0.0",
+    "profile_id": "synthetic.profile",
+    "version": "1.0.0",
+    "entity_ref": {
+      "artifact_kind": "entity",
+      "artifact_id": "synthetic",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "discovery_binding_ref": {
+      "artifact_kind": "model_binding",
+      "artifact_id": "discovery",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "grounding_binding": {
+      "kind": "model",
+      "model_binding_ref": {
+        "artifact_kind": "model_binding",
+        "artifact_id": "grounding",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    "observation_binding_ref": {
+      "artifact_kind": "model_binding",
+      "artifact_id": "observation",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "facet_refs": [],
+    "question_refs": [],
+    "question_selection_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "question_selection",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "rule_set_refs": [],
+    "tool_plan_ref": {
+      "artifact_kind": "tool_plan",
+      "artifact_id": "synthetic",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "applicability_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "applicability",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "prompt": {
+    "schema_version": "1.0.0",
+    "prompt_template_id": "synthetic.prompt",
+    "version": "1.0.0",
+    "purpose": "object_observation",
+    "template_text": "{{literal}} {scene} {scene} {image}",
+    "variables": [
+      {
+        "name": "scene",
+        "source": "context",
+        "field_path": [
+          "scene"
+        ],
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "synthetic",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "required": true,
+        "on_missing": "block"
+      },
+      {
+        "name": "image",
+        "source": "image_reference",
+        "field_path": [],
+        "schema_ref": {
+          "artifact_kind": "attribute_schema",
+          "artifact_id": "image",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "required": false,
+        "on_missing": "omit"
+      }
+    ],
+    "response_schema_ref": {
+      "artifact_kind": "response_schema",
+      "artifact_id": "synthetic",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "rendering_policy": "literal_substitution"
+  },
+  "variable": {
+    "name": "scene",
+    "source": "context",
+    "field_path": [
+      "scene"
+    ],
+    "schema_ref": {
+      "artifact_kind": "context_schema",
+      "artifact_id": "synthetic",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "required": true,
+    "on_missing": "block"
+  },
+  "image_variable": {
+    "name": "image",
+    "source": "image_reference",
+    "field_path": [],
+    "schema_ref": {
+      "artifact_kind": "attribute_schema",
+      "artifact_id": "image",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "required": false,
+    "on_missing": "omit"
+  },
+  "metadata": {
+    "namespace": "synthetic.metadata",
+    "attribute_schema_ref": {
+      "artifact_kind": "attribute_schema",
+      "artifact_id": "synthetic",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "value": {
+      "kind": "record",
+      "value": {
+        "label": {
+          "kind": "string",
+          "value": "synthetic"
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "vocabulary_ref": {
+        "artifact_kind": "vocabulary",
+        "artifact_id": "tags",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "member": "synthetic.one"
+    },
+    {
+      "vocabulary_ref": {
+        "artifact_kind": "vocabulary",
+        "artifact_id": "tags",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "member": "synthetic.two"
+    }
+  ],
+  "context_binding": {
+    "source": {
+      "source_kind": "context",
+      "selector": {
+        "source": "context_snapshot",
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "synthetic",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "field_path": [
+          "scene"
+        ]
+      }
+    },
+    "target": {
+      "schema_ref": {
+        "artifact_kind": "tool_input_schema",
+        "artifact_id": "synthetic",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "field_path": [
+        "scene"
+      ]
+    },
+    "required": true,
+    "on_missing": "block"
+  },
+  "image_binding": {
+    "source": {
+      "source_kind": "image",
+      "selector": {
+        "schema_ref": {
+          "artifact_kind": "attribute_schema",
+          "artifact_id": "image",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "field_path": []
+      }
+    },
+    "target": {
+      "schema_ref": {
+        "artifact_kind": "tool_input_schema",
+        "artifact_id": "synthetic",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "field_path": [
+        "image"
+      ]
+    },
+    "required": true,
+    "on_missing": "block"
+  },
+  "tool_grounding": {
+    "kind": "tool",
+    "tool_ref": {
+      "artifact_kind": "tool",
+      "artifact_id": "grounding",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "model_grounding": {
+    "kind": "model",
+    "model_binding_ref": {
+      "artifact_kind": "model_binding",
+      "artifact_id": "grounding",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  }
+}

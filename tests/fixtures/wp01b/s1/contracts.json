@@ -1,0 +1,144 @@
+{
+  "entity": {
+    "schema_version": "1.0.0",
+    "entity_id": "synthetic.entity",
+    "version": "1.0.0",
+    "name": "Synthetic entity",
+    "description": "CPU-only synthetic contract fixture",
+    "entity_type": {
+      "vocabulary_ref": {
+        "artifact_kind": "vocabulary",
+        "artifact_id": "types",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "member": "synthetic"
+    },
+    "lifecycle": {
+      "vocabulary_ref": {
+        "artifact_kind": "vocabulary",
+        "artifact_id": "lifecycle",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "member": "synthetic"
+    },
+    "attribute_schema_refs": [
+      {
+        "artifact_kind": "attribute_schema",
+        "artifact_id": "test",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  },
+  "region": {
+    "schema_version": "1.0.0",
+    "region_id": "synthetic.region",
+    "version": "1.0.0",
+    "name": "Synthetic region",
+    "region_type": {
+      "vocabulary_ref": {
+        "artifact_kind": "vocabulary",
+        "artifact_id": "regions",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "member": "synthetic"
+    },
+    "scene_type": {
+      "vocabulary_ref": {
+        "artifact_kind": "vocabulary",
+        "artifact_id": "scenes",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "member": "synthetic"
+    },
+    "asset_refs": [
+      {
+        "artifact_kind": "static_asset",
+        "artifact_id": "test",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "context_schema_ref": {
+      "artifact_kind": "context_schema",
+      "artifact_id": "test",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "vocabulary": {
+    "schema_version": "1.0.0",
+    "vocabulary_id": "types",
+    "version": "1.0.0",
+    "semantic_domain": "entity.type",
+    "members": [
+      "synthetic",
+      "another"
+    ]
+  },
+  "asset": {
+    "schema_version": "1.0.0",
+    "asset_id": "synthetic.asset",
+    "version": "1.0.0",
+    "data_path": "resources/assets/data/synthetic.bin",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "mime_type": "application/octet-stream",
+    "byte_size": 0
+  },
+  "capability": {
+    "family": "model_deployment",
+    "capability_id": "synthetic.model",
+    "contract_version": "1.0.0",
+    "allowed_implementation_versions": [
+      "1.0.0"
+    ],
+    "required_features": [
+      "rgb_image"
+    ]
+  },
+  "review": {
+    "report_id": "synthetic.review",
+    "version": "1.0.0",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "review_registry_id": "synthetic.registry"
+  },
+  "selector": {
+    "source": "context_snapshot",
+    "schema_ref": {
+      "artifact_kind": "context_schema",
+      "artifact_id": "test",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "field_path": [
+      "scene",
+      "a.b"
+    ]
+  },
+  "versions": {
+    "allowed_deployment_versions": [
+      "1.0.0"
+    ],
+    "allowed_model_versions": [
+      "2.0.0"
+    ]
+  },
+  "dimensions": {
+    "width": 1,
+    "height": 2
+  },
+  "member": {
+    "vocabulary_ref": {
+      "artifact_kind": "vocabulary",
+      "artifact_id": "types",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "member": "synthetic"
+  }
+}

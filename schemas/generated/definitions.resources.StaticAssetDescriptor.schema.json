@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "AbsentOptional_AssetDimensions_": {
+      "$ref": "#/$defs/AssetDimensions"
+    },
+    "AssetDataPath": {
+      "maxLength": 512,
+      "minLength": 1,
+      "pattern": "^(?!.*(?:^|/)[.]{1,2}(?:/|$))resources/assets/data/[^\\\\\\x00-\\x1f\\x7f-\\x9f:?#/]+(?:/[^\\\\\\x00-\\x1f\\x7f-\\x9f:?#/]+)*$(?![\\s\\S])",
+      "type": "string"
+    },
+    "AssetDimensions": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "width": {
+          "$ref": "#/$defs/PositiveBudget"
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ],
+      "title": "AssetDimensions",
+      "type": "object"
+    },
+    "MimeType": {
+      "$ref": "#/$defs/ShortText",
+      "pattern": "^[A-Za-z0-9!#$%&'*+.^_`|~-]+/[A-Za-z0-9!#$%&'*+.^_`|~-]+$(?![\\s\\S])"
+    },
+    "NonNegativeBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "PositiveBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "asset_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Asset Id",
+      "type": "string"
+    },
+    "byte_size": {
+      "$ref": "#/$defs/NonNegativeBudget"
+    },
+    "data_path": {
+      "$ref": "#/$defs/AssetDataPath"
+    },
+    "dimensions": {
+      "$ref": "#/$defs/AbsentOptional_AssetDimensions_"
+    },
+    "mime_type": {
+      "$ref": "#/$defs/MimeType"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "asset_id",
+    "version",
+    "data_path",
+    "sha256",
+    "mime_type",
+    "byte_size"
+  ],
+  "title": "StaticAssetDescriptor",
+  "type": "object"
+}

@@ -1,8 +1,12 @@
 # WP-01B — Definition & Fact Registry
 
-Revision: PLAN-2-G1，2026-11-17。当前门禁：**G1 CONDITIONAL / G1-D01 PENDING_USER_DECISION**。
+Revision: PLAN-4-A，2026-11-18。调度：**DEPENDENCY_DRIVEN / D01_OPTION_A_APPROVED**。
+当前执行基线c25bef668136acc651e7313ba608ec6fdefd39a5；main原基线保持不变。
+字段规范附录[CONTRACT_FIELDS.md](CONTRACT_FIELDS.md)属于本唯一PLAN，不能独立扩大范围。
 用户已授权 WP-01B 实施、CPU-only 安装/测试、独立 worktree/开发分支；不是仍待整个 WP 重复授权。
-本轮实际证据仍为 STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN；尚未委派代码。
+执行策略修订前的G1证据为STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN；
+本轮按依赖完成；前段证据封存于execution_02/，完整交付及最终验收证据在execution_03/。
+**当前：八模块工程PASS / 用户最终验收待确认。§8–9保留实施时调度历史；当前门禁见§10。**
 
 ## 1. 基线、授权和唯一计划
 
@@ -10,7 +14,9 @@ Revision: PLAN-2-G1，2026-11-17。当前门禁：**G1 CONDITIONAL / G1-D01 PEND
 开发分支：`dev/wp-01b-definition-fact-registry`。
 独立 worktree：`../JIMU_Inspection_Runtime_WP01B`。
 原 main 的143个 tracked 文件、27个已知未跟踪规划/验收/合并文件均核对原摘要，无非预期变化。
-只把这27个已核对文件按原字节复制到新 worktree；源树未改。
+G1初始化时只把这27个已核对文件按原字节复制到新 worktree，彼时源树未改。
+execution_02曾发生Sol-B误写9个新文件到原worktree后迁回的已纠正偏差；170保护文件
+及原main HEAD复核未变化，详见FINDINGS I02及审计日志，不宣称本轮从未触碰源树。
 PLAN-1.1/FINDINGS/REVIEW/摘要封套保存在本轮 evidence 的 before_planning/，旧 reviews 不重写。
 
 最新用户 Goal 原文保存在 `planning/implementation_evidence/WP-01B/USER_AUTHORIZATION.md`，
@@ -30,7 +36,7 @@ Policy Catalog；FactSchemaDefinition；FactProducerDeclaration；AuthoritativeR
 必要支持包含严格有限 Schema/Mapping 描述、Fact/Attempt/Result 关联输入、局部 value_schema 生成、CPU测试。
 不重复 A，不改 A 数值和 ref wire 语义。
 
-禁止：RuleDefinition/RuleSetDefinition、Rule AST（G1-D01 未获例外）、TypeChecker/Evaluator、
+禁止：RuleDefinition/RuleSetDefinition、共享条件数据模型之外的Rule AST功能、TypeChecker/Evaluator、
 Gate/Workflow、完整 Bundle graph/compiler/root digest/signature/admission、Release Manager、
 DB/ORM/API、Model Gateway、真实模型/GPU、需求平台。
 ToolPlan **本地 DAG 周期与可达性验证纳入 B**；它不等于 WP-02 全 Bundle 闭包。
@@ -54,24 +60,13 @@ FactSchema + Producer selectors → Fact / Attempt / Result / Authority
 
 ## 3. G1 四项裁决
 
-### G1-D01 — 条件数据分期：OPEN，唯一需用户范围裁定项
+### G1-D01 — option A approved; implementation and review complete
 
-Domain §14 的 ApplicabilityPolicy 必填 condition_ast；context_rules 间接依赖它；
-ToolSkipPolicy 与 §13.1 Producer 允许 typed Tool condition。A 没有现成 AST。
-最新授权同时要求完整既有 Policy/Producer、禁止 AST、只用已批准简单声明策略；
-现有规范没有已批准的独立 AST-free 条件语言。literal true/always 不能等同完整历史支持域。
-
-四 Sol 只读 Challenge 与 Primary 独立原文核对一致。不采用 Any/dict/opaque string/
-未解析 ForwardRef/改名 AST/空 Applicability/14分支冒充16分支。
-向用户提交的最小二选一：
-
-1. 推荐：仅将既有共享条件 AST **数据模型**前移 B；不提前 RuleDefinition、TypeChecker、Evaluator。
-   这是明确的范围例外，尚未批准。批准后更新模型/文件/测试清单，Sol 定向 Challenge，按现有实施授权继续。
-2. 保留 B 完全无 AST：用户明确批准缩减条件分支支持域及 B 验收范围，复杂分支留 C。
-   不得把原八项完整契约门槛原样写 PASS；Applicability 简单替代形状也不能自行发明。
-
-此处等待的是分期例外，不是再次索取整个 WP、每个文件或历史 D01–D15 的批准。
-未答复不视为同意。依用户“改变已批语义需暂停 Goal”的指令，在保存本轮审计后停于此门禁。
+用户明确批准共享条件AST数据模型前移B，仍禁止RuleDefinition/TypeChecker/Evaluator。
+原A/B选择与批准前审查保存在execution_02和execution_03/before；未默认选择或缩减目标。
+用户随后明确批准X-C01局部Tool Fact selector，修复同Plan反向ContentRef摘要环。
+完整字段、纯接口、文件写权与测试见CONTRACT_FIELDS §11–13；经定向Sol Challenge后实施。
+两项均为明确范围授权，不再等待用户；保留运行器/编译器/真实API/Git出版禁令。
 
 ### G1-D02 — 局部 JCS / value_schema：范围已批准，契约技术冻结
 
@@ -106,7 +101,7 @@ ValueSchemaGenerationInput、GeneratedValueSchema（非持久产物描述）、F
 规范来源：[RFC8785](https://www.rfc-editor.org/rfc/rfc8785)。
 此为设计冻结，不是JCS测试PASS。
 
-### G1-D03 — Fact / Attempt / Authority：支持域已批准，技术附录待字段补齐
+### G1-D03 — Fact / Attempt / Authority：字段技术冻结，按依赖验证
 
 持久根 FactRecord、AuthoritativeResultSelection 显式 schema_version=1.0.0。
 运行关联支持使用有限非持久 descriptors，不建设完整节点运行记录/存储服务。
@@ -163,16 +158,18 @@ Unicode/非有限数/额外字段，解析完整typed content必须等于该提�
 模型相等/稳定JSON不是传输bytes去重证据。不同bytes冲突，不覆盖旧值。
 Registry返回不可变快照/显式选权视图；不实现DB CAS/fencing/幂等服务。
 冲突检查只证明提交目录/快照内一致；新快照须显式携带前序历史，不能证明调用者未漏传
-外部历史，也不声称全存储全局去重。FactSchema metadata/完整公共字段附录仍须补齐（见REVIEW）。
+外部历史，也不声称全存储全局去重。FactSchema metadata及Fact/Attempt/Result/Authority字段
+已在附录§5/7.1冻结；模型之外的有限关联检查须保留上述信任边界。
 
 必测：跨Attempt cherry-pick、错scope/node/producer、optional已选缺项、必需输出缺失、
 失败/late资格、错误resultkind、ID重绑/复合键冲突、revision fork、旧快照不变、system absence无假Fact。
 
-### G1-D04 — 严格字段和 Mapping：技术裁决草案，C2字段补齐未完成
+### G1-D04 — 严格字段和 Mapping：字段技术冻结，代码按模块独立复核
 
-以下是最新授权下技术约束草案，不是新业务词表/生产阈值，也不修改 A 类型。
-定向Sol复查指出descriptor/source union/review scope尚未精确列出所有字段，不能称完整冻结。
-剩余是Primary可自行处理的技术工作，不要求用户另批；D01决策后恢复并在代码前补齐复查。
+下列技术约束与CONTRACT_FIELDS.md构成唯一计划；附录已完成descriptor/source union、
+review resolver scope、metadata/Prompt、Model/Tool/14个非表达式Policy的具体字段及定向Challenge。
+冻结是技术实现依据，不是代码验收或生产配置批准；不修改A语义。
+D01仅阻塞完整表达式Policy/Producer准入；各独立模块继续实施和代码复核。
 
 - 所有B持久根显式 Literal["1.0.0"]；ID/Version/Digest/ref使用A；branch禁止字段含null也拒绝。
   name/member等短文本1..128，描述1..4096，模板最多65536字符；普通目录集合最多1024，
@@ -215,7 +212,7 @@ Registry返回不可变快照/显式选权视图；不实现DB CAS/fencing/幂�
 - Prompt仅声明命名占位符（技术语法冻结为{identifier}，转义{{/}}）；变量名ASCII标识1..128、
   unique注册、模板使用域一致；partials exact refs且有限目录无环。无loops/expression/render服务。
 
-新wire约束影响尚未实现的B类型；示例仍illustrative。既有A、历史已发布制品不迁移。
+新wire约束仅作用于本轮新增、尚未发布的B类型；示例仍illustrative。既有A、历史已发布制品不迁移。
 geometry正文未在B冻结，保留exact geometry_resource ref及明确未执行内容检查，不假装几何语义PASS。
 
 ## 4. Pydantic / 纯接口清单
@@ -240,7 +237,7 @@ PolicyKind恰16：applicability、question_selection、unknown、question_valida
 tool_execution、tool_failure、tool_skip、resource_requirements、provider、fallback、rule、
 conflict、coverage、context_provenance、execution。G1-D01不关闭就不能把其完整union标完成。
 不新增ArtifactKind/RuntimeRecordKind；不把support descriptor注册成新artifact。
-新enum集中定义，由A首次写入后主控显式交接给B/C，禁止并发写enums.py。
+B的新enum集中在definition_enums.py，不改A的enums.py；A首次交付后显式移交B/C，禁止并发写。
 
 纯接口：
 register(exact_ref, definition) → builder；freeze() → immutable registry；
@@ -251,7 +248,7 @@ validate_fact/validate_producers/validate_authority接受完整typed finite cont
 
 ## 5. 执行顺序和所有权
 
-G1关闭后按依赖推进，不再逐文件求批：
+各任务自己的契约/输入/Challenge通过后按依赖推进，不再逐文件求批，也不要求G1全局先关闭：
 1. A共享支持/ontology + B descriptors（不共享写文件）；主控复核接口。
 2. C FactSchema/projection/selectors/tool outputs；A vocabulary/prompts可独立。
 3. B Policy/Model/ToolPlan；A capabilities；C producer与runtime支持在接口齐全后。
@@ -267,7 +264,9 @@ enums与import测试确需增量时单独交接，不重构A来绕过困难。
 
 ## 6. 测试与验收
 
-全部下列为计划，当前未执行。A历史324passed不是B结果。
+下列为完整验收设计。execution_02已实际执行模块测试，当前结果见TASKS与各日志；
+当前已实现A+B完整回归已执行：1455 passed/0 skipped，见execution_02最终日志；
+未实施的X1/X2/X3不在该测试通过声明内，A历史324passed不被冒用为B结果。
 
 - Domain：所有根逐字段缺失/额外字段/错误类型/深不可变；exact refs、词表/domain、
   Profile/Facet/Question精确交集、同shape异digest、单primary、无反向循环。
@@ -294,12 +293,15 @@ enums与import测试确需增量时单独交接，不重构A来绕过困难。
 ```bash
 uv run --locked --no-sync python -m pytest tests/unit tests/contract tests/negative -q --junitxml=planning/implementation_evidence/WP-01B/pytest_results.xml
 uv run --locked --no-sync ruff check .
-uv run --locked --no-sync ruff format --check .
+uv run --locked --no-sync ruff format --check src tests scripts
 uv run --locked --no-sync mypy src/jimu_runtime
 uv run --locked --no-sync python scripts/generate_schemas.py --check
 ```
 
-生成器未交付前最后一条不可执行或记PASS。模块测试仅相关路径，最终完整验收后只因变更/失败/新风险复验。
+当前生成器已交付；上述最后命令实际结果以整合日志为准。
+格式范围明确为维护中的src/tests/scripts。首轮`ruff format --check .`实际失败仅涉及三份
+已封存audit_schemas.py；保留原失败与原字节，不加ignore、不重命名或格式化历史证据，
+也不宣称全目录format已通过。Ruff lint仍检查整个`.`。模块测试仅相关路径，最终完整验收后只因变更/失败/新风险复验。
 日志精确记录UTC起止、cwd、command、exit、stdout/stderr、JUnit counts/skips、源码/lock hashes。
 测试数据synthetic；不证明模型质量、真实审批、调用、并发CAS或生产容量。
 
@@ -311,12 +313,103 @@ PASS后更新WORK_PACKAGE_STATUS并停止，推荐C但不开始；Git出版另�
 
 ## 7. 当前状态、风险和回退
 
-G1-D02范围已闭合；D03/D04按技术授权细化但完整字段附录尚有C2需补齐，不重复申请整个工作包；
-G1-D01待用户选定分期例外/缩减方案。相关实现未开始，整体Code NOT_IMPLEMENTED，
-Test TEST_NOT_RUN，Runtime N/A，G1 Independent Review CONDITIONAL。
-不得生成名为最终验收的PASS报告替代尚未完成的代码和测试。
+G1-D02–D04的字段契约已完成技术收口和定向Challenge，代码与证据按任务分别验收；
+G1-D01已获用户明确方案A授权；共享条件AST数据模型前移B，未批准TypeChecker/Evaluator。
+D01及全部依赖已闭合；完整八模块已实施并通过最终1907测试与独立审查。
+当前验收以FINAL_ACCEPTANCE_REPORT.md及execution_03实际证据为准，Runtime N/A。
 
 风险：表达能力暗中缩减、descriptor冒充可信schema、authority只检ID、JCS普通排序伪装、
 层次missing与false混淆、复杂后续图检查误报已完成。通过明确边界、独立vectors、
 exact refs、完整关联输入、单写入者和实际审查控制。
 回退以保留历史的定向修订为主；不reset/restore/删用户文件，不改main。
+
+## 8. Dependency-local execution schedule (retained implementation history)
+
+| Task | Dependencies | D01 dependency | Writer / delivery |
+|---|---|---|---|
+| S1 shared strict types + ontology/resources | A foundation, Fields§1 | none | Sol-A |
+| S2 bounded schema descriptors/mapping/review inputs | S1, Fields§2–4 | none | Sol-B |
+| F1 projection/JCS/FactSchema contracts | A foundation + S1, Fields§5 | none | Sol-C |
+| O1 Profile/Facet/Question/Prompt shapes | S1, S2 descriptor interfaces, Fields§1/6 | none for data shapes | Sol-A |
+| M1 ModelBinding/Tool/ToolPlan data+DAG | S1/S2 + F1 shared output/selector interfaces | none for pinned refs/local DAG | Sol-B |
+| P1 non-expression individual Policies | S1/S2 | none; no incomplete PolicyArtifact alias | Sol-B |
+| R1 schema register/query/payload/path | F1/S2 | none | Sol-D |
+| V1 finite Definition/Vocabulary/Prompt relation checks | O1/M1/P1/F1/S2 | none for available contracts; expression checks deferred | Sol-D |
+| A1 Fact/Result/Attempt/Authority data and pure relation checks | S1/F1 + Fields§7 | no AST; complete producer admission remains blocked | Sol-C |
+| A2 bounded candidate parse/history/local authority relations | A1/M1/R1, Fields§7.2 | none for finite history; full admission remains deferred | Sol-C |
+| E1 initial Schema inventory/export | implemented S1–V1/A2 | historical partial inventory retained in execution_02 | completed; E2 extends it |
+| X1 full condition data and16 Policy union | optionA approved, Fields§11 | resolved | Sol-B; local review PASS |
+| X2 full FactProducerDeclaration/catalog validation | X1 + M1 + X4 reference helper | resolved | Sol-C; implementing |
+| X3 full finite Producer/Authority/Registry integration | X2 + all independent tasks | resolved | Sol-D; implementing |
+
+D01-independent validators report exact performed/deferred checks. Pins to blocked definitions
+remain refs, never fake empty objects, unchecked Any or substitute release-ready admission.
+Fact/Authority local shape tests may proceed, but cannot assert full producer-authorized acceptance
+without X2. Full Goal acceptance remains unchanged; partial work does not become overall PASS.
+
+Order: freeze/Challenge S1 and F1 contracts first, implement S1; independently refine S2/A1.
+After S1 handoff, F1 and S2 can run in parallel on disjoint files. Code belongs to Sol;
+Primary reads actual outputs and tests before unlocking consumers. No previous read-only
+whole-repository audit is repeated; Challenges target only new/revised exact contracts.
+
+No automatic Goal pause because X1/X2 are blocked. Continue every ready independent task.
+The historical engine paused state was restored to active by the user on this continuation.
+No new Goal, reset, scope reduction or implicit option B was performed.
+
+
+## 9. Option A continuation — frozen dependency/ownership history
+
+用户明确选择G1-D01 A，原回复见execution_03/AUTHORIZATION.md。D01不再是用户范围阻塞。
+旧§3/§8及execution_02中“待批/BLOCKED_D01”是该批准前的状态；由本节替代当前调度。
+共享条件AST只是已批准节点/操作符的数据契约，不提供RuleDefinition/RuleSetDefinition、
+Operator Registry、表达式类型推导/单位兼容检查、求值/门控/执行器；这些继续属于C/后续WP。
+结构/深度/数量/循环/输入域限制与精确引用/字段关联校验属于B的契约安全，不冒称TypeChecker。
+
+| Task | Dependency / current state | Ownership |
+|---|---|---|
+| X0 shared Catalogue reference | independent extraction; local review PASS | Sol-C (released) |
+| X1 shared condition data + complete 16 Policy catalogue | X0-independent; frozen §11, code + targeted review PASS | Sol-B (released) |
+| X2 ProducerCatalogue + declaration/finite producer validation | X0/X1 models + X4 helper; checker API delivered, final tests in progress | Sol-C |
+| X3 complete finite Producer/Authority/Registry integration | X2 actual checker API + independent Registry/history; input models reviewed, composition implementing | Sol-D |
+| X4 finite Definition/Policy conditional reference integration | X0 + X1 only; no Producer import cycle; code and remediation review PASS | Sol-A (released) |
+| E2 full Schema inventory + regression + independent review | inventory source/test delta may proceed on stable roots; generated output and final regression after all code writers release | Sol-B; Primary verifies |
+
+All existing independent work is retained. The complete eight-module goal is unchanged.
+Only dependency waiting remains; no new user approval is required for these granted tasks.
+Exact data model/validation/test interfaces are frozen in CONTRACT_FIELDS §11–13
+and were challenged by Sol before implementation. Primary owns plan and final acceptance.
+Full semantic expression correctness, Bundle authenticity/closure and real provenance remain
+separately unimplemented; finite registry admission must name these boundaries explicitly.
+
+X-C01 local selector has explicit user approval; specs/01, specs/02 and ADR amendments are bounded to that authorization. Exact X1–X4 contracts and writer assignments are CONTRACT_FIELDS §11–13.
+
+
+X0 shared ProducerCatalogueContentRef extraction is independent of X1 and is assigned
+to C first (fact_selectors.py + runtime/facts.py import/re-export only, wire unchanged).
+X1 and X0 then unlock A-owned condition_inputs/reference helper and C-owned Producer
+models. C's full finite validation depends on A's helper handoff; no shared writer.
+Frozen exact interface is CONTRACT_FIELDS §13.2. Existing actual definition directories
+are reused; no Producer→condition helper→Producer cycle is permitted.
+
+Current continuation DAG: X0 + X1 → X4; X0 + X1 + X4 → X2; X2 + R1/A1/A2 → X3;
+X1/X2/X3/X4 → E2 final generation → full regression → Primary/Sol acceptance.
+No X4 → X2 → X4 cycle; X4 takes existing finite directories and returns temporary
+selectors without importing Producer declarations. All current module states are in TASKS.md.
+
+X3 independent regression implementation: Sol-A owns the single new
+`test_b_producer_authority_review_regressions.py` plus its exclusive x3_review fixture/log
+directories; D owns the checker and other X3 tests. This disjoint test task exercises
+Primary findings X-I06/X-I07 without assigning two writers to one file. Final source
+freeze includes both writers before E2 and full regression. No additional scope.
+
+## 10. Final completion gate — current authority
+
+全部批准任务完成。X0/X1/X2/X3/X4/E2交付和Primary独立审查通过，Sol完成独立Challenge。
+全量1907 passed /0 failures/errors/skips；Ruff lint、维护格式124文件、mypy源码48文件、
+162 Schema+index均通过，305测试文件字节稳定。所有C0/C1/C2关闭，X-N01 C3仍明确披露。
+
+Code/Test/Independent/Overall Engineering PASS；Runtime N/A / RUNTIME_NOT_RUN；
+User Acceptance PENDING_USER_ACCEPTANCE。完整证据、限制、文件与兼容性见
+[FINAL_ACCEPTANCE_REPORT.md](FINAL_ACCEPTANCE_REPORT.md)。本节覆盖旧进度行，不改合同范围。
+
+停止实施，不进入C或WP-02。Commit/Push/PR/Merge须单独授权，不修改main。

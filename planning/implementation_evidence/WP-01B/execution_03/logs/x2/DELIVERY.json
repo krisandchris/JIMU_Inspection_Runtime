@@ -1,0 +1,78 @@
+{
+  "work_package": "WP-01B X2",
+  "label": "TEST_PASSED",
+  "runtime": "RUNTIME_NOT_RUN",
+  "acceptance": "CONDITIONAL_PENDING_PRIMARY_DIRECT_REVIEW",
+  "approved_scope": "CONTRACT_FIELDS sections12,12.1,13.2 complete Producer data and finite catalogue/Fact conformance only",
+  "changed_files": [
+    "src/jimu_runtime/domain/producers.py",
+    "src/jimu_runtime/domain/validation/producer_inputs.py",
+    "src/jimu_runtime/domain/validation/producers.py",
+    "tests/contract/test_b_producers_contracts.py",
+    "tests/unit/test_b_producers_data.py",
+    "tests/unit/test_b_producers_validation.py",
+    "tests/negative/test_b_producers_invalid.py",
+    "tests/negative/test_b_producers_validation_invalid.py",
+    "tests/fixtures/wp01b/x2/support.py",
+    "tests/fixtures/wp01b/x2/contracts.json"
+  ],
+  "after_sha256": {
+    "src/jimu_runtime/domain/producers.py": "4d79e4e6c5aac9e90602b5a2c7f189ca64c7baf49916decadbe7e772b4c51832",
+    "src/jimu_runtime/domain/validation/producer_inputs.py": "778d788f55a1dbab5303498f5ba029fb8dd908dc4a032830e2803d40531201cf",
+    "src/jimu_runtime/domain/validation/producers.py": "7babab490bbb360d6107bb3231b8a960029e149893ace164f1ac345ba61a2ded",
+    "tests/contract/test_b_producers_contracts.py": "e031d3b2dee5dcce0035835047aeac4494ababfb5f759e8fee2bb3065b9dab95",
+    "tests/unit/test_b_producers_data.py": "18f0bef3de56c52ec4ad4fc5d60506366795825730024a771ed3ea9dbd9258ed",
+    "tests/unit/test_b_producers_validation.py": "ece044da5b2245380c9d1620ea1ab15164748e3d2effc46daf4fb428a1ea9178",
+    "tests/negative/test_b_producers_invalid.py": "f213b2655f8f0b5cf74b510f340b7c3ce7c2498da34dc5c543e65657cb921856",
+    "tests/negative/test_b_producers_validation_invalid.py": "5b35563bf872a0a3d07e5e57814373b02958bf0ef9909c7f81eed245476e7c32",
+    "tests/fixtures/wp01b/x2/support.py": "009277e90be20192ead25aadb1529937718231f691e23fcce7aaf2ed18ba7fe2",
+    "tests/fixtures/wp01b/x2/contracts.json": "469949ec6edb3c6860c2be0dfb215025b7b9c7b678ef574dff4651c87405e8fa"
+  },
+  "public_interfaces": [
+    "domain.producers ProducerCatalogue/FactProducerDeclaration/Producer/ActivationCondition and typed branches",
+    "validation.producer_inputs ProducerCatalogueRegistration/ProducerValidationContext/ProducerCatalogueContext/SystemCapabilityRegistration",
+    "validation.producers validate_producer_catalogue(registration,context,*,fact_schemas)",
+    "validation.producers validate_fact_producer(fact,registration,context,*,fact_schemas)",
+    "validation.producers requirements_agree(left,right)"
+  ],
+  "contract_changes": [
+    "New complete Producer catalogue definition explicit schema_version1.0.0; no selfdigest",
+    "Question and System preserve complete activation union; nonTool local-selector use rejected",
+    "System output slots unique independently of scoped factkey collision; required/optional Tool cardinality explicit",
+    "Producer context imports real existing Profile/Question/Tool/Plan/full Policy registrations; shared Profile ref reused",
+    "No new RuntimeRecordKind or authority-consumption API"
+  ],
+  "design": [
+    "Validated exact identities compared with reference_identity across ref wrapper classes; conflicting indexed bodies/digests invalid before lookup",
+    "Actual pinned ToolSkip structurally matched; explicit strict true/direct bool-true Literal mapping only; no expression folding",
+    "Known contradiction invalid, absent exact directory/Schema/host/environment incomplete",
+    "Finite checks do not infer absence from optional outputs or waive configured Question/mapped-output completeness",
+    "System constraint lists use set equivalence; original input and raw bytes are not mutated",
+    "Bound local selectors obtained from real X4 helper; source AST is not changed"
+  ],
+  "checks": {
+    "pytest": "33_final_check.json; final_x2_results_02.xml;117 passed;0 skipped;exit0",
+    "ruff": "34_final_check.json;exit0",
+    "format": "35_final_check.json;exit0",
+    "mypy": "36_final_check.json;3 source files;exit0",
+    "environment": "31_final_check.json"
+  },
+  "historical_failures": [
+    "10_stage3_binding_initial.json:4 assertion failures enum vs string, corrected assertion",
+    "14_stage3_check.json:1 wrong test import, corrected low-level import",
+    "22_stage3_check.json and27_final_check.json:negative path test incorrectly used fact_ref whole-value node; corrected to record_field_ref; no validator weakening",
+    "Ruff initial formatting/import-order outputs retained12/17/20; final check34 passes",
+    "Stage3 first ad-hoc static command was not captured in per-command JSON; terminal result retained in conversation; A independently captured initial mypy errors in x4/review_remediation_01/mypy.json"
+  ],
+  "deferred": [
+    "Operand typing/nominal enums/units/Boolean result require future TypeChecker; no evaluator",
+    "Dynamic activation and availability/mandatory consumer completeness",
+    "Actual invocation/implementation/evidence trust requires integrated records/runtime",
+    "Parent catalogue/Bundle authenticity and trusted host/report resolution"
+  ],
+  "security_migration": "No network/model/GPU/service/database/Git mutation; no secrets; no historical evidence rewritten; new schemas not exported in X2",
+  "limitations": "Synthetic CPU fixtures only. D X3 integration and Primary review remain separate. No production-readiness or full authority admission claim.",
+  "ownership": "All assigned X2 source/tests/fixtures released for Primary direct review; further edits require coordination.",
+  "next": "Primary direct review then authorized X3 integration/E1 regeneration; do not start later WP",
+  "created_at": "2026-11-17T17:43:53.456092+00:00"
+}

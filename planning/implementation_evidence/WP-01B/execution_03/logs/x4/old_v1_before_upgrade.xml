@@ -1,0 +1,1659 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="11" skipped="0" tests="74" time="8.131" timestamp="2026-11-18T01:14:25.172474+08:00" hostname="hy-System-Product-Name"><testcase classname="tests.unit.test_b_definition_relations" name="test_positive_finite_fixture_has_only_explicit_deferred_boundaries" time="0.095"><failure message="AssertionError: {&#10;    &quot;scope&quot;: &quot;definition_relations&quot;,&#10;    &quot;checks&quot;: [&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.catalogue.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.ontology.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.vocabulary.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.facets.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_closure.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;tool.external_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.policy_contents&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.producer_authority&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Static types do not establish Fact producer authority or runtime source availability&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.capabilities.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.questions.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.incomplete&quot;,&#10;        &quot;status&quot;: &quot;incomplete&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;policy.content_unavailable&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Exact Policy content is not supplied&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;selection.required_producer_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;plan.skip_conditions&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Condition use-site references, operand types and activation truth require separate checks&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.invalid&quot;,&#10;        &quot;status&quot;: &quot;invalid&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.contract_invalid&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Input or dependent contract failed strict validation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.grounding_io.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_context.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.fact_schema_metadata.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.boundaries.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_operand_typechecking&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_operand_typechecking.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_evaluation&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_evaluation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.applicability_identity_eligibility&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: applicability_identity_eligibility.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.rule_set_body&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: rule_set_body.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.producer_authority_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: producer_authority_admission.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.mandatory_producer_completeness&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: mandatory_producer_completeness.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.bundle_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: bundle_closure.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.external_authenticity&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: external_authenticity.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.semantic_protocol_io&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: semantic_protocol_io.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.geometry_body_and_asset_bytes&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: geometry_body_and_asset_bytes.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      }&#10;    ]&#10;  }&#10;assert 'invalid' == 'deferred'&#10;  &#10;  - deferred&#10;  + invalid">def test_positive_finite_fixture_has_only_explicit_deferred_boundaries():
+        result = report(fixture())
+&gt;       assert result.aggregate_status == "deferred", result.model_dump_json(indent=2)
+E       AssertionError: {
+E           "scope": "definition_relations",
+E           "checks": [
+E             {
+E               "check_id": "definitions.catalogue.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.ontology.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.vocabulary.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.facets.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_closure.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "tool.external_admission",
+E                   "path": [],
+E                   "message": "Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.policy_contents",
+E                   "path": [],
+E                   "message": "Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.producer_authority",
+E                   "path": [],
+E                   "message": "Static types do not establish Fact producer authority or runtime source availability",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.capabilities.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.questions.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.incomplete",
+E               "status": "incomplete",
+E               "issues": [
+E                 {
+E                   "code": "policy.content_unavailable",
+E                   "path": [],
+E                   "message": "Exact Policy content is not supplied",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "selection.required_producer_closure",
+E                   "path": [],
+E                   "message": "Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "plan.skip_conditions",
+E                   "path": [],
+E                   "message": "Condition use-site references, operand types and activation truth require separate checks",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.invalid",
+E               "status": "invalid",
+E               "issues": [
+E                 {
+E                   "code": "definitions.contract_invalid",
+E                   "path": [],
+E                   "message": "Input or dependent contract failed strict validation.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.grounding_io.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_context.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.fact_schema_metadata.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.boundaries.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "definitions.deferred.condition_operand_typechecking",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_operand_typechecking.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.condition_evaluation",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_evaluation.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.applicability_identity_eligibility",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: applicability_identity_eligibility.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.rule_set_body",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: rule_set_body.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.producer_authority_admission",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: producer_authority_admission.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.mandatory_producer_completeness",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: mandatory_producer_completeness.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.bundle_closure",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: bundle_closure.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.external_authenticity",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: external_authenticity.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.semantic_protocol_io",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: semantic_protocol_io.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.geometry_body_and_asset_bytes",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: geometry_body_and_asset_bytes.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             }
+E           ]
+E         }
+E       assert 'invalid' == 'deferred'
+E         
+E         - deferred
+E         + invalid
+
+tests/unit/test_b_definition_relations.py:18: AssertionError</failure></testcase><testcase classname="tests.unit.test_b_definition_relations" name="test_model_grounding_uses_same_generic_target_coverage_without_fake_step" time="0.089"><failure message="AssertionError: {&#10;    &quot;scope&quot;: &quot;definition_relations&quot;,&#10;    &quot;checks&quot;: [&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.catalogue.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.ontology.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.vocabulary.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.facets.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_closure.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;tool.external_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.policy_contents&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.producer_authority&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Static types do not establish Fact producer authority or runtime source availability&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.capabilities.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.questions.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.incomplete&quot;,&#10;        &quot;status&quot;: &quot;incomplete&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;policy.content_unavailable&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Exact Policy content is not supplied&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;selection.required_producer_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;plan.skip_conditions&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Condition use-site references, operand types and activation truth require separate checks&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.invalid&quot;,&#10;        &quot;status&quot;: &quot;invalid&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.contract_invalid&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Input or dependent contract failed strict validation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.grounding_io.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_context.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.fact_schema_metadata.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.boundaries.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_operand_typechecking&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_operand_typechecking.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_evaluation&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_evaluation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.applicability_identity_eligibility&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: applicability_identity_eligibility.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.rule_set_body&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: rule_set_body.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.producer_authority_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: producer_authority_admission.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.mandatory_producer_completeness&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: mandatory_producer_completeness.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.bundle_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: bundle_closure.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.external_authenticity&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: external_authenticity.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.semantic_protocol_io&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: semantic_protocol_io.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.geometry_body_and_asset_bytes&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: geometry_body_and_asset_bytes.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      }&#10;    ]&#10;  }&#10;assert 'invalid' == 'deferred'&#10;  &#10;  - deferred&#10;  + invalid">def test_model_grounding_uses_same_generic_target_coverage_without_fake_step():
+        data = fixture()
+        profile = entry(data, "profile")["definition"]
+        profile["grounding_binding"] = {
+            "kind": "model",
+            "model_binding_ref": entry(data, "model_binding", "grounding")["ref"],
+            "input_bindings": profile["grounding_binding"]["input_bindings"],
+        }
+        result = report(data)
+&gt;       assert result.aggregate_status == "deferred", result.model_dump_json(indent=2)
+E       AssertionError: {
+E           "scope": "definition_relations",
+E           "checks": [
+E             {
+E               "check_id": "definitions.catalogue.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.ontology.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.vocabulary.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.facets.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_closure.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "tool.external_admission",
+E                   "path": [],
+E                   "message": "Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.policy_contents",
+E                   "path": [],
+E                   "message": "Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.producer_authority",
+E                   "path": [],
+E                   "message": "Static types do not establish Fact producer authority or runtime source availability",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.capabilities.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.questions.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.incomplete",
+E               "status": "incomplete",
+E               "issues": [
+E                 {
+E                   "code": "policy.content_unavailable",
+E                   "path": [],
+E                   "message": "Exact Policy content is not supplied",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "selection.required_producer_closure",
+E                   "path": [],
+E                   "message": "Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "plan.skip_conditions",
+E                   "path": [],
+E                   "message": "Condition use-site references, operand types and activation truth require separate checks",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.invalid",
+E               "status": "invalid",
+E               "issues": [
+E                 {
+E                   "code": "definitions.contract_invalid",
+E                   "path": [],
+E                   "message": "Input or dependent contract failed strict validation.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.grounding_io.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_context.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.fact_schema_metadata.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.boundaries.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "definitions.deferred.condition_operand_typechecking",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_operand_typechecking.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.condition_evaluation",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_evaluation.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.applicability_identity_eligibility",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: applicability_identity_eligibility.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.rule_set_body",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: rule_set_body.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.producer_authority_admission",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: producer_authority_admission.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.mandatory_producer_completeness",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: mandatory_producer_completeness.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.bundle_closure",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: bundle_closure.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.external_authenticity",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: external_authenticity.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.semantic_protocol_io",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: semantic_protocol_io.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.geometry_body_and_asset_bytes",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: geometry_body_and_asset_bytes.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             }
+E           ]
+E         }
+E       assert 'invalid' == 'deferred'
+E         
+E         - deferred
+E         + invalid
+
+tests/unit/test_b_definition_relations.py:36: AssertionError</failure></testcase><testcase classname="tests.unit.test_b_definition_relations" name="test_partial_inherited_variables_and_exact_question_allowlist" time="0.105"><failure message="AssertionError: {&#10;    &quot;scope&quot;: &quot;definition_relations&quot;,&#10;    &quot;checks&quot;: [&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.catalogue.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.ontology.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.vocabulary.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.facets.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_closure.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;tool.external_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.policy_contents&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.producer_authority&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Static types do not establish Fact producer authority or runtime source availability&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.capabilities.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.questions.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.incomplete&quot;,&#10;        &quot;status&quot;: &quot;incomplete&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;policy.content_unavailable&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Exact Policy content is not supplied&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;selection.required_producer_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;plan.skip_conditions&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Condition use-site references, operand types and activation truth require separate checks&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.invalid&quot;,&#10;        &quot;status&quot;: &quot;invalid&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.contract_invalid&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Input or dependent contract failed strict validation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.grounding_io.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_context.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.fact_schema_metadata.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.boundaries.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_operand_typechecking&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_operand_typechecking.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_evaluation&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_evaluation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.applicability_identity_eligibility&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: applicability_identity_eligibility.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.rule_set_body&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: rule_set_body.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.producer_authority_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: producer_authority_admission.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.mandatory_producer_completeness&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: mandatory_producer_completeness.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.bundle_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: bundle_closure.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.external_authenticity&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: external_authenticity.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.semantic_protocol_io&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: semantic_protocol_io.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.geometry_body_and_asset_bytes&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: geometry_body_and_asset_bytes.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      }&#10;    ]&#10;  }&#10;assert 'invalid' == 'deferred'&#10;  &#10;  - deferred&#10;  + invalid">def test_partial_inherited_variables_and_exact_question_allowlist():
+        data = fixture()
+        root = entry(data, "prompt_template", "prompt-question")
+        child = deepcopy(root)
+        child["ref"]["artifact_id"] = "partial"
+        child["definition"]["prompt_template_id"] = "partial"
+        data["input"]["definitions"].append(child)
+        prompt_with_variable(data, "partial")
+        root["definition"]["partial_refs"] = [child["ref"]]
+        result = report(data)
+&gt;       assert result.aggregate_status == "deferred", result.model_dump_json(indent=2)
+E       AssertionError: {
+E           "scope": "definition_relations",
+E           "checks": [
+E             {
+E               "check_id": "definitions.catalogue.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.ontology.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.vocabulary.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.facets.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_closure.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "tool.external_admission",
+E                   "path": [],
+E                   "message": "Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.policy_contents",
+E                   "path": [],
+E                   "message": "Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.producer_authority",
+E                   "path": [],
+E                   "message": "Static types do not establish Fact producer authority or runtime source availability",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.capabilities.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.questions.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.incomplete",
+E               "status": "incomplete",
+E               "issues": [
+E                 {
+E                   "code": "policy.content_unavailable",
+E                   "path": [],
+E                   "message": "Exact Policy content is not supplied",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "selection.required_producer_closure",
+E                   "path": [],
+E                   "message": "Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "plan.skip_conditions",
+E                   "path": [],
+E                   "message": "Condition use-site references, operand types and activation truth require separate checks",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.invalid",
+E               "status": "invalid",
+E               "issues": [
+E                 {
+E                   "code": "definitions.contract_invalid",
+E                   "path": [],
+E                   "message": "Input or dependent contract failed strict validation.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.grounding_io.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_context.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.fact_schema_metadata.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.boundaries.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "definitions.deferred.condition_operand_typechecking",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_operand_typechecking.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.condition_evaluation",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_evaluation.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.applicability_identity_eligibility",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: applicability_identity_eligibility.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.rule_set_body",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: rule_set_body.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.producer_authority_admission",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: producer_authority_admission.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.mandatory_producer_completeness",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: mandatory_producer_completeness.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.bundle_closure",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: bundle_closure.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.external_authenticity",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: external_authenticity.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.semantic_protocol_io",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: semantic_protocol_io.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.geometry_body_and_asset_bytes",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: geometry_body_and_asset_bytes.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             }
+E           ]
+E         }
+E       assert 'invalid' == 'deferred'
+E         
+E         - deferred
+E         + invalid
+
+tests/unit/test_b_definition_relations.py:49: AssertionError</failure></testcase><testcase classname="tests.unit.test_b_definition_relations" name="test_missing_validation_at_does_not_skip_independent_checks[False]" time="0.086" /><testcase classname="tests.unit.test_b_definition_relations" name="test_missing_validation_at_does_not_skip_independent_checks[True]" time="0.086" /><testcase classname="tests.unit.test_b_definition_relations" name="test_question_metadata_is_explicit_for_question_owned_prompt" time="0.094"><failure message="AssertionError: {&#10;    &quot;scope&quot;: &quot;definition_relations&quot;,&#10;    &quot;checks&quot;: [&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.catalogue.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.ontology.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.vocabulary.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.facets.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_closure.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;tool.external_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.policy_contents&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.producer_authority&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Static types do not establish Fact producer authority or runtime source availability&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.capabilities.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.questions.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.incomplete&quot;,&#10;        &quot;status&quot;: &quot;incomplete&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;policy.content_unavailable&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Exact Policy content is not supplied&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;selection.required_producer_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;plan.skip_conditions&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Condition use-site references, operand types and activation truth require separate checks&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.invalid&quot;,&#10;        &quot;status&quot;: &quot;invalid&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.contract_invalid&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Input or dependent contract failed strict validation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.grounding_io.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_context.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.fact_schema_metadata.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.boundaries.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_operand_typechecking&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_operand_typechecking.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_evaluation&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_evaluation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.applicability_identity_eligibility&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: applicability_identity_eligibility.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.rule_set_body&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: rule_set_body.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.producer_authority_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: producer_authority_admission.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.mandatory_producer_completeness&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: mandatory_producer_completeness.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.bundle_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: bundle_closure.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.external_authenticity&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: external_authenticity.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.semantic_protocol_io&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: semantic_protocol_io.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.geometry_body_and_asset_bytes&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: geometry_body_and_asset_bytes.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      }&#10;    ]&#10;  }&#10;assert 'invalid' == 'deferred'&#10;  &#10;  - deferred&#10;  + invalid">def test_question_metadata_is_explicit_for_question_owned_prompt():
+        data = fixture()
+        prompt_with_variable(
+            data,
+            source="question_metadata",
+            kind="attribute_schema",
+            schema_id="question-meta",
+            path=["flag"],
+        )
+        result = report(data)
+&gt;       assert result.aggregate_status == "deferred", result.model_dump_json(indent=2)
+E       AssertionError: {
+E           "scope": "definition_relations",
+E           "checks": [
+E             {
+E               "check_id": "definitions.catalogue.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.ontology.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.vocabulary.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.facets.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_closure.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "tool.external_admission",
+E                   "path": [],
+E                   "message": "Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.policy_contents",
+E                   "path": [],
+E                   "message": "Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.producer_authority",
+E                   "path": [],
+E                   "message": "Static types do not establish Fact producer authority or runtime source availability",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.capabilities.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.questions.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.incomplete",
+E               "status": "incomplete",
+E               "issues": [
+E                 {
+E                   "code": "policy.content_unavailable",
+E                   "path": [],
+E                   "message": "Exact Policy content is not supplied",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "selection.required_producer_closure",
+E                   "path": [],
+E                   "message": "Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "plan.skip_conditions",
+E                   "path": [],
+E                   "message": "Condition use-site references, operand types and activation truth require separate checks",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.invalid",
+E               "status": "invalid",
+E               "issues": [
+E                 {
+E                   "code": "definitions.contract_invalid",
+E                   "path": [],
+E                   "message": "Input or dependent contract failed strict validation.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.grounding_io.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_context.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.fact_schema_metadata.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.boundaries.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "definitions.deferred.condition_operand_typechecking",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_operand_typechecking.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.condition_evaluation",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_evaluation.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.applicability_identity_eligibility",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: applicability_identity_eligibility.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.rule_set_body",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: rule_set_body.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.producer_authority_admission",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: producer_authority_admission.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.mandatory_producer_completeness",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: mandatory_producer_completeness.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.bundle_closure",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: bundle_closure.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.external_authenticity",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: external_authenticity.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.semantic_protocol_io",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: semantic_protocol_io.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.geometry_body_and_asset_bytes",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: geometry_body_and_asset_bytes.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             }
+E           ]
+E         }
+E       assert 'invalid' == 'deferred'
+E         
+E         - deferred
+E         + invalid
+
+tests/unit/test_b_definition_relations.py:88: AssertionError</failure></testcase><testcase classname="tests.unit.test_b_definition_relations" name="test_empty_input_never_means_complete_admission" time="0.001" /><testcase classname="tests.unit.test_b_definition_relations" name="test_nested_views_delegate_real_step_plan_without_full_admission" time="0.176"><failure message="AssertionError: {&#10;    &quot;scope&quot;: &quot;definition_relations&quot;,&#10;    &quot;checks&quot;: [&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.catalogue.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.ontology.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.vocabulary.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.facets.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_closure.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;tool.external_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.policy_contents&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.producer_authority&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Static types do not establish Fact producer authority or runtime source availability&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.capabilities.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.questions.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.incomplete&quot;,&#10;        &quot;status&quot;: &quot;incomplete&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;policy.content_unavailable&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Exact Policy content is not supplied&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;selection.required_producer_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;plan.skip_conditions&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Condition use-site references, operand types and activation truth require separate checks&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.invalid&quot;,&#10;        &quot;status&quot;: &quot;invalid&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.contract_invalid&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Input or dependent contract failed strict validation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.incomplete&quot;,&#10;        &quot;status&quot;: &quot;incomplete&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;policy.content_unavailable&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Exact Policy content is not supplied&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.grounding_io.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_context.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.incomplete&quot;,&#10;        &quot;status&quot;: &quot;incomplete&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;policy.content_unavailable&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Exact Policy content is not supplied&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;policy.content_unavailable&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Exact Policy content is not supplied&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.fact_schema_metadata.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.boundaries.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_operand_typechecking&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_operand_typechecking.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_evaluation&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_evaluation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.applicability_identity_eligibility&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: applicability_identity_eligibility.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.rule_set_body&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: rule_set_body.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.producer_authority_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: producer_authority_admission.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.mandatory_producer_completeness&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: mandatory_producer_completeness.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.bundle_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: bundle_closure.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.external_authenticity&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: external_authenticity.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.semantic_protocol_io&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: semantic_protocol_io.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.geometry_body_and_asset_bytes&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: geometry_body_and_asset_bytes.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      }&#10;    ]&#10;  }&#10;assert 'invalid' == 'deferred'&#10;  &#10;  - deferred&#10;  + invalid">def test_nested_views_delegate_real_step_plan_without_full_admission():
+        result = report(with_step(fixture()))
+&gt;       assert result.aggregate_status == "deferred", result.model_dump_json(indent=2)
+E       AssertionError: {
+E           "scope": "definition_relations",
+E           "checks": [
+E             {
+E               "check_id": "definitions.catalogue.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.ontology.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.vocabulary.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.facets.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_closure.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "tool.external_admission",
+E                   "path": [],
+E                   "message": "Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.policy_contents",
+E                   "path": [],
+E                   "message": "Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.producer_authority",
+E                   "path": [],
+E                   "message": "Static types do not establish Fact producer authority or runtime source availability",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.capabilities.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.questions.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.incomplete",
+E               "status": "incomplete",
+E               "issues": [
+E                 {
+E                   "code": "policy.content_unavailable",
+E                   "path": [],
+E                   "message": "Exact Policy content is not supplied",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "selection.required_producer_closure",
+E                   "path": [],
+E                   "message": "Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "plan.skip_conditions",
+E                   "path": [],
+E                   "message": "Condition use-site references, operand types and activation truth require separate checks",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.invalid",
+E               "status": "invalid",
+E               "issues": [
+E                 {
+E                   "code": "definitions.contract_invalid",
+E                   "path": [],
+E                   "message": "Input or dependent contract failed strict validation.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.condition_references.incomplete",
+E               "status": "incomplete",
+E               "issues": [
+E                 {
+E                   "code": "policy.content_unavailable",
+E                   "path": [],
+E                   "message": "Exact Policy content is not supplied",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.grounding_io.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_context.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.policies.incomplete",
+E               "status": "incomplete",
+E               "issues": [
+E                 {
+E                   "code": "policy.content_unavailable",
+E                   "path": [],
+E                   "message": "Exact Policy content is not supplied",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "policy.content_unavailable",
+E                   "path": [],
+E                   "message": "Exact Policy content is not supplied",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.profiles.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.fact_schema_metadata.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.boundaries.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "definitions.deferred.condition_operand_typechecking",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_operand_typechecking.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.condition_evaluation",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_evaluation.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.applicability_identity_eligibility",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: applicability_identity_eligibility.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.rule_set_body",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: rule_set_body.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.producer_authority_admission",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: producer_authority_admission.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.mandatory_producer_completeness",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: mandatory_producer_completeness.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.bundle_closure",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: bundle_closure.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.external_authenticity",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: external_authenticity.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.semantic_protocol_io",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: semantic_protocol_io.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.geometry_body_and_asset_bytes",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: geometry_body_and_asset_bytes.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             }
+E           ]
+E         }
+E       assert 'invalid' == 'deferred'
+E         
+E         - deferred
+E         + invalid
+
+tests/unit/test_b_definition_relations.py:107: AssertionError</failure></testcase><testcase classname="tests.unit.test_b_definition_relations" name="test_unit_and_coordinate_vocabularies_are_checked_without_changing_child" time="0.089"><failure message="AssertionError: assert 'invalid' == 'deferred'&#10;  &#10;  - deferred&#10;  + invalid">def test_unit_and_coordinate_vocabularies_are_checked_without_changing_child():
+        data = fixture()
+        schema = data["fact_schemas"][0]["definition"]
+        original = deepcopy(schema["payload_schema_ref"])
+        schema["units"] = {
+            "mode": "declared",
+            "bindings": [
+                {
+                    "field_path": [],
+                    "unit": {
+                        "vocabulary_ref": entry(data, "vocabulary", "unit")["ref"],
+                        "member": "synthetic",
+                    },
+                }
+            ],
+        }
+        schema["coordinate_system"] = {
+            "mode": "declared",
+            "bindings": [
+                {
+                    "field_path": [],
+                    "coordinate_system": {
+                        "vocabulary_ref": entry(data, "vocabulary", "coordinate")["ref"],
+                        "member": "synthetic",
+                    },
+                }
+            ],
+        }
+&gt;       assert report(data).aggregate_status == "deferred"
+E       AssertionError: assert 'invalid' == 'deferred'
+E         
+E         - deferred
+E         + invalid
+
+tests/unit/test_b_definition_relations.py:141: AssertionError</failure></testcase><testcase classname="tests.unit.test_b_definition_relations" name="test_unowned_tool_does_not_grant_its_model_the_current_profile_owner" time="0.108"><failure message="AssertionError: {&#10;    &quot;scope&quot;: &quot;definition_relations&quot;,&#10;    &quot;checks&quot;: [&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.catalogue.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.ontology.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.vocabulary.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.facets.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_closure.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.tool_plans.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;tool.external_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool.external_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.policy_contents&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;tool_plan.producer_authority&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Static types do not establish Fact producer authority or runtime source availability&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.capabilities.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.questions.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.incomplete&quot;,&#10;        &quot;status&quot;: &quot;incomplete&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;policy.content_unavailable&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Exact Policy content is not supplied&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.policies.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;selection.required_producer_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;plan.skip_conditions&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Condition use-site references, operand types and activation truth require separate checks&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;model.external_trust&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Report bytes/authenticity, independent quality, host features and real routing are not executed&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.invalid&quot;,&#10;        &quot;status&quot;: &quot;invalid&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.contract_invalid&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Input or dependent contract failed strict validation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.condition_references.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.grounding_io.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.prompt_context.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.profiles.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.fact_schema_metadata.passed&quot;,&#10;        &quot;status&quot;: &quot;passed&quot;,&#10;        &quot;issues&quot;: []&#10;      },&#10;      {&#10;        &quot;check_id&quot;: &quot;definitions.boundaries.deferred&quot;,&#10;        &quot;status&quot;: &quot;deferred&quot;,&#10;        &quot;issues&quot;: [&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_operand_typechecking&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_operand_typechecking.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.condition_evaluation&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: condition_evaluation.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.applicability_identity_eligibility&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: applicability_identity_eligibility.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.rule_set_body&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: rule_set_body.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.producer_authority_admission&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: producer_authority_admission.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.mandatory_producer_completeness&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: mandatory_producer_completeness.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.bundle_closure&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: bundle_closure.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.external_authenticity&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: external_authenticity.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.semantic_protocol_io&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: semantic_protocol_io.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          },&#10;          {&#10;            &quot;code&quot;: &quot;definitions.deferred.geometry_body_and_asset_bytes&quot;,&#10;            &quot;path&quot;: [],&#10;            &quot;message&quot;: &quot;Not established by finite Definition relations: geometry_body_and_asset_bytes.&quot;,&#10;            &quot;related_refs&quot;: []&#10;          }&#10;        ]&#10;      }&#10;    ]&#10;  }&#10;assert 'invalid' == 'deferred'&#10;  &#10;  - deferred&#10;  + invalid">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7a840929eb40&gt;
+
+    def test_unowned_tool_does_not_grant_its_model_the_current_profile_owner(monkeypatch):
+        from jimu_runtime.domain.validation import definitions
+    
+        data = fixture()
+        model = deepcopy(entry(data, "model_binding", "observation"))
+        model["ref"]["artifact_id"] = model["definition"]["model_binding_id"] = (
+            "unowned-model"
+        )
+        model["definition"]["capability"] = "vision_auxiliary"
+        model["definition"].pop("prompt_template_ref")
+        tool = deepcopy(entry(data, "tool"))
+        tool["ref"]["artifact_id"] = tool["definition"]["tool_id"] = "unowned-tool"
+        tool["definition"]["model_binding_ref"] = model["ref"]
+        data["input"]["definitions"].extend((model, tool))
+        original = definitions.validate_model_policies
+        owners = []
+    
+        def record_owner(binding, *args, **kwargs):
+            if binding.model_binding_id == "unowned-model":
+                owners.append(kwargs["profile_ref"])
+            return original(binding, *args, **kwargs)
+    
+        monkeypatch.setattr(definitions, "validate_model_policies", record_owner)
+        result = report(data)
+&gt;       assert result.aggregate_status == "deferred", result.model_dump_json(indent=2)
+E       AssertionError: {
+E           "scope": "definition_relations",
+E           "checks": [
+E             {
+E               "check_id": "definitions.catalogue.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.ontology.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.vocabulary.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.facets.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_closure.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.tool_plans.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "tool.external_admission",
+E                   "path": [],
+E                   "message": "Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool.external_admission",
+E                   "path": [],
+E                   "message": "Implementation allowlist, Policy contents, model binding and resource admission require separate finite catalogues",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.policy_contents",
+E                   "path": [],
+E                   "message": "Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "tool_plan.producer_authority",
+E                   "path": [],
+E                   "message": "Static types do not establish Fact producer authority or runtime source availability",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.capabilities.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.questions.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.incomplete",
+E               "status": "incomplete",
+E               "issues": [
+E                 {
+E                   "code": "policy.content_unavailable",
+E                   "path": [],
+E                   "message": "Exact Policy content is not supplied",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.policies.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "selection.required_producer_closure",
+E                   "path": [],
+E                   "message": "Mandatory Rule/Tool producer closure and Applicability expressions are not established by Policy refs",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "plan.skip_conditions",
+E                   "path": [],
+E                   "message": "Condition use-site references, operand types and activation truth require separate checks",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "model.external_trust",
+E                   "path": [],
+E                   "message": "Report bytes/authenticity, independent quality, host features and real routing are not executed",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.invalid",
+E               "status": "invalid",
+E               "issues": [
+E                 {
+E                   "code": "definitions.contract_invalid",
+E                   "path": [],
+E                   "message": "Input or dependent contract failed strict validation.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             },
+E             {
+E               "check_id": "definitions.condition_references.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.grounding_io.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.prompt_context.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.profiles.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.fact_schema_metadata.passed",
+E               "status": "passed",
+E               "issues": []
+E             },
+E             {
+E               "check_id": "definitions.boundaries.deferred",
+E               "status": "deferred",
+E               "issues": [
+E                 {
+E                   "code": "definitions.deferred.condition_operand_typechecking",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_operand_typechecking.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.condition_evaluation",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: condition_evaluation.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.applicability_identity_eligibility",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: applicability_identity_eligibility.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.rule_set_body",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: rule_set_body.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.producer_authority_admission",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: producer_authority_admission.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.mandatory_producer_completeness",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: mandatory_producer_completeness.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.bundle_closure",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: bundle_closure.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.external_authenticity",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: external_authenticity.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.semantic_protocol_io",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: semantic_protocol_io.",
+E                   "related_refs": []
+E                 },
+E                 {
+E                   "code": "definitions.deferred.geometry_body_and_asset_bytes",
+E                   "path": [],
+E                   "message": "Not established by finite Definition relations: geometry_body_and_asset_bytes.",
+E                   "related_refs": []
+E                 }
+E               ]
+E             }
+E           ]
+E         }
+E       assert 'invalid' == 'deferred'
+E         
+E         - deferred
+E         + invalid
+
+tests/unit/test_b_definition_relations.py:169: AssertionError</failure></testcase><testcase classname="tests.contract.test_b_definition_catalogue" name="test_all_registration_branches_and_root_roundtrip_schema" time="0.777" /><testcase classname="tests.contract.test_b_definition_catalogue" name="test_absent_optional_is_not_nullable[validation_at]" time="0.144" /><testcase classname="tests.contract.test_b_definition_catalogue" name="test_shape_binding_extra_and_copied_instance_taint" time="0.005" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_index_conflicts_are_rejected_before_losing_data[duplicate]" time="0.005" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_index_conflicts_are_rejected_before_losing_data[digest]" time="0.005" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_index_conflicts_are_rejected_before_losing_data[descriptor]" time="0.005" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_index_conflicts_are_rejected_before_losing_data[policy]" time="0.005" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_vocabulary_checks_actual_member_domain_and_exact_digest[member-definitions.vocabulary_member]" time="0.092" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_vocabulary_checks_actual_member_domain_and_exact_digest[domain-definitions.vocabulary_member]" time="0.095" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_vocabulary_checks_actual_member_domain_and_exact_digest[digest-definitions.digest_mismatch]" time="0.091" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_schema_intersection_profile_facets_scope_and_producer[facet-definitions.facet_intersection]" time="0.093" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_schema_intersection_profile_facets_scope_and_producer[profile-definitions.profile_facets]" time="0.095"><failure message="AssertionError: assert 'definitions.profile_facets' in {'definitions.contract_invalid', 'definitions.deferred.applicability_identity_eligibility', 'definitions.deferred.bund..._evaluation', 'definitions.deferred.condition_operand_typechecking', 'definitions.deferred.external_authenticity', ...}&#10; +  where {'definitions.contract_invalid', 'definitions.deferred.applicability_identity_eligibility', 'definitions.deferred.bund..._evaluation', 'definitions.deferred.condition_operand_typechecking', 'definitions.deferred.external_authenticity', ...} = codes(ValidationReport(scope='definition_relations', checks=(CheckResult(check_id='definitions.catalogue.passed', status='pa...path=(), message='Not established by finite Definition relations: geometry_body_and_asset_bytes.', related_refs=()))))))&#10; +    where ValidationReport(scope='definition_relations', checks=(CheckResult(check_id='definitions.catalogue.passed', status='pa...path=(), message='Not established by finite Definition relations: geometry_body_and_asset_bytes.', related_refs=()))))) = report({'fact_schemas': [{'definition': {'allowed_producer_kinds': ['vlm_question'], 'confidence_metadata_policy': {'mode': '......], ...}, 'notice': 'Synthetic finite relations; asserted content identities, no real provider or runtime evidence.'})">mutation = 'profile', expected = 'definitions.profile_facets'
+
+    @pytest.mark.parametrize(
+        "mutation,expected",
+        [
+            ("facet", "definitions.facet_intersection"),
+            ("profile", "definitions.profile_facets"),
+            ("scope", "definitions.question_schema"),
+            ("producer", "definitions.question_schema"),
+        ],
+    )
+    def test_schema_intersection_profile_facets_scope_and_producer(mutation, expected):
+        data = fixture()
+        if mutation == "facet":
+            copied = deepcopy(data["fact_schemas"][0])
+            copied["ref"]["artifact_id"] = "other"
+            copied["definition"]["schema_id"] = "other"
+            data["fact_schemas"].append(copied)
+            entry(data, "facet")["definition"]["fact_schema_refs"] = [copied["ref"]]
+        elif mutation == "profile":
+            entry(data, "profile")["definition"]["facet_refs"] = []
+        elif mutation == "scope":
+            data["fact_schemas"][0]["definition"].update(
+                scope="execution", allowed_producer_kinds=["system"]
+            )
+        else:
+            data["fact_schemas"][0]["definition"]["allowed_producer_kinds"] = ["system"]
+&gt;       assert expected in codes(report(data))
+E       AssertionError: assert 'definitions.profile_facets' in {'definitions.contract_invalid', 'definitions.deferred.applicability_identity_eligibility', 'definitions.deferred.bund..._evaluation', 'definitions.deferred.condition_operand_typechecking', 'definitions.deferred.external_authenticity', ...}
+E        +  where {'definitions.contract_invalid', 'definitions.deferred.applicability_identity_eligibility', 'definitions.deferred.bund..._evaluation', 'definitions.deferred.condition_operand_typechecking', 'definitions.deferred.external_authenticity', ...} = codes(ValidationReport(scope='definition_relations', checks=(CheckResult(check_id='definitions.catalogue.passed', status='pa...path=(), message='Not established by finite Definition relations: geometry_body_and_asset_bytes.', related_refs=()))))))
+E        +    where ValidationReport(scope='definition_relations', checks=(CheckResult(check_id='definitions.catalogue.passed', status='pa...path=(), message='Not established by finite Definition relations: geometry_body_and_asset_bytes.', related_refs=()))))) = report({'fact_schemas': [{'definition': {'allowed_producer_kinds': ['vlm_question'], 'confidence_metadata_policy': {'mode': '......], ...}, 'notice': 'Synthetic finite relations; asserted content identities, no real provider or runtime evidence.'})
+
+tests/negative/test_b_definition_relations_invalid.py:79: AssertionError</failure></testcase><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_schema_intersection_profile_facets_scope_and_producer[scope-definitions.question_schema]" time="0.091" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_schema_intersection_profile_facets_scope_and_producer[producer-definitions.question_schema]" time="0.089" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_metadata_uses_trusted_record_type[raw]" time="0.089" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_metadata_uses_trusted_record_type[missing]" time="0.090" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_metadata_uses_trusted_record_type[wrong_enum]" time="0.089" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_partial_graph_and_inherited_allowlist[cycle-definitions.prompt_cycle]" time="0.089" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_partial_graph_and_inherited_allowlist[dangling-definitions.target_missing]" time="0.090" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_partial_graph_and_inherited_allowlist[unused-definitions.prompt_registration]" time="0.089" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_partial_graph_and_inherited_allowlist[conflict-definitions.prompt_declaration_conflict]" time="0.098" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_partial_graph_and_inherited_allowlist[allowlist-definitions.question_context_allowlist]" time="0.087" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_context_owner_ambiguity_never_picks_first" time="0.092" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_model_joint_prompt_does_not_guess_question_metadata_owner" time="0.100" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_preobject_model_prompt_geometry_view_does_not_confer_object_owner[prompt-discovery]" time="0.089" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_preobject_model_prompt_geometry_view_does_not_confer_object_owner[prompt-grounding]" time="0.090" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_grounding_input_mapping_is_not_guessed[missing]" time="0.083" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_grounding_input_mapping_is_not_guessed[wrong_target]" time="0.083" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_grounding_input_mapping_is_not_guessed[missing_image]" time="0.084" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_missing_policy_content_is_incomplete_not_reference_shape_pass" time="0.085" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_diagnostic_capacity_fails_explicitly_without_successful_truncation" time="0.259" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_overflow_preserves_known_invalidity_and_all_deferred_boundaries" time="0.253" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_missing_time_cannot_hide_known_model_prompt_response_mismatch" time="0.089" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_known_source_schema_digest_conflict_precedes_owner_missing[False]" time="0.092" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_known_source_schema_digest_conflict_precedes_owner_missing[True]" time="0.084" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_nested_mapping_views_are_restricted_even_when_descriptor_unused[body-definitions.nested_descriptor_conflict]" time="0.110" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_nested_mapping_views_are_restricted_even_when_descriptor_unused[missing-descriptor_unavailable]" time="0.111" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_nested_mapping_views_are_restricted_even_when_descriptor_unused[profile-definitions.mapping_owner]" time="0.090" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_nested_mapping_views_are_restricted_even_when_descriptor_unused[plan-definitions.mapping_owner]" time="0.124" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_nested_mapping_views_are_restricted_even_when_descriptor_unused[step-definitions.mapping_step]" time="0.125" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_nested_mapping_views_are_restricted_even_when_descriptor_unused[source-definitions.nested_context_conflict]" time="0.163" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_nested_mapping_views_are_restricted_even_when_descriptor_unused[image-definitions.outer_view_missing]" time="0.157" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_used_region_metadata_needs_exact_current_region" time="0.164" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_missing_profile_use_is_not_silent_io_approval" time="0.075" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_fact_schema_annotation_vocabulary_members_are_validated[units-unit]" time="0.088" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_fact_schema_annotation_vocabulary_members_are_validated[coordinate_system-coordinate]" time="0.089" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_unused_question_context_allowlist_path_is_still_checked" time="0.088" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_unowned_plan_still_checks_referenced_tools_and_policies" time="0.174" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_known_nonexpression_policy_cannot_replace_blocked_content[profile]" time="0.175" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_known_nonexpression_policy_cannot_replace_blocked_content[step]" time="0.175" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_unowned_execution_policy_uses_actual_subtype_validator" time="0.096" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_every_prompt_response_reference_is_resolved_without_business_compilation[digest-schema_digest_mismatch-question]" time="0.088" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_every_prompt_response_reference_is_resolved_without_business_compilation[digest-schema_digest_mismatch-partial]" time="0.098" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_every_prompt_response_reference_is_resolved_without_business_compilation[digest-schema_digest_mismatch-orphan]" time="0.099" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_every_prompt_response_reference_is_resolved_without_business_compilation[missing-descriptor_unavailable-question]" time="0.089"><failure message="AssertionError: assert 'invalid' == 'incomplete'&#10;  &#10;  - incomplete&#10;  + invalid">location = 'question', mutation = 'missing', expected = 'descriptor_unavailable'
+
+    @pytest.mark.parametrize("location", ["question", "partial", "orphan"])
+    @pytest.mark.parametrize(
+        "mutation,expected",
+        [("digest", "schema_digest_mismatch"), ("missing", "descriptor_unavailable")],
+    )
+    def test_every_prompt_response_reference_is_resolved_without_business_compilation(
+        location, mutation, expected
+    ):
+        data = fixture()
+        prompt = entry(data, "prompt_template", "prompt-question")
+        if location != "question":
+            child = deepcopy(prompt)
+            child["ref"]["artifact_id"] = child["definition"]["prompt_template_id"] = (
+                "extra-prompt"
+            )
+            data["input"]["definitions"].append(child)
+            if location == "partial":
+                prompt["definition"]["partial_refs"] = [child["ref"]]
+            prompt = child
+        response = prompt["definition"]["response_schema_ref"]
+        response["digest" if mutation == "digest" else "artifact_id"] = (
+            "b" * 64 if mutation == "digest" else "absent"
+        )
+        result = report(data)
+        assert expected in codes(result)
+&gt;       assert result.aggregate_status == (
+            "invalid" if mutation == "digest" else "incomplete"
+        )
+E       AssertionError: assert 'invalid' == 'incomplete'
+E         
+E         - incomplete
+E         + invalid
+
+tests/negative/test_b_definition_relations_invalid.py:463: AssertionError</failure></testcase><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_every_prompt_response_reference_is_resolved_without_business_compilation[missing-descriptor_unavailable-partial]" time="0.098"><failure message="AssertionError: assert 'invalid' == 'incomplete'&#10;  &#10;  - incomplete&#10;  + invalid">location = 'partial', mutation = 'missing', expected = 'descriptor_unavailable'
+
+    @pytest.mark.parametrize("location", ["question", "partial", "orphan"])
+    @pytest.mark.parametrize(
+        "mutation,expected",
+        [("digest", "schema_digest_mismatch"), ("missing", "descriptor_unavailable")],
+    )
+    def test_every_prompt_response_reference_is_resolved_without_business_compilation(
+        location, mutation, expected
+    ):
+        data = fixture()
+        prompt = entry(data, "prompt_template", "prompt-question")
+        if location != "question":
+            child = deepcopy(prompt)
+            child["ref"]["artifact_id"] = child["definition"]["prompt_template_id"] = (
+                "extra-prompt"
+            )
+            data["input"]["definitions"].append(child)
+            if location == "partial":
+                prompt["definition"]["partial_refs"] = [child["ref"]]
+            prompt = child
+        response = prompt["definition"]["response_schema_ref"]
+        response["digest" if mutation == "digest" else "artifact_id"] = (
+            "b" * 64 if mutation == "digest" else "absent"
+        )
+        result = report(data)
+        assert expected in codes(result)
+&gt;       assert result.aggregate_status == (
+            "invalid" if mutation == "digest" else "incomplete"
+        )
+E       AssertionError: assert 'invalid' == 'incomplete'
+E         
+E         - incomplete
+E         + invalid
+
+tests/negative/test_b_definition_relations_invalid.py:463: AssertionError</failure></testcase><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_every_prompt_response_reference_is_resolved_without_business_compilation[missing-descriptor_unavailable-orphan]" time="0.093"><failure message="AssertionError: assert 'invalid' == 'incomplete'&#10;  &#10;  - incomplete&#10;  + invalid">location = 'orphan', mutation = 'missing', expected = 'descriptor_unavailable'
+
+    @pytest.mark.parametrize("location", ["question", "partial", "orphan"])
+    @pytest.mark.parametrize(
+        "mutation,expected",
+        [("digest", "schema_digest_mismatch"), ("missing", "descriptor_unavailable")],
+    )
+    def test_every_prompt_response_reference_is_resolved_without_business_compilation(
+        location, mutation, expected
+    ):
+        data = fixture()
+        prompt = entry(data, "prompt_template", "prompt-question")
+        if location != "question":
+            child = deepcopy(prompt)
+            child["ref"]["artifact_id"] = child["definition"]["prompt_template_id"] = (
+                "extra-prompt"
+            )
+            data["input"]["definitions"].append(child)
+            if location == "partial":
+                prompt["definition"]["partial_refs"] = [child["ref"]]
+            prompt = child
+        response = prompt["definition"]["response_schema_ref"]
+        response["digest" if mutation == "digest" else "artifact_id"] = (
+            "b" * 64 if mutation == "digest" else "absent"
+        )
+        result = report(data)
+        assert expected in codes(result)
+&gt;       assert result.aggregate_status == (
+            "invalid" if mutation == "digest" else "incomplete"
+        )
+E       AssertionError: assert 'invalid' == 'incomplete'
+E         
+E         - incomplete
+E         + invalid
+
+tests/negative/test_b_definition_relations_invalid.py:463: AssertionError</failure></testcase><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_unused_outer_views_cannot_conflict_with_known_schema_identity[image_reference_schema_ref]" time="0.005" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_unused_outer_views_cannot_conflict_with_known_schema_identity[profile_metadata_schema_ref]" time="0.005" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_unused_outer_views_cannot_conflict_with_known_schema_identity[object_geometry_schema_ref]" time="0.005" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_known_capability_labels_are_verified_without_host_quality_claims[discovery]" time="0.089" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_known_capability_labels_are_verified_without_host_quality_claims[model_grounding]" time="0.085" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_known_capability_labels_are_verified_without_host_quality_claims[tool_grounding]" time="0.090" /><testcase classname="tests.negative.test_b_definition_relations_invalid" name="test_known_capability_labels_are_verified_without_host_quality_claims[nested_tool]" time="0.089" /></testsuite></testsuites>

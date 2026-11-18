@@ -1,0 +1,30 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_authority_models.py",
+    "tests/contract/test_b_fact_records.py",
+    "tests/negative/test_b_authority_models_invalid.py",
+    "-q",
+    "--junitxml=planning/implementation_evidence/WP-01B/execution_02/logs/a1/targeted_results_v2.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T14:50:54.199331+00:00",
+  "ended_at": "2026-11-17T14:50:58.041853+00:00",
+  "exit_code": 0,
+  "stdout": "........................................................................ [ 53%]\n...............................................................          [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_02/logs/a1/targeted_results_v2.xml -\n135 passed in 3.58s\n",
+  "stderr": "",
+  "hashes": {
+    "src/jimu_runtime/domain/runtime/facts.py": "42fced7dbbb769048770067166b9603b07ec827d6e0a01273c9629bcf63a3182",
+    "src/jimu_runtime/domain/runtime/authority.py": "a4cd8d995051bca017332879ea99a8cb849b70138ff849a600632b493e29b065",
+    "src/jimu_runtime/domain/validation/authority_inputs.py": "1acd764bcab712285780233f5689fa5246977dc87e658e3e44360a755408b718",
+    "tests/unit/test_b_authority_models.py": "13552dc3db66b967e2cb9d144e9fa7b15cc5b8da699b1aa2574cec08947e06d0",
+    "tests/contract/test_b_fact_records.py": "5bca77c88791bc35312a1d3d5ab7201673d590ff0c0df40011175d561a50587a",
+    "tests/negative/test_b_authority_models_invalid.py": "6ba4704039c0f32ba17974822f2fd9d304c4a241dc7eef1a834d09ea4a87af13"
+  }
+}

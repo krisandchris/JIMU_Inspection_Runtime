@@ -1,0 +1,16 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-c",
+    "import json\nfrom jimu_runtime.domain.policies import LocalPrimaryProviderPolicy, ProviderPolicyArtifact\nraw=json.load(open(\"tests/fixtures/wp01b/p1/contracts.json\"))[\"local_provider\"]\nfor model,value in ((LocalPrimaryProviderPolicy,raw[\"policy\"]),(ProviderPolicyArtifact,raw)):\n try: print(\"BEFORE_NESTED\",model.__name__,model.model_validate_json(json.dumps(value)))\n except ValueError as e: print(\"BEFORE_NESTED_ERROR\",model.__name__,str(e))\n"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "ended_at": "2026-11-17T15:09:39.953835+00:00",
+  "exit_code": 0,
+  "stdout": "BEFORE_NESTED_ERROR LocalPrimaryProviderPolicy 2 validation errors for LocalPrimaryProviderPolicy\nlocal_primary_exception.valid_from\n  Input should be a valid datetime [type=datetime_type, input_value='2026-01-01T00:00:00Z', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/datetime_type\nlocal_primary_exception.valid_until\n  Input should be a valid datetime [type=datetime_type, input_value='2027-01-01T00:00:00Z', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/datetime_type\nBEFORE_NESTED_ERROR ProviderPolicyArtifact 2 validation errors for ProviderPolicyArtifact\npolicy.local_primary_exception.local_primary_exception.valid_from\n  Input should be a valid datetime [type=datetime_type, input_value='2026-01-01T00:00:00Z', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/datetime_type\npolicy.local_primary_exception.local_primary_exception.valid_until\n  Input should be a valid datetime [type=datetime_type, input_value='2027-01-01T00:00:00Z', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/datetime_type\n",
+  "stderr": ""
+}

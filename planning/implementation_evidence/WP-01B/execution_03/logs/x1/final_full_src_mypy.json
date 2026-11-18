@@ -1,0 +1,16 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:14:11.402536+00:00",
+  "end": "2026-11-17T17:14:11.861760+00:00",
+  "exit_code": 1,
+  "stdout": "src/jimu_runtime/domain/validation/definitions.py:1384: error: Incompatible types in assignment (expression has type \"RegionContentRef\", target has type \"tuple[RawDtoSchemaDescriptor | TypedValueSchemaDescriptor | ToolResultSchemaDescriptor | ToolInputRecordDescriptor | SnapshotContextRegistration | RegionContextRegistration | ProfileContextRegistration, ...]\")  [assignment]\nsrc/jimu_runtime/domain/validation/definitions.py:1421: error: Argument 1 to \"applicability\" has incompatible type \"jimu_runtime.domain.definitions.capabilities.PolicyContentRef\"; expected \"jimu_runtime.domain.definitions.models.PolicyContentRef\"  [arg-type]\nFound 2 errors in 1 file (checked 44 source files)\n",
+  "stderr": ""
+}

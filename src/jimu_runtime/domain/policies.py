@@ -1,0 +1,1021 @@
+"""Complete sixteen-kind Policy data; no expression inference or evaluation."""
+
+from typing import Annotated, Literal, Self
+
+from pydantic import (
+    BeforeValidator,
+    ConfigDict,
+    Discriminator,
+    Field,
+    Tag,
+    field_validator,
+    model_validator,
+)
+
+from jimu_runtime.domain.base import ContractModel
+from jimu_runtime.domain.conditions import (
+    ConditionExpr,
+    condition_references,
+    validate_condition_data,
+)
+from jimu_runtime.domain.definition_enums import (
+    CapabilityFamily,
+    CapabilityFeature,
+    ConditionInputDomain,
+    ContextProvenanceSource,
+    EvidenceType,
+    ModelCapability,
+    PolicyKind,
+)
+from jimu_runtime.domain.definition_support import (
+    AbsentOptional,
+    ContextFieldSelector,
+    ContextSchemaRef,
+    DefinitionContract,
+    Description,
+    ExternalCapabilityRequirement,
+    FieldPath,
+    NonNegativeBudget,
+    OptionalContract,
+    PositiveBudget,
+    ReviewReportRef,
+    UTCDateTime,
+    VersionConstraint,
+    VocabularyMemberRef,
+    immutable_sequence,
+    omit_default_from_schema,
+    reference_identity,
+    require_unique_references,
+)
+from jimu_runtime.domain.definitions.models import (
+    ModelBindingContentRef,
+    PolicyContentRef,
+)
+from jimu_runtime.domain.definitions.prompts import ResponseSchemaContentRef
+from jimu_runtime.domain.fact_selectors import QuestionContentRef
+from jimu_runtime.domain.primitives import ArtifactId, Version
+from jimu_runtime.domain.references import IdentitySelector, SchemaRef
+
+
+def _explicit_bool(value: object) -> object:
+    if type(value) is not bool:
+        raise ValueError("explicit boolean required")
+    return value
+
+
+type TrueFlag = Annotated[Literal[True], BeforeValidator(_explicit_bool)]
+type FalseFlag = Annotated[Literal[False], BeforeValidator(_explicit_bool)]
+type PolicyRefs = Annotated[
+    tuple[QuestionContentRef, ...],
+    Field(max_length=1024),
+    BeforeValidator(immutable_sequence),
+]
+type EvidenceTypes = Annotated[
+    tuple[EvidenceType, ...],
+    Field(max_length=8, json_schema_extra={"uniqueItems": True}),
+    BeforeValidator(immutable_sequence),
+]
+
+
+class _PolicyData(OptionalContract):
+    policy_kind: PolicyKind
+
+    @field_validator("policy_kind", mode="before")
+    @classmethod
+    def decode_kind(cls, value: object) -> PolicyKind:
+        return PolicyKind._decode(value)
+
+
+class ApplicabilityPolicy(_PolicyData):
+    policy_kind: Literal[PolicyKind.APPLICABILITY]
+    input_domain: Literal[ConditionInputDomain.RULE_APPLICABILITY]
+    context_allowlist: Annotated[
+        tuple[ContextFieldSelector, ...],
+        Field(max_length=1024),
+        BeforeValidator(immutable_sequence),
+    ]
+    identity_constraints: Annotated[
+        tuple[IdentitySelector, ...],
+        Field(max_length=1024),
+        BeforeValidator(immutable_sequence),
+    ]
+    condition_ast: ConditionExpr
+    on_unknown: Literal["block"]
+    description: AbsentOptional[Description] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+
+    @field_validator("input_domain", mode="before")
+    @classmethod
+    def decode_domain(cls, value: object) -> ConditionInputDomain:
+        return ConditionInputDomain._decode(value)
+
+    @field_validator("condition_ast", mode="before")
+    @classmethod
+    def metadata_condition(cls, value: object) -> ConditionExpr:
+        return validate_condition_data(
+            value, input_domain=ConditionInputDomain.RULE_APPLICABILITY
+        )
+
+    @model_validator(mode="after")
+    def declared_metadata(self) -> Self:
+        allowlist = [
+            (
+                selector.source,
+                reference_identity(selector.schema_ref),
+                selector.field_path,
+            )
+            for selector in self.context_allowlist
+        ]
+        if len(set(allowlist)) != len(allowlist):
+            raise ValueError("duplicate Context allowlist selector")
+        identities = [
+            (selector.artifact_kind, selector.artifact_id, selector.version_selector)
+            for selector in self.identity_constraints
+        ]
+        if len(set(identities)) != len(identities):
+            raise ValueError("duplicate applicability identity constraint")
+        for selector in condition_references(self.condition_ast).context_selectors:
+            if (
+                selector.source,
+                reference_identity(selector.schema_ref),
+                selector.field_path,
+            ) not in allowlist:
+                raise ValueError(
+                    "Condition ContextRef is not an exact allowlist member"
+                )
+        return self
+
+
+class ToolSkipPolicy(_PolicyData):
+    policy_kind: Literal[PolicyKind.TOOL_SKIP]
+    condition_ast: ConditionExpr | TrueFlag
+    on_false: Literal["skip_with_reason"]
+    on_unknown: Literal["block"]
+    on_missing_input: Literal["block"]
+
+    @field_validator("condition_ast", mode="before")
+    @classmethod
+    def tool_condition(cls, value: object) -> ConditionExpr | Literal[True]:
+        if type(value) is bool:
+            if value is True:
+                return True
+            raise ValueError("bare false is not an explicit always condition")
+        return validate_condition_data(
+            value, input_domain=ConditionInputDomain.TOOL_CONDITION
+        )
+
+
+class UnknownPolicy(_PolicyData):
+    policy_kind: Literal[PolicyKind.UNKNOWN]
+    insufficient_visibility: Literal["unknown"]
+    transport_failure: Literal["no_fact"]
+    envelope_failure: Literal["no_fact"]
+    item_validation_failure: Literal["error"]
+    non_known_value: Literal["forbidden"]
+    reason_required: TrueFlag
+
+
+class QuestionValidationPolicy(_PolicyData):
+    policy_kind: Literal[PolicyKind.QUESTION_VALIDATION]
+    coercion: Literal["forbid"]
+    extra_fields: Literal["forbid"]
+    association: Literal["exact_question_ref"]
+    missing_item: Literal["error"]
+    invalid_record: Literal["whole_fact_error"]
+    sibling_retention: Literal["trusted_envelope_only"]
+    max_string_chars: AbsentOptional[Annotated[PositiveBudget, Field(le=4096)]] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+    max_items: AbsentOptional[Annotated[PositiveBudget, Field(le=256)]] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+
+
+class EvidencePolicy(_PolicyData):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "allowed_evidence_types": {
+                                "contains": {
+                                    "enum": [
+                                        "crop",
+                                        "bbox_visualization",
+                                        "mask",
+                                        "geometry",
+                                    ]
+                                }
+                            }
+                        },
+                        "required": ["allowed_evidence_types"],
+                    },
+                    "then": {"required": ["transform_required_for_derived"]},
+                },
+                {
+                    "if": {
+                        "properties": {"original_media_required": {"const": True}},
+                        "required": ["original_media_required"],
+                    },
+                    "then": {
+                        "properties": {
+                            "allowed_evidence_types": {
+                                "contains": {"const": "original_image"}
+                            }
+                        }
+                    },
+                },
+            ]
+        }
+    )
+    policy_kind: Literal[PolicyKind.EVIDENCE]
+    required_evidence_types: EvidenceTypes
+    allowed_evidence_types: EvidenceTypes
+    on_missing: Literal["block_result"]
+    original_media_required: bool
+    retention_class: VocabularyMemberRef
+    retention_duration_seconds: PositiveBudget
+    access_scope: Literal["project", "task"]
+    transform_required_for_derived: AbsentOptional[TrueFlag] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+
+    @model_validator(mode="after")
+    def evidence_sets(self) -> Self:
+        for items in (self.required_evidence_types, self.allowed_evidence_types):
+            if len(set(items)) != len(items):
+                raise ValueError("duplicate evidence type")
+        allowed = set(self.allowed_evidence_types)
+        if not set(self.required_evidence_types).issubset(allowed):
+            raise ValueError("required evidence must be allowed")
+        if self.original_media_required and EvidenceType.ORIGINAL_IMAGE not in allowed:
+            raise ValueError("original media must be allowed")
+        if (
+            allowed
+            & {
+                EvidenceType.CROP,
+                EvidenceType.BBOX_VISUALIZATION,
+                EvidenceType.MASK,
+                EvidenceType.GEOMETRY,
+            }
+            and self.transform_required_for_derived is not True
+        ):
+            raise ValueError(
+                "spatial-derived evidence requires explicit transform guard"
+            )
+        return self
+
+
+class ToolExecutionPolicy(_PolicyData):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {"max_attempts": {"const": 1}},
+                        "required": ["max_attempts"],
+                    },
+                    "then": {"not": {"required": ["retry_backoff_ms"]}},
+                    "else": {
+                        "required": ["retry_backoff_ms"],
+                        "properties": {"retry_backoff_ms": {"minItems": 1}},
+                    },
+                }
+            ]
+        }
+    )
+    policy_kind: Literal[PolicyKind.TOOL_EXECUTION]
+    timeout_ms: PositiveBudget
+    max_attempts: Annotated[PositiveBudget, Field(le=1025)]
+    max_concurrency: PositiveBudget
+    input_byte_limit: PositiveBudget
+    retryable_error_classes: Annotated[
+        tuple[Literal["transport", "timeout", "rate_limit", "resource_exhausted"], ...],
+        Field(max_length=4, json_schema_extra={"uniqueItems": True}),
+        BeforeValidator(immutable_sequence),
+    ]
+    whole_step_retry: TrueFlag
+    retry_backoff_ms: AbsentOptional[
+        Annotated[
+            tuple[PositiveBudget, ...],
+            Field(max_length=1024),
+            BeforeValidator(immutable_sequence),
+        ]
+    ] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+
+    @model_validator(mode="after")
+    def retry_schedule(self) -> Self:
+        if len(set(self.retryable_error_classes)) != len(self.retryable_error_classes):
+            raise ValueError("duplicate retry error class")
+        if self.max_attempts == 1:
+            if self.retry_backoff_ms is not None:
+                raise ValueError("one attempt forbids backoff schedule")
+        elif (
+            self.retry_backoff_ms is None
+            or len(self.retry_backoff_ms) != self.max_attempts - 1
+        ):
+            raise ValueError("complete per-retry backoff schedule required")
+        return self
+
+
+class ToolFailurePolicy(_PolicyData):
+    policy_kind: Literal[PolicyKind.TOOL_FAILURE]
+    requirement: Literal["required", "optional"]
+    required_descendants: Literal["block"]
+    fact_failure: Literal["error"]
+    optional_continuation: Literal["allow_if_consumer_policy", "block"]
+
+
+class _Resources(_PolicyData):
+    policy_kind: Literal[PolicyKind.RESOURCE_REQUIREMENTS]
+    max_concurrency: PositiveBudget
+    timeout_ms: PositiveBudget
+    input_byte_limit: PositiveBudget
+    output_byte_limit: PositiveBudget
+
+
+class CPUResourceRequirements(_Resources):
+    resource_class: Literal["cpu"]
+
+
+class RemoteResourceRequirements(_Resources):
+    resource_class: Literal["remote"]
+    remote_quota_id: ArtifactId
+
+
+class GPUResourceRequirements(_Resources):
+    resource_class: Literal["gpu"]
+    gpu_memory_limit_bytes: PositiveBudget
+    worker_pool_id: ArtifactId
+
+
+type ResourceRequirements = Annotated[
+    CPUResourceRequirements | RemoteResourceRequirements | GPUResourceRequirements,
+    Field(discriminator="resource_class"),
+]
+
+
+class DeploymentRequirement(ContractModel):
+    provider_id: ArtifactId
+    deployment_id: ArtifactId
+    logical_model_id: ArtifactId
+    provider_kind: Literal["remote", "local"]
+    actual_version_constraints: VersionConstraint
+    required_features: Annotated[
+        tuple[CapabilityFeature, ...],
+        Field(max_length=7, json_schema_extra={"uniqueItems": True}),
+        BeforeValidator(immutable_sequence),
+    ]
+
+    @model_validator(mode="after")
+    def unique_features(self) -> Self:
+        if len(set(self.required_features)) != len(self.required_features):
+            raise ValueError("duplicate deployment feature")
+        return self
+
+
+class LocalPrimaryException(ContractModel):
+    exception_id: ArtifactId
+    version: Version
+    applicable_capabilities: Annotated[
+        tuple[ModelCapability, ...],
+        Field(min_length=1, max_length=5, json_schema_extra={"uniqueItems": True}),
+        BeforeValidator(immutable_sequence),
+    ]
+    reason: Literal[
+        "explicit_local_capability",
+        "privacy_restriction",
+        "unavailable_remote_capability",
+    ]
+    rationale: Description
+    approval_ref: ReviewReportRef
+    valid_from: UTCDateTime
+    valid_until: UTCDateTime
+
+    @model_validator(mode="after")
+    def valid_exception(self) -> Self:
+        if self.valid_from >= self.valid_until:
+            raise ValueError("invalid exception window")
+        if len(set(self.applicable_capabilities)) != len(self.applicable_capabilities):
+            raise ValueError("duplicate exception capability")
+        return self
+
+
+class _Provider(_PolicyData):
+    policy_kind: Literal[PolicyKind.PROVIDER]
+    primary_deployment_id: ArtifactId
+    deployments: Annotated[
+        tuple[DeploymentRequirement, ...],
+        Field(min_length=1, max_length=1024),
+        BeforeValidator(immutable_sequence),
+    ]
+    selection: Literal["primary_then_explicit_fallback"]
+
+    @model_validator(mode="after")
+    def valid_deployments(self) -> Self:
+        ids = [d.deployment_id for d in self.deployments]
+        if len(ids) != len(set(ids)):
+            raise ValueError("duplicate deployment ID")
+        if self.primary_deployment_id not in ids:
+            raise ValueError("primary deployment not declared")
+        return self
+
+
+class RemotePrimaryProviderPolicy(_Provider):
+    routing_mode: Literal["remote_primary"]
+
+    @model_validator(mode="after")
+    def remote_primary(self) -> Self:
+        if (
+            next(
+                d
+                for d in self.deployments
+                if d.deployment_id == self.primary_deployment_id
+            ).provider_kind
+            != "remote"
+        ):
+            raise ValueError("remote primary must be remote")
+        return self
+
+
+class LocalPrimaryProviderPolicy(_Provider):
+    routing_mode: Literal["local_primary_exception"]
+    local_primary_exception: LocalPrimaryException
+
+    @model_validator(mode="after")
+    def local_primary(self) -> Self:
+        if (
+            next(
+                d
+                for d in self.deployments
+                if d.deployment_id == self.primary_deployment_id
+            ).provider_kind
+            != "local"
+        ):
+            raise ValueError("local exception needs local primary")
+        return self
+
+
+type ProviderPolicy = Annotated[
+    RemotePrimaryProviderPolicy | LocalPrimaryProviderPolicy,
+    Field(discriminator="routing_mode"),
+]
+
+
+class FallbackTransition(ContractModel):
+    from_deployment_id: ArtifactId
+    to_deployment_id: ArtifactId
+
+    @model_validator(mode="after")
+    def distinct(self) -> Self:
+        if self.from_deployment_id == self.to_deployment_id:
+            raise ValueError("fallback transition must change deployment")
+        return self
+
+
+type TriggerError = Literal["transport", "timeout", "rate_limit", "unavailable"]
+
+
+class _Fallback(_PolicyData):
+    policy_kind: Literal[PolicyKind.FALLBACK]
+    contract_compatibility: Literal["exact"]
+
+
+class DisabledFallbackPolicy(_Fallback):
+    mode: Literal["disabled"]
+    trigger_errors: Annotated[
+        tuple[TriggerError, ...],
+        Field(max_length=0),
+        BeforeValidator(immutable_sequence),
+    ]
+    allowed_transitions: Annotated[
+        tuple[FallbackTransition, ...],
+        Field(max_length=0),
+        BeforeValidator(immutable_sequence),
+    ]
+
+
+class EvaluatedFallbackPolicy(_Fallback):
+    mode: Literal["explicit_evaluated"]
+    trigger_errors: Annotated[
+        tuple[TriggerError, ...],
+        Field(min_length=1, max_length=4, json_schema_extra={"uniqueItems": True}),
+        BeforeValidator(immutable_sequence),
+    ]
+    allowed_transitions: Annotated[
+        tuple[FallbackTransition, ...],
+        Field(min_length=1, max_length=1024),
+        BeforeValidator(immutable_sequence),
+    ]
+    evaluation_refs: Annotated[
+        tuple[ReviewReportRef, ...],
+        Field(min_length=1, max_length=1024),
+        BeforeValidator(immutable_sequence),
+    ]
+
+    @model_validator(mode="after")
+    def unique_sets(self) -> Self:
+        transitions = [
+            (t.from_deployment_id, t.to_deployment_id) for t in self.allowed_transitions
+        ]
+        reports = [
+            (r.review_registry_id, r.report_id, r.version) for r in self.evaluation_refs
+        ]
+        if (
+            len(set(self.trigger_errors)) != len(self.trigger_errors)
+            or len(set(transitions)) != len(transitions)
+            or len(set(reports)) != len(reports)
+        ):
+            raise ValueError("duplicate fallback trigger/transition/report")
+        return self
+
+
+type FallbackPolicy = Annotated[
+    DisabledFallbackPolicy | EvaluatedFallbackPolicy, Field(discriminator="mode")
+]
+
+
+class RulePolicy(_PolicyData):
+    policy_kind: Literal[PolicyKind.RULE]
+    mandatory: bool
+    missing: Literal["unknown"]
+    unknown: Literal["unknown"]
+    error: Literal["unknown"]
+    not_applicable: Literal["unknown"]
+    not_evaluated: Literal["unknown"]
+    required_guard: Literal["block_unavailable"]
+    scan: Literal["all_mandatory"]
+    true_result: Literal["violation"]
+    false_result: Literal["no_violation"]
+    unknown_result: Literal["uncertain"]
+
+
+class ConflictPolicy(_PolicyData):
+    policy_kind: Literal[PolicyKind.CONFLICT]
+    mode: Literal["collect_all"]
+    early_exit: FalseFlag
+    category_dedup: Literal["set"]
+    preserve_rule_refs: TrueFlag
+
+
+class CoveragePolicy(_PolicyData):
+    policy_kind: Literal[PolicyKind.COVERAGE]
+    no_hits: Literal["uncertain"]
+    no_target: Literal["uncertain"]
+    partial_without_match: Literal["uncertain"]
+    partial_with_match: Literal["violation"]
+    complete_negative: Literal["all_mandatory_false_with_required_evidence"]
+    absence_strategy: Literal["conservative"]
+
+
+class ContextDerivationRequirement(ExternalCapabilityRequirement):
+    family: Literal[CapabilityFamily.CONTEXT_DERIVATION]
+
+    @field_validator("family", mode="before")
+    @classmethod
+    def decode_family(cls, value: object) -> CapabilityFamily:
+        return CapabilityFamily._decode(value)
+
+
+class ContextFieldRequirement(OptionalContract):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {"time_sensitive": {"const": True}},
+                        "required": ["time_sensitive"],
+                    },
+                    "then": {"required": ["clock_tolerance_ms"]},
+                    "else": {"not": {"required": ["clock_tolerance_ms"]}},
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "allowed_sources": {
+                                "contains": {"const": "declared_derivation"}
+                            }
+                        },
+                        "required": ["allowed_sources"],
+                    },
+                    "then": {"required": ["derivation_requirement", "input_selectors"]},
+                    "else": {
+                        "not": {
+                            "anyOf": [
+                                {"required": ["derivation_requirement"]},
+                                {"required": ["input_selectors"]},
+                            ]
+                        }
+                    },
+                },
+            ]
+        }
+    )
+    field_path: FieldPath
+    schema_ref: ContextSchemaRef
+    required: bool
+    time_sensitive: bool
+    allowed_sources: Annotated[
+        tuple[ContextProvenanceSource, ...],
+        Field(min_length=1, max_length=5, json_schema_extra={"uniqueItems": True}),
+        BeforeValidator(immutable_sequence),
+    ]
+    derivation_requirement: AbsentOptional[ContextDerivationRequirement] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+    input_selectors: AbsentOptional[
+        Annotated[
+            tuple[ContextFieldSelector, ...],
+            Field(max_length=64),
+            BeforeValidator(immutable_sequence),
+        ]
+    ] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+    clock_tolerance_ms: AbsentOptional[NonNegativeBudget] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+
+    @model_validator(mode="after")
+    def conditional_fields(self) -> Self:
+        if len(set(self.allowed_sources)) != len(self.allowed_sources):
+            raise ValueError("duplicate provenance source")
+        derived = ContextProvenanceSource.DECLARED_DERIVATION in self.allowed_sources
+        if derived != (self.derivation_requirement is not None) or derived != (
+            self.input_selectors is not None
+        ):
+            raise ValueError("derivation fields required iff derivation source allowed")
+        if self.time_sensitive != (self.clock_tolerance_ms is not None):
+            raise ValueError("clock tolerance required iff time sensitive")
+        return self
+
+
+class ContextProvenancePolicy(_PolicyData):
+    policy_kind: Literal[PolicyKind.CONTEXT_PROVENANCE]
+    fields: Annotated[
+        tuple[ContextFieldRequirement, ...],
+        Field(max_length=64),
+        BeforeValidator(immutable_sequence),
+    ]
+    conflicting_sources: Literal["block"]
+    missing_required: Literal["block"]
+    internal_timezone: Literal["UTC"]
+    naive_time: Literal["reject"]
+
+    @model_validator(mode="after")
+    def unique_fields(self) -> Self:
+        for i, left in enumerate(self.fields):
+            for right in self.fields[i + 1 :]:
+                if reference_identity(left.schema_ref) == reference_identity(
+                    right.schema_ref
+                ) and (
+                    left.field_path[: len(right.field_path)] == right.field_path
+                    or right.field_path[: len(left.field_path)] == left.field_path
+                ):
+                    raise ValueError("duplicate/prefix-overlap context outputs")
+        return self
+
+
+class ExecutionPolicy(_PolicyData):
+    policy_kind: Literal[PolicyKind.EXECUTION]
+    workflow_version: Version
+    node_order: Annotated[
+        tuple[
+            Literal["N01"],
+            Literal["N02"],
+            Literal["N03"],
+            Literal["N04"],
+            Literal["N05"],
+            Literal["N06"],
+        ],
+        BeforeValidator(immutable_sequence),
+    ]
+    coverage_policy_ref: PolicyContentRef
+    context_provenance_policy_ref: PolicyContentRef
+    resource_requirements_ref: PolicyContentRef
+    artifact_schema_refs: Annotated[
+        tuple[SchemaRef, ...],
+        Field(max_length=1024),
+        BeforeValidator(immutable_sequence),
+    ]
+
+    @model_validator(mode="after")
+    def unique_schemas(self) -> Self:
+        require_unique_references(self.artifact_schema_refs)
+        return self
+
+
+class ContextSelectionRule(ContractModel):
+    question_ref: QuestionContentRef
+    applicability_policy_ref: PolicyContentRef
+
+
+class SharedN02SelectionCallPolicy(ContractModel):
+    mode: Literal["shared_n02"]
+
+
+class AdditionalSelectionCallPolicy(ContractModel):
+    mode: Literal["explicit_additional"]
+    proposal_binding_ref: ModelBindingContentRef
+    additional_resource_requirements_ref: PolicyContentRef
+    max_additional_invocations_per_execution: PositiveBudget
+
+
+type SelectionCallPolicy = Annotated[
+    SharedN02SelectionCallPolicy | AdditionalSelectionCallPolicy,
+    Field(discriminator="mode"),
+]
+
+
+class QuestionSelectionPolicy(_PolicyData):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {"mode": {"const": "all_declared"}},
+                        "required": ["mode"],
+                    },
+                    "then": {"properties": {"optional_source": {"const": "all"}}},
+                },
+                {
+                    "if": {
+                        "properties": {"optional_source": {"const": "context_rules"}},
+                        "required": ["optional_source"],
+                    },
+                    "then": {"required": ["context_selection_rules"]},
+                    "else": {"not": {"required": ["context_selection_rules"]}},
+                },
+                {
+                    "if": {
+                        "properties": {"optional_source": {"const": "model_advisory"}},
+                        "required": ["optional_source"],
+                    },
+                    "then": {
+                        "required": [
+                            "proposal_schema_ref",
+                            "selection_review_ref",
+                            "selection_call_policy",
+                        ]
+                    },
+                    "else": {
+                        "not": {
+                            "anyOf": [
+                                {"required": ["proposal_schema_ref"]},
+                                {"required": ["selection_review_ref"]},
+                                {"required": ["selection_call_policy"]},
+                            ]
+                        }
+                    },
+                },
+            ]
+        }
+    )
+    policy_kind: Literal[PolicyKind.QUESTION_SELECTION]
+    mode: Literal["all_declared", "mandatory_plus_optional"]
+    mandatory_question_refs: PolicyRefs
+    optional_question_refs: PolicyRefs
+    optional_source: Literal["all", "context_rules", "model_advisory"]
+    fallback: Literal["include_all_optional", "block_profile"]
+    ordering: Literal["profile_order"]
+    context_selection_rules: AbsentOptional[
+        Annotated[
+            tuple[ContextSelectionRule, ...],
+            Field(max_length=1024),
+            BeforeValidator(immutable_sequence),
+        ]
+    ] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+    proposal_schema_ref: AbsentOptional[ResponseSchemaContentRef] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+    selection_review_ref: AbsentOptional[ReviewReportRef] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+    selection_call_policy: AbsentOptional[SelectionCallPolicy] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda v: v is None,
+        json_schema_extra=omit_default_from_schema,
+    )
+
+    @model_validator(mode="after")
+    def exact_partition_and_branches(self) -> Self:
+        require_unique_references(
+            (*self.mandatory_question_refs, *self.optional_question_refs)
+        )
+        if self.mode == "all_declared" and self.optional_source != "all":
+            raise ValueError("all_declared requires optional_source=all")
+        if (self.context_selection_rules is not None) != (
+            self.optional_source == "context_rules"
+        ):
+            raise ValueError("context rules present iff context source")
+        advisory = self.optional_source == "model_advisory"
+        if any(
+            (value is not None) != advisory
+            for value in (
+                self.proposal_schema_ref,
+                self.selection_review_ref,
+                self.selection_call_policy,
+            )
+        ):
+            raise ValueError("model advisory fields present iff model source")
+        if self.context_selection_rules is not None:
+            refs = tuple(rule.question_ref for rule in self.context_selection_rules)
+            require_unique_references(refs)
+            if {reference_identity(ref) for ref in refs} != {
+                reference_identity(ref) for ref in self.optional_question_refs
+            }:
+                raise ValueError("context rules must exactly cover optional Questions")
+        return self
+
+
+class _NamedPolicyArtifact(DefinitionContract):
+    policy_id: ArtifactId
+    version: Version
+
+
+class ApplicabilityPolicyArtifact(_NamedPolicyArtifact):
+    policy: ApplicabilityPolicy
+
+
+class ToolSkipPolicyArtifact(_NamedPolicyArtifact):
+    policy: ToolSkipPolicy
+
+
+class QuestionSelectionPolicyArtifact(_NamedPolicyArtifact):
+    policy: QuestionSelectionPolicy
+
+
+class UnknownPolicyArtifact(_NamedPolicyArtifact):
+    policy: UnknownPolicy
+
+
+class QuestionValidationPolicyArtifact(_NamedPolicyArtifact):
+    policy: QuestionValidationPolicy
+
+
+class EvidencePolicyArtifact(_NamedPolicyArtifact):
+    policy: EvidencePolicy
+
+
+class ToolExecutionPolicyArtifact(_NamedPolicyArtifact):
+    policy: ToolExecutionPolicy
+
+
+class ToolFailurePolicyArtifact(_NamedPolicyArtifact):
+    policy: ToolFailurePolicy
+
+
+class ResourceRequirementsArtifact(_NamedPolicyArtifact):
+    policy: ResourceRequirements
+
+
+class ProviderPolicyArtifact(_NamedPolicyArtifact):
+    policy: ProviderPolicy
+
+
+class FallbackPolicyArtifact(_NamedPolicyArtifact):
+    policy: FallbackPolicy
+
+
+class RulePolicyArtifact(_NamedPolicyArtifact):
+    policy: RulePolicy
+
+
+class ConflictPolicyArtifact(_NamedPolicyArtifact):
+    policy: ConflictPolicy
+
+
+class CoveragePolicyArtifact(_NamedPolicyArtifact):
+    policy: CoveragePolicy
+
+
+class ContextProvenancePolicyArtifact(_NamedPolicyArtifact):
+    policy: ContextProvenancePolicy
+
+
+class ExecutionPolicyArtifact(_NamedPolicyArtifact):
+    policy: ExecutionPolicy
+
+
+# This compatibility subset remains explicitly partial; complete registries use PolicyArtifact.
+type NonExpressionPolicyArtifact = (
+    QuestionSelectionPolicyArtifact
+    | UnknownPolicyArtifact
+    | QuestionValidationPolicyArtifact
+    | EvidencePolicyArtifact
+    | ToolExecutionPolicyArtifact
+    | ToolFailurePolicyArtifact
+    | ResourceRequirementsArtifact
+    | ProviderPolicyArtifact
+    | FallbackPolicyArtifact
+    | RulePolicyArtifact
+    | ConflictPolicyArtifact
+    | CoveragePolicyArtifact
+    | ContextProvenancePolicyArtifact
+    | ExecutionPolicyArtifact
+)
+
+
+def _artifact_policy_tag(value: object) -> str | None:
+    # Select a branch without reconstructing/filtering the input. Model/extra
+    # validation still receives the complete original instance or dictionary.
+    data = value.__dict__ if isinstance(value, ContractModel) else value
+    if not isinstance(data, dict):
+        return None
+    policy = data.get("policy")
+    payload = policy.__dict__ if isinstance(policy, ContractModel) else policy
+    if not isinstance(payload, dict):
+        return None
+    kind = payload.get("policy_kind")
+    if isinstance(kind, PolicyKind):
+        return kind.value
+    return kind if type(kind) is str else None
+
+
+type _ApplicabilityChoice = Annotated[ApplicabilityPolicyArtifact, Tag("applicability")]
+type _QuestionSelectionChoice = Annotated[
+    QuestionSelectionPolicyArtifact, Tag("question_selection")
+]
+type _UnknownChoice = Annotated[UnknownPolicyArtifact, Tag("unknown")]
+type _QuestionValidationChoice = Annotated[
+    QuestionValidationPolicyArtifact, Tag("question_validation")
+]
+type _EvidenceChoice = Annotated[EvidencePolicyArtifact, Tag("evidence")]
+type _ToolExecutionChoice = Annotated[
+    ToolExecutionPolicyArtifact, Tag("tool_execution")
+]
+type _ToolFailureChoice = Annotated[ToolFailurePolicyArtifact, Tag("tool_failure")]
+type _ToolSkipChoice = Annotated[ToolSkipPolicyArtifact, Tag("tool_skip")]
+type _ResourceRequirementsChoice = Annotated[
+    ResourceRequirementsArtifact, Tag("resource_requirements")
+]
+type _ProviderChoice = Annotated[ProviderPolicyArtifact, Tag("provider")]
+type _FallbackChoice = Annotated[FallbackPolicyArtifact, Tag("fallback")]
+type _RuleChoice = Annotated[RulePolicyArtifact, Tag("rule")]
+type _ConflictChoice = Annotated[ConflictPolicyArtifact, Tag("conflict")]
+type _CoverageChoice = Annotated[CoveragePolicyArtifact, Tag("coverage")]
+type _ContextProvenanceChoice = Annotated[
+    ContextProvenancePolicyArtifact, Tag("context_provenance")
+]
+type _ExecutionChoice = Annotated[ExecutionPolicyArtifact, Tag("execution")]
+
+
+type PolicyArtifact = Annotated[
+    _ApplicabilityChoice
+    | _QuestionSelectionChoice
+    | _UnknownChoice
+    | _QuestionValidationChoice
+    | _EvidenceChoice
+    | _ToolExecutionChoice
+    | _ToolFailureChoice
+    | _ToolSkipChoice
+    | _ResourceRequirementsChoice
+    | _ProviderChoice
+    | _FallbackChoice
+    | _RuleChoice
+    | _ConflictChoice
+    | _CoverageChoice
+    | _ContextProvenanceChoice
+    | _ExecutionChoice,
+    Discriminator(_artifact_policy_tag),
+]

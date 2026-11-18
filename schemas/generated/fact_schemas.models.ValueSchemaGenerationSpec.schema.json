@@ -1,0 +1,83 @@
+{
+  "$defs": {
+    "GlobalTypeLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "list_max_items": {
+          "maximum": 256,
+          "minimum": 1,
+          "title": "List Max Items",
+          "type": "integer"
+        },
+        "max_depth": {
+          "maximum": 8,
+          "minimum": 1,
+          "title": "Max Depth",
+          "type": "integer"
+        },
+        "record_max_fields": {
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Record Max Fields",
+          "type": "integer"
+        },
+        "string_max_length": {
+          "maximum": 4096,
+          "minimum": 1,
+          "title": "String Max Length",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "string_max_length",
+        "list_max_items",
+        "record_max_fields",
+        "max_depth"
+      ],
+      "title": "GlobalTypeLimits",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "canonicalization_id": {
+      "const": "JCS",
+      "title": "Canonicalization Id",
+      "type": "string"
+    },
+    "generator_id": {
+      "const": "jimu.value-schema",
+      "title": "Generator Id",
+      "type": "string"
+    },
+    "generator_version": {
+      "const": "1.0.0",
+      "title": "Generator Version",
+      "type": "string"
+    },
+    "global_limits": {
+      "$ref": "#/$defs/GlobalTypeLimits"
+    },
+    "projection_profile_version": {
+      "const": "1.0.0",
+      "title": "Projection Profile Version",
+      "type": "string"
+    },
+    "schema_dialect": {
+      "const": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Schema Dialect",
+      "type": "string"
+    }
+  },
+  "required": [
+    "projection_profile_version",
+    "generator_id",
+    "generator_version",
+    "schema_dialect",
+    "canonicalization_id",
+    "global_limits"
+  ],
+  "title": "ValueSchemaGenerationSpec",
+  "type": "object"
+}

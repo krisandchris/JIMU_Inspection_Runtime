@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "members": {
+      "items": {
+        "$ref": "#/$defs/ShortText"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "title": "Members",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "semantic_domain": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Semantic Domain",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    },
+    "vocabulary_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Vocabulary Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "vocabulary_id",
+    "version",
+    "semantic_domain",
+    "members"
+  ],
+  "title": "VocabularyDefinition",
+  "type": "object"
+}

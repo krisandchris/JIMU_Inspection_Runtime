@@ -1,0 +1,470 @@
+{
+  "$defs": {
+    "BooleanTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BooleanTypeDefinition",
+      "type": "object"
+    },
+    "BoundedString": {
+      "maxLength": 4096,
+      "type": "string"
+    },
+    "EnumTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enum",
+          "title": "Kind",
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "$ref": "#/$defs/BoundedString"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "members"
+      ],
+      "title": "EnumTypeDefinition",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "GlobalTypeLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "list_max_items": {
+          "maximum": 256,
+          "minimum": 1,
+          "title": "List Max Items",
+          "type": "integer"
+        },
+        "max_depth": {
+          "maximum": 8,
+          "minimum": 1,
+          "title": "Max Depth",
+          "type": "integer"
+        },
+        "record_max_fields": {
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Record Max Fields",
+          "type": "integer"
+        },
+        "string_max_length": {
+          "maximum": 4096,
+          "minimum": 1,
+          "title": "String Max Length",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "string_max_length",
+        "list_max_items",
+        "record_max_fields",
+        "max_depth"
+      ],
+      "title": "GlobalTypeLimits",
+      "type": "object"
+    },
+    "IntegerTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "IntegerTypeDefinition",
+      "type": "object"
+    },
+    "ListTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "item_type": {
+          "$ref": "#/$defs/TypeDefinition"
+        },
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_items": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__2",
+          "default": 256
+        },
+        "min_items": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__2",
+          "default": 0
+        }
+      },
+      "required": [
+        "kind",
+        "item_type"
+      ],
+      "title": "ListTypeDefinition",
+      "type": "object"
+    },
+    "NumberTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NumberTypeDefinition",
+      "type": "object"
+    },
+    "RecordFieldDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/FieldName"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "type_definition": {
+          "$ref": "#/$defs/TypeDefinition"
+        }
+      },
+      "required": [
+        "name",
+        "required",
+        "type_definition"
+      ],
+      "title": "RecordFieldDefinition",
+      "type": "object"
+    },
+    "RecordTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/RecordFieldDefinition"
+          },
+          "maxItems": 64,
+          "title": "Fields",
+          "type": "array"
+        },
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fields"
+      ],
+      "title": "RecordTypeDefinition",
+      "type": "object"
+    },
+    "StringTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_length": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__1",
+          "default": 4096
+        },
+        "min_length": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__1",
+          "default": 0
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "StringTypeDefinition",
+      "type": "object"
+    },
+    "TypeDefinition": {
+      "discriminator": {
+        "mapping": {
+          "bool": "#/$defs/BooleanTypeDefinition",
+          "enum": "#/$defs/EnumTypeDefinition",
+          "integer": "#/$defs/IntegerTypeDefinition",
+          "list": "#/$defs/ListTypeDefinition",
+          "number": "#/$defs/NumberTypeDefinition",
+          "record": "#/$defs/RecordTypeDefinition",
+          "string": "#/$defs/StringTypeDefinition"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BooleanTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/IntegerTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/NumberTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/StringTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/EnumTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/ListTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/RecordTypeDefinition"
+        }
+      ]
+    },
+    "ValueSchemaContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "value_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ValueSchemaContentRef",
+      "type": "object"
+    },
+    "ValueSchemaGenerationInput": {
+      "additionalProperties": false,
+      "properties": {
+        "generation_spec": {
+          "$ref": "#/$defs/ValueSchemaGenerationSpec"
+        },
+        "projection": {
+          "$ref": "#/$defs/TypeDefinition"
+        }
+      },
+      "required": [
+        "projection",
+        "generation_spec"
+      ],
+      "title": "ValueSchemaGenerationInput",
+      "type": "object"
+    },
+    "ValueSchemaGenerationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "canonicalization_id": {
+          "const": "JCS",
+          "title": "Canonicalization Id",
+          "type": "string"
+        },
+        "generator_id": {
+          "const": "jimu.value-schema",
+          "title": "Generator Id",
+          "type": "string"
+        },
+        "generator_version": {
+          "const": "1.0.0",
+          "title": "Generator Version",
+          "type": "string"
+        },
+        "global_limits": {
+          "$ref": "#/$defs/GlobalTypeLimits"
+        },
+        "projection_profile_version": {
+          "const": "1.0.0",
+          "title": "Projection Profile Version",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        }
+      },
+      "required": [
+        "projection_profile_version",
+        "generator_id",
+        "generator_version",
+        "schema_dialect",
+        "canonicalization_id",
+        "global_limits"
+      ],
+      "title": "ValueSchemaGenerationSpec",
+      "type": "object"
+    },
+    "jimu_runtime__domain__values__Size__1": {
+      "maximum": 4096,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "jimu_runtime__domain__values__Size__2": {
+      "maximum": 256,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Internal output; generation entry points never accept it as schema authority.",
+  "properties": {
+    "canonical_input_bytes": {
+      "format": "binary",
+      "title": "Canonical Input Bytes",
+      "type": "string"
+    },
+    "canonical_schema_bytes": {
+      "format": "binary",
+      "title": "Canonical Schema Bytes",
+      "type": "string"
+    },
+    "child_digest": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Child Digest",
+      "type": "string"
+    },
+    "child_ref": {
+      "$ref": "#/$defs/ValueSchemaContentRef"
+    },
+    "generation_input": {
+      "$ref": "#/$defs/ValueSchemaGenerationInput"
+    },
+    "input_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "generation_input",
+    "canonical_input_bytes",
+    "input_sha256",
+    "canonical_schema_bytes",
+    "child_digest",
+    "child_ref"
+  ],
+  "title": "GeneratedValueSchema",
+  "type": "object"
+}

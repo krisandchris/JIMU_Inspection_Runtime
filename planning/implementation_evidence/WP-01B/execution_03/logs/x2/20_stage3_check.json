@@ -1,0 +1,26 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "src/jimu_runtime/domain/producers.py",
+    "src/jimu_runtime/domain/validation/producer_inputs.py",
+    "src/jimu_runtime/domain/validation/producers.py",
+    "tests/contract/test_b_producers_contracts.py",
+    "tests/unit/test_b_producers_data.py",
+    "tests/unit/test_b_producers_validation.py",
+    "tests/negative/test_b_producers_invalid.py",
+    "tests/negative/test_b_producers_validation_invalid.py",
+    "tests/fixtures/wp01b/x2/support.py",
+    "--fix"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:42:10.664291+00:00",
+  "end": "2026-11-17T17:42:10.678381+00:00",
+  "exit": 1,
+  "stdout": "E702 Multiple statements on one line (semicolon)\n   --> tests/negative/test_b_producers_validation_invalid.py:256:19\n    |\n254 | def test_system_selector_requires_exact_declared_output_contract(change):\n255 |     from fixtures.wp01b.x2.support import condition_use\n256 |     data=fixture();declaration=data[\"registration\"][\"definition\"][\"declarations\"][0];target=data[\"system_execution\"]\n    |                   ^\n257 |     selector=dict(scope=\"execution\",fact_key=target[\"fact_key\"],fact_schema_ref=deepcopy(target[\"fact_schema_ref\"]),field_path=[],pro\u2026\n258 |     if change==\"output\":selector[\"producer_selector\"][\"output_name\"]=\"unknown\"\n    |\n\nE702 Multiple statements on one line (semicolon)\n   --> tests/negative/test_b_producers_validation_invalid.py:256:85\n    |\n254 | def test_system_selector_requires_exact_declared_output_contract(change):\n255 |     from fixtures.wp01b.x2.support import condition_use\n256 |     data=fixture();declaration=data[\"registration\"][\"definition\"][\"declarations\"][0];target=data[\"system_execution\"]\n    |                                                                                     ^\n257 |     selector=dict(scope=\"execution\",fact_key=target[\"fact_key\"],fact_schema_ref=deepcopy(target[\"fact_schema_ref\"]),field_path=[],pro\u2026\n258 |     if change==\"output\":selector[\"producer_selector\"][\"output_name\"]=\"unknown\"\n    |\n\nE701 Multiple statements on one line (colon)\n   --> tests/negative/test_b_producers_validation_invalid.py:258:24\n    |\n256 |     data=fixture();declaration=data[\"registration\"][\"definition\"][\"declarations\"][0];target=data[\"system_execution\"]\n257 |     selector=dict(scope=\"execution\",fact_key=target[\"fact_key\"],fact_schema_ref=deepcopy(target[\"fact_schema_ref\"]),field_path=[],pro\u2026\n258 |     if change==\"output\":selector[\"producer_selector\"][\"output_name\"]=\"unknown\"\n    |                        ^\n259 |     elif change==\"key\":selector[\"fact_key\"]=\"wrong\"\n260 |     elif change==\"requirements\":selector[\"producer_selector\"][\"requirement\"][\"allowed_implementation_versions\"]=[\"9.0.0\"]\n    |\n\nE701 Multiple statements on one line (colon)\n   --> tests/negative/test_b_producers_validation_invalid.py:259:23\n    |\n257 |     selector=dict(scope=\"execution\",fact_key=target[\"fact_key\"],fact_schema_ref=deepcopy(target[\"fact_schema_ref\"]),field_path=[],pro\u2026\n258 |     if change==\"output\":selector[\"producer_selector\"][\"output_name\"]=\"unknown\"\n259 |     elif change==\"key\":selector[\"fact_key\"]=\"wrong\"\n    |                       ^\n260 |     elif change==\"requirements\":selector[\"producer_selector\"][\"requirement\"][\"allowed_implementation_versions\"]=[\"9.0.0\"]\n261 |     else:selector[\"field_path\"]=[\"missing\"]\n    |\n\nE701 Multiple statements on one line (colon)\n   --> tests/negative/test_b_producers_validation_invalid.py:260:32\n    |\n258 |     if change==\"output\":selector[\"producer_selector\"][\"output_name\"]=\"unknown\"\n259 |     elif change==\"key\":selector[\"fact_key\"]=\"wrong\"\n260 |     elif change==\"requirements\":selector[\"producer_selector\"][\"requirement\"][\"allowed_implementation_versions\"]=[\"9.0.0\"]\n    |                                ^\n261 |     else:selector[\"field_path\"]=[\"missing\"]\n262 |     declaration[\"activation_condition\"]={\"mode\":\"tool_condition\",\"condition_ast\":dict(kind=\"fact_ref\",selector=selector)}\n    |\n\nE701 Multiple statements on one line (colon)\n   --> tests/negative/test_b_producers_validation_invalid.py:261:9\n    |\n259 |     elif change==\"key\":selector[\"fact_key\"]=\"wrong\"\n260 |     elif change==\"requirements\":selector[\"producer_selector\"][\"requirement\"][\"allowed_implementation_versions\"]=[\"9.0.0\"]\n261 |     else:selector[\"field_path\"]=[\"missing\"]\n    |         ^\n262 |     declaration[\"activation_condition\"]={\"mode\":\"tool_condition\",\"condition_ast\":dict(kind=\"fact_ref\",selector=selector)}\n263 |     data[\"context\"][\"condition_contexts\"]=[condition_use(data,declaration)]\n    |\n\nFound 7 errors (1 fixed, 6 remaining).\n",
+  "stderr": ""
+}

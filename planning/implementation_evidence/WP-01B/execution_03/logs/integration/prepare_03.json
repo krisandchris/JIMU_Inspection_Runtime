@@ -1,0 +1,19 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "planning/implementation_evidence/WP-01B/execution_03/logs/integration/run_final_verification.py"
+  ],
+  "start": "2026-11-17T17:48:32.907164+00:00",
+  "end": "2026-11-17T17:48:32.920012+00:00",
+  "exit": 1,
+  "stdout": "UP022 Prefer `capture_output` over sending `stdout` and `stderr` to `PIPE`\n   --> planning/implementation_evidence/WP-01B/execution_03/logs/integration/run_final_verification.py:185:18\n    |\n183 |           write_json(run / f\"{identifier}_before.json\", before)\n184 |           start = utc()\n185 |           result = subprocess.run(\n    |  __________________^\n186 | |             argv,\n187 | |             cwd=WORKTREE,\n188 | |             stdin=subprocess.DEVNULL,\n189 | |             stdout=subprocess.PIPE,\n190 | |             stderr=subprocess.PIPE,\n191 | |             check=False,\n192 | |         )\n    | |_________^\n193 |           end = utc()\n194 |           (run / f\"{identifier}.stdout\").write_bytes(result.stdout)\n    |\nhelp: Replace with `capture_output` keyword argument\n\nFound 1 error.\nNo fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).\n",
+  "stderr": "",
+  "before_sha256": "b0c7b72c8058071c5b14382fc9e82a0caa52257482ab16f167c82e2b0294250a",
+  "after_sha256": "b0c7b72c8058071c5b14382fc9e82a0caa52257482ab16f167c82e2b0294250a"
+}

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "--fix",
+    "src/jimu_runtime/domain/runtime/facts.py",
+    "src/jimu_runtime/domain/runtime/authority.py",
+    "src/jimu_runtime/domain/validation/authority_inputs.py",
+    "tests/unit/test_b_authority_models.py",
+    "tests/contract/test_b_fact_records.py",
+    "tests/negative/test_b_authority_models_invalid.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T14:47:33.485574+00:00",
+  "ended_at": "2026-11-17T14:47:33.503716+00:00",
+  "exit_code": 1,
+  "stdout": "F821 Undefined name `JsonSchemaValue`\n   --> src/jimu_runtime/domain/runtime/facts.py:120:33\n    |\n118 | ]\n119 |\n120 | def scope_constraints() -> list[JsonSchemaValue]:\n    |                                 ^^^^^^^^^^^^^^^\n121 |     return [\n122 |         {\"if\": {\"properties\": {\"scope\": {\"const\": \"object\"}}, \"required\": [\"scope\"]},\n    |\n\nF821 Undefined name `JsonSchemaValue`\n   --> src/jimu_runtime/domain/runtime/facts.py:129:27\n    |\n129 | def _scope_schema(schema: JsonSchemaValue) -> None:\n    |                           ^^^^^^^^^^^^^^^\n130 |     schema[\"allOf\"] = scope_constraints()\n    |\n\nF821 Undefined name `JsonSchemaValue`\n   --> src/jimu_runtime/domain/runtime/facts.py:266:26\n    |\n266 | def _fact_schema(schema: JsonSchemaValue) -> None:\n    |                          ^^^^^^^^^^^^^^^\n267 |     constraints = scope_constraints()\n268 |     constraints.append({\n    |\n\nFound 4 errors (1 fixed, 3 remaining).\n",
+  "stderr": ""
+}

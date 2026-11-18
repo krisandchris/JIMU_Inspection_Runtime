@@ -1,0 +1,18 @@
+[
+  {
+    "id": "M1-required-output-subset",
+    "status": "FIXED_PENDING_REVIEW",
+    "evidence": "subset_before_fix.json, remediation_final_pytest.json",
+    "change": "Removed forced selection of all required Tool declarations; mapped outputs must remain declared and non-aliased."
+  },
+  {
+    "id": "M1-complete-plan-pin",
+    "status": "FIXED_PENDING_REVIEW",
+    "change": "validate_tool_plan now requires keyword-only plan_ref; checks id/version, exact context digest and one exact Profile scope per call. Parent digest authenticity remains external."
+  },
+  {
+    "id": "M1-tool-digest-reference",
+    "status": "FIXED_PENDING_REVIEW",
+    "change": "Known Tool id/version with wrong digest is invalid, distinct from missing catalogue incomplete."
+  }
+]

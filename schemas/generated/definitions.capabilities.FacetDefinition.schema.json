@@ -1,0 +1,471 @@
+{
+  "$defs": {
+    "AbsentOptional_Annotated_tuple_FacetMetadataEntry___________FieldInfo_annotation_NoneType__required_True__json_schema_extra___uniqueItems___metadata__MinLen_min_length_1___MaxLen_max_length_64_____BeforeValidator__": {
+      "items": {
+        "$ref": "#/$defs/FacetMetadataEntry"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "AbsentOptional_Annotated_tuple_VocabularyMemberRef___________FieldInfo_annotation_NoneType__required_True__json_schema_extra___uniqueItems___metadata__MaxLen_max_length_1024_____BeforeValidator__": {
+      "items": {
+        "$ref": "#/$defs/VocabularyMemberRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "AttributeSchemaContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "attribute_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "AttributeSchemaContentRef",
+      "type": "object"
+    },
+    "BooleanValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanValue",
+      "type": "object"
+    },
+    "BoundedString": {
+      "maxLength": 4096,
+      "type": "string"
+    },
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "EnumValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enum",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "EnumValue",
+      "type": "object"
+    },
+    "FacetMetadataEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "attribute_schema_ref": {
+          "$ref": "#/$defs/AttributeSchemaContentRef"
+        },
+        "namespace": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Namespace",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/RecordValue"
+        }
+      },
+      "required": [
+        "namespace",
+        "attribute_schema_ref",
+        "value"
+      ],
+      "title": "FacetMetadataEntry",
+      "type": "object"
+    },
+    "FactSchemaContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "fact_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "FactSchemaContentRef",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "IntegerValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "IntegerValue",
+      "type": "object"
+    },
+    "ListValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "$ref": "#/$defs/Value"
+          },
+          "maxItems": 256,
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "ListValue",
+      "type": "object"
+    },
+    "NumberValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "NumberValue",
+      "type": "object"
+    },
+    "RecordValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Value"
+          },
+          "maxProperties": 64,
+          "propertyNames": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "title": "Value",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "RecordValue",
+      "type": "object"
+    },
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "StringValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "StringValue",
+      "type": "object"
+    },
+    "Value": {
+      "discriminator": {
+        "mapping": {
+          "bool": "#/$defs/BooleanValue",
+          "enum": "#/$defs/EnumValue",
+          "integer": "#/$defs/IntegerValue",
+          "list": "#/$defs/ListValue",
+          "number": "#/$defs/NumberValue",
+          "record": "#/$defs/RecordValue",
+          "string": "#/$defs/StringValue"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BooleanValue"
+        },
+        {
+          "$ref": "#/$defs/IntegerValue"
+        },
+        {
+          "$ref": "#/$defs/NumberValue"
+        },
+        {
+          "$ref": "#/$defs/StringValue"
+        },
+        {
+          "$ref": "#/$defs/EnumValue"
+        },
+        {
+          "$ref": "#/$defs/ListValue"
+        },
+        {
+          "$ref": "#/$defs/RecordValue"
+        }
+      ]
+    },
+    "VocabularyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "vocabulary",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "VocabularyContentRef",
+      "type": "object"
+    },
+    "VocabularyMemberRef": {
+      "additionalProperties": false,
+      "properties": {
+        "member": {
+          "$ref": "#/$defs/ShortText"
+        },
+        "vocabulary_ref": {
+          "$ref": "#/$defs/VocabularyContentRef"
+        }
+      },
+      "required": [
+        "vocabulary_ref",
+        "member"
+      ],
+      "title": "VocabularyMemberRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "$ref": "#/$defs/Description"
+    },
+    "facet_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Facet Id",
+      "type": "string"
+    },
+    "fact_schema_refs": {
+      "items": {
+        "$ref": "#/$defs/FactSchemaContentRef"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "title": "Fact Schema Refs",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "metadata": {
+      "$ref": "#/$defs/AbsentOptional_Annotated_tuple_FacetMetadataEntry___________FieldInfo_annotation_NoneType__required_True__json_schema_extra___uniqueItems___metadata__MinLen_min_length_1___MaxLen_max_length_64_____BeforeValidator__"
+    },
+    "name": {
+      "$ref": "#/$defs/ShortText"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tags": {
+      "$ref": "#/$defs/AbsentOptional_Annotated_tuple_VocabularyMemberRef___________FieldInfo_annotation_NoneType__required_True__json_schema_extra___uniqueItems___metadata__MaxLen_max_length_1024_____BeforeValidator__"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "facet_id",
+    "version",
+    "name",
+    "description",
+    "fact_schema_refs"
+  ],
+  "title": "FacetDefinition",
+  "type": "object"
+}

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "format",
+    "--check",
+    "src/jimu_runtime/domain/definition_enums.py",
+    "src/jimu_runtime/domain/definitions/models.py",
+    "src/jimu_runtime/domain/definitions/tools.py",
+    "src/jimu_runtime/domain/tool_outputs.py",
+    "src/jimu_runtime/domain/validation/tool_plans.py",
+    "tests/unit/test_b_tool_plans.py",
+    "tests/contract/test_b_models_tools.py",
+    "tests/negative/test_b_models_tools_invalid.py"
+  ],
+  "start": "2026-11-17T14:54:39.723831+00:00",
+  "end": "2026-11-17T14:54:39.739169+00:00",
+  "exit_code": 0,
+  "output": "8 files already formatted\n"
+}

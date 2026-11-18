@@ -1,0 +1,37 @@
+{
+  "reviewed_at": "2026-11-17T17:45:04.807932+00:00",
+  "scope": "X2 complete Producer data and finite Catalogue/Fact checker",
+  "direct_review": [
+    "producer models, input registrations and full948-line checker",
+    "skip/activation table, configured completeness, System output-slot/host constraints",
+    "Fact scope/source/identity/value/confidence and condition reference bindings",
+    "positive/negative/Schema tests, final raw logs/JUnit and all10product hashes"
+  ],
+  "conclusion": "PASS_COMPONENT_ONLY",
+  "tests": {
+    "tests": 117,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "independent_review": "wp01b_b_facts no C0-C2; separate read-only probes and final seal review",
+  "known_boundaries": [
+    "Operand typing/nominal enums/units/Boolean result require future TypeChecker; no evaluator",
+    "Dynamic activation and availability/mandatory consumer completeness",
+    "Actual invocation/implementation/evidence trust requires integrated records/runtime",
+    "Parent catalogue/Bundle authenticity and trusted host/report resolution"
+  ],
+  "runtime": "RUNTIME_NOT_RUN",
+  "product_sha256": {
+    "src/jimu_runtime/domain/producers.py": "4d79e4e6c5aac9e90602b5a2c7f189ca64c7baf49916decadbe7e772b4c51832",
+    "src/jimu_runtime/domain/validation/producer_inputs.py": "778d788f55a1dbab5303498f5ba029fb8dd908dc4a032830e2803d40531201cf",
+    "src/jimu_runtime/domain/validation/producers.py": "7babab490bbb360d6107bb3231b8a960029e149893ace164f1ac345ba61a2ded",
+    "tests/contract/test_b_producers_contracts.py": "e031d3b2dee5dcce0035835047aeac4494ababfb5f759e8fee2bb3065b9dab95",
+    "tests/unit/test_b_producers_data.py": "18f0bef3de56c52ec4ad4fc5d60506366795825730024a771ed3ea9dbd9258ed",
+    "tests/unit/test_b_producers_validation.py": "ece044da5b2245380c9d1620ea1ab15164748e3d2effc46daf4fb428a1ea9178",
+    "tests/negative/test_b_producers_invalid.py": "f213b2655f8f0b5cf74b510f340b7c3ce7c2498da34dc5c543e65657cb921856",
+    "tests/negative/test_b_producers_validation_invalid.py": "5b35563bf872a0a3d07e5e57814373b02958bf0ef9909c7f81eed245476e7c32",
+    "tests/fixtures/wp01b/x2/support.py": "009277e90be20192ead25aadb1529937718231f691e23fcce7aaf2ed18ba7fe2",
+    "tests/fixtures/wp01b/x2/contracts.json": "469949ec6edb3c6860c2be0dfb215025b7b9c7b678ef574dff4651c87405e8fa"
+  }
+}

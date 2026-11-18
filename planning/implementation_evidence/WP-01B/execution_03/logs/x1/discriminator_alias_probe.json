@@ -1,0 +1,16 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "-c",
+    "from typing import Annotated\nfrom pydantic import Discriminator, Tag\nclass A: pass\nclass B: pass\ndef tag(v: object) -> str: return \"a\"\ntype U = Annotated[Annotated[A, Tag(\"a\")] | Annotated[B, Tag(\"b\")], Discriminator(tag)]\n"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "recorded_at": "2026-11-17T17:04:35.622794+00:00",
+  "exit_code": 2,
+  "stdout": "",
+  "stderr": "usage: mypy [-h] [-v] [-V] [more options; see below]\n            [-m MODULE] [-p PACKAGE] [-c PROGRAM_TEXT] [files ...]\nmypy: error: May only specify one of: module/package, files, or command.\n"
+}

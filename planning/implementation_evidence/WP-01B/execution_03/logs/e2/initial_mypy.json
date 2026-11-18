@@ -1,0 +1,16 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "scripts/generate_schemas.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_utc": "2026-11-17T18:09:45.004197+00:00",
+  "finished_utc": "2026-11-17T18:09:45.466696+00:00",
+  "exit_code": 1,
+  "stdout": "scripts/generate_schemas.py:22: error: Library stubs not installed for \"jsonschema\"  [import-untyped]\nscripts/generate_schemas.py:22: note: Hint: \"python3 -m pip install types-jsonschema\"\nscripts/generate_schemas.py:22: note: (or run \"mypy --install-types\" to install all missing stub packages)\nscripts/generate_schemas.py:25: error: Skipping analyzing \"jimu_runtime.domain\": module is installed, but missing library stubs or py.typed marker  [import-untyped]\nscripts/generate_schemas.py:39: error: Skipping analyzing \"jimu_runtime.domain.definitions\": module is installed, but missing library stubs or py.typed marker  [import-untyped]\nscripts/generate_schemas.py:39: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports\nscripts/generate_schemas.py:47: error: Skipping analyzing \"jimu_runtime.domain.fact_schemas\": module is installed, but missing library stubs or py.typed marker  [import-untyped]\nscripts/generate_schemas.py:48: error: Skipping analyzing \"jimu_runtime.domain.runtime\": module is installed, but missing library stubs or py.typed marker  [import-untyped]\nscripts/generate_schemas.py:49: error: Skipping analyzing \"jimu_runtime.domain.validation\": module is installed, but missing library stubs or py.typed marker  [import-untyped]\nscripts/generate_schemas.py:485: error: \"object\" not callable  [operator]\nFound 7 errors in 1 file (checked 1 source file)\n",
+  "stderr": ""
+}

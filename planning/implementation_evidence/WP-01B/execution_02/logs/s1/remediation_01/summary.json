@@ -1,0 +1,27 @@
+{
+  "finding": "Primary strict instance-revalidation data loss",
+  "status": "FIXED_PENDING_PRIMARY_REVIEW",
+  "changed_files": [
+    "src/jimu_runtime/domain/definition_support.py",
+    "tests/negative/test_b_ontology_invalid.py"
+  ],
+  "baseline": "c25bef668136acc651e7313ba608ec6fdefd39a5",
+  "test_results": {
+    "before": "8 failed, 1 passed, 80 deselected (focused regression only)",
+    "after": "133 passed, 0 failed/errors/skipped (complete S1 targeted suite)",
+    "before_log": "01_regression_before.json",
+    "before_junit": "01_regression_before.xml",
+    "after_log": "03_pytest.json",
+    "after_junit": "03_junit.xml"
+  },
+  "static": {
+    "ruff": "04_ruff_check.json",
+    "mypy": "05_mypy.json",
+    "format": "06_ruff_format_check.json",
+    "schemas": "07_schema_audit.json",
+    "generated_schemas": 34
+  },
+  "runtime": "RUNTIME_NOT_RUN",
+  "dependencies_changed": false,
+  "ownership_released": true
+}

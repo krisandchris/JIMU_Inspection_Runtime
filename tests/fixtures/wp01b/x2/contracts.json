@@ -1,0 +1,1085 @@
+{
+  "question": {
+    "declaration_id": "question.primary",
+    "scope": "object",
+    "profile_ref": {
+      "artifact_kind": "profile",
+      "artifact_id": "fixture",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "producer_kind": "vlm_question",
+    "producer_id": "fixture",
+    "producer_version": "1.0.0",
+    "producer": {
+      "producer_kind": "vlm_question",
+      "question_ref": {
+        "artifact_kind": "question",
+        "artifact_id": "fixture",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    "output_name": "primary",
+    "fact_key": "parked",
+    "fact_schema_ref": {
+      "artifact_kind": "fact_schema",
+      "artifact_id": "fixture",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "cardinality": "exactly_one",
+    "activation_condition": {
+      "mode": "always"
+    }
+  },
+  "tool": {
+    "declaration_id": "tool.relation",
+    "scope": "object",
+    "profile_ref": {
+      "artifact_kind": "profile",
+      "artifact_id": "fixture",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "producer_kind": "tool",
+    "producer_id": "fixture",
+    "producer_version": "1.0.0",
+    "producer": {
+      "producer_kind": "tool",
+      "tool_plan_ref": {
+        "artifact_kind": "tool_plan",
+        "artifact_id": "fixture",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "step_id": "measure",
+      "tool_ref": {
+        "artifact_kind": "tool",
+        "artifact_id": "fixture",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    "output_name": "relation",
+    "fact_key": "relation.state",
+    "fact_schema_ref": {
+      "artifact_kind": "fact_schema",
+      "artifact_id": "fixture",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "cardinality": "exactly_one",
+    "activation_condition": {
+      "mode": "tool_condition",
+      "condition_ast": {
+        "kind": "all",
+        "arguments": [
+          {
+            "kind": "literal",
+            "constant": {
+              "type_definition": {
+                "kind": "bool"
+              },
+              "value": {
+                "kind": "bool",
+                "value": true
+              }
+            }
+          },
+          {
+            "kind": "not",
+            "argument": {
+              "kind": "literal",
+              "constant": {
+                "type_definition": {
+                  "kind": "bool"
+                },
+                "value": {
+                  "kind": "bool",
+                  "value": false
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "system_object": {
+    "declaration_id": "system.context",
+    "scope": "object",
+    "profile_ref": {
+      "artifact_kind": "profile",
+      "artifact_id": "fixture",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "producer_kind": "system",
+    "producer_id": "system-context",
+    "producer_version": "1.0.0",
+    "producer": {
+      "producer_kind": "system",
+      "requirement": {
+        "family": "system_fact_producer",
+        "capability_id": "system-context",
+        "contract_version": "1.0.0",
+        "allowed_implementation_versions": [
+          "1.2.0"
+        ],
+        "required_features": []
+      }
+    },
+    "output_name": "context",
+    "fact_key": "system.context",
+    "fact_schema_ref": {
+      "artifact_kind": "fact_schema",
+      "artifact_id": "fixture",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "cardinality": "zero_or_one",
+    "activation_condition": {
+      "mode": "tool_condition",
+      "condition_ast": {
+        "kind": "all",
+        "arguments": [
+          {
+            "kind": "literal",
+            "constant": {
+              "type_definition": {
+                "kind": "bool"
+              },
+              "value": {
+                "kind": "bool",
+                "value": true
+              }
+            }
+          },
+          {
+            "kind": "not",
+            "argument": {
+              "kind": "literal",
+              "constant": {
+                "type_definition": {
+                  "kind": "bool"
+                },
+                "value": {
+                  "kind": "bool",
+                  "value": false
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "system_execution": {
+    "declaration_id": "system.execution",
+    "scope": "execution",
+    "producer_kind": "system",
+    "producer_id": "system-context",
+    "producer_version": "1.0.0",
+    "producer": {
+      "producer_kind": "system",
+      "requirement": {
+        "family": "system_fact_producer",
+        "capability_id": "system-context",
+        "contract_version": "1.0.0",
+        "allowed_implementation_versions": [
+          "1.2.0"
+        ],
+        "required_features": []
+      }
+    },
+    "output_name": "execution.context",
+    "fact_key": "execution.context",
+    "fact_schema_ref": {
+      "artifact_kind": "fact_schema",
+      "artifact_id": "execution-schema",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "cardinality": "exactly_one",
+    "activation_condition": {
+      "mode": "tool_condition",
+      "condition_ast": {
+        "kind": "all",
+        "arguments": [
+          {
+            "kind": "literal",
+            "constant": {
+              "type_definition": {
+                "kind": "bool"
+              },
+              "value": {
+                "kind": "bool",
+                "value": true
+              }
+            }
+          },
+          {
+            "kind": "not",
+            "argument": {
+              "kind": "literal",
+              "constant": {
+                "type_definition": {
+                  "kind": "bool"
+                },
+                "value": {
+                  "kind": "bool",
+                  "value": false
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "literal_true": {
+    "kind": "literal",
+    "constant": {
+      "type_definition": {
+        "kind": "bool"
+      },
+      "value": {
+        "kind": "bool",
+        "value": true
+      }
+    }
+  },
+  "literal_false": {
+    "kind": "literal",
+    "constant": {
+      "type_definition": {
+        "kind": "bool"
+      },
+      "value": {
+        "kind": "bool",
+        "value": false
+      }
+    }
+  },
+  "catalogue": {
+    "schema_version": "1.0.0",
+    "catalogue_id": "fixture.catalogue",
+    "version": "1.0.0",
+    "declarations": [
+      {
+        "declaration_id": "question.primary",
+        "scope": "object",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "producer_kind": "vlm_question",
+        "producer_id": "fixture",
+        "producer_version": "1.0.0",
+        "producer": {
+          "producer_kind": "vlm_question",
+          "question_ref": {
+            "artifact_kind": "question",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "output_name": "primary",
+        "fact_key": "parked",
+        "fact_schema_ref": {
+          "artifact_kind": "fact_schema",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "cardinality": "exactly_one",
+        "activation_condition": {
+          "mode": "always"
+        }
+      },
+      {
+        "declaration_id": "tool.relation",
+        "scope": "object",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "producer_kind": "tool",
+        "producer_id": "fixture",
+        "producer_version": "1.0.0",
+        "producer": {
+          "producer_kind": "tool",
+          "tool_plan_ref": {
+            "artifact_kind": "tool_plan",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "step_id": "measure",
+          "tool_ref": {
+            "artifact_kind": "tool",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "output_name": "relation",
+        "fact_key": "relation.state",
+        "fact_schema_ref": {
+          "artifact_kind": "fact_schema",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "cardinality": "exactly_one",
+        "activation_condition": {
+          "mode": "tool_condition",
+          "condition_ast": {
+            "kind": "all",
+            "arguments": [
+              {
+                "kind": "literal",
+                "constant": {
+                  "type_definition": {
+                    "kind": "bool"
+                  },
+                  "value": {
+                    "kind": "bool",
+                    "value": true
+                  }
+                }
+              },
+              {
+                "kind": "not",
+                "argument": {
+                  "kind": "literal",
+                  "constant": {
+                    "type_definition": {
+                      "kind": "bool"
+                    },
+                    "value": {
+                      "kind": "bool",
+                      "value": false
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "declaration_id": "system.context",
+        "scope": "object",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "producer_kind": "system",
+        "producer_id": "system-context",
+        "producer_version": "1.0.0",
+        "producer": {
+          "producer_kind": "system",
+          "requirement": {
+            "family": "system_fact_producer",
+            "capability_id": "system-context",
+            "contract_version": "1.0.0",
+            "allowed_implementation_versions": [
+              "1.2.0"
+            ],
+            "required_features": []
+          }
+        },
+        "output_name": "context",
+        "fact_key": "system.context",
+        "fact_schema_ref": {
+          "artifact_kind": "fact_schema",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "cardinality": "zero_or_one",
+        "activation_condition": {
+          "mode": "tool_condition",
+          "condition_ast": {
+            "kind": "all",
+            "arguments": [
+              {
+                "kind": "literal",
+                "constant": {
+                  "type_definition": {
+                    "kind": "bool"
+                  },
+                  "value": {
+                    "kind": "bool",
+                    "value": true
+                  }
+                }
+              },
+              {
+                "kind": "not",
+                "argument": {
+                  "kind": "literal",
+                  "constant": {
+                    "type_definition": {
+                      "kind": "bool"
+                    },
+                    "value": {
+                      "kind": "bool",
+                      "value": false
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "declaration_id": "system.execution",
+        "scope": "execution",
+        "producer_kind": "system",
+        "producer_id": "system-context",
+        "producer_version": "1.0.0",
+        "producer": {
+          "producer_kind": "system",
+          "requirement": {
+            "family": "system_fact_producer",
+            "capability_id": "system-context",
+            "contract_version": "1.0.0",
+            "allowed_implementation_versions": [
+              "1.2.0"
+            ],
+            "required_features": []
+          }
+        },
+        "output_name": "execution.context",
+        "fact_key": "execution.context",
+        "fact_schema_ref": {
+          "artifact_kind": "fact_schema",
+          "artifact_id": "execution-schema",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "cardinality": "exactly_one",
+        "activation_condition": {
+          "mode": "tool_condition",
+          "condition_ast": {
+            "kind": "all",
+            "arguments": [
+              {
+                "kind": "literal",
+                "constant": {
+                  "type_definition": {
+                    "kind": "bool"
+                  },
+                  "value": {
+                    "kind": "bool",
+                    "value": true
+                  }
+                }
+              },
+              {
+                "kind": "not",
+                "argument": {
+                  "kind": "literal",
+                  "constant": {
+                    "type_definition": {
+                      "kind": "bool"
+                    },
+                    "value": {
+                      "kind": "bool",
+                      "value": false
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "registration": {
+    "ref": {
+      "artifact_kind": "fact_producer_catalog",
+      "artifact_id": "fixture.catalogue",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "definition": {
+      "schema_version": "1.0.0",
+      "catalogue_id": "fixture.catalogue",
+      "version": "1.0.0",
+      "declarations": [
+        {
+          "declaration_id": "question.primary",
+          "scope": "object",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "producer_kind": "vlm_question",
+          "producer_id": "fixture",
+          "producer_version": "1.0.0",
+          "producer": {
+            "producer_kind": "vlm_question",
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "output_name": "primary",
+          "fact_key": "parked",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "cardinality": "exactly_one",
+          "activation_condition": {
+            "mode": "always"
+          }
+        },
+        {
+          "declaration_id": "tool.relation",
+          "scope": "object",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "producer_kind": "tool",
+          "producer_id": "fixture",
+          "producer_version": "1.0.0",
+          "producer": {
+            "producer_kind": "tool",
+            "tool_plan_ref": {
+              "artifact_kind": "tool_plan",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "step_id": "measure",
+            "tool_ref": {
+              "artifact_kind": "tool",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "output_name": "relation",
+          "fact_key": "relation.state",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "cardinality": "exactly_one",
+          "activation_condition": {
+            "mode": "tool_condition",
+            "condition_ast": {
+              "kind": "all",
+              "arguments": [
+                {
+                  "kind": "literal",
+                  "constant": {
+                    "type_definition": {
+                      "kind": "bool"
+                    },
+                    "value": {
+                      "kind": "bool",
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "kind": "not",
+                  "argument": {
+                    "kind": "literal",
+                    "constant": {
+                      "type_definition": {
+                        "kind": "bool"
+                      },
+                      "value": {
+                        "kind": "bool",
+                        "value": false
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "declaration_id": "system.context",
+          "scope": "object",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "producer_kind": "system",
+          "producer_id": "system-context",
+          "producer_version": "1.0.0",
+          "producer": {
+            "producer_kind": "system",
+            "requirement": {
+              "family": "system_fact_producer",
+              "capability_id": "system-context",
+              "contract_version": "1.0.0",
+              "allowed_implementation_versions": [
+                "1.2.0"
+              ],
+              "required_features": []
+            }
+          },
+          "output_name": "context",
+          "fact_key": "system.context",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "cardinality": "zero_or_one",
+          "activation_condition": {
+            "mode": "tool_condition",
+            "condition_ast": {
+              "kind": "all",
+              "arguments": [
+                {
+                  "kind": "literal",
+                  "constant": {
+                    "type_definition": {
+                      "kind": "bool"
+                    },
+                    "value": {
+                      "kind": "bool",
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "kind": "not",
+                  "argument": {
+                    "kind": "literal",
+                    "constant": {
+                      "type_definition": {
+                        "kind": "bool"
+                      },
+                      "value": {
+                        "kind": "bool",
+                        "value": false
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "declaration_id": "system.execution",
+          "scope": "execution",
+          "producer_kind": "system",
+          "producer_id": "system-context",
+          "producer_version": "1.0.0",
+          "producer": {
+            "producer_kind": "system",
+            "requirement": {
+              "family": "system_fact_producer",
+              "capability_id": "system-context",
+              "contract_version": "1.0.0",
+              "allowed_implementation_versions": [
+                "1.2.0"
+              ],
+              "required_features": []
+            }
+          },
+          "output_name": "execution.context",
+          "fact_key": "execution.context",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "execution-schema",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "cardinality": "exactly_one",
+          "activation_condition": {
+            "mode": "tool_condition",
+            "condition_ast": {
+              "kind": "all",
+              "arguments": [
+                {
+                  "kind": "literal",
+                  "constant": {
+                    "type_definition": {
+                      "kind": "bool"
+                    },
+                    "value": {
+                      "kind": "bool",
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "kind": "not",
+                  "argument": {
+                    "kind": "literal",
+                    "constant": {
+                      "type_definition": {
+                        "kind": "bool"
+                      },
+                      "value": {
+                        "kind": "bool",
+                        "value": false
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "context": {
+    "profiles": [
+      {
+        "registration_kind": "profile",
+        "ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "profile_id": "fixture",
+          "version": "1.0.0",
+          "entity_ref": {
+            "artifact_kind": "entity",
+            "artifact_id": "synthetic",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "discovery_binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "discovery",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "grounding_binding": {
+            "kind": "model",
+            "model_binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "grounding",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          },
+          "observation_binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "observation",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "facet_refs": [],
+          "question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "question_selection_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "question_selection",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "rule_set_refs": [],
+          "tool_plan_ref": {
+            "artifact_kind": "tool_plan",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "applicability_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "applicability",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      }
+    ],
+    "questions": [
+      {
+        "ref": {
+          "artifact_kind": "question",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "question_id": "fixture",
+          "version": "1.0.0",
+          "objective": "Synthetic observation objective",
+          "prompt_template_ref": {
+            "artifact_kind": "prompt_template",
+            "artifact_id": "synthetic.prompt",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "facet_refs": [
+            {
+              "artifact_kind": "facet",
+              "artifact_id": "synthetic.facet",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "context_allowlist": [],
+          "primary_fact_key": "parked",
+          "primary_fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "evidence_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "evidence",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "unknown_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "unknown",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "validation_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "question_validation",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      }
+    ],
+    "plans": [
+      {
+        "ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "tool_plan_id": "fixture",
+          "version": "1.0.0",
+          "steps": [
+            {
+              "step_id": "measure",
+              "tool_ref": {
+                "artifact_kind": "tool",
+                "artifact_id": "fixture",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "depends_on": [],
+              "input_bindings": [],
+              "fact_output_mappings": [
+                {
+                  "output_name": "relation",
+                  "target_fact_key": "relation.state"
+                }
+              ],
+              "requirement": "required",
+              "failure_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "execution",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "skip_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "skip",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "tools": [
+      {
+        "ref": {
+          "artifact_kind": "tool",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "tool_id": "fixture",
+          "version": "1.0.0",
+          "tool_type": "geometry",
+          "provider_kind": "builtin",
+          "input_schema_ref": {
+            "artifact_kind": "tool_input_schema",
+            "artifact_id": "input",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "output_schema_ref": {
+            "artifact_kind": "tool_output_schema",
+            "artifact_id": "output",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "resource_requirements_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "resources",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "execution_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "execution",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "evidence_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "evidence",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "implementation_requirement": {
+            "family": "tool_implementation",
+            "capability_id": "geometry-worker",
+            "contract_version": "1.0.0",
+            "allowed_implementation_versions": [
+              "1.2.0"
+            ],
+            "required_features": [
+              "geometry_output"
+            ]
+          },
+          "capability_tags": [
+            "geometry"
+          ],
+          "fact_outputs": [
+            {
+              "output_name": "relation",
+              "fact_key": "relation.state",
+              "fact_schema_ref": {
+                "artifact_kind": "fact_schema",
+                "artifact_id": "fixture",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "scope": "object",
+              "required": true,
+              "value_path": []
+            }
+          ]
+        }
+      }
+    ],
+    "policies": [
+      {
+        "ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "skip",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact": {
+          "schema_version": "1.0.0",
+          "policy_id": "skip",
+          "version": "1.0.0",
+          "policy": {
+            "policy_kind": "tool_skip",
+            "condition_ast": {
+              "kind": "all",
+              "arguments": [
+                {
+                  "kind": "literal",
+                  "constant": {
+                    "type_definition": {
+                      "kind": "bool"
+                    },
+                    "value": {
+                      "kind": "bool",
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "kind": "not",
+                  "argument": {
+                    "kind": "literal",
+                    "constant": {
+                      "type_definition": {
+                        "kind": "bool"
+                      },
+                      "value": {
+                        "kind": "bool",
+                        "value": false
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "on_false": "skip_with_reason",
+            "on_unknown": "block",
+            "on_missing_input": "block"
+          }
+        }
+      }
+    ],
+    "system_capabilities": [
+      {
+        "registry_id": "synthetic-host",
+        "family": "system_fact_producer",
+        "capability_id": "system-context",
+        "contract_version": "1.0.0",
+        "available_implementation_versions": [
+          "1.2.0"
+        ],
+        "supported_features": []
+      }
+    ],
+    "condition_contexts": []
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "scope": "X3 stage1 finite input contracts only",
+  "status": "DELIVERED_PENDING_PRIMARY_REVIEW",
+  "tests": {
+    "passed": 29,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit": "stage1_pytest_second.xml"
+  },
+  "static": {
+    "ruff_check_exit": 0,
+    "ruff_format_check_exit": 0,
+    "mypy_one_owned_source_exit": 0
+  },
+  "schemas": "Both public input roots Draft202012 meta-validated, valid JSON and roundtrips; required/null/extra rejection tested",
+  "combination_validator": "NOT_IMPLEMENTED_WAITING_X2_VALIDATOR_HANDOFF",
+  "producer_authority_admission": "NOT_ESTABLISHED",
+  "runtime_acceptance": "N/A",
+  "runtime_evidence": "RUNTIME_NOT_RUN",
+  "preserved_initial_failures": [
+    "Ruff style findings before format",
+    "pytest collection error from duplicate test basename; unit file renamed within owned prefix"
+  ],
+  "source_write_released": true
+}

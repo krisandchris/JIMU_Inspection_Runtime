@@ -1,0 +1,309 @@
+--- scripts/generate_schemas.py
++++ scripts/generate_schemas.py
+@@ -1,4 +1,4 @@
+-"""Engineering Schema export of implemented contracts; PARTIAL_D01_BLOCKED."""
++"""Engineering Schema inventory of complete WP01B contracts; no runtime admission proof."""
+ 
+ import sys
+ 
+@@ -23,11 +23,14 @@
+     from pydantic import TypeAdapter
+ 
+     from jimu_runtime.domain import (
++        conditions,
++        definition_enums,
+         definition_support,
+         enums,
+         fact_selectors,
+         policies,
+         primitives,
++        producers,
+         references,
+         schema_types,
+         tool_mappings,
+@@ -46,8 +49,11 @@
+     from jimu_runtime.domain.validation import authority as authority_checks
+     from jimu_runtime.domain.validation import (
+         authority_inputs,
++        condition_inputs,
+         definition_inputs,
+         issues,
++        producer_authority_inputs,
++        producer_inputs,
+         review_inputs,
+         tool_plans,
+     )
+@@ -59,7 +65,7 @@
+         "foundation",
+         "definition_root",
+         "runtime_root",
+-        "partial_policy_root",
++        "definition_component",
+         "named_union",
+         "nonpersistent_input",
+         "nonpersistent_output",
+@@ -103,6 +109,14 @@
+         ),
+         *_group(values, "Value TypeDefinition", "named_union"),
+         *_group(
++            definition_enums,
++            "ConditionInputDomain ComparisonOperator ProducerCardinality",
++            "foundation",
++        ),
++        *_group(conditions, "ConditionExpr", "named_union"),
++        *_group(conditions, "LocalToolFactSelector", "nonpersistent_input"),
++        *_group(conditions, "ConditionReferences", "nonpersistent_output"),
++        *_group(
+             definition_support,
+             "UTCDateTime FieldPath ReviewReportRef ExternalCapabilityRequirement VocabularyMemberRef VersionConstraint ContextFieldSelector AssetDimensions",
+             "nonpersistent_input",
+@@ -133,6 +147,10 @@
+             "named_union",
+         ),
+         *_group(fact_selectors, "FactSelector", "nonpersistent_input"),
++        *_group(fact_selectors, "ProducerCatalogueContentRef", "foundation"),
++        *_group(producers, "ProducerCatalogue", "definition_root"),
++        *_group(producers, "FactProducerDeclaration", "definition_component"),
++        *_group(producers, "Producer ActivationCondition", "named_union"),
+         *_group(fact_selectors, "ProducerSelector", "named_union"),
+         *_group(schema_types, "FieldSelector ResolvedFieldType", "nonpersistent_input"),
+         *_group(schema_types, "SchemaDescriptor", "named_union"),
+@@ -144,12 +162,12 @@
+         *_group(review_inputs, "ReviewScope ReviewAssessment", "named_union"),
+         *_group(
+             policies,
+-            "QuestionSelectionPolicyArtifact UnknownPolicyArtifact QuestionValidationPolicyArtifact EvidencePolicyArtifact ToolExecutionPolicyArtifact ToolFailurePolicyArtifact ResourceRequirementsArtifact ProviderPolicyArtifact FallbackPolicyArtifact RulePolicyArtifact ConflictPolicyArtifact CoveragePolicyArtifact ContextProvenancePolicyArtifact ExecutionPolicyArtifact",
+-            "partial_policy_root",
++            "QuestionSelectionPolicyArtifact UnknownPolicyArtifact QuestionValidationPolicyArtifact EvidencePolicyArtifact ToolExecutionPolicyArtifact ToolFailurePolicyArtifact ResourceRequirementsArtifact ProviderPolicyArtifact FallbackPolicyArtifact RulePolicyArtifact ConflictPolicyArtifact CoveragePolicyArtifact ContextProvenancePolicyArtifact ExecutionPolicyArtifact ApplicabilityPolicyArtifact ToolSkipPolicyArtifact",
++            "definition_root",
+         ),
+         *_group(
+             policies,
+-            "ResourceRequirements ProviderPolicy FallbackPolicy SelectionCallPolicy NonExpressionPolicyArtifact",
++            "ResourceRequirements ProviderPolicy FallbackPolicy SelectionCallPolicy NonExpressionPolicyArtifact PolicyArtifact",
+             "named_union",
+         ),
+         *_group(
+@@ -158,6 +176,23 @@
+             "nonpersistent_input",
+         ),
+         *_group(tool_plans, "ToolRegistration", "nonpersistent_input"),
++        *_group(
++            producer_inputs,
++            "ProducerCatalogueRegistration SystemCapabilityRegistration ProducerValidationContext ProducerCatalogueContext",
++            "nonpersistent_input",
++        ),
++        *_group(
++            producer_authority_inputs,
++            "ExecutionDefinitionPin ProducerAuthorityValidationInput",
++            "nonpersistent_input",
++        ),
++        *_group(
++            condition_inputs,
++            "ApplicabilityConditionContext ToolStepGuardConditionContext ProducerActivationConditionContext",
++            "nonpersistent_input",
++        ),
++        *_group(condition_inputs, "ConditionReferenceContext", "named_union"),
++        *_group(condition_inputs, "ConditionReferenceResult", "nonpersistent_output"),
+         *_group(
+             facts,
+             "KnownFact UnknownFact ErrorFact NotApplicableFact NotEvaluatedFact",
+@@ -206,16 +241,16 @@
+         "utc": "Schema states normalized UTC lexical support; Pydantic checks calendar/aware semantics. No leap-second support; -00:00 provenance is not normalized away.",
+         "bytes": "Nonpersistent candidate/snapshot bytes are Python inputs, not a specified JSON byte-transport or semantic roundtrip protocol.",
+         "taint": "Constructed/copied-instance revalidation and deep immutability require Pydantic checks, not JSON Schema alone.",
+-        "relations": "Finite reference/type/policy/history checks are separate. Schemas do not prove model calls, Producer rights, external history or Bundle admission.",
++        "relations": "Finite reference/policy/Producer/history checks are separate from shape validation. Schemas do not prove expression typing, condition truth, model calls, runtime authority, external authenticity/history completeness or Release/Bundle admission.",
+         "digest": "Engineering file SHA256 is not RFC8785 child projection or parent/Bundle digest; F1 owns value_schema derivation.",
+     }
+     DEFERRED_GROUPS = (
+-        "ApplicabilityPolicy expression contract",
+-        "ToolSkipPolicy expression contract",
+-        "PolicyArtifact complete union",
+-        "FactProducerDeclaration",
+-        "ProducerCatalogue",
+-        "full_authority_admission",
++        "expression TypeChecker",
++        "RuleDefinition and Rule evaluation",
++        "dynamic condition activation",
++        "Release and Bundle admission",
++        "external authenticity and history completeness",
++        "consumer-ready runtime authority",
+     )
+ 
+     def _json_bytes(value: object) -> bytes:
+@@ -318,7 +353,7 @@
+         rendered["index.json"] = _json_bytes(
+             {
+                 "schema_version": "1.0.0",
+-                "status": "PARTIAL_D01_BLOCKED",
++                "status": "COMPLETE_WP01B_CONTRACTS",
+                 "export_kind": "engineering_pydantic_schemas",
+                 "generation": {
+                     "mode": "validation",
+@@ -414,7 +449,7 @@
+         print(
+             "Schema export matches"
+             if args.check
+-            else "Schema export written; PARTIAL_D01_BLOCKED"
++            else "Schema export written; COMPLETE_WP01B_CONTRACTS"
+         )
+         return 0
+ 
+--- tests/contract/test_b_schema_inventory.py
++++ tests/contract/test_b_schema_inventory.py
+@@ -106,10 +106,10 @@
+     }
+ 
+ 
+-def test_generated_inventory_is_partial_exact_and_self_consistent() -> None:
++def test_generated_inventory_is_complete_exact_and_self_consistent() -> None:
+     rendered = exporter.render_exports()
+     index = json.loads(rendered["index.json"])
+-    assert index["status"] == "PARTIAL_D01_BLOCKED"
++    assert index["status"] == "COMPLETE_WP01B_CONTRACTS"
+     assert index["generation"] == {
+         "mode": "validation",
+         "by_alias": True,
+@@ -132,14 +132,25 @@
+         item["source_symbol"].endswith(".NonExpressionPolicyArtifact")
+         for item in index["schemas"]
+     )
+-    assert not any(
++    assert any(
+         item["source_symbol"].endswith(".PolicyArtifact") for item in index["schemas"]
+     )
+-    assert {
++    assert not {
++        "ApplicabilityPolicy expression contract",
++        "ToolSkipPolicy expression contract",
++        "PolicyArtifact complete union",
+         "FactProducerDeclaration",
+         "ProducerCatalogue",
+         "full_authority_admission",
+-    } <= set(index["deferred_groups"])
++    } & set(index["deferred_groups"])
++    assert set(index["deferred_groups"]) == {
++        "expression TypeChecker",
++        "RuleDefinition and Rule evaluation",
++        "dynamic condition activation",
++        "Release and Bundle admission",
++        "external authenticity and history completeness",
++        "consumer-ready runtime authority",
++    }
+     for item in index["schemas"]:
+         encoded = rendered[item["filename"]]
+         assert hashlib.sha256(encoded).hexdigest() == item["sha256"]
+@@ -208,3 +219,92 @@
+     assert Draft202012Validator(schema).is_valid("2026-02-30T00:00:00Z")
+     with pytest.raises(ValidationError):
+         TypeAdapter(UTCDateTime).validate_json('"2026-02-30T00:00:00Z"')
++
++
++def test_explicit_x1_to_x4_inventory_and_component_roles() -> None:
++    # Independent expected public API names: do not derive this set from INVENTORY.
++    expected = {
++        "conditions.ConditionExpr",
++        "conditions.LocalToolFactSelector",
++        "conditions.ConditionReferences",
++        "definition_enums.ConditionInputDomain",
++        "definition_enums.ComparisonOperator",
++        "definition_enums.ProducerCardinality",
++        "fact_selectors.ProducerCatalogueContentRef",
++        "policies.ApplicabilityPolicyArtifact",
++        "policies.ToolSkipPolicyArtifact",
++        "policies.PolicyArtifact",
++        "policies.NonExpressionPolicyArtifact",
++        "producers.FactProducerDeclaration",
++        "producers.ProducerCatalogue",
++        "producers.Producer",
++        "producers.ActivationCondition",
++        "validation.producer_inputs.ProducerCatalogueRegistration",
++        "validation.producer_inputs.SystemCapabilityRegistration",
++        "validation.producer_inputs.ProducerValidationContext",
++        "validation.producer_inputs.ProducerCatalogueContext",
++        "validation.producer_authority_inputs.ExecutionDefinitionPin",
++        "validation.producer_authority_inputs.ProducerAuthorityValidationInput",
++        "validation.condition_inputs.ApplicabilityConditionContext",
++        "validation.condition_inputs.ToolStepGuardConditionContext",
++        "validation.condition_inputs.ProducerActivationConditionContext",
++        "validation.condition_inputs.ConditionReferenceContext",
++        "validation.condition_inputs.ConditionReferenceResult",
++        "validation.definition_inputs.DefinitionRegistration",
++        "validation.definition_inputs.DefinitionValidationInput",
++    }
++    entries = {
++        entry.source_symbol.removeprefix("jimu_runtime.domain."): entry
++        for entry in exporter.INVENTORY
++    }
++    assert expected <= entries.keys(), expected - entries.keys()
++    assert entries["producers.FactProducerDeclaration"].role == "definition_component"
++    assert entries["producers.ProducerCatalogue"].role == "definition_root"
++    for name in ("ApplicabilityPolicyArtifact", "ToolSkipPolicyArtifact"):
++        assert entries["policies." + name].role == "definition_root"
++
++
++def test_complete_exported_unions_preserve_their_actual_branch_counts() -> None:
++    rendered = exporter.render_exports()
++    for filename, count in (
++        ("conditions.ConditionExpr.schema.json", 10),
++        ("policies.PolicyArtifact.schema.json", 16),
++        ("policies.NonExpressionPolicyArtifact.schema.json", 14),
++        ("producers.Producer.schema.json", 3),
++        ("producers.ActivationCondition.schema.json", 2),
++        ("validation.condition_inputs.ConditionReferenceContext.schema.json", 3),
++    ):
++        document = json.loads(rendered[filename])
++        union = document
++        if "$ref" in union:
++            # Recursive PEP 695 aliases may retain a root-local definition ref.
++            reference = union["$ref"]
++            assert reference.startswith("#/$defs/")
++            union = document["$defs"][reference.removeprefix("#/$defs/")]
++        keyword = (
++            "anyOf" if "NonExpressionPolicyArtifact" in filename else "oneOf"
++        )
++        assert len(union[keyword]) == count
++
++
++@pytest.mark.parametrize("kind", ["applicability", "tool_skip"])
++def test_exported_expression_policy_fixtures_and_invalid_tag(kind: str) -> None:
++    data = json.loads((ROOT / "tests/fixtures/wp01b/x1/contracts.json").read_text())
++    raw = data["artifacts"][kind]
++    document = json.loads(exporter.render_exports()["policies.PolicyArtifact.schema.json"])
++    validator = Draft202012Validator(document)
++    assert validator.is_valid(raw)
++    del raw["schema_version"]
++    assert not validator.is_valid(raw)
++    raw["schema_version"] = "1.0.0"
++    raw["policy"]["policy_kind"] = "unregistered"
++    assert not validator.is_valid(raw)
++
++
++def test_exported_producer_catalogue_fixture_and_missing_version() -> None:
++    raw = json.loads((ROOT / "tests/fixtures/wp01b/x2/contracts.json").read_text())["catalogue"]
++    document = json.loads(exporter.render_exports()["producers.ProducerCatalogue.schema.json"])
++    validator = Draft202012Validator(document)
++    assert validator.is_valid(raw)
++    del raw["schema_version"]
++    assert not validator.is_valid(raw)
+--- tests/unit/test_b_schema_export.py
++++ tests/unit/test_b_schema_export.py
+@@ -274,3 +274,17 @@
+     before = tree(output)
+     assert exporter.export_schemas(output)
+     assert tree(output) == before
++
++
++def test_new_contract_roots_are_monitored_by_readonly_cli_checks(
++    rendered: dict[str, bytes],
++) -> None:
++    # The existing CLI matrix checks every emitted file, including these new roots.
++    assert {
++        "conditions.ConditionExpr.schema.json",
++        "policies.PolicyArtifact.schema.json",
++        "producers.ProducerCatalogue.schema.json",
++        "validation.producer_authority_inputs.ProducerAuthorityValidationInput.schema.json",
++        "validation.condition_inputs.ConditionReferenceContext.schema.json",
++        "validation.definition_inputs.DefinitionValidationInput.schema.json",
++    } <= rendered.keys()

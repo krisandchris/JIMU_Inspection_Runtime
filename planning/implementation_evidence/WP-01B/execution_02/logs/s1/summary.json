@@ -1,0 +1,49 @@
+{
+  "scope": "S1 frozen contract only; pending Primary review",
+  "baseline": "c25bef668136acc651e7313ba608ec6fdefd39a5",
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "files": [
+    "src/jimu_runtime/domain/definition_enums.py",
+    "src/jimu_runtime/domain/definition_support.py",
+    "src/jimu_runtime/domain/definitions/__init__.py",
+    "src/jimu_runtime/domain/definitions/ontology.py",
+    "src/jimu_runtime/domain/definitions/resources.py",
+    "tests/unit/test_b_support.py",
+    "tests/contract/test_b_ontology.py",
+    "tests/negative/test_b_ontology_invalid.py",
+    "tests/fixtures/wp01b/s1/contracts.json"
+  ],
+  "runtime": "RUNTIME_NOT_RUN",
+  "tests": {
+    "final_command_log": "22_pytest.json",
+    "junit": "22_junit.xml",
+    "passed": 122,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "static_checks": {
+    "ruff": "23_ruff_check.json",
+    "mypy": "24_mypy.json",
+    "format": "25_ruff_format_check.json",
+    "schema": "27_schema_audit_complete.json"
+  },
+  "preserved_failures": [
+    "03_pytest.json",
+    "03_junit.xml",
+    "07_mypy.json",
+    "15_pytest.json",
+    "15_junit.xml"
+  ],
+  "protected_diff": "20_protected_diff.json",
+  "environment": "02_environment.json",
+  "uv": "13_uv_version.json",
+  "lock_modified": false,
+  "limitations": [
+    "No vocabulary membership/domain/content digest validation in S1",
+    "No asset byte/hash/size verification or filesystem/symlink checks",
+    "No Profile/Policy/Producer/Registry/Rule models or execution",
+    "JSON Schema date-time format remains annotation in this CPU lock; explicit zero-offset pattern and Pydantic datetime validation apply",
+    "Full A regression and domain import-boundary integration checks delegated to later authorized integration"
+  ]
+}

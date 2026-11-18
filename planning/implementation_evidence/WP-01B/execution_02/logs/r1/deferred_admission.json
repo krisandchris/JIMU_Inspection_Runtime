@@ -1,0 +1,42 @@
+[
+  {
+    "aggregate_status": "deferred",
+    "report": {
+      "scope": "producer_admission",
+      "checks": [
+        {
+          "check_id": "producer_admission.full",
+          "status": "deferred",
+          "issues": [
+            {
+              "code": "scope.full_admission_deferred",
+              "path": [],
+              "message": "Full admission belongs to later integrated contracts; Registry core cannot establish it.",
+              "related_refs": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "aggregate_status": "deferred",
+    "report": {
+      "scope": "authority_admission",
+      "checks": [
+        {
+          "check_id": "authority_admission.full",
+          "status": "deferred",
+          "issues": [
+            {
+              "code": "scope.full_admission_deferred",
+              "path": [],
+              "message": "Full admission belongs to later integrated contracts; Registry core cannot establish it.",
+              "related_refs": []
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

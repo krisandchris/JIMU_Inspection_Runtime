@@ -1,0 +1,22 @@
+--- src/jimu_runtime/domain/validation/tool_plans.py
++++ src/jimu_runtime/domain/validation/tool_plans.py
+@@ -559,7 +559,7 @@
+             "tool_plan.policy_contents",
+             "deferred",
+             "tool_plan.policy_contents",
+-            "Policy subtype/budgets and failure requirement need Policy catalogue; ToolSkip expression admission remains D01 blocked",
++            "This local API has no complete Policy catalogue; subtype/budget, failure and ToolSkip condition checks require upper-layer finite checks. Actual activation, expression typing, Release admission and external trust are not proven here.",
+         )
+     )
+     checks.append(
+--- src/jimu_runtime/domain/validation/authority.py
++++ src/jimu_runtime/domain/validation/authority.py
+@@ -149,7 +149,7 @@
+         for name, message in (
+             (
+                 "full_authority_admission",
+-                "Full Producer catalogue/declaration existence, activation and production authorization remain deferred D01; no consumer authority is granted.",
++                "This local API has no complete Producer/Policy catalogues; declaration and policy checks require upper-layer finite checks. Actual activation, expression typing, Release admission and external trust are not proven here; no consumer authority is granted.",
+             ),
+             (
+                 "profile_release_admission",

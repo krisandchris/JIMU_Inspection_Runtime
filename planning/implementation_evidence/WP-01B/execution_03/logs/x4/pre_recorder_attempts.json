@@ -1,0 +1,46 @@
+{
+  "notice": "Initial development static checks preceded the subprocess recorder. Tool transcript stdout is retained in conversation; UTC boundaries were not captured and are not reconstructed. Later failures and all final checks have raw JSON stdout/stderr + UTC records.",
+  "attempts": [
+    {
+      "tool_chunk": "69506b",
+      "argv": [
+        ".venv/bin/ruff",
+        "check",
+        "--fix",
+        "src/jimu_runtime/domain/validation/condition_inputs.py",
+        "src/jimu_runtime/domain/validation/conditions.py"
+      ],
+      "exit": 0,
+      "stdout": "Found 2 errors (2 fixed, 0 remaining)."
+    },
+    {
+      "tool_chunk": "69506b",
+      "argv": [
+        ".venv/bin/mypy",
+        "src/jimu_runtime/domain/validation/conditions.py",
+        "src/jimu_runtime/domain/validation/condition_inputs.py"
+      ],
+      "exit": 1,
+      "stdout_summary": "18 errors in conditions.py (generic ref bound, union narrowing, loop-variable reuse, enum/string comparison, lambda inference); raw transcript contains each diagnostic."
+    },
+    {
+      "tool_chunk": "fd6a36",
+      "argv": [
+        ".venv/bin/mypy",
+        "src/jimu_runtime/domain/validation/conditions.py",
+        "src/jimu_runtime/domain/validation/condition_inputs.py"
+      ],
+      "exit": 0,
+      "stdout": "Success: no issues found in 2 source files"
+    },
+    {
+      "tool_chunk": "773e69",
+      "argv": [
+        ".venv/bin/mypy",
+        "src"
+      ],
+      "exit": 1,
+      "stdout": "src/jimu_runtime/domain/validation/definitions.py:1384: error: Incompatible types in assignment (expression has type \"RegionContentRef\", target has type \"tuple[RawDtoSchemaDescriptor | TypedValueSchemaDescriptor | ToolResultSchemaDescriptor | ToolInputRecordDescriptor | SnapshotContextRegistration | RegionContextRegistration | ProfileContextRegistration, ...]\") [assignment]\nsrc/jimu_runtime/domain/validation/definitions.py:1421: error: Argument 1 to \"applicability\" has incompatible type \"jimu_runtime.domain.definitions.capabilities.PolicyContentRef\"; expected \"jimu_runtime.domain.definitions.models.PolicyContentRef\" [arg-type]\nFound 2 errors in 1 file (checked 44 source files)"
+    }
+  ]
+}

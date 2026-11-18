@@ -1,0 +1,230 @@
+{
+  "$defs": {
+    "ContextSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "context_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ContextSchemaRef",
+      "type": "object"
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "ProfileContextRegistration": {
+      "additionalProperties": false,
+      "properties": {
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "const": "profile_metadata",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref",
+        "profile_ref"
+      ],
+      "title": "ProfileContextRegistration",
+      "type": "object"
+    },
+    "RegionContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "region",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RegionContentRef",
+      "type": "object"
+    },
+    "RegionContextRegistration": {
+      "additionalProperties": false,
+      "properties": {
+        "region_ref": {
+          "$ref": "#/$defs/RegionContentRef"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "const": "region_metadata",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref",
+        "region_ref"
+      ],
+      "title": "RegionContextRegistration",
+      "type": "object"
+    },
+    "SnapshotContextRegistration": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "const": "context_snapshot",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref"
+      ],
+      "title": "SnapshotContextRegistration",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "context_snapshot": "#/$defs/SnapshotContextRegistration",
+      "profile_metadata": "#/$defs/ProfileContextRegistration",
+      "region_metadata": "#/$defs/RegionContextRegistration"
+    },
+    "propertyName": "source"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SnapshotContextRegistration"
+    },
+    {
+      "$ref": "#/$defs/RegionContextRegistration"
+    },
+    {
+      "$ref": "#/$defs/ProfileContextRegistration"
+    }
+  ]
+}

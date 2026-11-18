@@ -1,0 +1,24 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "format",
+    "src/jimu_runtime/domain/definition_enums.py",
+    "src/jimu_runtime/domain/definition_support.py",
+    "src/jimu_runtime/domain/definitions/__init__.py",
+    "src/jimu_runtime/domain/definitions/ontology.py",
+    "src/jimu_runtime/domain/definitions/resources.py",
+    "tests/unit/test_b_support.py",
+    "tests/contract/test_b_ontology.py",
+    "tests/negative/test_b_ontology_invalid.py"
+  ],
+  "started_at": "2026-11-17T14:15:03.836897+00:00",
+  "finished_at": "2026-11-17T14:15:03.850167+00:00",
+  "exit_code": 0,
+  "stdout": "1 file reformatted, 7 files left unchanged\n",
+  "stderr": ""
+}

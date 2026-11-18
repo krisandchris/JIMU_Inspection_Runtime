@@ -1,0 +1,15 @@
+# V1 finite Definition relations
+
+Delivery is pending Primary independent code review. This is not complete WP-01B or Definition admission.
+
+Final targeted verification: TEST_PASSED, 76 tests (74 V1 and 2 existing dependency-boundary checks), zero failures/errors/skips. Ruff check, Ruff format check and mypy on both owned source files exited 0. Contract tests executed Draft202012 schema checks, all eleven registration branches, strict identity/instance revalidation, roundtrip and absent-not-null constraints. Exact commands, cwd, UTC start/end and original stdout/stderr are retained in commands.jsonl; final JUnit is pytest_final.xml. after_sha256.json covers both sources, three tests and both fixtures. environment.json records actual interpreter/tool versions and observed lock hash.
+
+Files: validation/definition_inputs.py and definitions.py; three assigned test files; fixtures/wp01b/v1/contracts.json and support.py. No shared Domain source was edited. The public schema inputs are stable and source/test write ownership is released.
+
+Validation uses actual caller-pinned registrations and explicit finite views. It rejects index conflicts before lookup, resolves exact schemas/definitions, validates vocabulary domains/members, Facet intersection and Profile membership, trusted metadata Record constraints, iterative Prompt partial graph/variables/owner/allowlist, capability labels and grounding IO. Tool/Plan/Policy checks delegate to existing B public validators; V1 adapts its known registration discriminator only after strict revalidation rather than loosening base contracts. Nested contexts remain restricted outer views. Missing time prevents Model Policy compatibility, while independent Prompt/ref checks still run. Model-level question metadata never guesses a Question; pre-Object geometry cannot be made available by a schema view. Unowned Tools do not grant their nested models an unrelated current Profile scope.
+
+Reports preserve invalid/incomplete/deferred outcomes by category and status. Diagnostic overflow preserves the bounded original prefix and known-invalid result, explicitly states enumeration is incomplete, and retains deferred boundaries. It never silently truncates into PASS. Caller identity, Schema descriptors and ReviewMetadata are trusted injected assertions; report scopes are resolver associations, not report hash inputs that would create reverse owner digest cycles.
+
+Applicability/ToolSkip content, RuleSet body, complete Producer/Authority admission, mandatory producer completeness, Bundle closure, semantic protocol IO, external authenticity and geometry/asset body checks remain explicit deferred boundaries. Parent artifact bytes, actual report approval/quality, runtime availability, model/tool execution, concurrency, workflow and production readiness are not established. Runtime Acceptance N/A; RUNTIME_NOT_RUN. No Rule AST, compiler/service, persistence or Git publication was added.
+
+Initial failures and before-fix Prompt response evidence remain in findings.json and logs. No test was skipped or weakened to obtain the final result. Whole-WP validation and final acceptance belong to Primary.

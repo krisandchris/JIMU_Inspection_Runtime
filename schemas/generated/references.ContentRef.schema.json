@@ -1,0 +1,77 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "entity",
+        "region",
+        "profile",
+        "facet",
+        "question",
+        "tool",
+        "tool_plan",
+        "rule",
+        "rule_set",
+        "model_binding",
+        "fact_schema",
+        "prompt_template",
+        "response_schema",
+        "attribute_schema",
+        "context_schema",
+        "tool_input_schema",
+        "tool_output_schema",
+        "object_schema",
+        "decision_schema",
+        "value_schema",
+        "policy",
+        "vocabulary",
+        "geometry_resource",
+        "static_asset",
+        "fact_producer_catalog"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "artifact_kind": {
+      "$ref": "#/$defs/ArtifactKind"
+    },
+    "digest": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Digest",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifact_kind",
+    "artifact_id",
+    "version",
+    "digest"
+  ],
+  "title": "ContentRef",
+  "type": "object"
+}

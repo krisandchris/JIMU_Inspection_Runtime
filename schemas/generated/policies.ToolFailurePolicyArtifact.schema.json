@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "ToolFailurePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_failure": {
+          "const": "error",
+          "title": "Fact Failure",
+          "type": "string"
+        },
+        "optional_continuation": {
+          "enum": [
+            "allow_if_consumer_policy",
+            "block"
+          ],
+          "title": "Optional Continuation",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "tool_failure",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "required_descendants": {
+          "const": "block",
+          "title": "Required Descendants",
+          "type": "string"
+        },
+        "requirement": {
+          "enum": [
+            "required",
+            "optional"
+          ],
+          "title": "Requirement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "requirement",
+        "required_descendants",
+        "fact_failure",
+        "optional_continuation"
+      ],
+      "title": "ToolFailurePolicy",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "policy": {
+      "$ref": "#/$defs/ToolFailurePolicy"
+    },
+    "policy_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "policy_id",
+    "version",
+    "policy"
+  ],
+  "title": "ToolFailurePolicyArtifact",
+  "type": "object"
+}

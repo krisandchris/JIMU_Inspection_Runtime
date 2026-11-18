@@ -1,0 +1,25 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "src/jimu_runtime/domain/producers.py",
+    "src/jimu_runtime/domain/validation/producer_inputs.py",
+    "src/jimu_runtime/domain/validation/producers.py",
+    "tests/contract/test_b_producers_contracts.py",
+    "tests/unit/test_b_producers_data.py",
+    "tests/unit/test_b_producers_validation.py",
+    "tests/negative/test_b_producers_invalid.py",
+    "tests/negative/test_b_producers_validation_invalid.py",
+    "tests/fixtures/wp01b/x2/support.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:41:16.675486+00:00",
+  "end": "2026-11-17T17:41:16.688600+00:00",
+  "exit": 1,
+  "stdout": "I001 [*] Import block is un-sorted or un-formatted\n   --> tests/negative/test_b_producers_validation_invalid.py:231:5\n    |\n230 |   def test_model_copy_taint_is_revalidated_before_indexing():\n231 | /     from fixtures.wp01b.x2.support import registry\n232 | |     from jimu_runtime.domain.validation.producer_inputs import (\n233 | |         ProducerCatalogueRegistration,\n234 | |         ProducerValidationContext,\n235 | |     )\n236 | |     from jimu_runtime.domain.validation.producers import validate_producer_catalogue\n    | |____________________________________________________________________________________^\n237 |\n238 |       data = fixture()\n    |\nhelp: Organize imports\n\nFound 1 error.\n[*] 1 fixable with the `--fix` option.\n",
+  "stderr": ""
+}

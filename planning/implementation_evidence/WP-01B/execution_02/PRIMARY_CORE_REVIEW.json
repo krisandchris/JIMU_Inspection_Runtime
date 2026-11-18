@@ -1,0 +1,71 @@
+{
+  "captured_at": "2026-11-17T15:49:50.836409+00:00",
+  "baseline": "c25bef668136acc651e7313ba608ec6fdefd39a5",
+  "reviewer": "Primary Astra",
+  "scope": "Completed D01-independent core modules; V1/E1/integration still pending",
+  "direct_code_review": [
+    "definition_support.py including full instance revalidation and UTC fix",
+    "F1 normalization/projection/canonicalization and actual lock diff",
+    "ontology/resources/capabilities/prompts",
+    "schema_types/tool_mappings/schema_descriptors with diagnostic and owner remediation",
+    "definitions/models.py,tools.py,tool_outputs.py and complete validation/tool_plans.py",
+    "complete policies.py and validation/policies.py with latest exact identity resolvers",
+    "complete fact_schemas/registry.py",
+    "runtime/facts.py,authority.py and authority_inputs.py",
+    "complete runtime/candidates.py and validation/authority.py",
+    "validation/issues.py and actual import boundary test/helper diff"
+  ],
+  "direct_test_review": [
+    "F1 test vectors and positive/negative/schema tests",
+    "S1 extra injection and shared UTC test bodies",
+    "Prompt syntax/capability schema tests",
+    "Registry unit/schema/negative cases",
+    "A1 FactRecord/Authority schema tests and negative-case inventory",
+    "M1 mapping/context tests and typed Registry regression",
+    "P1 Policy schemas/conditional field tests and resolver regressions",
+    "A2 bytes/history tests and independent actual probes"
+  ],
+  "independent_reviews": "Native Sol targeted code/probe results preserved in agent_reviews; no delegate completion equals overall acceptance",
+  "hash_checks": {
+    "logs/o1/after_sha256.json": {
+      "count": 6,
+      "mismatches": {}
+    },
+    "logs/r1/snapshot_final.json": {
+      "count": 7,
+      "mismatches": {}
+    },
+    "logs/reports/snapshot.json": {
+      "count": 7,
+      "mismatches": {}
+    },
+    "logs/shared_utc/after_sha256.json": {
+      "count": 3,
+      "mismatches": {}
+    },
+    "logs/a2/owned_sha256.json": {
+      "count": 7,
+      "mismatches": {}
+    },
+    "logs/m1/remediation_03/after_sha256.json": {
+      "count": 2,
+      "mismatches": {}
+    },
+    "logs/p1/remediation_02/after_sha256.json": {
+      "count": 2,
+      "mismatches": {}
+    },
+    "logs/s2/coverage_refactor/after_sha256.json": {
+      "count": 2,
+      "mismatches": {}
+    }
+  },
+  "remaining": [
+    "V1 Definition relation checks implementation/test/review",
+    "E1 inventory/export implementation/test/review",
+    "current implemented A+B full regression and final evidence sealing",
+    "X1/X2/X3 D01 user scope decision"
+  ],
+  "overall_acceptance": "INCOMPLETE",
+  "runtime": "RUNTIME_NOT_RUN"
+}

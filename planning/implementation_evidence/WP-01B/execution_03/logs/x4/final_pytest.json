@@ -1,0 +1,20 @@
+{
+  "argv": [
+    ".venv/bin/pytest",
+    "-q",
+    "tests/unit/test_b_condition_bindings.py",
+    "tests/contract/test_b_condition_bindings_schema.py",
+    "tests/negative/test_b_condition_bindings_invalid.py",
+    "tests/negative/test_b_definition_conditions_invalid.py",
+    "tests/unit/test_b_definition_relations.py",
+    "tests/contract/test_b_definition_catalogue.py",
+    "tests/negative/test_b_definition_relations_invalid.py",
+    "--junitxml=planning/implementation_evidence/WP-01B/execution_03/logs/x4/final_pytest.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start_utc": "2026-11-17T17:23:45.607271+00:00",
+  "end_utc": "2026-11-17T17:24:01.923976+00:00",
+  "exit_code": 0,
+  "stdout": "........................................................................ [ 57%]\n......................................................                   [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_03/logs/x4/final_pytest.xml -\n126 passed in 16.08s\n",
+  "stderr": ""
+}

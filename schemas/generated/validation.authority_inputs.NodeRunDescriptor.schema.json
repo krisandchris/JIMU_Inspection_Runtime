@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "NodeRunRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "node_run",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "NodeRunRef",
+      "type": "object"
+    },
+    "NodeRunStatus": {
+      "enum": [
+        "pending",
+        "ready",
+        "running",
+        "succeeded",
+        "failed",
+        "blocked",
+        "skipped",
+        "cancelled"
+      ],
+      "title": "NodeRunStatus",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "execution_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "node_id": {
+      "enum": [
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "title": "Node Id",
+      "type": "string"
+    },
+    "node_run_ref": {
+      "$ref": "#/$defs/NodeRunRef"
+    },
+    "status": {
+      "$ref": "#/$defs/NodeRunStatus"
+    }
+  },
+  "required": [
+    "node_run_ref",
+    "execution_id",
+    "node_id",
+    "status"
+  ],
+  "title": "NodeRunDescriptor",
+  "type": "object"
+}

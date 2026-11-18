@@ -1,0 +1,23 @@
+{
+  "reviewer": "Primary GPT-6 Astra",
+  "captured_at": "2026-11-17T14:36:11.556134+00:00",
+  "source_and_tests_directly_read": [
+    "src/jimu_runtime/domain/definition_enums.py",
+    "src/jimu_runtime/domain/definition_support.py",
+    "src/jimu_runtime/domain/definitions/__init__.py",
+    "src/jimu_runtime/domain/definitions/ontology.py",
+    "src/jimu_runtime/domain/definitions/resources.py",
+    "tests/unit/test_b_support.py",
+    "tests/contract/test_b_ontology.py",
+    "tests/negative/test_b_ontology_invalid.py",
+    "tests/fixtures/wp01b/s1/contracts.json"
+  ],
+  "hash_mismatches": [],
+  "finding": "OptionalContract instance revalidation dropped model_copy/subclass extras; Primary reproduced, Sol fixed with regression failures preserved.",
+  "finding_status": "CLOSED_AFTER_DIRECT_CODE_REVIEW",
+  "local_acceptance": "S1_PASS",
+  "scope_limit": "shape/support only; catalogue/membership/full WP acceptance not established",
+  "tests_log": "logs/s1/remediation_01/03_pytest.json",
+  "tests": "133 passed; raw final pytest/mypy logs and regression code inspected",
+  "runtime": "RUNTIME_NOT_RUN"
+}

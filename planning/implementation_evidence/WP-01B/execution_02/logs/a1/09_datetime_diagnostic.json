@@ -1,0 +1,16 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-c",
+    "import json\nfrom pydantic import field_validator, ValidationInfo\nfrom jimu_runtime.domain.runtime.facts import KnownFact\nclass Probe(KnownFact):\n @field_validator(\"created_at\",mode=\"before\")\n @classmethod\n def probe(cls,value:object,info:ValidationInfo)->object:\n  print(\"FIELD_MODE\",info.mode,type(value))\n  return value\nraw=json.load(open(\"tests/fixtures/wp01b/a1/contracts.json\"))[\"known\"]\ntry: Probe.model_validate_json(json.dumps(raw))\nexcept ValueError as e: print(type(e).__name__,str(e))\n"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "ended_at": "2026-11-17T14:48:24.001508+00:00",
+  "exit_code": 0,
+  "stdout": "FIELD_MODE json <class 'str'>\nValidationError 1 validation error for Probe\ncreated_at\n  Input should be a valid datetime [type=datetime_type, input_value='2026-11-17T12:00:00Z', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/datetime_type\n",
+  "stderr": ""
+}

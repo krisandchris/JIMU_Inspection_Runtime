@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="10" time="0.542" timestamp="2026-11-18T01:34:51.639805+08:00" hostname="hy-System-Product-Name"><testcase classname="tests.negative.test_b_condition_bindings_invalid" name="test_same_context_source_owner_cannot_register_two_schemas_even_unused[local-context_snapshot]" time="0.017"><failure message="AssertionError: assert 'deferred' == 'invalid'&#10;  &#10;  - invalid&#10;  + deferred">source = 'context_snapshot', guard = 'local'
+
+    @pytest.mark.parametrize("source", ["context_snapshot", "profile_metadata", "region_metadata"])
+    @pytest.mark.parametrize("guard", ["local", "constant"])
+    def test_same_context_source_owner_cannot_register_two_schemas_even_unused(source, guard):
+        data, ctx, expr = setup()
+        schema = deepcopy(ctx["context_registrations"][0]["schema_ref"])
+        if source == "profile_metadata":
+            first = dict(source=source, schema_ref=schema, profile_ref=ctx["profile_ref"])
+        elif source == "region_metadata":
+            first = deepcopy(ctx["context_registrations"][1])
+        else:
+            first = deepcopy(ctx["context_registrations"][0])
+        second = deepcopy(first)
+        second["schema_ref"]["artifact_id"] = "distinct-context-schema"
+        descriptor = deepcopy(next(item for item in ctx["descriptors"] if item["schema_ref"] == first["schema_ref"]))
+        descriptor["schema_ref"] = deepcopy(second["schema_ref"])
+        ctx["context_registrations"] = [first, second]
+        ctx["descriptors"].append(descriptor)
+        result = bind(data, ctx, expr if guard == "local" else True)
+&gt;       assert result.report.aggregate_status == "invalid"
+E       AssertionError: assert 'deferred' == 'invalid'
+E         
+E         - invalid
+E         + deferred
+
+tests/negative/test_b_condition_bindings_invalid.py:269: AssertionError</failure></testcase><testcase classname="tests.negative.test_b_condition_bindings_invalid" name="test_same_context_source_owner_cannot_register_two_schemas_even_unused[local-profile_metadata]" time="0.012"><failure message="AssertionError: assert 'deferred' == 'invalid'&#10;  &#10;  - invalid&#10;  + deferred">source = 'profile_metadata', guard = 'local'
+
+    @pytest.mark.parametrize("source", ["context_snapshot", "profile_metadata", "region_metadata"])
+    @pytest.mark.parametrize("guard", ["local", "constant"])
+    def test_same_context_source_owner_cannot_register_two_schemas_even_unused(source, guard):
+        data, ctx, expr = setup()
+        schema = deepcopy(ctx["context_registrations"][0]["schema_ref"])
+        if source == "profile_metadata":
+            first = dict(source=source, schema_ref=schema, profile_ref=ctx["profile_ref"])
+        elif source == "region_metadata":
+            first = deepcopy(ctx["context_registrations"][1])
+        else:
+            first = deepcopy(ctx["context_registrations"][0])
+        second = deepcopy(first)
+        second["schema_ref"]["artifact_id"] = "distinct-context-schema"
+        descriptor = deepcopy(next(item for item in ctx["descriptors"] if item["schema_ref"] == first["schema_ref"]))
+        descriptor["schema_ref"] = deepcopy(second["schema_ref"])
+        ctx["context_registrations"] = [first, second]
+        ctx["descriptors"].append(descriptor)
+        result = bind(data, ctx, expr if guard == "local" else True)
+&gt;       assert result.report.aggregate_status == "invalid"
+E       AssertionError: assert 'deferred' == 'invalid'
+E         
+E         - invalid
+E         + deferred
+
+tests/negative/test_b_condition_bindings_invalid.py:269: AssertionError</failure></testcase><testcase classname="tests.negative.test_b_condition_bindings_invalid" name="test_same_context_source_owner_cannot_register_two_schemas_even_unused[local-region_metadata]" time="0.013"><failure message="AssertionError: assert 'deferred' == 'invalid'&#10;  &#10;  - invalid&#10;  + deferred">source = 'region_metadata', guard = 'local'
+
+    @pytest.mark.parametrize("source", ["context_snapshot", "profile_metadata", "region_metadata"])
+    @pytest.mark.parametrize("guard", ["local", "constant"])
+    def test_same_context_source_owner_cannot_register_two_schemas_even_unused(source, guard):
+        data, ctx, expr = setup()
+        schema = deepcopy(ctx["context_registrations"][0]["schema_ref"])
+        if source == "profile_metadata":
+            first = dict(source=source, schema_ref=schema, profile_ref=ctx["profile_ref"])
+        elif source == "region_metadata":
+            first = deepcopy(ctx["context_registrations"][1])
+        else:
+            first = deepcopy(ctx["context_registrations"][0])
+        second = deepcopy(first)
+        second["schema_ref"]["artifact_id"] = "distinct-context-schema"
+        descriptor = deepcopy(next(item for item in ctx["descriptors"] if item["schema_ref"] == first["schema_ref"]))
+        descriptor["schema_ref"] = deepcopy(second["schema_ref"])
+        ctx["context_registrations"] = [first, second]
+        ctx["descriptors"].append(descriptor)
+        result = bind(data, ctx, expr if guard == "local" else True)
+&gt;       assert result.report.aggregate_status == "invalid"
+E       AssertionError: assert 'deferred' == 'invalid'
+E         
+E         - invalid
+E         + deferred
+
+tests/negative/test_b_condition_bindings_invalid.py:269: AssertionError</failure></testcase><testcase classname="tests.negative.test_b_condition_bindings_invalid" name="test_same_context_source_owner_cannot_register_two_schemas_even_unused[constant-context_snapshot]" time="0.009"><failure message="AssertionError: assert 'deferred' == 'invalid'&#10;  &#10;  - invalid&#10;  + deferred">source = 'context_snapshot', guard = 'constant'
+
+    @pytest.mark.parametrize("source", ["context_snapshot", "profile_metadata", "region_metadata"])
+    @pytest.mark.parametrize("guard", ["local", "constant"])
+    def test_same_context_source_owner_cannot_register_two_schemas_even_unused(source, guard):
+        data, ctx, expr = setup()
+        schema = deepcopy(ctx["context_registrations"][0]["schema_ref"])
+        if source == "profile_metadata":
+            first = dict(source=source, schema_ref=schema, profile_ref=ctx["profile_ref"])
+        elif source == "region_metadata":
+            first = deepcopy(ctx["context_registrations"][1])
+        else:
+            first = deepcopy(ctx["context_registrations"][0])
+        second = deepcopy(first)
+        second["schema_ref"]["artifact_id"] = "distinct-context-schema"
+        descriptor = deepcopy(next(item for item in ctx["descriptors"] if item["schema_ref"] == first["schema_ref"]))
+        descriptor["schema_ref"] = deepcopy(second["schema_ref"])
+        ctx["context_registrations"] = [first, second]
+        ctx["descriptors"].append(descriptor)
+        result = bind(data, ctx, expr if guard == "local" else True)
+&gt;       assert result.report.aggregate_status == "invalid"
+E       AssertionError: assert 'deferred' == 'invalid'
+E         
+E         - invalid
+E         + deferred
+
+tests/negative/test_b_condition_bindings_invalid.py:269: AssertionError</failure></testcase><testcase classname="tests.negative.test_b_condition_bindings_invalid" name="test_same_context_source_owner_cannot_register_two_schemas_even_unused[constant-profile_metadata]" time="0.010"><failure message="AssertionError: assert 'deferred' == 'invalid'&#10;  &#10;  - invalid&#10;  + deferred">source = 'profile_metadata', guard = 'constant'
+
+    @pytest.mark.parametrize("source", ["context_snapshot", "profile_metadata", "region_metadata"])
+    @pytest.mark.parametrize("guard", ["local", "constant"])
+    def test_same_context_source_owner_cannot_register_two_schemas_even_unused(source, guard):
+        data, ctx, expr = setup()
+        schema = deepcopy(ctx["context_registrations"][0]["schema_ref"])
+        if source == "profile_metadata":
+            first = dict(source=source, schema_ref=schema, profile_ref=ctx["profile_ref"])
+        elif source == "region_metadata":
+            first = deepcopy(ctx["context_registrations"][1])
+        else:
+            first = deepcopy(ctx["context_registrations"][0])
+        second = deepcopy(first)
+        second["schema_ref"]["artifact_id"] = "distinct-context-schema"
+        descriptor = deepcopy(next(item for item in ctx["descriptors"] if item["schema_ref"] == first["schema_ref"]))
+        descriptor["schema_ref"] = deepcopy(second["schema_ref"])
+        ctx["context_registrations"] = [first, second]
+        ctx["descriptors"].append(descriptor)
+        result = bind(data, ctx, expr if guard == "local" else True)
+&gt;       assert result.report.aggregate_status == "invalid"
+E       AssertionError: assert 'deferred' == 'invalid'
+E         
+E         - invalid
+E         + deferred
+
+tests/negative/test_b_condition_bindings_invalid.py:269: AssertionError</failure></testcase><testcase classname="tests.negative.test_b_condition_bindings_invalid" name="test_same_context_source_owner_cannot_register_two_schemas_even_unused[constant-region_metadata]" time="0.010"><failure message="AssertionError: assert 'deferred' == 'invalid'&#10;  &#10;  - invalid&#10;  + deferred">source = 'region_metadata', guard = 'constant'
+
+    @pytest.mark.parametrize("source", ["context_snapshot", "profile_metadata", "region_metadata"])
+    @pytest.mark.parametrize("guard", ["local", "constant"])
+    def test_same_context_source_owner_cannot_register_two_schemas_even_unused(source, guard):
+        data, ctx, expr = setup()
+        schema = deepcopy(ctx["context_registrations"][0]["schema_ref"])
+        if source == "profile_metadata":
+            first = dict(source=source, schema_ref=schema, profile_ref=ctx["profile_ref"])
+        elif source == "region_metadata":
+            first = deepcopy(ctx["context_registrations"][1])
+        else:
+            first = deepcopy(ctx["context_registrations"][0])
+        second = deepcopy(first)
+        second["schema_ref"]["artifact_id"] = "distinct-context-schema"
+        descriptor = deepcopy(next(item for item in ctx["descriptors"] if item["schema_ref"] == first["schema_ref"]))
+        descriptor["schema_ref"] = deepcopy(second["schema_ref"])
+        ctx["context_registrations"] = [first, second]
+        ctx["descriptors"].append(descriptor)
+        result = bind(data, ctx, expr if guard == "local" else True)
+&gt;       assert result.report.aggregate_status == "invalid"
+E       AssertionError: assert 'deferred' == 'invalid'
+E         
+E         - invalid
+E         + deferred
+
+tests/negative/test_b_condition_bindings_invalid.py:269: AssertionError</failure></testcase><testcase classname="tests.negative.test_b_condition_bindings_invalid" name="test_system_activation_scope_matrix[execution-object]" time="0.016" /><testcase classname="tests.negative.test_b_condition_bindings_invalid" name="test_system_activation_scope_matrix[object-execution]" time="0.016" /><testcase classname="tests.negative.test_b_condition_bindings_invalid" name="test_system_activation_scope_matrix[object-object]" time="0.015" /><testcase classname="tests.negative.test_b_condition_bindings_invalid" name="test_system_activation_scope_matrix[execution-execution]" time="0.016" /></testsuite></testsuites>

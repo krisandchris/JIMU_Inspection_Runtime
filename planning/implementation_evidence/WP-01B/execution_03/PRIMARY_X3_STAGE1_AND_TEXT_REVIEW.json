@@ -1,0 +1,31 @@
+{
+  "reviewed_at": "2026-11-17T17:35:50.811848+00:00",
+  "reviewer": "Primary",
+  "scope": "X3 data stage and local diagnostic text change only",
+  "direct_review": [
+    "producer_authority_inputs.py complete source and three tests",
+    "two-line exact.diff compared to before snapshots",
+    "raw command logs, JUnit and product SHA-256"
+  ],
+  "hash_verification": "all 6 X3 files and 2 diagnostic-only files match",
+  "junit": {
+    "x3_stage1": {
+      "tests": 29,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "local_boundary_text": {
+      "tests": 219,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "conclusion": "PASS_COMPONENT_ONLY",
+  "remaining": [
+    "X3 combination checker not yet implemented",
+    "final integration checks pending"
+  ],
+  "runtime": "RUNTIME_NOT_RUN"
+}

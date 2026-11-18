@@ -1,0 +1,30 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime/domain/producers.py",
+    "src/jimu_runtime/domain/validation/producer_inputs.py",
+    "src/jimu_runtime/domain/validation/producers.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:43:03.550512+00:00",
+  "end": "2026-11-17T17:43:03.685708+00:00",
+  "exit": 0,
+  "stdout": "Success: no issues found in 3 source files\n",
+  "stderr": "",
+  "sha256": {
+    "src/jimu_runtime/domain/producers.py": "4d79e4e6c5aac9e90602b5a2c7f189ca64c7baf49916decadbe7e772b4c51832",
+    "src/jimu_runtime/domain/validation/producer_inputs.py": "778d788f55a1dbab5303498f5ba029fb8dd908dc4a032830e2803d40531201cf",
+    "src/jimu_runtime/domain/validation/producers.py": "7babab490bbb360d6107bb3231b8a960029e149893ace164f1ac345ba61a2ded",
+    "tests/contract/test_b_producers_contracts.py": "e031d3b2dee5dcce0035835047aeac4494ababfb5f759e8fee2bb3065b9dab95",
+    "tests/unit/test_b_producers_data.py": "18f0bef3de56c52ec4ad4fc5d60506366795825730024a771ed3ea9dbd9258ed",
+    "tests/unit/test_b_producers_validation.py": "ece044da5b2245380c9d1620ea1ab15164748e3d2effc46daf4fb428a1ea9178",
+    "tests/negative/test_b_producers_invalid.py": "f213b2655f8f0b5cf74b510f340b7c3ce7c2498da34dc5c543e65657cb921856",
+    "tests/negative/test_b_producers_validation_invalid.py": "5b35563bf872a0a3d07e5e57814373b02958bf0ef9909c7f81eed245476e7c32",
+    "tests/fixtures/wp01b/x2/support.py": "009277e90be20192ead25aadb1529937718231f691e23fcce7aaf2ed18ba7fe2",
+    "tests/fixtures/wp01b/x2/contracts.json": "469949ec6edb3c6860c2be0dfb215025b7b9c7b678ef574dff4651c87405e8fa"
+  }
+}

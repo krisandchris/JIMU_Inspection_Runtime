@@ -1,0 +1,207 @@
+{
+  "$defs": {
+    "CPUResourceRequirements": {
+      "additionalProperties": false,
+      "properties": {
+        "input_byte_limit": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "max_concurrency": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "output_byte_limit": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "policy_kind": {
+          "const": "resource_requirements",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "resource_class": {
+          "const": "cpu",
+          "title": "Resource Class",
+          "type": "string"
+        },
+        "timeout_ms": {
+          "$ref": "#/$defs/PositiveBudget"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "max_concurrency",
+        "timeout_ms",
+        "input_byte_limit",
+        "output_byte_limit",
+        "resource_class"
+      ],
+      "title": "CPUResourceRequirements",
+      "type": "object"
+    },
+    "GPUResourceRequirements": {
+      "additionalProperties": false,
+      "properties": {
+        "gpu_memory_limit_bytes": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "input_byte_limit": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "max_concurrency": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "output_byte_limit": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "policy_kind": {
+          "const": "resource_requirements",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "resource_class": {
+          "const": "gpu",
+          "title": "Resource Class",
+          "type": "string"
+        },
+        "timeout_ms": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "worker_pool_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Worker Pool Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "max_concurrency",
+        "timeout_ms",
+        "input_byte_limit",
+        "output_byte_limit",
+        "resource_class",
+        "gpu_memory_limit_bytes",
+        "worker_pool_id"
+      ],
+      "title": "GPUResourceRequirements",
+      "type": "object"
+    },
+    "PositiveBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "RemoteResourceRequirements": {
+      "additionalProperties": false,
+      "properties": {
+        "input_byte_limit": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "max_concurrency": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "output_byte_limit": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "policy_kind": {
+          "const": "resource_requirements",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "remote_quota_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Remote Quota Id",
+          "type": "string"
+        },
+        "resource_class": {
+          "const": "remote",
+          "title": "Resource Class",
+          "type": "string"
+        },
+        "timeout_ms": {
+          "$ref": "#/$defs/PositiveBudget"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "max_concurrency",
+        "timeout_ms",
+        "input_byte_limit",
+        "output_byte_limit",
+        "resource_class",
+        "remote_quota_id"
+      ],
+      "title": "RemoteResourceRequirements",
+      "type": "object"
+    },
+    "ResourceRequirements": {
+      "discriminator": {
+        "mapping": {
+          "cpu": "#/$defs/CPUResourceRequirements",
+          "gpu": "#/$defs/GPUResourceRequirements",
+          "remote": "#/$defs/RemoteResourceRequirements"
+        },
+        "propertyName": "resource_class"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CPUResourceRequirements"
+        },
+        {
+          "$ref": "#/$defs/RemoteResourceRequirements"
+        },
+        {
+          "$ref": "#/$defs/GPUResourceRequirements"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "policy": {
+      "$ref": "#/$defs/ResourceRequirements"
+    },
+    "policy_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "policy_id",
+    "version",
+    "policy"
+  ],
+  "title": "ResourceRequirementsArtifact",
+  "type": "object"
+}

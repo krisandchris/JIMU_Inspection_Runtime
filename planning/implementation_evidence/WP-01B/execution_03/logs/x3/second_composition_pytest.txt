@@ -1,0 +1,105 @@
+.....................F.F.......                                          [100%]
+=================================== FAILURES ===================================
+__________________ test_zero_fact_tool_wrong_step_is_invalid ___________________
+
+    def test_zero_fact_tool_wrong_step_is_invalid():
+        raw = fixture("tool")
+        h = raw["history"]
+        h["proposed_selections"] = []
+        h["candidates"]["entries"] = []
+        h["tool_results"][0]["mapped_outputs"] = []
+        h["tool_results"][0]["step_id"] = "foreign"
+        report = check(raw)
+        assert report.aggregate_status == "invalid", report
+>       assert "x3.result_step" in codes(report)
+E       AssertionError: assert 'x3.result_step' in {'external_provenance', 'producer.bundle_host_authenticity', 'producer.conditional_availability', 'producer.expression_semantics', 'producer.runtime_provenance', 'x3.deferred.activation_truth', ...}
+E        +  where {'external_provenance', 'producer.bundle_host_authenticity', 'producer.conditional_availability', 'producer.expression_semantics', 'producer.runtime_provenance', 'x3.deferred.activation_truth', ...} = codes(ValidationReport(scope='authority_admission', checks=(CheckResult(check_id='x3.input.passed', status='passed', issues=...ctual Actor/Invocation/evidence/host trust and outside-history completeness are not established.', related_refs=()))))))
+
+tests/negative/test_b_producer_authority_invalid.py:99: AssertionError
+______ test_actual_result_version_not_copied_from_allowed_version[system] ______
+
+name = 'system'
+
+    @pytest.mark.parametrize("name", ["tool", "system"])
+    def test_actual_result_version_not_copied_from_allowed_version(name):
+        raw = fixture(name)
+        raw["history"]["tool_results" if name == "tool" else "system_results"][0]["actual_implementation_version"] = "9.0.0"
+>       assert f"x3.{name}_actual_version" in codes(check(raw))
+                                                    ^^^^^^^^^^
+
+tests/negative/test_b_producer_authority_invalid.py:106: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/fixtures/wp01b/x3/integration.py:99: in check
+    parse(raw),
+    ^^^^^^^^^^
+tests/fixtures/wp01b/x3/integration.py:56: in parse
+    "history": history_input(raw["history"]),
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/fixtures/wp01b/x3/integration.py:143: in history_input
+    values[field] = tuple(
+tests/fixtures/wp01b/x3/integration.py:144: in <genexpr>
+    TypeAdapter(model).validate_json(json.dumps(entry)) for entry in raw[field]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TypeAdapter(SystemOutputResultDescriptor)
+data = '{"execution_id": "execution-1", "scope": "execution", "attempt_ref": {"record_kind": "attempt", "record_id": "attempt...ext", "reason": {"reason_code": "visibility", "message": "Synthetic unavailable observation", "diagnostic_refs": []}}}'
+
+    def validate_json(
+        self,
+        data: str | bytes | bytearray,
+        /,
+        *,
+        strict: bool | None = None,
+        extra: ExtraValues | None = None,
+        context: Any | None = None,
+        experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> T:
+        """!!! abstract "Usage Documentation"
+            [JSON Parsing](../concepts/json.md#json-parsing)
+    
+        Validate a JSON string or bytes against the model.
+    
+        Args:
+            data: The JSON data to validate against the model.
+            strict: Whether to strictly check types.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
+            context: Additional context to use during validation.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
+                * False / 'off': Default behavior, no partial validation.
+                * True / 'on': Enable partial validation.
+                * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
+    
+        Returns:
+            The validated object.
+        """
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+    
+>       return self.validator.validate_json(
+            data,
+            strict=strict,
+            extra=extra,
+            context=context,
+            allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for SystemOutputResultDescriptor
+E         Value error, actual system implementation version must be explicitly allowed [type=value_error, input_value={'execution_id': 'executi...'diagnostic_refs': []}}}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.12/v/value_error
+
+.venv/lib/python3.12/site-packages/pydantic/type_adapter.py:492: ValidationError
+=========================== short test summary info ============================
+FAILED tests/negative/test_b_producer_authority_invalid.py::test_zero_fact_tool_wrong_step_is_invalid
+FAILED tests/negative/test_b_producer_authority_invalid.py::test_actual_result_version_not_copied_from_allowed_version[system]
+2 failed, 29 passed in 1.83s

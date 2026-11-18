@@ -1,0 +1,20 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "format",
+    "--check",
+    "scripts/generate_schemas.py",
+    "tests/unit/test_b_schema_export.py",
+    "tests/contract/test_b_schema_inventory.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_utc": "2026-11-17T18:09:44.990509+00:00",
+  "finished_utc": "2026-11-17T18:09:45.004064+00:00",
+  "exit_code": 1,
+  "stdout": "Would reformat: tests/contract/test_b_schema_inventory.py\n1 file would be reformatted, 2 files already formatted\n",
+  "stderr": ""
+}

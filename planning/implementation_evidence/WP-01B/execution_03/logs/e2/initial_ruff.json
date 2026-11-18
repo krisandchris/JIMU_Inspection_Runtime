@@ -1,0 +1,19 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "scripts/generate_schemas.py",
+    "tests/unit/test_b_schema_export.py",
+    "tests/contract/test_b_schema_inventory.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_utc": "2026-11-17T18:09:44.975789+00:00",
+  "finished_utc": "2026-11-17T18:09:44.990326+00:00",
+  "exit_code": 0,
+  "stdout": "All checks passed!\n",
+  "stderr": ""
+}

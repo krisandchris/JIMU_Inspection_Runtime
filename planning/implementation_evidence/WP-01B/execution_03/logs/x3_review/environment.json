@@ -1,0 +1,15 @@
+{
+  "argv": [
+    ".venv/bin/python",
+    "-c",
+    "import sys,importlib.metadata,json; print(sys.version); print(json.dumps({name:importlib.metadata.version(name) for name in (\"pydantic\",\"pytest\",\"ruff\",\"mypy\",\"jsonschema\",\"rfc8785\")},sort_keys=True))"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start_utc": "2026-11-17T18:07:27.718658+00:00",
+  "end_utc": "2026-11-17T18:07:27.770160+00:00",
+  "exit_code": 0,
+  "stdout": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]\n{\"jsonschema\": \"4.25.1\", \"mypy\": \"1.18.2\", \"pydantic\": \"2.12.5\", \"pytest\": \"8.4.2\", \"rfc8785\": \"0.1.4\", \"ruff\": \"0.14.14\"}\n",
+  "stderr": "",
+  "checker_before_sha256": "4179223f05cc4a226936a6c83ff832919a119b5754495bc3715c34856c4349af",
+  "checker_after_sha256": "4179223f05cc4a226936a6c83ff832919a119b5754495bc3715c34856c4349af"
+}

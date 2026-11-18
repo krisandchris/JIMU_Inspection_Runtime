@@ -1,0 +1,21 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/contract/test_b_schema_inventory.py",
+    "tests/unit/test_b_schema_export.py",
+    "-q",
+    "--junitxml=planning/implementation_evidence/WP-01B/execution_02/logs/e1/targeted_results.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T15:52:35.912863+00:00",
+  "ended_at": "2026-11-17T15:53:38.795317+00:00",
+  "exit_code": 1,
+  "stdout": "............F..................                                          [100%]\n=================================== FAILURES ===================================\n_________ test_cli_check_is_read_only_and_detects_mismatch[additional] _________\n\ntmp_path = PosixPath('/tmp/pytest-of-hy/pytest-97/test_cli_check_is_read_only_an3')\nrendered = {'definition_support.AssetDimensions.schema.json': b'{\\n  \"$defs\": {\\n    \"PositiveBudget\": {\\n      \"maximum\": 922337.../2020-12/schema\",\\n  \"items\": {\\n    \"$ref\": \"#/$defs/FieldName\"\\n  },\\n  \"maxItems\": 8,\\n  \"type\": \"array\"\\n}\\n', ...}\nchange = 'additional'\n\n    @pytest.mark.parametrize(\"change\", [\"valid\", \"missing\", \"stale\", \"additional\"])\n    def test_cli_check_is_read_only_and_detects_mismatch(\n        tmp_path: Path, rendered: dict[str, bytes], change: str\n    ) -> None:\n        output = tmp_path / \"generated\"\n        seed(output, rendered)\n        chosen = next(name for name in rendered if name != \"index.json\")\n        if change == \"missing\":\n            (output / chosen).unlink()\n        elif change == \"stale\":\n            (output / chosen).write_bytes(b\"{}\\n\")\n        elif change == \"additional\":\n            (output / \"unknown.txt\").write_text(\"preserve\")\n        before = tree(tmp_path)\n        sources = tree(ROOT / \"src\")\n        completed = subprocess.run(\n            [sys.executable, str(SCRIPT), \"--check\", \"--output\", str(output)],\n            cwd=tmp_path,\n            capture_output=True,\n            text=True,\n        )\n        assert completed.returncode == (0 if change == \"valid\" else 1), completed.stderr\n        assert tree(tmp_path) == before\n>       assert tree(ROOT / \"src\") == sources  # includes cache directories and pyc mtimes.\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       AssertionError: assert {'jimu_runtim...51, 288), ...} == {'jimu_runtim...51, 288), ...}\nE         \nE         Omitting 91 identical items, use -vv to show\nE         Differing items:\nE         {'jimu_runtime/domain/validation/definitions.py': ('608d7cf2435470dfc8e9d19f704e103dc33f24744f87bd509cfd1329041bba2e', 1794930795466994342, 48884)} != {'jimu_runtime/domain/validation/definitions.py': ('7da8a9d772740d84faeaba600ec4a0ec831ef5b0408836e68aecd2d6c6118ff5', 1794930740579360148, 48644)}\nE         Use -v to get more diff\n\ntests/unit/test_b_schema_export.py:78: AssertionError\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_02/logs/e1/targeted_results.xml -\n=========================== short test summary info ============================\nFAILED tests/unit/test_b_schema_export.py::test_cli_check_is_read_only_and_detects_mismatch[additional]\n1 failed, 30 passed in 62.63s (0:01:02)\n",
+  "stderr": ""
+}

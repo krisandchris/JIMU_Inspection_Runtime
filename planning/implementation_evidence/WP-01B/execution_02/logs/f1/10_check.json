@@ -1,0 +1,21 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_projection.py",
+    "tests/contract/test_b_fact_schema.py",
+    "tests/negative/test_b_fact_schema_invalid.py",
+    "-q"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T14:34:15.835715+00:00",
+  "ended_at": "2026-11-17T14:34:16.669061+00:00",
+  "exit_code": 0,
+  "stdout": "........................................................................ [ 79%]\n...................                                                      [100%]\n91 passed in 0.60s\n",
+  "stderr": ""
+}

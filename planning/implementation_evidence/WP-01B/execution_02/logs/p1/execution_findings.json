@@ -1,0 +1,23 @@
+[
+  {
+    "id": "P1-initial-UTC",
+    "status": "FIXED_BY_SHARED_OWNER",
+    "evidence": "initial_pytest.json and final_pytest.json",
+    "detail": "Nested LocalPrimaryException strict JSON UTC failed through shared OptionalContract. Sol-C repaired shared UTC JSON parsing without accepting Python strings; Sol-B did not edit shared types."
+  },
+  {
+    "id": "P1-review-annotations",
+    "status": "FIXED",
+    "detail": "Initial mypy3 errors: separate local/fallback covered-version set types and annotate context resolved set. No ignore/type relaxation."
+  },
+  {
+    "id": "P1-nested-check-id",
+    "status": "FIXED",
+    "detail": "expanded_pytest:112passed1failed; nested model missing reused policy check ID. Dedicated tool.configuration issue now preserves passed refs and explicit missing result."
+  },
+  {
+    "id": "P1-editing-checks",
+    "status": "FIXED",
+    "detail": "Pre-test Ruff fixed imports and format expanded24 one-line statements. Later added-test imports initially missing, then a mechanical import edit caused temporary indentation parse errors; repaired before final tests. Tool transcripts retain those editing checks; final files pass Ruff/format/mypy."
+  }
+]

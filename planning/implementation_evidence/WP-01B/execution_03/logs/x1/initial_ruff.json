@@ -1,0 +1,20 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "src/jimu_runtime/domain/conditions.py",
+    "src/jimu_runtime/domain/policies.py",
+    "src/jimu_runtime/domain/definition_enums.py",
+    "src/jimu_runtime/domain/validation/policies.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T16:59:30.706283+00:00",
+  "end": "2026-11-17T16:59:30.721755+00:00",
+  "exit_code": 1,
+  "stdout": "F821 Undefined name `ConditionExpr`\n   --> src/jimu_runtime/domain/conditions.py:211:11\n    |\n209 |     kind: Literal[\"comparison\"]\n210 |     operator: ComparisonOperator\n211 |     left: ConditionExpr\n    |           ^^^^^^^^^^^^^\n212 |     right: ConditionExpr\n    |\n\nF821 Undefined name `ConditionExpr`\n   --> src/jimu_runtime/domain/conditions.py:212:12\n    |\n210 |     operator: ComparisonOperator\n211 |     left: ConditionExpr\n212 |     right: ConditionExpr\n    |            ^^^^^^^^^^^^^\n    |\n\nF821 Undefined name `ConditionExpr`\n   --> src/jimu_runtime/domain/conditions.py:217:11\n    |\n215 | class InExpr(_ConditionNode):\n216 |     kind: Literal[\"in\"]\n217 |     item: ConditionExpr\n    |           ^^^^^^^^^^^^^\n218 |     collection: ConditionExpr\n    |\n\nF821 Undefined name `ConditionExpr`\n   --> src/jimu_runtime/domain/conditions.py:218:17\n    |\n216 |     kind: Literal[\"in\"]\n217 |     item: ConditionExpr\n218 |     collection: ConditionExpr\n    |                 ^^^^^^^^^^^^^\n219 |\n220 |     @model_validator(mode=\"after\")\n    |\n\nF821 Undefined name `ConditionExpr`\n   --> src/jimu_runtime/domain/conditions.py:237:15\n    |\n235 |     kind: Literal[\"all\"]\n236 |     arguments: Annotated[\n237 |         tuple[ConditionExpr, ...],\n    |               ^^^^^^^^^^^^^\n238 |         Field(min_length=1, max_length=MAX_CONDITION_ARGUMENTS),\n239 |         BeforeValidator(immutable_sequence),\n    |\n\nF821 Undefined name `ConditionExpr`\n   --> src/jimu_runtime/domain/conditions.py:246:15\n    |\n244 |     kind: Literal[\"any\"]\n245 |     arguments: Annotated[\n246 |         tuple[ConditionExpr, ...],\n    |               ^^^^^^^^^^^^^\n247 |         Field(min_length=1, max_length=MAX_CONDITION_ARGUMENTS),\n248 |         BeforeValidator(immutable_sequence),\n    |\n\nF821 Undefined name `ConditionExpr`\n   --> src/jimu_runtime/domain/conditions.py:254:15\n    |\n252 | class NotExpr(_ConditionNode):\n253 |     kind: Literal[\"not\"]\n254 |     argument: ConditionExpr\n    |               ^^^^^^^^^^^^^\n    |\n\nFound 7 errors.\n",
+  "stderr": ""
+}

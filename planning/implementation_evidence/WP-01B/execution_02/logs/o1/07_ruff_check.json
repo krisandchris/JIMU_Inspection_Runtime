@@ -1,0 +1,21 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "src/jimu_runtime/domain/definitions/capabilities.py",
+    "src/jimu_runtime/domain/definitions/prompts.py",
+    "tests/unit/test_b_prompts.py",
+    "tests/contract/test_b_capabilities.py",
+    "tests/negative/test_b_capabilities_invalid.py"
+  ],
+  "started_at": "2026-11-17T14:41:13.147670+00:00",
+  "finished_at": "2026-11-17T14:41:13.165314+00:00",
+  "exit_code": 1,
+  "stdout": "I001 [*] Import block is un-sorted or un-formatted\n  --> src/jimu_runtime/domain/definitions/prompts.py:3:1\n   |\n 1 |   \"\"\"Literal Prompt declarations and syntax only; no rendering or catalogue closure.\"\"\"\n 2 |\n 3 | / import re\n 4 | | from typing import Annotated, Literal, Self\n 5 | |\n 6 | | from pydantic import (\n 7 | |     BeforeValidator,\n 8 | |     ConfigDict,\n 9 | |     Field,\n10 | |     StrictBool,\n11 | |     StringConstraints,\n12 | |     TypeAdapter,\n13 | |     field_validator,\n14 | |     model_validator,\n15 | | )\n16 | |\n17 | | from pydantic.config import JsonDict, JsonValue\n18 | |\n19 | | from jimu_runtime.domain.base import ContractModel\n20 | | from jimu_runtime.domain.definition_enums import ModelCapability\n21 | | from jimu_runtime.domain.definition_support import (\n22 | |     AbsentOptional,\n23 | |     DefinitionContract,\n24 | |     FieldPath,\n25 | |     immutable_sequence,\n26 | |     omit_default_from_schema,\n27 | |     require_unique_references,\n28 | | )\n29 | | from jimu_runtime.domain.enums import ArtifactKind\n30 | | from jimu_runtime.domain.primitives import ArtifactId, Version\n31 | | from jimu_runtime.domain.references import ContentRef, SchemaRef\n   | |________________________________________________________________^\n32 |\n33 |   _NAME_PATTERN = r\"^[A-Za-z_][A-Za-z0-9_]{0,127}$(?![\\s\\S])\"\n   |\nhelp: Organize imports\n\nI001 [*] Import block is un-sorted or un-formatted\n  --> tests/negative/test_b_capabilities_invalid.py:3:1\n   |\n 1 |   \"\"\"O1 shape rejections, including generated Schema and instance-taint regressions.\"\"\"\n 2 |\n 3 | / import json\n 4 | | from pathlib import Path\n 5 | | from typing import cast\n 6 | |\n 7 | | import pytest\n 8 | | from jsonschema import Draft202012Validator\n 9 | | from pydantic import ValidationError\n10 | |\n11 | | from jimu_runtime.domain.base import ContractModel\n12 | | from jimu_runtime.domain.definitions.capabilities import (\n13 | |     FacetDefinition,\n14 | |     GroundingInputBinding,\n15 | |     ModelGroundingBinding,\n16 | |     ProfileDefinition,\n17 | |     QuestionDefinition,\n18 | |     ToolGroundingBinding,\n19 | | )\n20 | | from jimu_runtime.domain.definitions.prompts import (\n21 | |     PromptTemplateDefinition,\n22 | |     PromptVariable,\n23 | | )\n24 | |\n25 | | from jimu_runtime.domain.tool_mappings import InputBinding\n   | |__________________________________________________________^\n26 |\n27 |   ROOTS = [\n   |\nhelp: Organize imports\n\nFound 2 errors.\n[*] 2 fixable with the `--fix` option.\n",
+  "stderr": ""
+}

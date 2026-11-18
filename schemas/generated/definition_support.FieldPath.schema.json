@@ -1,0 +1,15 @@
+{
+  "$defs": {
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "items": {
+    "$ref": "#/$defs/FieldName"
+  },
+  "maxItems": 8,
+  "type": "array"
+}

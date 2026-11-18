@@ -1,0 +1,14 @@
+[
+  {
+    "id": "S2-C2-diagnostic-path",
+    "status": "FIXED_PENDING_REVIEW",
+    "change": "Diagnostic IssuePath32 and caller prefix24 reserve recursion8; shared selector FieldPath8 unchanged. Invalid prefixes produce structured error."
+  },
+  {
+    "id": "S2-C2-region-owner",
+    "status": "FIXED_PENDING_REVIEW",
+    "before": "new regression failed DID NOT RAISE, exit1",
+    "change": "unique(source,owner.kind/id/version), so conflicting same-version digest rejected, different versions preserved",
+    "evidence": "region_owner_before_fix.json; remediation_final_pytest.json/xml:85passed; mypy/Ruff/format:exit0"
+  }
+]

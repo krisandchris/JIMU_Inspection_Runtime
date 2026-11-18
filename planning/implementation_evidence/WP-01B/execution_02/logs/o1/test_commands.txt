@@ -1,0 +1,16 @@
+uv run --locked --no-sync ruff format src/jimu_runtime/domain/definitions/capabilities.py src/jimu_runtime/domain/definitions/prompts.py tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py
+uv run --locked --no-sync python -m pytest tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py -q --junitxml=planning/implementation_evidence/WP-01B/execution_02/logs/o1/02_junit.xml
+uv run --locked --no-sync ruff check src/jimu_runtime/domain/definitions/capabilities.py src/jimu_runtime/domain/definitions/prompts.py tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py
+uv run --locked --no-sync mypy src/jimu_runtime
+uv run --locked --no-sync ruff format src/jimu_runtime/domain/definitions/capabilities.py src/jimu_runtime/domain/definitions/prompts.py tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py
+uv run --locked --no-sync python -m pytest tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py -q --junitxml=planning/implementation_evidence/WP-01B/execution_02/logs/o1/06_junit.xml
+uv run --locked --no-sync ruff check src/jimu_runtime/domain/definitions/capabilities.py src/jimu_runtime/domain/definitions/prompts.py tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py
+uv run --locked --no-sync mypy src/jimu_runtime
+uv run --locked --no-sync ruff format --check src/jimu_runtime/domain/definitions/capabilities.py src/jimu_runtime/domain/definitions/prompts.py tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py
+uv run --locked --no-sync ruff format src/jimu_runtime/domain/definitions/capabilities.py src/jimu_runtime/domain/definitions/prompts.py tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py
+uv run --locked --no-sync python -m pytest tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py -q --junitxml=planning/implementation_evidence/WP-01B/execution_02/logs/o1/11_junit.xml
+uv run --locked --no-sync ruff check src/jimu_runtime/domain/definitions/capabilities.py src/jimu_runtime/domain/definitions/prompts.py tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py
+uv run --locked --no-sync mypy src/jimu_runtime
+uv run --locked --no-sync ruff format --check src/jimu_runtime/domain/definitions/capabilities.py src/jimu_runtime/domain/definitions/prompts.py tests/unit/test_b_prompts.py tests/contract/test_b_capabilities.py tests/negative/test_b_capabilities_invalid.py
+uv run --locked --no-sync python planning/implementation_evidence/WP-01B/execution_02/logs/o1/audit_schemas.py
+uv run --locked --no-sync python -c import sys,platform,importlib.metadata,json; print(json.dumps({"python":sys.version,"executable":sys.executable,"platform":platform.platform(),"packages":{d.metadata["Name"]:d.version for d in importlib.metadata.distributions()}},indent=2))

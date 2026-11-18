@@ -1,0 +1,381 @@
+{
+  "$defs": {
+    "CapabilityFeature": {
+      "enum": [
+        "rgb_image",
+        "typed_context",
+        "structured_output",
+        "original_xyxy",
+        "mask_output",
+        "geometry_output",
+        "ocr_text"
+      ],
+      "title": "CapabilityFeature",
+      "type": "string"
+    },
+    "DeploymentRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_version_constraints": {
+          "$ref": "#/$defs/VersionConstraint"
+        },
+        "deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Deployment Id",
+          "type": "string"
+        },
+        "logical_model_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Logical Model Id",
+          "type": "string"
+        },
+        "provider_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "provider_kind": {
+          "enum": [
+            "remote",
+            "local"
+          ],
+          "title": "Provider Kind",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "provider_id",
+        "deployment_id",
+        "logical_model_id",
+        "provider_kind",
+        "actual_version_constraints",
+        "required_features"
+      ],
+      "title": "DeploymentRequirement",
+      "type": "object"
+    },
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "LocalPrimaryException": {
+      "additionalProperties": false,
+      "properties": {
+        "applicable_capabilities": {
+          "items": {
+            "$ref": "#/$defs/ModelCapability"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Applicable Capabilities",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "approval_ref": {
+          "$ref": "#/$defs/ReviewReportRef"
+        },
+        "exception_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Exception Id",
+          "type": "string"
+        },
+        "rationale": {
+          "$ref": "#/$defs/Description"
+        },
+        "reason": {
+          "enum": [
+            "explicit_local_capability",
+            "privacy_restriction",
+            "unavailable_remote_capability"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "valid_from": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "valid_until": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "exception_id",
+        "version",
+        "applicable_capabilities",
+        "reason",
+        "rationale",
+        "approval_ref",
+        "valid_from",
+        "valid_until"
+      ],
+      "title": "LocalPrimaryException",
+      "type": "object"
+    },
+    "LocalPrimaryProviderPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "deployments": {
+          "items": {
+            "$ref": "#/$defs/DeploymentRequirement"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Deployments",
+          "type": "array"
+        },
+        "local_primary_exception": {
+          "$ref": "#/$defs/LocalPrimaryException"
+        },
+        "policy_kind": {
+          "const": "provider",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "primary_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Primary Deployment Id",
+          "type": "string"
+        },
+        "routing_mode": {
+          "const": "local_primary_exception",
+          "title": "Routing Mode",
+          "type": "string"
+        },
+        "selection": {
+          "const": "primary_then_explicit_fallback",
+          "title": "Selection",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "primary_deployment_id",
+        "deployments",
+        "selection",
+        "routing_mode",
+        "local_primary_exception"
+      ],
+      "title": "LocalPrimaryProviderPolicy",
+      "type": "object"
+    },
+    "ModelCapability": {
+      "enum": [
+        "profile_discovery",
+        "object_grounding",
+        "object_observation",
+        "candidate_prediction",
+        "vision_auxiliary"
+      ],
+      "title": "ModelCapability",
+      "type": "string"
+    },
+    "RemotePrimaryProviderPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "deployments": {
+          "items": {
+            "$ref": "#/$defs/DeploymentRequirement"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Deployments",
+          "type": "array"
+        },
+        "policy_kind": {
+          "const": "provider",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "primary_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Primary Deployment Id",
+          "type": "string"
+        },
+        "routing_mode": {
+          "const": "remote_primary",
+          "title": "Routing Mode",
+          "type": "string"
+        },
+        "selection": {
+          "const": "primary_then_explicit_fallback",
+          "title": "Selection",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "primary_deployment_id",
+        "deployments",
+        "selection",
+        "routing_mode"
+      ],
+      "title": "RemotePrimaryProviderPolicy",
+      "type": "object"
+    },
+    "ReviewReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "review_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Review Registry Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "version",
+        "sha256",
+        "review_registry_id"
+      ],
+      "title": "ReviewReportRef",
+      "type": "object"
+    },
+    "UTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    },
+    "VersionConstraint": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_deployment_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Deployment Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "allowed_model_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Model Versions",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "allowed_deployment_versions",
+        "allowed_model_versions"
+      ],
+      "title": "VersionConstraint",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "local_primary_exception": "#/$defs/LocalPrimaryProviderPolicy",
+      "remote_primary": "#/$defs/RemotePrimaryProviderPolicy"
+    },
+    "propertyName": "routing_mode"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/RemotePrimaryProviderPolicy"
+    },
+    {
+      "$ref": "#/$defs/LocalPrimaryProviderPolicy"
+    }
+  ]
+}

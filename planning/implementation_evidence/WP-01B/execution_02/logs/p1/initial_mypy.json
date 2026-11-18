@@ -1,0 +1,14 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime/domain/policies.py",
+    "src/jimu_runtime/domain/validation/policies.py"
+  ],
+  "exit_code": 1,
+  "output": "src/jimu_runtime/domain/validation/policies.py:374: error: Name \"covered_versions\" already defined on line 309  [no-redef]\nsrc/jimu_runtime/domain/validation/policies.py:405: error: Argument 1 to \"add\" of \"set\" has incompatible type \"tuple[str, str, str, str]\"; expected \"tuple[str, str]\"  [arg-type]\nsrc/jimu_runtime/domain/validation/policies.py:623: error: Need type annotation for \"resolved\" (hint: \"resolved: set[<type>] = ...\")  [var-annotated]\nFound 3 errors in 1 file (checked 2 source files)\n",
+  "recorded_at": "2026-11-17T15:05:16.618348+00:00"
+}

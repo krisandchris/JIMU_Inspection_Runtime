@@ -215,3 +215,23 @@ Only explicitly authorized scope decisions are recorded here:
 G1-D01 AST staging remains an unresolved scope question in active/WP-01B/FINDINGS.md.
 Neither proposed option is entered here as approved. Technical drafts in PLAN-2
 do not imply new business approvals; G1-D03/D04 still require explicit field completion.
+
+
+## WP-01B execution amendments — GOAL-002 explicit user approvals
+
+These are implementation-boundary amendments, not a renumbering or overwrite of D01–D15.
+Original decision histories and WP-00 review evidence remain unchanged.
+
+| Item | Decision | Approval evidence / status |
+|---|---|---|
+| G1-D01 option A | Move existing shared condition AST data models into WP-01B; retain prohibition on RuleDefinition, TypeChecker and Evaluator | Exact user async reply in execution_03/AUTHORIZATION.md; APPROVED_BY_USER |
+| X-C01 local Tool Fact selector | Add a tool_condition-only current-ToolPlan local Fact selector; bind enclosing pinned Plan/ancestor identity at use, retaining existing exact reference types | Exact user async reply in execution_03/AUTHORIZATION.md; APPROVED_BY_USER |
+
+X-C01 repairs the ToolPlan→skip Policy→exact ToolProducerSelector→same ToolPlan digest
+cycle. Fields and constraints are Domain §13.4 and active CONTRACT_FIELDS §11.2. No
+new artifact/policy kind, implicit hash exclusion, cross-Object association or automatic
+condition evaluation is authorized. Existing exact selectors and produced Fact identities
+remain unchanged; unsupported new nodes fail closed in older readers. Definitions using
+the new local node require a new immutable artifact version/digest when published; no
+historical content is rewritten. This unshipped WP-01B data-contract addition has no
+persisted production migration. CPU synthetic tests do not prove Runtime execution.

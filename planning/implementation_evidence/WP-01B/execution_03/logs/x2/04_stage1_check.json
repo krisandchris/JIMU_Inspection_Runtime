@@ -1,0 +1,28 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_producers_data.py",
+    "tests/contract/test_b_producers_contracts.py",
+    "tests/negative/test_b_producers_invalid.py",
+    "-q",
+    "--junitxml=planning/implementation_evidence/WP-01B/execution_03/logs/x2/stage1_data_results.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T17:12:48.570603+00:00",
+  "ended_at": "2026-11-17T17:12:49.548486+00:00",
+  "exit_code": 0,
+  "stdout": "........................................                                 [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_03/logs/x2/stage1_data_results.xml -\n40 passed in 0.79s\n",
+  "stderr": "",
+  "hashes": {
+    "src/jimu_runtime/domain/producers.py": "8943ed39f9be683cd1dcef241072041fb6659ad3c91f87c08bfe77ca26482571",
+    "tests/unit/test_b_producers_data.py": "a3ecb2e1e67ec97b3dcbf9182d55cc881424b431e3bc7fae72f7c8f293b69e37",
+    "tests/contract/test_b_producers_contracts.py": "06585dcfae212ddfdd5f676d2910f853548d5430edc726ce76649b6092b60b4c",
+    "tests/negative/test_b_producers_invalid.py": "867b3bb9b3b1868375d8387b507d1d5bc1c22ae952d95b45d2e5351ead8349d6"
+  }
+}

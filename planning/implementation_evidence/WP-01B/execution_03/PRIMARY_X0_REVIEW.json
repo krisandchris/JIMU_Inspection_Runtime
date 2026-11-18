@@ -1,0 +1,26 @@
+{
+  "captured_at": "2026-11-17T17:11:13.163909+00:00",
+  "reviewer": "Primary Astra",
+  "scope": "X0 sole shared ProducerCatalogueContentRef extraction",
+  "read_sources": [
+    "src/jimu_runtime/domain/fact_selectors.py",
+    "src/jimu_runtime/domain/runtime/facts.py",
+    "tests/contract/test_b_producer_ref.py"
+  ],
+  "before_diff": "only same class relocation + re-export import; four-field wire and old API identity maintained",
+  "checks_all_exit_zero": true,
+  "first_pytest_junit_count": 145,
+  "subsequent_new_ref_only_pytest": {
+    "count": 11,
+    "source": "09_final_check.json",
+    "note": "one added schema exact-equivalence test after initial145; no invented combined run"
+  },
+  "source_hashes_verified": {
+    "src/jimu_runtime/domain/fact_selectors.py": "39bccead232229fe11ae59f7845408d679a457be01fc5b1b94ec22e2bc663617",
+    "src/jimu_runtime/domain/runtime/facts.py": "92999252da8653c114c7dc04a42e09aa2532b849000fa2067c16bd41b143d076",
+    "tests/contract/test_b_producer_ref.py": "f41dab89be54e117b4cbaab4f8fe0377c965ae61f5a7d3d1b2db8994c4afb0a4"
+  },
+  "findings": [],
+  "conclusion": "PASS_LOCAL_X0_NOT_WHOLE_WP",
+  "runtime": "RUNTIME_NOT_RUN"
+}

@@ -1,0 +1,30 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "src/jimu_runtime/domain/runtime/facts.py",
+    "src/jimu_runtime/domain/runtime/authority.py",
+    "src/jimu_runtime/domain/validation/authority_inputs.py",
+    "tests/unit/test_b_authority_models.py",
+    "tests/contract/test_b_fact_records.py",
+    "tests/negative/test_b_authority_models_invalid.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T14:49:52.626327+00:00",
+  "ended_at": "2026-11-17T14:49:52.647624+00:00",
+  "exit_code": 0,
+  "stdout": "All checks passed!\n",
+  "stderr": "",
+  "hashes": {
+    "src/jimu_runtime/domain/runtime/facts.py": "42fced7dbbb769048770067166b9603b07ec827d6e0a01273c9629bcf63a3182",
+    "src/jimu_runtime/domain/runtime/authority.py": "a4cd8d995051bca017332879ea99a8cb849b70138ff849a600632b493e29b065",
+    "src/jimu_runtime/domain/validation/authority_inputs.py": "1acd764bcab712285780233f5689fa5246977dc87e658e3e44360a755408b718",
+    "tests/unit/test_b_authority_models.py": "2ce42ac06b5d73999b3af44cc929a92dd89933ca1e9d2b98f7a1a3cff24c6481",
+    "tests/contract/test_b_fact_records.py": "5bca77c88791bc35312a1d3d5ab7201673d590ff0c0df40011175d561a50587a",
+    "tests/negative/test_b_authority_models_invalid.py": "2d5c7e99457c494a89c08293795d579663e39df5b4bc32a6796d356c487fe9a1"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "--config-file=/dev/null",
+    "--strict",
+    "--python-version=3.12",
+    "-c",
+    "from typing import Annotated\nfrom pydantic import Discriminator, Tag\nclass A: pass\nclass B: pass\ndef tag(v: object) -> str: return \"a\"\ntype AC = Annotated[A, Tag(\"a\")]\ntype BC = Annotated[B, Tag(\"b\")]\ntype U = Annotated[AC | BC, Discriminator(tag)]\n"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "recorded_at": "2026-11-17T17:05:07.641235+00:00",
+  "exit_code": 0,
+  "stdout": "Success: no issues found in 1 source file\n",
+  "stderr": "/dev/null: No [mypy] section in config file\n"
+}

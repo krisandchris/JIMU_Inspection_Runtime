@@ -1,0 +1,16 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:03:13.492342+00:00",
+  "end": "2026-11-17T17:03:14.860834+00:00",
+  "exit_code": 1,
+  "stdout": "src/jimu_runtime/domain/conditions.py:75: error: Argument 1 to \"tuple\" has incompatible type \"Any | None\"; expected \"Iterable[object]\"  [arg-type]\nsrc/jimu_runtime/domain/policies.py:975: error: Invalid type alias: expression is not a valid type  [valid-type]\nsrc/jimu_runtime/domain/validation/definitions.py:323: error: Returning Any from function declared to return \"QuestionSelectionPolicyArtifact | UnknownPolicyArtifact | QuestionValidationPolicyArtifact | EvidencePolicyArtifact | ToolExecutionPolicyArtifact | <9 more items>\"  [no-any-return]\nFound 3 errors in 3 files (checked 41 source files)\n",
+  "stderr": ""
+}

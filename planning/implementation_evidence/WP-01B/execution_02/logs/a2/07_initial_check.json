@@ -1,0 +1,20 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_candidate_history.py",
+    "tests/contract/test_b_authority_history.py",
+    "-q"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T15:26:02.245266+00:00",
+  "ended_at": "2026-11-17T15:26:03.632088+00:00",
+  "exit_code": 1,
+  "stdout": "......FF...                                                              [100%]\n=================================== FAILURES ===================================\n_ test_local_valid_history_has_no_unconditional_authority_pass[question_history] _\n\nname = 'question_history'\n\n    @pytest.mark.parametrize(\"name\", [\"question_history\", \"tool_history\", \"system_history\"])\n    def test_local_valid_history_has_no_unconditional_authority_pass(name: str) -> None:\n        data = fixture()\n>       inputs = LocalAuthorityHistoryInput.model_validate_json(json.dumps(data[name]))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       pydantic_core._pydantic_core.ValidationError: 1 validation error for LocalAuthorityHistoryInput\nE       candidates.entries.0.raw_bytes\nE         Input should be a valid bytes [type=bytes_type, input_value='{\"schema_version\":\"1.0.0...\",\"trace_id\":\"trace-1\"}', input_type=str]\nE           For further information visit https://errors.pydantic.dev/2.12/v/bytes_type\n\ntests/contract/test_b_authority_history.py:52: ValidationError\n__ test_local_valid_history_has_no_unconditional_authority_pass[tool_history] __\n\nname = 'tool_history'\n\n    @pytest.mark.parametrize(\"name\", [\"question_history\", \"tool_history\", \"system_history\"])\n    def test_local_valid_history_has_no_unconditional_authority_pass(name: str) -> None:\n        data = fixture()\n>       inputs = LocalAuthorityHistoryInput.model_validate_json(json.dumps(data[name]))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       pydantic_core._pydantic_core.ValidationError: 1 validation error for LocalAuthorityHistoryInput\nE       candidates.entries.0.raw_bytes\nE         Input should be a valid bytes [type=bytes_type, input_value='{\"schema_version\":\"1.0.0...\",\"trace_id\":\"trace-1\"}', input_type=str]\nE           For further information visit https://errors.pydantic.dev/2.12/v/bytes_type\n\ntests/contract/test_b_authority_history.py:52: ValidationError\n=========================== short test summary info ============================\nFAILED tests/contract/test_b_authority_history.py::test_local_valid_history_has_no_unconditional_authority_pass[question_history]\nFAILED tests/contract/test_b_authority_history.py::test_local_valid_history_has_no_unconditional_authority_pass[tool_history]\n2 failed, 9 passed in 1.10s\n",
+  "stderr": ""
+}

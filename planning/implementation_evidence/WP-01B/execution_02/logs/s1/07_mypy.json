@@ -1,0 +1,16 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime"
+  ],
+  "started_at": "2026-11-17T14:11:13.890710+00:00",
+  "finished_at": "2026-11-17T14:11:16.032683+00:00",
+  "exit_code": 1,
+  "stdout": "src/jimu_runtime/domain/definition_support.py:116: error: Incompatible return value type (got \"None\", expected \"FieldInfo\")  [return-value]\nsrc/jimu_runtime/domain/definition_support.py:187: error: Incompatible types in assignment (expression has type \"FieldInfo\", variable has type \"ReviewReportRef | None\")  [assignment]\nsrc/jimu_runtime/domain/definitions/resources.py:69: error: Incompatible types in assignment (expression has type \"FieldInfo\", variable has type \"AssetDimensions | None\")  [assignment]\nsrc/jimu_runtime/domain/definitions/ontology.py:55: error: Incompatible types in assignment (expression has type \"FieldInfo\", variable has type \"GeometryResourceContentRef | None\")  [assignment]\nFound 4 errors in 3 files (checked 12 source files)\n",
+  "stderr": ""
+}

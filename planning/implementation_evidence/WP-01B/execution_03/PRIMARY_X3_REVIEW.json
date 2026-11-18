@@ -1,0 +1,53 @@
+{
+  "reviewed_at": "2026-11-17T18:07:53.492692+00:00",
+  "scope": "Complete finite Producer/Authority composition",
+  "direct_review": [
+    "Full checker via initialbody and final added/changed sections; inputmodels",
+    "all-context preflight and immutable Question/Tool/Plan merge",
+    "allCandidate and allResult static/recriprocal associations; selected-only eligibility and output completeness",
+    "precise three local-deferred replacements while preserving failures/incomplete and future boundaries",
+    "main unit/contract/negative tests plus independently authored review regressions",
+    "actual rawfinalcommandrecords/JUnit and all12 sealedhashes"
+  ],
+  "conclusion": "PASS_COMPONENT_ONLY",
+  "tests": {
+    "tests": 78,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "independent_review": "wp01b_c_policies PASS; read-only probes no C0-C2",
+  "finding_status": {
+    "X-I06": "CLOSED after independent63 and direct review",
+    "X-I07": "CLOSED after independent63 and direct review"
+  },
+  "evidence_limitation": "No missing failed JUnit: original failed report was retained as logs/x3/composition_prerelease_failure.xml; raw failed command output remains in composition_commands.jsonl. Current composition_final.xml is final78 only.",
+  "runtime": "N/A / RUNTIME_NOT_RUN",
+  "product_sha256": {
+    "src/jimu_runtime/domain/validation/producer_authority.py": "4179223f05cc4a226936a6c83ff832919a119b5754495bc3715c34856c4349af",
+    "src/jimu_runtime/domain/validation/producer_authority_inputs.py": "77fd8e3021e88b8ecff21f03bf4851600624d3b3639462b7dad292bd76ec1596",
+    "tests/contract/test_b_producer_authority_contracts.py": "cd6d154e0a0363ef1c01178e40eabfcede3dfc05e6a8c197fce75bed7cb10073",
+    "tests/contract/test_b_producer_authority_inputs.py": "583567321551bb1b696de995ef43e8f9c0385bf8e856d3dc87d816ba498473e1",
+    "tests/fixtures/wp01b/x3/composition.json": "ab4f1f5a24c1eec25d77b3aa49a631a6d6eedae0f60ce2b154dfecc28034fbba",
+    "tests/fixtures/wp01b/x3/inputs.json": "f95f25926143e72a28b1d1be403a4139bfa64a2285e2ac967feac351ac98973c",
+    "tests/fixtures/wp01b/x3/integration.py": "4a48975406a9529cafbccf9e4c2a42234441844c20f2faef78b5f2bef2986a35",
+    "tests/fixtures/wp01b/x3/support.py": "e5fb16dbe1c4b38d5dbd197d0d18a9e0150f05bef7edbd0481a00d530fe786fc",
+    "tests/negative/test_b_producer_authority_inputs_invalid.py": "d0f5ca3f0fe8fe6956366ddf4fffa33ecf5338a064e8e7935789f2f5dbf11b70",
+    "tests/negative/test_b_producer_authority_invalid.py": "05e362495554393614cbe51481f8a87f7d15b2ffb8aca4d59286fd7339f678e8",
+    "tests/unit/test_b_producer_authority_input_views.py": "942ac23c0e989509a53621dbe91be52db066ba78dd13810fe5bc4713ecf57d15",
+    "tests/unit/test_b_producer_authority_integration.py": "27aa2239c171fe1c36c0ee07a72364c1529d7f868eab89757cecd388b523a42c"
+  },
+  "evidence_correction": {
+    "verified_at": "2026-11-17T18:09:08.701868+00:00",
+    "initial_assumption": "Reused output path initially suggested lost intermediate XML",
+    "actual_verified_evidence": "logs/x3/composition_prerelease_failure.xml",
+    "counts": {
+      "tests": 78,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "sha256": "b987093ea4025b69ec9d7149e04c82b0c74c8cf120359536e72fd6c46b505da5",
+    "note": "Primary corrected the assumption after reading the retained original XML; no evidence reconstruction."
+  }
+}

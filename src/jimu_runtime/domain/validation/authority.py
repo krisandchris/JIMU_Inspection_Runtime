@@ -1,0 +1,887 @@
+"""Finite local history checks; never return a validated-authority consumer view."""
+
+from collections.abc import Callable
+from typing import Annotated
+
+from pydantic import BeforeValidator, Field, ValidationError
+
+from jimu_runtime.domain.base import ContractModel
+from jimu_runtime.domain.definition_enums import FactScope
+from jimu_runtime.domain.definition_support import (
+    immutable_sequence,
+    reference_identity,
+)
+from jimu_runtime.domain.enums import AttemptStatus
+from jimu_runtime.domain.fact_schemas.models import (
+    ForbiddenConfidenceMetadataPolicy,
+    RequiredConfidenceMetadataPolicy,
+)
+from jimu_runtime.domain.fact_schemas.registry import (
+    FactSchemaRegistry,
+    RegistryValidationError,
+)
+from jimu_runtime.domain.references import ContentRef, RuntimeRecordRef
+from jimu_runtime.domain.runtime.authority import (
+    AuthoritativeResultSelection,
+    ObservationBatchSelection,
+    SystemOutputSelection,
+    ToolStepSelection,
+)
+from jimu_runtime.domain.runtime.candidates import (
+    CandidateParseLimits,
+    CandidateSnapshot,
+    CandidateSnapshotLimits,
+    RejectedCandidates,
+    append_candidates,
+    issue,
+)
+from jimu_runtime.domain.runtime.facts import (
+    FactRecord,
+    KnownFact,
+    QuestionFactSource,
+    ScopedRecord,
+    SystemFactSource,
+    ToolFactSource,
+)
+from jimu_runtime.domain.validation.authority_inputs import (
+    AttemptDescriptor,
+    AuthorityQuestionInput,
+    AuthorityToolPlanInput,
+    EmittedOutput,
+    NodeAttemptOwner,
+    NodeRunDescriptor,
+    ObjectDescriptor,
+    ObservationResultDescriptor,
+    QuestionSelectionDescriptor,
+    SystemAttemptOwner,
+    SystemOutputResultDescriptor,
+    ToolStepResultDescriptor,
+)
+from jimu_runtime.domain.validation.issues import (
+    CheckResult,
+    CheckStatus,
+    ValidationIssue,
+    ValidationReport,
+)
+from jimu_runtime.domain.validation.tool_plans import ToolRegistration
+
+type Directory[T] = Annotated[
+    tuple[T, ...], Field(max_length=1024), BeforeValidator(immutable_sequence)
+]
+type ResultDescriptor = (
+    ObservationResultDescriptor
+    | ToolStepResultDescriptor
+    | SystemOutputResultDescriptor
+)
+
+
+class LocalAuthorityHistoryInput(ContractModel):
+    candidates: CandidateSnapshot
+    prior_selections: Directory[AuthoritativeResultSelection]
+    proposed_selections: Directory[AuthoritativeResultSelection]
+    objects: Directory[ObjectDescriptor]
+    node_runs: Directory[NodeRunDescriptor]
+    attempts: Directory[AttemptDescriptor]
+    question_selections: Directory[QuestionSelectionDescriptor]
+    observation_results: Directory[ObservationResultDescriptor]
+    tool_results: Directory[ToolStepResultDescriptor]
+    system_results: Directory[SystemOutputResultDescriptor]
+    questions: Directory[AuthorityQuestionInput]
+    tools: Directory[ToolRegistration]
+    plans: Directory[AuthorityToolPlanInput]
+
+
+class _Checks:
+    def __init__(self) -> None:
+        self.problems: dict[str, list[tuple[CheckStatus, ValidationIssue]]] = {}
+        self.performed: set[str] = set()
+
+    def add(self, check: str, status: CheckStatus, code: str, message: str) -> None:
+        entries = self.problems.setdefault(check, [])
+        if len(entries) < 64:
+            entries.append((status, issue(code, (), message)))
+        elif entries[-1][1].code != "diagnostic_overflow":
+            entries[-1] = (
+                "invalid",
+                issue(
+                    "diagnostic_overflow",
+                    (),
+                    "Diagnostic enumeration exceeded64; retained locations are incomplete.",
+                ),
+            )
+
+    def report(self) -> ValidationReport:
+        checks: list[CheckResult] = []
+        for name in (
+            "history_input",
+            "history_identity",
+            "history_chain",
+            "history_association",
+            "history_fact_schema",
+        ):
+            problems = self.problems.get(name, [])
+            if not problems and name not in self.performed:
+                problems = [
+                    (
+                        "incomplete",
+                        issue(
+                            "check_not_run",
+                            (),
+                            "Prerequisites prevented this local check; it was not executed.",
+                        ),
+                    )
+                ]
+            statuses = {status for status, _ in problems}
+            status: CheckStatus = (
+                "invalid"
+                if "invalid" in statuses
+                else "incomplete"
+                if "incomplete" in statuses
+                else "passed"
+            )
+            checks.append(
+                CheckResult(
+                    check_id=name,
+                    status=status,
+                    issues=tuple(problem for _, problem in problems),
+                )
+            )
+        for name, message in (
+            (
+                "full_authority_admission",
+                "This local API has no complete Producer/Policy catalogues; declaration and policy checks require upper-layer finite checks. Actual activation, expression typing, Release admission and external trust are not proven here; no consumer authority is granted.",
+            ),
+            (
+                "profile_release_admission",
+                "Profile membership, Release pin and selection-policy completeness require full authoritative catalogues.",
+            ),
+            (
+                "system_output_declaration",
+                "System emitted key/schema/cardinality and optional-absence permission require the complete Producer declaration.",
+            ),
+            (
+                "external_provenance",
+                "Actual evidence, Invocation, Actor trust and external history completeness are unverified.",
+            ),
+        ):
+            checks.append(
+                CheckResult(
+                    check_id=name, status="deferred", issues=(issue(name, (), message),)
+                )
+            )
+        return ValidationReport(scope="authority_admission", checks=tuple(checks))
+
+
+def _index[T: ContractModel](
+    entries: tuple[T, ...], key: Callable[[T], tuple[object, ...]], checks: _Checks
+) -> dict[tuple[object, ...], T]:
+    result: dict[tuple[object, ...], T] = {}
+    for entry in entries:
+        identity = key(entry)
+        if identity in result:
+            if result[identity] != entry:
+                checks.add(
+                    "history_identity",
+                    "invalid",
+                    "record_rebinding",
+                    "One scoped record identity has contradictory immutable content.",
+                )
+        else:
+            result[identity] = entry
+    return result
+
+
+def _runtime_key(execution: str, ref: RuntimeRecordRef) -> tuple[object, ...]:
+    return execution, ref.record_kind, ref.record_id
+
+
+def _scope(record: ScopedRecord) -> tuple[object, ...]:
+    return (
+        record.execution_id,
+        record.scope,
+        record.object_id,
+        reference_identity(record.profile_ref)
+        if record.profile_ref is not None
+        else None,
+    )
+
+
+def _system_identity(
+    requirement: SystemFactSource
+    | SystemOutputSelection
+    | SystemOutputResultDescriptor
+    | SystemAttemptOwner,
+) -> tuple[object, ...]:
+    value = requirement.requirement
+    return value.family, value.capability_id, value.contract_version
+
+
+def _group(selection: AuthoritativeResultSelection) -> tuple[object, ...]:
+    prefix = (selection.selection_group, *_scope(selection))
+    if isinstance(selection, ToolStepSelection):
+        return (*prefix, reference_identity(selection.tool_plan_ref), selection.step_id)
+    if isinstance(selection, SystemOutputSelection):
+        return (*prefix, _system_identity(selection), selection.output_name)
+    return prefix
+
+
+def _resolve[T: ContractModel](
+    ref: ContentRef,
+    entries: tuple[T, ...],
+    get_ref: Callable[[T], ContentRef],
+    checks: _Checks,
+) -> T | None:
+    identity = reference_identity(ref)
+    for entry in entries:
+        actual = reference_identity(get_ref(entry))
+        if actual[:3] == identity[:3]:
+            if actual != identity:
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "definition_digest_mismatch",
+                    "Known definition identity has a contradictory pinned digest.",
+                )
+                return None
+            return entry
+    checks.add(
+        "history_association",
+        "incomplete",
+        "missing_definition",
+        "Required actual Question/Tool/Plan definition was not supplied.",
+    )
+    return None
+
+
+def _fact_schema(
+    fact: FactRecord, registry: FactSchemaRegistry, checks: _Checks
+) -> None:
+    try:
+        definition = registry.resolve(fact.fact_schema_ref)
+        if (
+            definition.scope is not fact.scope
+            or fact.producer_kind not in definition.allowed_producer_kinds
+        ):
+            checks.add(
+                "history_fact_schema",
+                "invalid",
+                "fact_schema_scope_producer",
+                "Fact scope or producer kind contradicts registered Schema.",
+            )
+        if isinstance(fact, KnownFact):
+            registry.validate_payload(fact.fact_schema_ref, fact.value)
+        policy = definition.confidence_metadata_policy
+        present = fact.confidence is not None
+        if isinstance(policy, ForbiddenConfidenceMetadataPolicy):
+            valid = not present
+        else:
+            allowed = fact.status in policy.allowed_fact_statuses
+            valid = (allowed or not present) and (
+                not isinstance(policy, RequiredConfidenceMetadataPolicy)
+                or not allowed
+                or present
+            )
+        if not valid:
+            checks.add(
+                "history_fact_schema",
+                "invalid",
+                "fact_confidence_policy",
+                "Confidence presence/status contradicts registered metadata policy.",
+            )
+    except RegistryValidationError as exc:
+        unknown = any(
+            problem.code == "registry.unknown_identity"
+            for check in exc.report.checks
+            for problem in check.issues
+        )
+        checks.add(
+            "history_fact_schema",
+            "incomplete" if unknown else "invalid",
+            "fact_schema_missing" if unknown else "fact_schema_invalid",
+            "Exact Schema or typed payload could not be validated in supplied registry.",
+        )
+
+
+def _check_chain(
+    selections: tuple[AuthoritativeResultSelection, ...], checks: _Checks
+) -> None:
+    checks.performed.add("history_chain")
+    by_id = _index(
+        selections, lambda entry: (entry.execution_id, entry.selection_id), checks
+    )
+    revisions: dict[tuple[object, ...], dict[int, AuthoritativeResultSelection]] = {}
+    for selection in by_id.values():
+        group = revisions.setdefault(_group(selection), {})
+        previous = group.get(selection.authority_revision)
+        if previous is not None and previous.selection_id != selection.selection_id:
+            checks.add(
+                "history_chain",
+                "invalid",
+                "authority_revision_fork",
+                "A group revision has more than one explicit selection identity.",
+            )
+        else:
+            group[selection.authority_revision] = selection
+        ref = selection.expected_previous_selection_ref
+        if ref is not None:
+            prior = by_id.get((selection.execution_id, ref.record_id))
+            if prior is None:
+                checks.add(
+                    "history_chain",
+                    "incomplete",
+                    "missing_previous_selection",
+                    "Previous selection identity is missing from finite history.",
+                )
+            elif (
+                _group(prior) != _group(selection)
+                or prior.authority_revision + 1 != selection.authority_revision
+            ):
+                checks.add(
+                    "history_chain",
+                    "invalid",
+                    "authority_previous_mismatch",
+                    "Known predecessor belongs to another group or contradictory revision.",
+                )
+    for group in revisions.values():
+        for number, selection in group.items():
+            if number > 1 and number - 1 in group:
+                previous = group[number - 1]
+                if (
+                    selection.expected_previous_selection_ref is None
+                    or selection.expected_previous_selection_ref.record_id
+                    != previous.selection_id
+                ):
+                    checks.add(
+                        "history_chain",
+                        "invalid",
+                        "authority_previous_mismatch",
+                        "Known adjacent revision does not match the explicitly pinned predecessor.",
+                    )
+
+
+def validate_local_authority_history(
+    inputs: LocalAuthorityHistoryInput,
+    *,
+    fact_schemas: FactSchemaRegistry,
+    parse_limits: CandidateParseLimits,
+    snapshot_limits: CandidateSnapshotLimits,
+) -> ValidationReport:
+    checks = _Checks()
+    try:
+        inputs = LocalAuthorityHistoryInput.model_validate(inputs)
+        parse_limits = CandidateParseLimits.model_validate(parse_limits)
+        snapshot_limits = CandidateSnapshotLimits.model_validate(snapshot_limits)
+    except (ValidationError, ValueError):
+        checks.add(
+            "history_input",
+            "invalid",
+            "invalid_history_contract",
+            "History or explicit budgets violate their strict contracts.",
+        )
+        checks.add(
+            "history_association",
+            "incomplete",
+            "history_prerequisite",
+            "Associations cannot be checked against invalid input.",
+        )
+        return checks.report()
+    checks.performed.add("history_input")
+    candidate_result = append_candidates(
+        inputs.candidates,
+        (),
+        parse_limits=parse_limits,
+        snapshot_limits=snapshot_limits,
+    )
+    if isinstance(candidate_result, RejectedCandidates):
+        checks.add(
+            "history_input",
+            "invalid",
+            "invalid_candidate_history",
+            "Candidate snapshot could not be independently validated.",
+        )
+        checks.add(
+            "history_association",
+            "incomplete",
+            "history_prerequisite",
+            "Associations require a validated candidate snapshot.",
+        )
+        return checks.report()
+    facts = {entry.fact.fact_id: entry.fact for entry in inputs.candidates.entries}
+    if isinstance(fact_schemas, FactSchemaRegistry):
+        checks.performed.add("history_fact_schema")
+        for candidate in facts.values():
+            _fact_schema(candidate, fact_schemas, checks)
+    else:
+        checks.add(
+            "history_fact_schema",
+            "incomplete",
+            "missing_fact_registry",
+            "An explicit immutable Fact Schema registry is required for Schema checks.",
+        )
+    checks.performed.add("history_identity")
+    objects = _index(
+        inputs.objects,
+        lambda item: _runtime_key(item.execution_id, item.object_ref),
+        checks,
+    )
+    nodes = _index(
+        inputs.node_runs,
+        lambda item: _runtime_key(item.execution_id, item.node_run_ref),
+        checks,
+    )
+    attempts = _index(
+        inputs.attempts,
+        lambda item: _runtime_key(item.execution_id, item.attempt_ref),
+        checks,
+    )
+    question_sets = _index(
+        inputs.question_selections,
+        lambda item: _runtime_key(item.execution_id, item.question_selection_ref),
+        checks,
+    )
+    all_results: tuple[ResultDescriptor, ...] = (
+        *inputs.observation_results,
+        *inputs.tool_results,
+        *inputs.system_results,
+    )
+    results = _index(
+        all_results,
+        lambda item: _runtime_key(item.execution_id, item.result_ref),
+        checks,
+    )
+    _index(inputs.questions, lambda item: reference_identity(item.ref)[:3], checks)
+    _index(inputs.tools, lambda item: reference_identity(item.ref)[:3], checks)
+    _index(inputs.plans, lambda item: reference_identity(item.ref)[:3], checks)
+    selections = (*inputs.prior_selections, *inputs.proposed_selections)
+    _check_chain(selections, checks)
+    if checks.problems.get("history_identity"):
+        checks.add(
+            "history_association",
+            "incomplete",
+            "history_prerequisite",
+            "Conflicting directory identities prevent association lookup.",
+        )
+        return checks.report()
+    checks.performed.add("history_association")
+    for selection in selections:
+        result = results.get(
+            _runtime_key(selection.execution_id, selection.selected_result_ref)
+        )
+        attempt = next(
+            (
+                item
+                for item in attempts.values()
+                if item.execution_id == selection.execution_id
+                and item.attempt_ref.record_id == selection.selected_attempt_id
+            ),
+            None,
+        )
+        if result is None or attempt is None:
+            checks.add(
+                "history_association",
+                "incomplete",
+                "missing_result_attempt",
+                "Selected Result or Attempt is missing in the same Execution.",
+            )
+            continue
+        if attempt.status is not AttemptStatus.SUCCEEDED:
+            checks.add(
+                "history_association",
+                "invalid",
+                "ineligible_attempt",
+                "Every selection reason requires a succeeded Attempt.",
+            )
+        if result.arrival_qualification != "on_time":
+            checks.add(
+                "history_association",
+                "incomplete"
+                if result.arrival_qualification == "unresolved"
+                else "invalid",
+                "result_arrival",
+                "Selected result lacks explicit on-time qualification.",
+            )
+        if result.attempt_ref.record_id != selection.selected_attempt_id or _scope(
+            result
+        ) != _scope(selection):
+            checks.add(
+                "history_association",
+                "invalid",
+                "result_scope_attempt",
+                "Selected result scope/Attempt contradicts the selection.",
+            )
+        if selection.scope is FactScope.OBJECT:
+            obj = next(
+                (
+                    item
+                    for item in objects.values()
+                    if item.execution_id == selection.execution_id
+                    and item.object_ref.record_id == selection.object_id
+                ),
+                None,
+            )
+            if obj is None:
+                checks.add(
+                    "history_association",
+                    "incomplete",
+                    "missing_object",
+                    "Actual scoped Object is absent from the finite catalogue.",
+                )
+            elif obj.profile_ref != selection.profile_ref:
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "object_profile",
+                    "Object belongs to a different exact Profile.",
+                )
+        if isinstance(selection, SystemOutputSelection):
+            if not isinstance(attempt.owner, SystemAttemptOwner) or _system_identity(
+                attempt.owner
+            ) != _system_identity(selection):
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "system_attempt_owner",
+                    "System Attempt must belong to the exact registered capability identity.",
+                )
+        elif isinstance(attempt.owner, NodeAttemptOwner):
+            node = nodes.get(
+                _runtime_key(selection.execution_id, attempt.owner.node_run_ref)
+            )
+            if node is None:
+                checks.add(
+                    "history_association",
+                    "incomplete",
+                    "missing_node",
+                    "Attempt owning NodeRun is absent.",
+                )
+            elif node.node_id != (
+                "N04" if isinstance(selection, ObservationBatchSelection) else "N05"
+            ):
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "wrong_node",
+                    "Selected Attempt has the wrong business node owner.",
+                )
+        else:
+            checks.add(
+                "history_association",
+                "invalid",
+                "wrong_attempt_owner",
+                "Node selection cannot use a system Attempt owner.",
+            )
+        selected = {ref.record_id for ref in selection.selected_fact_refs}
+        if isinstance(result, (ObservationResultDescriptor, ToolStepResultDescriptor)):
+            for qualification in (
+                result.envelope_validation,
+                result.association_validation,
+            ):
+                if qualification != "trusted":
+                    checks.add(
+                        "history_association",
+                        "incomplete" if qualification == "unresolved" else "invalid",
+                        "untrusted_result",
+                        "Result envelope/association is not explicitly trusted.",
+                    )
+        expected: set[str] = set()
+        if isinstance(selection, ObservationBatchSelection) and isinstance(
+            result, ObservationResultDescriptor
+        ):
+            anchor = question_sets.get(
+                _runtime_key(selection.execution_id, result.question_selection_ref)
+            )
+            if anchor is None:
+                checks.add(
+                    "history_association",
+                    "incomplete",
+                    "missing_question_selection",
+                    "N04 effective Questions require an external selection anchor.",
+                )
+            else:
+                if (
+                    anchor.profile_ref != selection.profile_ref
+                    or anchor.effective_question_refs != result.effective_question_refs
+                ):
+                    checks.add(
+                        "history_association",
+                        "invalid",
+                        "question_anchor_mismatch",
+                        "N04 effective set/Profile contradicts the pinned external selection.",
+                    )
+                if anchor.eligibility_qualification != "validated":
+                    checks.add(
+                        "history_association",
+                        "incomplete"
+                        if anchor.eligibility_qualification == "unresolved"
+                        else "invalid",
+                        "question_selection_qualification",
+                        "External Question selection lacks validated qualification.",
+                    )
+            if {
+                reference_identity(item.question_ref)
+                for item in result.question_results
+            } != {reference_identity(ref) for ref in result.effective_question_refs}:
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "incomplete_question_batch",
+                    "Question candidates do not cover exactly the pinned effective set.",
+                )
+            for item in result.question_results:
+                expected.add(item.fact_ref.record_id)
+                fact = facts.get(item.fact_ref.record_id)
+                question = _resolve(
+                    item.question_ref, inputs.questions, lambda entry: entry.ref, checks
+                )
+                if fact is not None:
+                    if (
+                        not isinstance(fact.source, QuestionFactSource)
+                        or fact.source.question_ref != item.question_ref
+                        or fact.source.observation_batch_ref != result.result_ref
+                        or fact.source.model_invocation_ref
+                        != result.model_invocation_ref
+                    ):
+                        checks.add(
+                            "history_association",
+                            "invalid",
+                            "question_fact_source",
+                            "Fact provenance contradicts its Question/batch/invocation association.",
+                        )
+                    if question is not None and (
+                        fact.fact_key != question.definition.primary_fact_key
+                        or reference_identity(fact.fact_schema_ref)
+                        != reference_identity(
+                            question.definition.primary_fact_schema_ref
+                        )
+                    ):
+                        checks.add(
+                            "history_association",
+                            "invalid",
+                            "question_primary_contract",
+                            "Fact key/Schema differs from actual Question primary declaration.",
+                        )
+        elif isinstance(selection, ToolStepSelection) and isinstance(
+            result, ToolStepResultDescriptor
+        ):
+            if (
+                selection.tool_plan_ref != result.tool_plan_ref
+                or selection.step_id != result.step_id
+            ):
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "tool_group",
+                    "Result belongs to a different ToolPlan step.",
+                )
+            plan = _resolve(
+                selection.tool_plan_ref, inputs.plans, lambda entry: entry.ref, checks
+            )
+            tool = _resolve(
+                result.tool_ref, inputs.tools, lambda entry: entry.ref, checks
+            )
+            step = (
+                next(
+                    (
+                        item
+                        for item in plan.definition.steps
+                        if item.step_id == selection.step_id
+                    ),
+                    None,
+                )
+                if plan
+                else None
+            )
+            if plan is not None and step is None:
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "unknown_plan_step",
+                    "Known ToolPlan does not declare the selected step.",
+                )
+            if step is not None and step.tool_ref != result.tool_ref:
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "step_tool_mismatch",
+                    "Result Tool contradicts actual step binding.",
+                )
+            if (
+                tool is not None
+                and result.actual_implementation_version
+                not in tool.definition.implementation_requirement.allowed_implementation_versions
+            ):
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "tool_implementation",
+                    "Actual Tool implementation version is not explicitly allowed.",
+                )
+            outputs = {item.output_name: item for item in result.mapped_outputs}
+            if step is not None and set(outputs) != {
+                item.output_name for item in step.fact_output_mappings
+            }:
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "tool_output_set",
+                    "Result output set differs from actual mapped step outputs.",
+                )
+            declarations = (
+                {item.output_name: item for item in tool.definition.fact_outputs}
+                if tool
+                else {}
+            )
+            mappings = (
+                {item.output_name: item for item in step.fact_output_mappings}
+                if step
+                else {}
+            )
+            for output in result.mapped_outputs:
+                declaration = declarations.get(output.output_name)
+                mapping = mappings.get(output.output_name)
+                if tool is not None and declaration is None:
+                    checks.add(
+                        "history_association",
+                        "invalid",
+                        "undeclared_tool_output",
+                        "Actual Tool does not declare this named output.",
+                    )
+                if isinstance(output, EmittedOutput):
+                    expected.add(output.fact_ref.record_id)
+                    fact = facts.get(output.fact_ref.record_id)
+                    if fact is not None:
+                        source = fact.source
+                        if (
+                            not isinstance(source, ToolFactSource)
+                            or source.tool_execution_ref != result.result_ref
+                            or source.tool_plan_ref != result.tool_plan_ref
+                            or source.step_id != result.step_id
+                            or source.tool_ref != result.tool_ref
+                            or source.output_name != output.output_name
+                            or fact.status is not output.fact_status
+                        ):
+                            checks.add(
+                                "history_association",
+                                "invalid",
+                                "tool_fact_source",
+                                "Emitted Fact source/status differs from selected Tool result.",
+                            )
+                        if declaration is not None and (
+                            fact.fact_key != declaration.fact_key
+                            or reference_identity(fact.fact_schema_ref)
+                            != reference_identity(declaration.fact_schema_ref)
+                            or fact.scope is not declaration.scope
+                        ):
+                            checks.add(
+                                "history_association",
+                                "invalid",
+                                "tool_output_contract",
+                                "Fact key/Schema/scope differs from actual Tool output declaration.",
+                            )
+                elif declaration is not None and declaration.required:
+                    checks.add(
+                        "history_association",
+                        "invalid",
+                        "required_tool_absence",
+                        "Required mapped Tool output cannot be absent.",
+                    )
+                if (
+                    declaration is not None
+                    and mapping is not None
+                    and mapping.target_fact_key != declaration.fact_key
+                ):
+                    checks.add(
+                        "history_association",
+                        "invalid",
+                        "tool_key_alias",
+                        "Step target key differs from Tool declaration.",
+                    )
+        elif isinstance(selection, SystemOutputSelection) and isinstance(
+            result, SystemOutputResultDescriptor
+        ):
+            requirements = [selection.requirement]
+            if isinstance(attempt.owner, SystemAttemptOwner):
+                requirements.append(attempt.owner.requirement)
+            if any(
+                result.actual_implementation_version
+                not in requirement.allowed_implementation_versions
+                for requirement in requirements
+            ):
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "system_implementation",
+                    "Actual system implementation is not allowed by the explicitly pinned selection/Attempt requirements.",
+                )
+            if (
+                _system_identity(selection) != _system_identity(result)
+                or selection.output_name != result.output_name
+            ):
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "system_group",
+                    "System output identity differs from selection group.",
+                )
+            if isinstance(result.output, EmittedOutput):
+                expected.add(result.output.fact_ref.record_id)
+                fact = facts.get(result.output.fact_ref.record_id)
+                if fact is not None and (
+                    not isinstance(fact.source, SystemFactSource)
+                    or _system_identity(fact.source) != _system_identity(result)
+                    or fact.source.output_name != result.output_name
+                    or fact.source.system_output_ref != result.result_ref
+                    or fact.status is not result.output.fact_status
+                ):
+                    checks.add(
+                        "history_association",
+                        "invalid",
+                        "system_fact_source",
+                        "System Fact source/status contradicts recorded result.",
+                    )
+                if (
+                    fact is not None
+                    and isinstance(fact.source, SystemFactSource)
+                    and result.actual_implementation_version
+                    not in fact.source.requirement.allowed_implementation_versions
+                ):
+                    checks.add(
+                        "history_association",
+                        "invalid",
+                        "system_implementation",
+                        "Actual system implementation is not allowed by Fact provenance requirement.",
+                    )
+        else:
+            checks.add(
+                "history_association",
+                "invalid",
+                "result_group_kind",
+                "Selected result type does not match selection group.",
+            )
+        if selected != expected:
+            checks.add(
+                "history_association",
+                "invalid",
+                "whole_result_selection",
+                "Selected Facts must equal the entire Result output set, without splicing.",
+            )
+        for identity in expected | selected:
+            fact = facts.get(identity)
+            if fact is None:
+                checks.add(
+                    "history_association",
+                    "incomplete",
+                    "missing_candidate_fact",
+                    "Result or Selection refers to a candidate absent from finite snapshot.",
+                )
+            elif (
+                _scope(fact) != _scope(selection)
+                or fact.attempt_id != selection.selected_attempt_id
+            ):
+                checks.add(
+                    "history_association",
+                    "invalid",
+                    "fact_scope_attempt",
+                    "Selected candidate belongs to a different scope or Attempt.",
+                )
+    return checks.report()

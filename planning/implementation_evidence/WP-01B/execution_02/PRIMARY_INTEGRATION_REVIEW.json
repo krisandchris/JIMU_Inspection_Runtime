@@ -1,0 +1,105 @@
+{
+  "captured_at": "2026-11-17T16:15:24.532274+00:00",
+  "reviewer": "Primary Astra",
+  "baseline": "c25bef668136acc651e7313ba608ec6fdefd39a5",
+  "directly_read_evidence": "planning/implementation_evidence/WP-01B/execution_02/logs/integration/final_recheck",
+  "junit_counts": {
+    "tests": 1455,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "commands": [
+    {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-m",
+        "pytest",
+        "tests/unit",
+        "tests/contract",
+        "tests/negative",
+        "-q",
+        "--junitxml=planning/implementation_evidence/WP-01B/execution_02/logs/integration/final_recheck/pytest.xml"
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "start": "2026-11-17T16:10:08.643403+00:00",
+      "end": "2026-11-17T16:11:30.633283+00:00",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "check",
+        "."
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "start": "2026-11-17T16:10:22.480881+00:00",
+      "end": "2026-11-17T16:10:22.497676+00:00",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "format",
+        "--check",
+        "src",
+        "tests",
+        "scripts"
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "start": "2026-11-17T16:10:22.481147+00:00",
+      "end": "2026-11-17T16:10:22.497383+00:00",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "mypy",
+        "src/jimu_runtime"
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "start": "2026-11-17T16:10:22.483624+00:00",
+      "end": "2026-11-17T16:10:23.027551+00:00",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "scripts/generate_schemas.py",
+        "--check"
+      ],
+      "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+      "start": "2026-11-17T16:10:22.482799+00:00",
+      "end": "2026-11-17T16:10:26.632376+00:00",
+      "exit_code": 0
+    }
+  ],
+  "tested_files_count": 240,
+  "current_hash_mismatches": [],
+  "source_snapshot_stable": true,
+  "format_scope": "src/tests/scripts passed; whole-tree format first run failed on three immutable audit source snapshots and remains explicitly disclosed",
+  "code_acceptance": "PASS_LOCAL_IMPLEMENTED_D01_INDEPENDENT_SCOPE",
+  "test_acceptance": "TEST_PASSED_FOR_CURRENT_IMPLEMENTED_A_PLUS_B",
+  "overall_wp01b": "INCOMPLETE_PENDING_G1_D01_USER_DECISION",
+  "runtime_acceptance": "N/A / RUNTIME_NOT_RUN",
+  "full_authority_admission": "NOT_IMPLEMENTED_D01_DEPENDENCY"
+}

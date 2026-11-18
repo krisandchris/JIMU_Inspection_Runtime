@@ -1,0 +1,50 @@
+[
+  {
+    "id": "V1-E01",
+    "status": "FIXED_PENDING_PRIMARY_REVIEW",
+    "issue": "Initial source import names, narrow-ref adaptation and mypy flow errors; initial test style errors",
+    "evidence": "Original Ruff/mypy outputs retained in commands.jsonl; final checks all exit0."
+  },
+  {
+    "id": "V1-E02",
+    "status": "FIXED_PENDING_PRIMARY_REVIEW",
+    "issue": "Passing V1 registration subclasses directly to strict B base validators leaked the known wrapper discriminator",
+    "evidence": "Initial 5failed/33passed, next4failed/34passed retained. Explicit conversion back to B base registrations occurs after full strict V1 revalidation; no extra-field relaxation."
+  },
+  {
+    "id": "V1-R01",
+    "status": "FIXED_PENDING_PRIMARY_REVIEW",
+    "issue": "Missing validation_at could hide known Model Prompt response pin conflict",
+    "evidence": "Dedicated combined invalid-response/incomplete-time regression passed."
+  },
+  {
+    "id": "V1-R02",
+    "status": "FIXED_PENDING_PRIMARY_REVIEW",
+    "issue": "Diagnostic overflow initially discarded known invalidity and deferred boundaries",
+    "evidence": "Both incomplete-only overflow and known-invalid overflow regressions preserve bounded prefix+capacity+deferred."
+  },
+  {
+    "id": "V1-R03",
+    "status": "FIXED_PENDING_PRIMARY_REVIEW",
+    "issue": "Known wrong source Schema digest could be classified as missing owner",
+    "evidence": "Prompt and Grounding regressions resolve Schema identity before owner matching."
+  },
+  {
+    "id": "V1-R04",
+    "status": "FIXED_PENDING_PRIMARY_REVIEW",
+    "issue": "Question/partial/orphan Prompt response refs were not resolved",
+    "evidence": "finding_prompt_response_before.json records both wrongdigest/missing were only deferred. Six final regressions reject/classify correctly."
+  },
+  {
+    "id": "V1-R05",
+    "status": "FIXED_PENDING_PRIMARY_REVIEW",
+    "issue": "Isolated ExecutionPolicy and unowned ToolPlan relations needed existing B validator delegation",
+    "evidence": "Dedicated actual-validator regressions passed."
+  },
+  {
+    "id": "V1-E03",
+    "status": "NON_TEST_DEBUG_PROBE_FAILED",
+    "issue": "A direct system python3 debug probe omitted uv and failed to import jimu_runtime; no tests executed in that probe",
+    "evidence": "Observed terminal output ModuleNotFoundError retained in tool transcript; successful commands use locked project interpreter."
+  }
+]

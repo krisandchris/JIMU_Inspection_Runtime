@@ -1,0 +1,20 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_authority_models.py",
+    "tests/contract/test_b_fact_records.py",
+    "tests/negative/test_b_authority_models_invalid.py",
+    "-q"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "ended_at": "2026-11-17T14:48:50.399634+00:00",
+  "exit_code": 0,
+  "stdout": "........................................................................ [ 60%]\n................................................                         [100%]\n=============================== warnings summary ===============================\ntests/contract/test_b_fact_records.py::test_five_fact_statuses_and_three_sources_roundtrip[known]\ntests/contract/test_b_fact_records.py::test_five_fact_statuses_and_three_sources_roundtrip[unknown]\ntests/contract/test_b_fact_records.py::test_five_fact_statuses_and_three_sources_roundtrip[error]\ntests/contract/test_b_fact_records.py::test_five_fact_statuses_and_three_sources_roundtrip[not_applicable]\ntests/contract/test_b_fact_records.py::test_five_fact_statuses_and_three_sources_roundtrip[not_evaluated]\ntests/contract/test_b_fact_records.py::test_five_fact_statuses_and_three_sources_roundtrip[tool_fact]\ntests/contract/test_b_fact_records.py::test_five_fact_statuses_and_three_sources_roundtrip[system_fact]\n  /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/tests/contract/test_b_fact_records.py:54: PydanticDeprecatedSince211: Accessing the 'model_fields' attribute on the instance is deprecated. Instead, you should access this attribute from the model class. Deprecated in Pydantic V2.11 to be removed in V3.0.\n    assert \"scope\" not in item.source.model_fields\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n120 passed, 7 warnings in 3.81s\n",
+  "stderr": ""
+}

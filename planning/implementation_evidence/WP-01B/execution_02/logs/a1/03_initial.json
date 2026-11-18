@@ -1,0 +1,18 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime/domain/runtime/facts.py",
+    "src/jimu_runtime/domain/runtime/authority.py",
+    "src/jimu_runtime/domain/validation/authority_inputs.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T14:43:46.272190+00:00",
+  "ended_at": "2026-11-17T14:43:46.756618+00:00",
+  "exit_code": 1,
+  "stdout": "src/jimu_runtime/domain/runtime/facts.py:135: error: Dict entry 0 has incompatible type \"str\": \"list[dict[str, object]]\"; expected \"str\": \"int | float | str | list[JsonValue] | JsonDict | None\"  [dict-item]\nsrc/jimu_runtime/domain/runtime/facts.py:207: error: Incompatible types in assignment (expression has type \"tuple[Literal[RuntimeRecordKind.EVIDENCE, RuntimeRecordKind.CONTEXT_SNAPSHOT], str]\", variable has type \"tuple[Literal[ArtifactKind.POLICY], str, str, str]\")  [assignment]\nsrc/jimu_runtime/domain/runtime/facts.py:267: error: List item 0 has incompatible type \"list[dict[str, object]]\"; expected \"int | float | str | list[JsonValue] | JsonDict | None\"  [list-item]\nsrc/jimu_runtime/domain/runtime/facts.py:275: error: List item 2 has incompatible type \"list[dict[str, dict[str, dict[str, dict[str, str]] | list[str]] | dict[str, dict[str, dict[str, dict[str, dict[str, str]]]]]]]\"; expected \"int | float | str | list[JsonValue] | JsonDict | None\"  [list-item]\nsrc/jimu_runtime/domain/runtime/authority.py:42: error: List item 0 has incompatible type \"list[dict[str, object]]\"; expected \"int | float | str | list[JsonValue] | JsonDict | None\"  [list-item]\nFound 5 errors in 2 files (checked 3 source files)\n",
+  "stderr": ""
+}

@@ -1,0 +1,87 @@
+{
+  "status": "TEST_PASSED",
+  "scope": "X3 finite Producer/Authority composition only",
+  "tests": 78,
+  "skipped": 0,
+  "runtime": "RUNTIME_NOT_RUN",
+  "source_sha256": "4179223f05cc4a226936a6c83ff832919a119b5754495bc3715c34856c4349af",
+  "checks": [
+    {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "check",
+        "src/jimu_runtime/domain/validation/producer_authority.py",
+        "src/jimu_runtime/domain/validation/producer_authority_inputs.py",
+        "tests/unit/test_b_producer_authority_integration.py",
+        "tests/negative/test_b_producer_authority_invalid.py",
+        "tests/contract/test_b_producer_authority_contracts.py",
+        "tests/fixtures/wp01b/x3/integration.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "format",
+        "--check",
+        "src/jimu_runtime/domain/validation/producer_authority.py",
+        "src/jimu_runtime/domain/validation/producer_authority_inputs.py",
+        "tests/unit/test_b_producer_authority_integration.py",
+        "tests/negative/test_b_producer_authority_invalid.py",
+        "tests/contract/test_b_producer_authority_contracts.py",
+        "tests/fixtures/wp01b/x3/integration.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "mypy",
+        "src/jimu_runtime/domain/validation/producer_authority.py",
+        "src/jimu_runtime/domain/validation/producer_authority_inputs.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "pytest",
+        "-q",
+        "tests/contract/test_b_producer_authority_inputs.py",
+        "tests/unit/test_b_producer_authority_input_views.py",
+        "tests/negative/test_b_producer_authority_inputs_invalid.py",
+        "tests/unit/test_b_producer_authority_integration.py",
+        "tests/negative/test_b_producer_authority_invalid.py",
+        "tests/contract/test_b_producer_authority_contracts.py",
+        "--junitxml=planning/implementation_evidence/WP-01B/execution_03/logs/x3/composition_final.xml"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-c",
+        "import sys,importlib.metadata as m; print(sys.version); print({p:m.version(p) for p in (\"pydantic\",\"rfc8785\",\"pytest\",\"jsonschema\",\"ruff\",\"mypy\")})"
+      ],
+      "exit_code": 0
+    }
+  ]
+}

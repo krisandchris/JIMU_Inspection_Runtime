@@ -1,0 +1,4381 @@
+{
+  "$defs": {
+    "AbsentOptional_Annotated_PositiveBudget__FieldInfo_annotation_NoneType__required_True__metadata__Le_le_256_____": {
+      "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__3"
+    },
+    "AbsentOptional_Annotated_PositiveBudget__FieldInfo_annotation_NoneType__required_True__metadata__Le_le_4096_____": {
+      "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__2"
+    },
+    "AbsentOptional_Annotated_tuple_ContextFieldSelector___________FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_64_____BeforeValidator__": {
+      "items": {
+        "$ref": "#/$defs/ContextFieldSelector"
+      },
+      "maxItems": 64,
+      "type": "array"
+    },
+    "AbsentOptional_Annotated_tuple_ContextSelectionRule___________FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_1024_____BeforeValidator__": {
+      "items": {
+        "$ref": "#/$defs/ContextSelectionRule"
+      },
+      "maxItems": 1024,
+      "type": "array"
+    },
+    "AbsentOptional_Annotated_tuple_PositiveBudget___________FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_1024_____BeforeValidator__": {
+      "items": {
+        "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+      },
+      "maxItems": 1024,
+      "type": "array"
+    },
+    "AbsentOptional_ContextDerivationRequirement_": {
+      "$ref": "#/$defs/ContextDerivationRequirement"
+    },
+    "AbsentOptional_Description_": {
+      "$ref": "#/$defs/Description"
+    },
+    "AbsentOptional_NonNegativeBudget_": {
+      "$ref": "#/$defs/NonNegativeBudget"
+    },
+    "AbsentOptional_ResponseSchemaContentRef_": {
+      "$ref": "#/$defs/ResponseSchemaContentRef"
+    },
+    "AbsentOptional_ReviewReportRef_": {
+      "$ref": "#/$defs/ReviewReportRef"
+    },
+    "AbsentOptional_SelectionCallPolicy_": {
+      "$ref": "#/$defs/SelectionCallPolicy"
+    },
+    "AbsentOptional_TrueFlag_": {
+      "$ref": "#/$defs/TrueFlag"
+    },
+    "AdditionalSelectionCallPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "additional_resource_requirements_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "max_additional_invocations_per_execution": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "mode": {
+          "const": "explicit_additional",
+          "title": "Mode",
+          "type": "string"
+        },
+        "proposal_binding_ref": {
+          "$ref": "#/$defs/ModelBindingContentRef"
+        }
+      },
+      "required": [
+        "mode",
+        "proposal_binding_ref",
+        "additional_resource_requirements_ref",
+        "max_additional_invocations_per_execution"
+      ],
+      "title": "AdditionalSelectionCallPolicy",
+      "type": "object"
+    },
+    "AllExpr": {
+      "additionalProperties": false,
+      "properties": {
+        "arguments": {
+          "items": {
+            "$ref": "#/$defs/ConditionExpr"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Arguments",
+          "type": "array"
+        },
+        "kind": {
+          "const": "all",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "arguments"
+      ],
+      "title": "AllExpr",
+      "type": "object"
+    },
+    "AnyExpr": {
+      "additionalProperties": false,
+      "properties": {
+        "arguments": {
+          "items": {
+            "$ref": "#/$defs/ConditionExpr"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Arguments",
+          "type": "array"
+        },
+        "kind": {
+          "const": "any",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "arguments"
+      ],
+      "title": "AnyExpr",
+      "type": "object"
+    },
+    "ApplicabilityPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "condition_ast": {
+          "$ref": "#/$defs/ConditionExpr"
+        },
+        "context_allowlist": {
+          "items": {
+            "$ref": "#/$defs/ContextFieldSelector"
+          },
+          "maxItems": 1024,
+          "title": "Context Allowlist",
+          "type": "array"
+        },
+        "description": {
+          "$ref": "#/$defs/AbsentOptional_Description_"
+        },
+        "identity_constraints": {
+          "items": {
+            "$ref": "#/$defs/IdentitySelector"
+          },
+          "maxItems": 1024,
+          "title": "Identity Constraints",
+          "type": "array"
+        },
+        "input_domain": {
+          "const": "rule_applicability",
+          "title": "Input Domain",
+          "type": "string"
+        },
+        "on_unknown": {
+          "const": "block",
+          "title": "On Unknown",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "applicability",
+          "title": "Policy Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "input_domain",
+        "context_allowlist",
+        "identity_constraints",
+        "condition_ast",
+        "on_unknown"
+      ],
+      "title": "ApplicabilityPolicy",
+      "type": "object"
+    },
+    "ApplicabilityPolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/ApplicabilityPolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "ApplicabilityPolicyArtifact",
+      "type": "object"
+    },
+    "BooleanTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BooleanTypeDefinition",
+      "type": "object"
+    },
+    "BooleanValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanValue",
+      "type": "object"
+    },
+    "BoundedString": {
+      "maxLength": 4096,
+      "type": "string"
+    },
+    "CPUResourceRequirements": {
+      "additionalProperties": false,
+      "properties": {
+        "input_byte_limit": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "max_concurrency": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "output_byte_limit": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "policy_kind": {
+          "const": "resource_requirements",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "resource_class": {
+          "const": "cpu",
+          "title": "Resource Class",
+          "type": "string"
+        },
+        "timeout_ms": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "max_concurrency",
+        "timeout_ms",
+        "input_byte_limit",
+        "output_byte_limit",
+        "resource_class"
+      ],
+      "title": "CPUResourceRequirements",
+      "type": "object"
+    },
+    "CapabilityFeature": {
+      "enum": [
+        "rgb_image",
+        "typed_context",
+        "structured_output",
+        "original_xyxy",
+        "mask_output",
+        "geometry_output",
+        "ocr_text"
+      ],
+      "title": "CapabilityFeature",
+      "type": "string"
+    },
+    "ComparisonExpr": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "comparison",
+          "title": "Kind",
+          "type": "string"
+        },
+        "left": {
+          "$ref": "#/$defs/ConditionExpr"
+        },
+        "operator": {
+          "$ref": "#/$defs/ComparisonOperator"
+        },
+        "right": {
+          "$ref": "#/$defs/ConditionExpr"
+        }
+      },
+      "required": [
+        "kind",
+        "operator",
+        "left",
+        "right"
+      ],
+      "title": "ComparisonExpr",
+      "type": "object"
+    },
+    "ComparisonOperator": {
+      "enum": [
+        "eq",
+        "ne",
+        "lt",
+        "le",
+        "gt",
+        "ge"
+      ],
+      "title": "ComparisonOperator",
+      "type": "string"
+    },
+    "ConditionExpr": {
+      "discriminator": {
+        "mapping": {
+          "all": "#/$defs/AllExpr",
+          "any": "#/$defs/AnyExpr",
+          "comparison": "#/$defs/ComparisonExpr",
+          "context_ref": "#/$defs/ContextRefExpr",
+          "fact_ref": "#/$defs/FactRefExpr",
+          "in": "#/$defs/InExpr",
+          "literal": "#/$defs/LiteralExpr",
+          "local_tool_fact_ref": "#/$defs/LocalToolFactRefExpr",
+          "not": "#/$defs/NotExpr",
+          "record_field_ref": "#/$defs/RecordFieldRefExpr"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/LiteralExpr"
+        },
+        {
+          "$ref": "#/$defs/FactRefExpr"
+        },
+        {
+          "$ref": "#/$defs/RecordFieldRefExpr"
+        },
+        {
+          "$ref": "#/$defs/ContextRefExpr"
+        },
+        {
+          "$ref": "#/$defs/LocalToolFactRefExpr"
+        },
+        {
+          "$ref": "#/$defs/ComparisonExpr"
+        },
+        {
+          "$ref": "#/$defs/InExpr"
+        },
+        {
+          "$ref": "#/$defs/AllExpr"
+        },
+        {
+          "$ref": "#/$defs/AnyExpr"
+        },
+        {
+          "$ref": "#/$defs/NotExpr"
+        }
+      ]
+    },
+    "ConflictPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "category_dedup": {
+          "const": "set",
+          "title": "Category Dedup",
+          "type": "string"
+        },
+        "early_exit": {
+          "$ref": "#/$defs/FalseFlag"
+        },
+        "mode": {
+          "const": "collect_all",
+          "title": "Mode",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "conflict",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "preserve_rule_refs": {
+          "$ref": "#/$defs/TrueFlag"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "mode",
+        "early_exit",
+        "category_dedup",
+        "preserve_rule_refs"
+      ],
+      "title": "ConflictPolicy",
+      "type": "object"
+    },
+    "ConflictPolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/ConflictPolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "ConflictPolicyArtifact",
+      "type": "object"
+    },
+    "ContextDerivationRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_implementation_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Implementation Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "capability_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "contract_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "evaluation_ref": {
+          "$ref": "#/$defs/AbsentOptional_ReviewReportRef_"
+        },
+        "family": {
+          "const": "context_derivation",
+          "title": "Family",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "family",
+        "capability_id",
+        "contract_version",
+        "allowed_implementation_versions",
+        "required_features"
+      ],
+      "title": "ContextDerivationRequirement",
+      "type": "object"
+    },
+    "ContextFieldRequirement": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "not": {
+              "required": [
+                "clock_tolerance_ms"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "time_sensitive": {
+                "const": true
+              }
+            },
+            "required": [
+              "time_sensitive"
+            ]
+          },
+          "then": {
+            "required": [
+              "clock_tolerance_ms"
+            ]
+          }
+        },
+        {
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "derivation_requirement"
+                  ]
+                },
+                {
+                  "required": [
+                    "input_selectors"
+                  ]
+                }
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "allowed_sources": {
+                "contains": {
+                  "const": "declared_derivation"
+                }
+              }
+            },
+            "required": [
+              "allowed_sources"
+            ]
+          },
+          "then": {
+            "required": [
+              "derivation_requirement",
+              "input_selectors"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "allowed_sources": {
+          "items": {
+            "$ref": "#/$defs/ContextProvenanceSource"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Allowed Sources",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "clock_tolerance_ms": {
+          "$ref": "#/$defs/AbsentOptional_NonNegativeBudget_"
+        },
+        "derivation_requirement": {
+          "$ref": "#/$defs/AbsentOptional_ContextDerivationRequirement_"
+        },
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        },
+        "input_selectors": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_tuple_ContextFieldSelector___________FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_64_____BeforeValidator__"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "time_sensitive": {
+          "title": "Time Sensitive",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "field_path",
+        "schema_ref",
+        "required",
+        "time_sensitive",
+        "allowed_sources"
+      ],
+      "title": "ContextFieldRequirement",
+      "type": "object"
+    },
+    "ContextFieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "items": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Field Path",
+          "type": "array"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "$ref": "#/$defs/ContextSource"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "ContextFieldSelector",
+      "type": "object"
+    },
+    "ContextProvenancePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "conflicting_sources": {
+          "const": "block",
+          "title": "Conflicting Sources",
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/ContextFieldRequirement"
+          },
+          "maxItems": 64,
+          "title": "Fields",
+          "type": "array"
+        },
+        "internal_timezone": {
+          "const": "UTC",
+          "title": "Internal Timezone",
+          "type": "string"
+        },
+        "missing_required": {
+          "const": "block",
+          "title": "Missing Required",
+          "type": "string"
+        },
+        "naive_time": {
+          "const": "reject",
+          "title": "Naive Time",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "context_provenance",
+          "title": "Policy Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "fields",
+        "conflicting_sources",
+        "missing_required",
+        "internal_timezone",
+        "naive_time"
+      ],
+      "title": "ContextProvenancePolicy",
+      "type": "object"
+    },
+    "ContextProvenancePolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/ContextProvenancePolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "ContextProvenancePolicyArtifact",
+      "type": "object"
+    },
+    "ContextProvenanceSource": {
+      "enum": [
+        "trusted_task_metadata",
+        "device_registry",
+        "camera_registry",
+        "region_definition",
+        "declared_derivation"
+      ],
+      "title": "ContextProvenanceSource",
+      "type": "string"
+    },
+    "ContextRefExpr": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "context_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "selector": {
+          "$ref": "#/$defs/ContextFieldSelector"
+        }
+      },
+      "required": [
+        "kind",
+        "selector"
+      ],
+      "title": "ContextRefExpr",
+      "type": "object"
+    },
+    "ContextSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "context_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ContextSchemaRef",
+      "type": "object"
+    },
+    "ContextSelectionRule": {
+      "additionalProperties": false,
+      "properties": {
+        "applicability_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "question_ref": {
+          "$ref": "#/$defs/QuestionContentRef"
+        }
+      },
+      "required": [
+        "question_ref",
+        "applicability_policy_ref"
+      ],
+      "title": "ContextSelectionRule",
+      "type": "object"
+    },
+    "ContextSource": {
+      "enum": [
+        "context_snapshot",
+        "region_metadata",
+        "profile_metadata"
+      ],
+      "title": "ContextSource",
+      "type": "string"
+    },
+    "CoveragePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "absence_strategy": {
+          "const": "conservative",
+          "title": "Absence Strategy",
+          "type": "string"
+        },
+        "complete_negative": {
+          "const": "all_mandatory_false_with_required_evidence",
+          "title": "Complete Negative",
+          "type": "string"
+        },
+        "no_hits": {
+          "const": "uncertain",
+          "title": "No Hits",
+          "type": "string"
+        },
+        "no_target": {
+          "const": "uncertain",
+          "title": "No Target",
+          "type": "string"
+        },
+        "partial_with_match": {
+          "const": "violation",
+          "title": "Partial With Match",
+          "type": "string"
+        },
+        "partial_without_match": {
+          "const": "uncertain",
+          "title": "Partial Without Match",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "coverage",
+          "title": "Policy Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "no_hits",
+        "no_target",
+        "partial_without_match",
+        "partial_with_match",
+        "complete_negative",
+        "absence_strategy"
+      ],
+      "title": "CoveragePolicy",
+      "type": "object"
+    },
+    "CoveragePolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/CoveragePolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "CoveragePolicyArtifact",
+      "type": "object"
+    },
+    "DeploymentRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_version_constraints": {
+          "$ref": "#/$defs/VersionConstraint"
+        },
+        "deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Deployment Id",
+          "type": "string"
+        },
+        "logical_model_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Logical Model Id",
+          "type": "string"
+        },
+        "provider_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "provider_kind": {
+          "enum": [
+            "remote",
+            "local"
+          ],
+          "title": "Provider Kind",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "provider_id",
+        "deployment_id",
+        "logical_model_id",
+        "provider_kind",
+        "actual_version_constraints",
+        "required_features"
+      ],
+      "title": "DeploymentRequirement",
+      "type": "object"
+    },
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "DisabledFallbackPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_transitions": {
+          "items": {
+            "$ref": "#/$defs/FallbackTransition"
+          },
+          "maxItems": 0,
+          "title": "Allowed Transitions",
+          "type": "array"
+        },
+        "contract_compatibility": {
+          "const": "exact",
+          "title": "Contract Compatibility",
+          "type": "string"
+        },
+        "mode": {
+          "const": "disabled",
+          "title": "Mode",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "fallback",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "trigger_errors": {
+          "items": {
+            "$ref": "#/$defs/TriggerError"
+          },
+          "maxItems": 0,
+          "title": "Trigger Errors",
+          "type": "array"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "contract_compatibility",
+        "mode",
+        "trigger_errors",
+        "allowed_transitions"
+      ],
+      "title": "DisabledFallbackPolicy",
+      "type": "object"
+    },
+    "EnumTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enum",
+          "title": "Kind",
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "$ref": "#/$defs/BoundedString"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "members"
+      ],
+      "title": "EnumTypeDefinition",
+      "type": "object"
+    },
+    "EnumValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enum",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "EnumValue",
+      "type": "object"
+    },
+    "EvaluatedFallbackPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_transitions": {
+          "items": {
+            "$ref": "#/$defs/FallbackTransition"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Transitions",
+          "type": "array"
+        },
+        "contract_compatibility": {
+          "const": "exact",
+          "title": "Contract Compatibility",
+          "type": "string"
+        },
+        "evaluation_refs": {
+          "items": {
+            "$ref": "#/$defs/ReviewReportRef"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Evaluation Refs",
+          "type": "array"
+        },
+        "mode": {
+          "const": "explicit_evaluated",
+          "title": "Mode",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "fallback",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "trigger_errors": {
+          "items": {
+            "$ref": "#/$defs/TriggerError"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Trigger Errors",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "policy_kind",
+        "contract_compatibility",
+        "mode",
+        "trigger_errors",
+        "allowed_transitions",
+        "evaluation_refs"
+      ],
+      "title": "EvaluatedFallbackPolicy",
+      "type": "object"
+    },
+    "EvidencePolicy": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "allowed_evidence_types": {
+                "contains": {
+                  "enum": [
+                    "crop",
+                    "bbox_visualization",
+                    "mask",
+                    "geometry"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "allowed_evidence_types"
+            ]
+          },
+          "then": {
+            "required": [
+              "transform_required_for_derived"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "original_media_required": {
+                "const": true
+              }
+            },
+            "required": [
+              "original_media_required"
+            ]
+          },
+          "then": {
+            "properties": {
+              "allowed_evidence_types": {
+                "contains": {
+                  "const": "original_image"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "access_scope": {
+          "enum": [
+            "project",
+            "task"
+          ],
+          "title": "Access Scope",
+          "type": "string"
+        },
+        "allowed_evidence_types": {
+          "$ref": "#/$defs/EvidenceTypes"
+        },
+        "on_missing": {
+          "const": "block_result",
+          "title": "On Missing",
+          "type": "string"
+        },
+        "original_media_required": {
+          "title": "Original Media Required",
+          "type": "boolean"
+        },
+        "policy_kind": {
+          "const": "evidence",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "required_evidence_types": {
+          "$ref": "#/$defs/EvidenceTypes"
+        },
+        "retention_class": {
+          "$ref": "#/$defs/VocabularyMemberRef"
+        },
+        "retention_duration_seconds": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "transform_required_for_derived": {
+          "$ref": "#/$defs/AbsentOptional_TrueFlag_"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "required_evidence_types",
+        "allowed_evidence_types",
+        "on_missing",
+        "original_media_required",
+        "retention_class",
+        "retention_duration_seconds",
+        "access_scope"
+      ],
+      "title": "EvidencePolicy",
+      "type": "object"
+    },
+    "EvidencePolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/EvidencePolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "EvidencePolicyArtifact",
+      "type": "object"
+    },
+    "EvidenceType": {
+      "enum": [
+        "original_image",
+        "crop",
+        "bbox_visualization",
+        "mask",
+        "tool_output",
+        "geometry",
+        "model_request",
+        "model_response"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    },
+    "EvidenceTypes": {
+      "items": {
+        "$ref": "#/$defs/EvidenceType"
+      },
+      "maxItems": 8,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "ExecutionPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_schema_refs": {
+          "items": {
+            "$ref": "#/$defs/SchemaRef"
+          },
+          "maxItems": 1024,
+          "title": "Artifact Schema Refs",
+          "type": "array"
+        },
+        "context_provenance_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "coverage_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "node_order": {
+          "maxItems": 6,
+          "minItems": 6,
+          "prefixItems": [
+            {
+              "const": "N01",
+              "type": "string"
+            },
+            {
+              "const": "N02",
+              "type": "string"
+            },
+            {
+              "const": "N03",
+              "type": "string"
+            },
+            {
+              "const": "N04",
+              "type": "string"
+            },
+            {
+              "const": "N05",
+              "type": "string"
+            },
+            {
+              "const": "N06",
+              "type": "string"
+            }
+          ],
+          "title": "Node Order",
+          "type": "array"
+        },
+        "policy_kind": {
+          "const": "execution",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "resource_requirements_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "workflow_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Workflow Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "workflow_version",
+        "node_order",
+        "coverage_policy_ref",
+        "context_provenance_policy_ref",
+        "resource_requirements_ref",
+        "artifact_schema_refs"
+      ],
+      "title": "ExecutionPolicy",
+      "type": "object"
+    },
+    "ExecutionPolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/ExecutionPolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "ExecutionPolicyArtifact",
+      "type": "object"
+    },
+    "FactRefExpr": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "fact_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "selector": {
+          "$ref": "#/$defs/FactSelector"
+        }
+      },
+      "required": [
+        "kind",
+        "selector"
+      ],
+      "title": "FactRefExpr",
+      "type": "object"
+    },
+    "FactSchemaContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "fact_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "FactSchemaContentRef",
+      "type": "object"
+    },
+    "FactScope": {
+      "enum": [
+        "object",
+        "execution"
+      ],
+      "title": "FactScope",
+      "type": "string"
+    },
+    "FactSelector": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "scope": {
+                "const": "execution"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          },
+          "then": {
+            "properties": {
+              "producer_selector": {
+                "properties": {
+                  "producer_kind": {
+                    "const": "system"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "fact_key": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Fact Key",
+          "type": "string"
+        },
+        "fact_schema_ref": {
+          "$ref": "#/$defs/FactSchemaContentRef"
+        },
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        },
+        "producer_selector": {
+          "$ref": "#/$defs/ProducerSelector"
+        },
+        "scope": {
+          "$ref": "#/$defs/FactScope"
+        }
+      },
+      "required": [
+        "scope",
+        "fact_key",
+        "fact_schema_ref",
+        "producer_selector",
+        "field_path"
+      ],
+      "title": "FactSelector",
+      "type": "object"
+    },
+    "FallbackPolicy": {
+      "discriminator": {
+        "mapping": {
+          "disabled": "#/$defs/DisabledFallbackPolicy",
+          "explicit_evaluated": "#/$defs/EvaluatedFallbackPolicy"
+        },
+        "propertyName": "mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/DisabledFallbackPolicy"
+        },
+        {
+          "$ref": "#/$defs/EvaluatedFallbackPolicy"
+        }
+      ]
+    },
+    "FallbackPolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/FallbackPolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "FallbackPolicyArtifact",
+      "type": "object"
+    },
+    "FallbackTransition": {
+      "additionalProperties": false,
+      "properties": {
+        "from_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "From Deployment Id",
+          "type": "string"
+        },
+        "to_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "To Deployment Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from_deployment_id",
+        "to_deployment_id"
+      ],
+      "title": "FallbackTransition",
+      "type": "object"
+    },
+    "FalseFlag": {
+      "const": false,
+      "type": "boolean"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FieldPath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "GPUResourceRequirements": {
+      "additionalProperties": false,
+      "properties": {
+        "gpu_memory_limit_bytes": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "input_byte_limit": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "max_concurrency": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "output_byte_limit": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "policy_kind": {
+          "const": "resource_requirements",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "resource_class": {
+          "const": "gpu",
+          "title": "Resource Class",
+          "type": "string"
+        },
+        "timeout_ms": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "worker_pool_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Worker Pool Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "max_concurrency",
+        "timeout_ms",
+        "input_byte_limit",
+        "output_byte_limit",
+        "resource_class",
+        "gpu_memory_limit_bytes",
+        "worker_pool_id"
+      ],
+      "title": "GPUResourceRequirements",
+      "type": "object"
+    },
+    "IdentitySelector": {
+      "additionalProperties": false,
+      "description": "Only approved Profile/Region applicability identity; never content authority.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "enum": [
+            "profile",
+            "region"
+          ],
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "version_selector": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version Selector",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version_selector"
+      ],
+      "title": "IdentitySelector",
+      "type": "object"
+    },
+    "InExpr": {
+      "additionalProperties": false,
+      "properties": {
+        "collection": {
+          "$ref": "#/$defs/ConditionExpr"
+        },
+        "item": {
+          "$ref": "#/$defs/ConditionExpr"
+        },
+        "kind": {
+          "const": "in",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "item",
+        "collection"
+      ],
+      "title": "InExpr",
+      "type": "object"
+    },
+    "IntegerTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "IntegerTypeDefinition",
+      "type": "object"
+    },
+    "IntegerValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "IntegerValue",
+      "type": "object"
+    },
+    "ListTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "item_type": {
+          "$ref": "#/$defs/TypeDefinition"
+        },
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_items": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__2",
+          "default": 256
+        },
+        "min_items": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__2",
+          "default": 0
+        }
+      },
+      "required": [
+        "kind",
+        "item_type"
+      ],
+      "title": "ListTypeDefinition",
+      "type": "object"
+    },
+    "ListValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "$ref": "#/$defs/Value"
+          },
+          "maxItems": 256,
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "ListValue",
+      "type": "object"
+    },
+    "LiteralExpr": {
+      "additionalProperties": false,
+      "properties": {
+        "constant": {
+          "$ref": "#/$defs/ValueContract"
+        },
+        "kind": {
+          "const": "literal",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "constant"
+      ],
+      "title": "LiteralExpr",
+      "type": "object"
+    },
+    "LocalPrimaryException": {
+      "additionalProperties": false,
+      "properties": {
+        "applicable_capabilities": {
+          "items": {
+            "$ref": "#/$defs/ModelCapability"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Applicable Capabilities",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "approval_ref": {
+          "$ref": "#/$defs/ReviewReportRef"
+        },
+        "exception_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Exception Id",
+          "type": "string"
+        },
+        "rationale": {
+          "$ref": "#/$defs/Description"
+        },
+        "reason": {
+          "enum": [
+            "explicit_local_capability",
+            "privacy_restriction",
+            "unavailable_remote_capability"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "valid_from": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "valid_until": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "exception_id",
+        "version",
+        "applicable_capabilities",
+        "reason",
+        "rationale",
+        "approval_ref",
+        "valid_from",
+        "valid_until"
+      ],
+      "title": "LocalPrimaryException",
+      "type": "object"
+    },
+    "LocalPrimaryProviderPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "deployments": {
+          "items": {
+            "$ref": "#/$defs/DeploymentRequirement"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Deployments",
+          "type": "array"
+        },
+        "local_primary_exception": {
+          "$ref": "#/$defs/LocalPrimaryException"
+        },
+        "policy_kind": {
+          "const": "provider",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "primary_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Primary Deployment Id",
+          "type": "string"
+        },
+        "routing_mode": {
+          "const": "local_primary_exception",
+          "title": "Routing Mode",
+          "type": "string"
+        },
+        "selection": {
+          "const": "primary_then_explicit_fallback",
+          "title": "Selection",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "primary_deployment_id",
+        "deployments",
+        "selection",
+        "routing_mode",
+        "local_primary_exception"
+      ],
+      "title": "LocalPrimaryProviderPolicy",
+      "type": "object"
+    },
+    "LocalToolFactRefExpr": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "local_tool_fact_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "selector": {
+          "$ref": "#/$defs/LocalToolFactSelector"
+        }
+      },
+      "required": [
+        "kind",
+        "selector"
+      ],
+      "title": "LocalToolFactRefExpr",
+      "type": "object"
+    },
+    "LocalToolFactSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_key": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Fact Key",
+          "type": "string"
+        },
+        "fact_schema_ref": {
+          "$ref": "#/$defs/FactSchemaContentRef"
+        },
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        },
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        },
+        "scope": {
+          "const": "object",
+          "title": "Scope",
+          "type": "string"
+        },
+        "step_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Step Id",
+          "type": "string"
+        },
+        "tool_ref": {
+          "$ref": "#/$defs/ToolContentRef"
+        }
+      },
+      "required": [
+        "scope",
+        "step_id",
+        "tool_ref",
+        "output_name",
+        "fact_key",
+        "fact_schema_ref",
+        "field_path"
+      ],
+      "title": "LocalToolFactSelector",
+      "type": "object"
+    },
+    "ModelBindingContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "model_binding",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ModelBindingContentRef",
+      "type": "object"
+    },
+    "ModelCapability": {
+      "enum": [
+        "profile_discovery",
+        "object_grounding",
+        "object_observation",
+        "candidate_prediction",
+        "vision_auxiliary"
+      ],
+      "title": "ModelCapability",
+      "type": "string"
+    },
+    "NonNegativeBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "NotExpr": {
+      "additionalProperties": false,
+      "properties": {
+        "argument": {
+          "$ref": "#/$defs/ConditionExpr"
+        },
+        "kind": {
+          "const": "not",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "argument"
+      ],
+      "title": "NotExpr",
+      "type": "object"
+    },
+    "NumberTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NumberTypeDefinition",
+      "type": "object"
+    },
+    "NumberValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "NumberValue",
+      "type": "object"
+    },
+    "PolicyArtifact": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/_ApplicabilityChoice"
+        },
+        {
+          "$ref": "#/$defs/_QuestionSelectionChoice"
+        },
+        {
+          "$ref": "#/$defs/_UnknownChoice"
+        },
+        {
+          "$ref": "#/$defs/_QuestionValidationChoice"
+        },
+        {
+          "$ref": "#/$defs/_EvidenceChoice"
+        },
+        {
+          "$ref": "#/$defs/_ToolExecutionChoice"
+        },
+        {
+          "$ref": "#/$defs/_ToolFailureChoice"
+        },
+        {
+          "$ref": "#/$defs/_ToolSkipChoice"
+        },
+        {
+          "$ref": "#/$defs/_ResourceRequirementsChoice"
+        },
+        {
+          "$ref": "#/$defs/_ProviderChoice"
+        },
+        {
+          "$ref": "#/$defs/_FallbackChoice"
+        },
+        {
+          "$ref": "#/$defs/_RuleChoice"
+        },
+        {
+          "$ref": "#/$defs/_ConflictChoice"
+        },
+        {
+          "$ref": "#/$defs/_CoverageChoice"
+        },
+        {
+          "$ref": "#/$defs/_ContextProvenanceChoice"
+        },
+        {
+          "$ref": "#/$defs/_ExecutionChoice"
+        }
+      ]
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "PolicyRefs": {
+      "items": {
+        "$ref": "#/$defs/QuestionContentRef"
+      },
+      "maxItems": 1024,
+      "type": "array"
+    },
+    "ProducerSelector": {
+      "discriminator": {
+        "mapping": {
+          "system": "#/$defs/SystemProducerSelector",
+          "tool": "#/$defs/ToolProducerSelector",
+          "vlm_question": "#/$defs/QuestionProducerSelector"
+        },
+        "propertyName": "producer_kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/QuestionProducerSelector"
+        },
+        {
+          "$ref": "#/$defs/ToolProducerSelector"
+        },
+        {
+          "$ref": "#/$defs/SystemProducerSelector"
+        }
+      ]
+    },
+    "ProviderPolicy": {
+      "discriminator": {
+        "mapping": {
+          "local_primary_exception": "#/$defs/LocalPrimaryProviderPolicy",
+          "remote_primary": "#/$defs/RemotePrimaryProviderPolicy"
+        },
+        "propertyName": "routing_mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RemotePrimaryProviderPolicy"
+        },
+        {
+          "$ref": "#/$defs/LocalPrimaryProviderPolicy"
+        }
+      ]
+    },
+    "ProviderPolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/ProviderPolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "ProviderPolicyArtifact",
+      "type": "object"
+    },
+    "QuestionContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "question",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "QuestionContentRef",
+      "type": "object"
+    },
+    "QuestionProducerSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "output_name": {
+          "const": "primary",
+          "title": "Output Name",
+          "type": "string"
+        },
+        "producer_kind": {
+          "const": "vlm_question",
+          "title": "Producer Kind",
+          "type": "string"
+        },
+        "question_ref": {
+          "$ref": "#/$defs/QuestionContentRef"
+        }
+      },
+      "required": [
+        "producer_kind",
+        "question_ref",
+        "output_name"
+      ],
+      "title": "QuestionProducerSelector",
+      "type": "object"
+    },
+    "QuestionSelectionPolicy": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "all_declared"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "properties": {
+              "optional_source": {
+                "const": "all"
+              }
+            }
+          }
+        },
+        {
+          "else": {
+            "not": {
+              "required": [
+                "context_selection_rules"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "optional_source": {
+                "const": "context_rules"
+              }
+            },
+            "required": [
+              "optional_source"
+            ]
+          },
+          "then": {
+            "required": [
+              "context_selection_rules"
+            ]
+          }
+        },
+        {
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "proposal_schema_ref"
+                  ]
+                },
+                {
+                  "required": [
+                    "selection_review_ref"
+                  ]
+                },
+                {
+                  "required": [
+                    "selection_call_policy"
+                  ]
+                }
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "optional_source": {
+                "const": "model_advisory"
+              }
+            },
+            "required": [
+              "optional_source"
+            ]
+          },
+          "then": {
+            "required": [
+              "proposal_schema_ref",
+              "selection_review_ref",
+              "selection_call_policy"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "context_selection_rules": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_tuple_ContextSelectionRule___________FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_1024_____BeforeValidator__"
+        },
+        "fallback": {
+          "enum": [
+            "include_all_optional",
+            "block_profile"
+          ],
+          "title": "Fallback",
+          "type": "string"
+        },
+        "mandatory_question_refs": {
+          "$ref": "#/$defs/PolicyRefs"
+        },
+        "mode": {
+          "enum": [
+            "all_declared",
+            "mandatory_plus_optional"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "optional_question_refs": {
+          "$ref": "#/$defs/PolicyRefs"
+        },
+        "optional_source": {
+          "enum": [
+            "all",
+            "context_rules",
+            "model_advisory"
+          ],
+          "title": "Optional Source",
+          "type": "string"
+        },
+        "ordering": {
+          "const": "profile_order",
+          "title": "Ordering",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "question_selection",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "proposal_schema_ref": {
+          "$ref": "#/$defs/AbsentOptional_ResponseSchemaContentRef_"
+        },
+        "selection_call_policy": {
+          "$ref": "#/$defs/AbsentOptional_SelectionCallPolicy_"
+        },
+        "selection_review_ref": {
+          "$ref": "#/$defs/AbsentOptional_ReviewReportRef_"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "mode",
+        "mandatory_question_refs",
+        "optional_question_refs",
+        "optional_source",
+        "fallback",
+        "ordering"
+      ],
+      "title": "QuestionSelectionPolicy",
+      "type": "object"
+    },
+    "QuestionSelectionPolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/QuestionSelectionPolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "QuestionSelectionPolicyArtifact",
+      "type": "object"
+    },
+    "QuestionValidationPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "association": {
+          "const": "exact_question_ref",
+          "title": "Association",
+          "type": "string"
+        },
+        "coercion": {
+          "const": "forbid",
+          "title": "Coercion",
+          "type": "string"
+        },
+        "extra_fields": {
+          "const": "forbid",
+          "title": "Extra Fields",
+          "type": "string"
+        },
+        "invalid_record": {
+          "const": "whole_fact_error",
+          "title": "Invalid Record",
+          "type": "string"
+        },
+        "max_items": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_PositiveBudget__FieldInfo_annotation_NoneType__required_True__metadata__Le_le_256_____"
+        },
+        "max_string_chars": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_PositiveBudget__FieldInfo_annotation_NoneType__required_True__metadata__Le_le_4096_____"
+        },
+        "missing_item": {
+          "const": "error",
+          "title": "Missing Item",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "question_validation",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "sibling_retention": {
+          "const": "trusted_envelope_only",
+          "title": "Sibling Retention",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "coercion",
+        "extra_fields",
+        "association",
+        "missing_item",
+        "invalid_record",
+        "sibling_retention"
+      ],
+      "title": "QuestionValidationPolicy",
+      "type": "object"
+    },
+    "QuestionValidationPolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/QuestionValidationPolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "QuestionValidationPolicyArtifact",
+      "type": "object"
+    },
+    "RecordFieldDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/FieldName"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "type_definition": {
+          "$ref": "#/$defs/TypeDefinition"
+        }
+      },
+      "required": [
+        "name",
+        "required",
+        "type_definition"
+      ],
+      "title": "RecordFieldDefinition",
+      "type": "object"
+    },
+    "RecordFieldRefExpr": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record_field_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "selector": {
+          "$ref": "#/$defs/FactSelector"
+        }
+      },
+      "required": [
+        "kind",
+        "selector"
+      ],
+      "title": "RecordFieldRefExpr",
+      "type": "object"
+    },
+    "RecordTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/RecordFieldDefinition"
+          },
+          "maxItems": 64,
+          "title": "Fields",
+          "type": "array"
+        },
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fields"
+      ],
+      "title": "RecordTypeDefinition",
+      "type": "object"
+    },
+    "RecordValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Value"
+          },
+          "maxProperties": 64,
+          "propertyNames": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "title": "Value",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "RecordValue",
+      "type": "object"
+    },
+    "RemotePrimaryProviderPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "deployments": {
+          "items": {
+            "$ref": "#/$defs/DeploymentRequirement"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Deployments",
+          "type": "array"
+        },
+        "policy_kind": {
+          "const": "provider",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "primary_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Primary Deployment Id",
+          "type": "string"
+        },
+        "routing_mode": {
+          "const": "remote_primary",
+          "title": "Routing Mode",
+          "type": "string"
+        },
+        "selection": {
+          "const": "primary_then_explicit_fallback",
+          "title": "Selection",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "primary_deployment_id",
+        "deployments",
+        "selection",
+        "routing_mode"
+      ],
+      "title": "RemotePrimaryProviderPolicy",
+      "type": "object"
+    },
+    "RemoteResourceRequirements": {
+      "additionalProperties": false,
+      "properties": {
+        "input_byte_limit": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "max_concurrency": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "output_byte_limit": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "policy_kind": {
+          "const": "resource_requirements",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "remote_quota_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Remote Quota Id",
+          "type": "string"
+        },
+        "resource_class": {
+          "const": "remote",
+          "title": "Resource Class",
+          "type": "string"
+        },
+        "timeout_ms": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "max_concurrency",
+        "timeout_ms",
+        "input_byte_limit",
+        "output_byte_limit",
+        "resource_class",
+        "remote_quota_id"
+      ],
+      "title": "RemoteResourceRequirements",
+      "type": "object"
+    },
+    "ResourceRequirements": {
+      "discriminator": {
+        "mapping": {
+          "cpu": "#/$defs/CPUResourceRequirements",
+          "gpu": "#/$defs/GPUResourceRequirements",
+          "remote": "#/$defs/RemoteResourceRequirements"
+        },
+        "propertyName": "resource_class"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CPUResourceRequirements"
+        },
+        {
+          "$ref": "#/$defs/RemoteResourceRequirements"
+        },
+        {
+          "$ref": "#/$defs/GPUResourceRequirements"
+        }
+      ]
+    },
+    "ResourceRequirementsArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/ResourceRequirements"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "ResourceRequirementsArtifact",
+      "type": "object"
+    },
+    "ResponseSchemaContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "response_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ResponseSchemaContentRef",
+      "type": "object"
+    },
+    "ReviewReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "review_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Review Registry Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "version",
+        "sha256",
+        "review_registry_id"
+      ],
+      "title": "ReviewReportRef",
+      "type": "object"
+    },
+    "RulePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "const": "unknown",
+          "title": "Error",
+          "type": "string"
+        },
+        "false_result": {
+          "const": "no_violation",
+          "title": "False Result",
+          "type": "string"
+        },
+        "mandatory": {
+          "title": "Mandatory",
+          "type": "boolean"
+        },
+        "missing": {
+          "const": "unknown",
+          "title": "Missing",
+          "type": "string"
+        },
+        "not_applicable": {
+          "const": "unknown",
+          "title": "Not Applicable",
+          "type": "string"
+        },
+        "not_evaluated": {
+          "const": "unknown",
+          "title": "Not Evaluated",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "rule",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "required_guard": {
+          "const": "block_unavailable",
+          "title": "Required Guard",
+          "type": "string"
+        },
+        "scan": {
+          "const": "all_mandatory",
+          "title": "Scan",
+          "type": "string"
+        },
+        "true_result": {
+          "const": "violation",
+          "title": "True Result",
+          "type": "string"
+        },
+        "unknown": {
+          "const": "unknown",
+          "title": "Unknown",
+          "type": "string"
+        },
+        "unknown_result": {
+          "const": "uncertain",
+          "title": "Unknown Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "mandatory",
+        "missing",
+        "unknown",
+        "error",
+        "not_applicable",
+        "not_evaluated",
+        "required_guard",
+        "scan",
+        "true_result",
+        "false_result",
+        "unknown_result"
+      ],
+      "title": "RulePolicy",
+      "type": "object"
+    },
+    "RulePolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/RulePolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "RulePolicyArtifact",
+      "type": "object"
+    },
+    "SchemaRef": {
+      "additionalProperties": false,
+      "description": "A constrained ContentRef, not a second schema identity system.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "enum": [
+            "fact_schema",
+            "value_schema",
+            "response_schema",
+            "attribute_schema",
+            "context_schema",
+            "tool_input_schema",
+            "tool_output_schema",
+            "object_schema",
+            "decision_schema"
+          ],
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "SchemaRef",
+      "type": "object"
+    },
+    "SelectionCallPolicy": {
+      "discriminator": {
+        "mapping": {
+          "explicit_additional": "#/$defs/AdditionalSelectionCallPolicy",
+          "shared_n02": "#/$defs/SharedN02SelectionCallPolicy"
+        },
+        "propertyName": "mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SharedN02SelectionCallPolicy"
+        },
+        {
+          "$ref": "#/$defs/AdditionalSelectionCallPolicy"
+        }
+      ]
+    },
+    "SharedN02SelectionCallPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "shared_n02",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "SharedN02SelectionCallPolicy",
+      "type": "object"
+    },
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "StringTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_length": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__1",
+          "default": 4096
+        },
+        "min_length": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__1",
+          "default": 0
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "StringTypeDefinition",
+      "type": "object"
+    },
+    "StringValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "StringValue",
+      "type": "object"
+    },
+    "SystemProducerRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_implementation_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Implementation Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "capability_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "contract_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "evaluation_ref": {
+          "$ref": "#/$defs/AbsentOptional_ReviewReportRef_"
+        },
+        "family": {
+          "const": "system_fact_producer",
+          "title": "Family",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "family",
+        "capability_id",
+        "contract_version",
+        "allowed_implementation_versions",
+        "required_features"
+      ],
+      "title": "SystemProducerRequirement",
+      "type": "object"
+    },
+    "SystemProducerSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        },
+        "producer_kind": {
+          "const": "system",
+          "title": "Producer Kind",
+          "type": "string"
+        },
+        "requirement": {
+          "$ref": "#/$defs/SystemProducerRequirement"
+        }
+      },
+      "required": [
+        "producer_kind",
+        "requirement",
+        "output_name"
+      ],
+      "title": "SystemProducerSelector",
+      "type": "object"
+    },
+    "ToolContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ToolContentRef",
+      "type": "object"
+    },
+    "ToolExecutionPolicy": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "properties": {
+              "retry_backoff_ms": {
+                "minItems": 1
+              }
+            },
+            "required": [
+              "retry_backoff_ms"
+            ]
+          },
+          "if": {
+            "properties": {
+              "max_attempts": {
+                "const": 1
+              }
+            },
+            "required": [
+              "max_attempts"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "retry_backoff_ms"
+              ]
+            }
+          }
+        }
+      ],
+      "properties": {
+        "input_byte_limit": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "max_attempts": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__4"
+        },
+        "max_concurrency": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "policy_kind": {
+          "const": "tool_execution",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "retry_backoff_ms": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_tuple_PositiveBudget___________FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_1024_____BeforeValidator__"
+        },
+        "retryable_error_classes": {
+          "items": {
+            "enum": [
+              "transport",
+              "timeout",
+              "rate_limit",
+              "resource_exhausted"
+            ],
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Retryable Error Classes",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "timeout_ms": {
+          "$ref": "#/$defs/jimu_runtime__domain__definition_support__PositiveBudget__1"
+        },
+        "whole_step_retry": {
+          "$ref": "#/$defs/TrueFlag"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "timeout_ms",
+        "max_attempts",
+        "max_concurrency",
+        "input_byte_limit",
+        "retryable_error_classes",
+        "whole_step_retry"
+      ],
+      "title": "ToolExecutionPolicy",
+      "type": "object"
+    },
+    "ToolExecutionPolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/ToolExecutionPolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "ToolExecutionPolicyArtifact",
+      "type": "object"
+    },
+    "ToolFailurePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_failure": {
+          "const": "error",
+          "title": "Fact Failure",
+          "type": "string"
+        },
+        "optional_continuation": {
+          "enum": [
+            "allow_if_consumer_policy",
+            "block"
+          ],
+          "title": "Optional Continuation",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "tool_failure",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "required_descendants": {
+          "const": "block",
+          "title": "Required Descendants",
+          "type": "string"
+        },
+        "requirement": {
+          "enum": [
+            "required",
+            "optional"
+          ],
+          "title": "Requirement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "requirement",
+        "required_descendants",
+        "fact_failure",
+        "optional_continuation"
+      ],
+      "title": "ToolFailurePolicy",
+      "type": "object"
+    },
+    "ToolFailurePolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/ToolFailurePolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "ToolFailurePolicyArtifact",
+      "type": "object"
+    },
+    "ToolPlanContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool_plan",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ToolPlanContentRef",
+      "type": "object"
+    },
+    "ToolProducerSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        },
+        "producer_kind": {
+          "const": "tool",
+          "title": "Producer Kind",
+          "type": "string"
+        },
+        "step_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Step Id",
+          "type": "string"
+        },
+        "tool_plan_ref": {
+          "$ref": "#/$defs/ToolPlanContentRef"
+        },
+        "tool_ref": {
+          "$ref": "#/$defs/ToolContentRef"
+        }
+      },
+      "required": [
+        "producer_kind",
+        "tool_plan_ref",
+        "step_id",
+        "tool_ref",
+        "output_name"
+      ],
+      "title": "ToolProducerSelector",
+      "type": "object"
+    },
+    "ToolSkipPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "condition_ast": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConditionExpr"
+            },
+            {
+              "$ref": "#/$defs/TrueFlag"
+            }
+          ],
+          "title": "Condition Ast"
+        },
+        "on_false": {
+          "const": "skip_with_reason",
+          "title": "On False",
+          "type": "string"
+        },
+        "on_missing_input": {
+          "const": "block",
+          "title": "On Missing Input",
+          "type": "string"
+        },
+        "on_unknown": {
+          "const": "block",
+          "title": "On Unknown",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "tool_skip",
+          "title": "Policy Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "condition_ast",
+        "on_false",
+        "on_unknown",
+        "on_missing_input"
+      ],
+      "title": "ToolSkipPolicy",
+      "type": "object"
+    },
+    "ToolSkipPolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/ToolSkipPolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "ToolSkipPolicyArtifact",
+      "type": "object"
+    },
+    "TriggerError": {
+      "enum": [
+        "transport",
+        "timeout",
+        "rate_limit",
+        "unavailable"
+      ],
+      "type": "string"
+    },
+    "TrueFlag": {
+      "const": true,
+      "type": "boolean"
+    },
+    "TypeDefinition": {
+      "discriminator": {
+        "mapping": {
+          "bool": "#/$defs/BooleanTypeDefinition",
+          "enum": "#/$defs/EnumTypeDefinition",
+          "integer": "#/$defs/IntegerTypeDefinition",
+          "list": "#/$defs/ListTypeDefinition",
+          "number": "#/$defs/NumberTypeDefinition",
+          "record": "#/$defs/RecordTypeDefinition",
+          "string": "#/$defs/StringTypeDefinition"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BooleanTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/IntegerTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/NumberTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/StringTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/EnumTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/ListTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/RecordTypeDefinition"
+        }
+      ]
+    },
+    "UTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    },
+    "UnknownPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "envelope_failure": {
+          "const": "no_fact",
+          "title": "Envelope Failure",
+          "type": "string"
+        },
+        "insufficient_visibility": {
+          "const": "unknown",
+          "title": "Insufficient Visibility",
+          "type": "string"
+        },
+        "item_validation_failure": {
+          "const": "error",
+          "title": "Item Validation Failure",
+          "type": "string"
+        },
+        "non_known_value": {
+          "const": "forbidden",
+          "title": "Non Known Value",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "unknown",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "reason_required": {
+          "$ref": "#/$defs/TrueFlag"
+        },
+        "transport_failure": {
+          "const": "no_fact",
+          "title": "Transport Failure",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "insufficient_visibility",
+        "transport_failure",
+        "envelope_failure",
+        "item_validation_failure",
+        "non_known_value",
+        "reason_required"
+      ],
+      "title": "UnknownPolicy",
+      "type": "object"
+    },
+    "UnknownPolicyArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/UnknownPolicy"
+        },
+        "policy_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "policy_id",
+        "version",
+        "policy"
+      ],
+      "title": "UnknownPolicyArtifact",
+      "type": "object"
+    },
+    "Value": {
+      "discriminator": {
+        "mapping": {
+          "bool": "#/$defs/BooleanValue",
+          "enum": "#/$defs/EnumValue",
+          "integer": "#/$defs/IntegerValue",
+          "list": "#/$defs/ListValue",
+          "number": "#/$defs/NumberValue",
+          "record": "#/$defs/RecordValue",
+          "string": "#/$defs/StringValue"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BooleanValue"
+        },
+        {
+          "$ref": "#/$defs/IntegerValue"
+        },
+        {
+          "$ref": "#/$defs/NumberValue"
+        },
+        {
+          "$ref": "#/$defs/StringValue"
+        },
+        {
+          "$ref": "#/$defs/EnumValue"
+        },
+        {
+          "$ref": "#/$defs/ListValue"
+        },
+        {
+          "$ref": "#/$defs/RecordValue"
+        }
+      ]
+    },
+    "ValueContract": {
+      "additionalProperties": false,
+      "description": "Bind payload to explicit type; this local check confers no Fact authority.\n\nJSON Schema validates the structural algebra. Cross-field conformance needs\nthis model validator too, just as schema/key/producer checks later need a\nRegistry. A bare EnumValue/RecordValue is not proof of semantic validation.",
+      "properties": {
+        "type_definition": {
+          "$ref": "#/$defs/TypeDefinition"
+        },
+        "value": {
+          "$ref": "#/$defs/Value"
+        }
+      },
+      "required": [
+        "type_definition",
+        "value"
+      ],
+      "title": "ValueContract",
+      "type": "object"
+    },
+    "VersionConstraint": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_deployment_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Deployment Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "allowed_model_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Model Versions",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "allowed_deployment_versions",
+        "allowed_model_versions"
+      ],
+      "title": "VersionConstraint",
+      "type": "object"
+    },
+    "VocabularyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "vocabulary",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "VocabularyContentRef",
+      "type": "object"
+    },
+    "VocabularyMemberRef": {
+      "additionalProperties": false,
+      "properties": {
+        "member": {
+          "$ref": "#/$defs/ShortText"
+        },
+        "vocabulary_ref": {
+          "$ref": "#/$defs/VocabularyContentRef"
+        }
+      },
+      "required": [
+        "vocabulary_ref",
+        "member"
+      ],
+      "title": "VocabularyMemberRef",
+      "type": "object"
+    },
+    "_ApplicabilityChoice": {
+      "$ref": "#/$defs/ApplicabilityPolicyArtifact"
+    },
+    "_ConflictChoice": {
+      "$ref": "#/$defs/ConflictPolicyArtifact"
+    },
+    "_ContextProvenanceChoice": {
+      "$ref": "#/$defs/ContextProvenancePolicyArtifact"
+    },
+    "_CoverageChoice": {
+      "$ref": "#/$defs/CoveragePolicyArtifact"
+    },
+    "_EvidenceChoice": {
+      "$ref": "#/$defs/EvidencePolicyArtifact"
+    },
+    "_ExecutionChoice": {
+      "$ref": "#/$defs/ExecutionPolicyArtifact"
+    },
+    "_FallbackChoice": {
+      "$ref": "#/$defs/FallbackPolicyArtifact"
+    },
+    "_ProviderChoice": {
+      "$ref": "#/$defs/ProviderPolicyArtifact"
+    },
+    "_QuestionSelectionChoice": {
+      "$ref": "#/$defs/QuestionSelectionPolicyArtifact"
+    },
+    "_QuestionValidationChoice": {
+      "$ref": "#/$defs/QuestionValidationPolicyArtifact"
+    },
+    "_ResourceRequirementsChoice": {
+      "$ref": "#/$defs/ResourceRequirementsArtifact"
+    },
+    "_RuleChoice": {
+      "$ref": "#/$defs/RulePolicyArtifact"
+    },
+    "_ToolExecutionChoice": {
+      "$ref": "#/$defs/ToolExecutionPolicyArtifact"
+    },
+    "_ToolFailureChoice": {
+      "$ref": "#/$defs/ToolFailurePolicyArtifact"
+    },
+    "_ToolSkipChoice": {
+      "$ref": "#/$defs/ToolSkipPolicyArtifact"
+    },
+    "_UnknownChoice": {
+      "$ref": "#/$defs/UnknownPolicyArtifact"
+    },
+    "jimu_runtime__domain__definition_support__PositiveBudget__1": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "jimu_runtime__domain__definition_support__PositiveBudget__2": {
+      "maximum": 4096,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "jimu_runtime__domain__definition_support__PositiveBudget__3": {
+      "maximum": 256,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "jimu_runtime__domain__definition_support__PositiveBudget__4": {
+      "maximum": 1025,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "jimu_runtime__domain__values__Size__1": {
+      "maximum": 4096,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "jimu_runtime__domain__values__Size__2": {
+      "maximum": 256,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact": {
+      "$ref": "#/$defs/PolicyArtifact"
+    },
+    "ref": {
+      "$ref": "#/$defs/PolicyContentRef"
+    }
+  },
+  "required": [
+    "ref",
+    "artifact"
+  ],
+  "title": "PolicyRegistration",
+  "type": "object"
+}

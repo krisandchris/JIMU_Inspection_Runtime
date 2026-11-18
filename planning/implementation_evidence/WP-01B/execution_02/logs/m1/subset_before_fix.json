@@ -1,0 +1,16 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_tool_plans.py::test_step_may_select_subset_of_required_tool_declarations",
+    "-q"
+  ],
+  "exit_code": 1,
+  "output": "F                                                                        [100%]\n=================================== FAILURES ===================================\n__________ test_step_may_select_subset_of_required_tool_declarations ___________\n\n    def test_step_may_select_subset_of_required_tool_declarations() -> None:\n        data = fixture()\n        rawtool = cast(dict[str, object], data[\"tool\"])\n        rawtool[\"fact_outputs\"] = [data[\"output\"]]\n        tool = ToolDefinition.model_validate(rawtool)\n        plan = ToolPlanDefinition.model_validate(data[\"plan\"])\n        registration = ToolRegistration.model_validate({\"ref\": plan.steps[0].tool_ref, \"definition\": tool})\n        report = validate_tool_plan(plan, (registration,), (MappingTypeContext.model_validate(data[\"context\"]),))\n>       assert next(check for check in report.checks if check.check_id == \"tool_plan.step.0\").status == \"passed\"\nE       AssertionError: assert 'invalid' == 'passed'\nE         \nE         - passed\nE         + invalid\n\ntests/unit/test_b_tool_plans.py:212: AssertionError\n=========================== short test summary info ============================\nFAILED tests/unit/test_b_tool_plans.py::test_step_may_select_subset_of_required_tool_declarations\n1 failed in 0.20s\n",
+  "recorded_at": "2026-11-17T14:58:41.679004+00:00"
+}

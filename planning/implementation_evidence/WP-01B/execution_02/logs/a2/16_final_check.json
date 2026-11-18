@@ -1,0 +1,26 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime/domain/runtime/candidates.py",
+    "src/jimu_runtime/domain/validation/authority.py",
+    "src/jimu_runtime/domain/validation/authority_inputs.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T15:33:06.834237+00:00",
+  "ended_at": "2026-11-17T15:33:07.226569+00:00",
+  "exit_code": 0,
+  "stdout": "Success: no issues found in 3 source files\n",
+  "stderr": "",
+  "hashes": {
+    "src/jimu_runtime/domain/runtime/candidates.py": "7558fcf3acd4026eb8fde3bb453069ff72be62c301828733c4fa9e29665d3a67",
+    "src/jimu_runtime/domain/validation/authority.py": "30055fffc4cec6cc26d15b78d6412e1ee6605bdc929ba3c9aa70223c7e6bb734",
+    "src/jimu_runtime/domain/validation/authority_inputs.py": "40331849be8cabcfbeaaede0e0da2d018847f2252d42e4421a6200e3fcdb0677",
+    "tests/unit/test_b_candidate_history.py": "9ddac6eebc3f64128ccb48a703cc7e59702edb7a31f708fc426c1dea4ad62b68",
+    "tests/contract/test_b_authority_history.py": "d65e69cedd69d32a33ecfab76891645b6d32e5cd3fb7243dbe37417ec4149a1b",
+    "tests/negative/test_b_history_invalid.py": "2241c2989cf596fa6e14a0866bfce89cd2a82ca446cc1d2d017e742ae7228b59"
+  }
+}
