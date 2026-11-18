@@ -1,0 +1,14 @@
+{
+  "utc": "2026-11-17T17:40:16.153749+00:00",
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "source_hashes": {
+    "scripts/generate_schemas.py": "7c432c5dde8be9e8aa4f6a0b2ab0bed5b49a6a4acaa5ea18d572d58fd5c1504f",
+    "tests/contract/test_b_schema_inventory.py": "076e30e48ad8e9a2900a2a6e9bae965d02bebf6eb944654477ce4fe77c11b5fb",
+    "tests/unit/test_b_schema_export.py": "be3ea05df14ded9d5b788a1fde53761a43001ac95618e3f2b2588b6ab76ed101"
+  },
+  "syntax": "stdlib ast.parse only",
+  "tests": "TEST_NOT_RUN: generation barrier pending",
+  "generated": "NOT_WRITTEN",
+  "status": "PREPARATION_ONLY_NOT_TESTED",
+  "review_finding": "Three malformed _group calls from broad replacement; fixed after Primary review, original failed preparation preserved"
+}

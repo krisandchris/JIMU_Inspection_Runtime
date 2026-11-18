@@ -1,0 +1,16 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime"
+  ],
+  "started_at": "2026-11-17T14:39:22.502284+00:00",
+  "finished_at": "2026-11-17T14:39:22.942795+00:00",
+  "exit_code": 1,
+  "stdout": "src/jimu_runtime/domain/definitions/prompts.py:82: error: Dict entry 0 has incompatible type \"str\": \"list[dict[str, dict[str, dict[str, dict[str, bool]] | list[str]] | dict[str, dict[str, dict[str, str]]]] | dict[str, dict[str, dict[str, dict[str, Literal['context', 'profile_metadata', 'question_metadata', 'object_geometry', 'image_reference']]] | list[str]] | dict[str, dict[str, dict[str, dict[str, dict[str, str]]]]]]]\"; expected \"str\": \"int | float | str | list[JsonValue] | JsonDict | None\"  [dict-item]\nsrc/jimu_runtime/domain/definitions/prompts.py:175: error: Need type annotation for \"text\"  [var-annotated]\nFound 2 errors in 1 file (checked 25 source files)\n",
+  "stderr": ""
+}

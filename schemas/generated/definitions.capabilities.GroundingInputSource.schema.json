@@ -1,0 +1,225 @@
+{
+  "$defs": {
+    "ContextFieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "items": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Field Path",
+          "type": "array"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "$ref": "#/$defs/ContextSource"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "ContextFieldSelector",
+      "type": "object"
+    },
+    "ContextInput": {
+      "additionalProperties": false,
+      "properties": {
+        "selector": {
+          "$ref": "#/$defs/ContextFieldSelector"
+        },
+        "source_kind": {
+          "const": "context",
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_kind",
+        "selector"
+      ],
+      "title": "ContextInput",
+      "type": "object"
+    },
+    "ContextSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "context_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ContextSchemaRef",
+      "type": "object"
+    },
+    "ContextSource": {
+      "enum": [
+        "context_snapshot",
+        "region_metadata",
+        "profile_metadata"
+      ],
+      "title": "ContextSource",
+      "type": "string"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FieldPath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "ImageFieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ImageSchemaRef"
+        }
+      },
+      "required": [
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "ImageFieldSelector",
+      "type": "object"
+    },
+    "ImageInput": {
+      "additionalProperties": false,
+      "properties": {
+        "selector": {
+          "$ref": "#/$defs/ImageFieldSelector"
+        },
+        "source_kind": {
+          "const": "image",
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_kind",
+        "selector"
+      ],
+      "title": "ImageInput",
+      "type": "object"
+    },
+    "ImageSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "attribute_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ImageSchemaRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "context": "#/$defs/ContextInput",
+      "image": "#/$defs/ImageInput"
+    },
+    "propertyName": "source_kind"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ContextInput"
+    },
+    {
+      "$ref": "#/$defs/ImageInput"
+    }
+  ]
+}

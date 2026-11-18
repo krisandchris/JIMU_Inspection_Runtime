@@ -1,0 +1,12 @@
+{
+  "$defs": {
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$ref": "#/$defs/ShortText",
+  "pattern": "^[A-Za-z0-9!#$%&'*+.^_`|~-]+/[A-Za-z0-9!#$%&'*+.^_`|~-]+$(?![\\s\\S])"
+}

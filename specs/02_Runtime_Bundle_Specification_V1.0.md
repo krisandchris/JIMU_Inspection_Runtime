@@ -272,3 +272,15 @@ Rejected Bundle never becomes Active. Activation rollback changes the active poi
 - unsupported required capability rejected;
 - active pointer rollback leaves historical Release intact;
 - in-flight Task remains pinned after activation change.
+
+
+## WP-01B approved local-selector compatibility note
+
+Domain §13.4 adds LocalToolFactRefExpr for same-ToolPlan ancestor Facts in tool_condition.
+Its Policy bytes contain exact Tool/FactSchema dependencies but no reverse enclosing
+ToolPlan digest. At each consuming Plan step, compilation binds the enclosing Plan
+identity and checks strict ancestry/mapped output/scope. It must not insert the resolved
+Plan reference into the Policy before hashing, exclude fields from artifact hashing,
+or treat the local selector as an admitted ContentRef. Existing exact FactSelector and
+IdentitySelector wire contracts remain unchanged. WP-01B supplies data/finite checks;
+full Bundle graph compilation, root digest and signature remain WP-02.

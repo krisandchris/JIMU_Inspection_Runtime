@@ -1,0 +1,18 @@
+{
+  "reviewer": "Primary GPT-6 Astra",
+  "captured_at": "2026-11-17T15:05:36.404740+00:00",
+  "scope": "F1 projection + selector local contracts",
+  "source_review": "All delivered source, positive/negative projection tests, generated-shape tests, actual dependency diff, final raw pytest log read directly. Final enum-length guard change re-read after C completion.",
+  "independent_challenge": "Sol-A; direct code/tests/logs + read-only edge probes; no blocking finding",
+  "owned_hash_mismatches": [],
+  "targeted_tests": "127 passed (107 F1 +20 selectors); not a whole-project run",
+  "local_acceptance": "PASS",
+  "limits": [
+    "integer library support ±(2^53-1) only at projection boundary",
+    "parent content digest authenticity not verified",
+    "no duplicate-safe raw JSON generation parser API",
+    "vocabulary membership/Policy contents and business enum semantics not inferred from shape",
+    "no Runtime/model/GPU execution"
+  ],
+  "runtime": "RUNTIME_NOT_RUN"
+}

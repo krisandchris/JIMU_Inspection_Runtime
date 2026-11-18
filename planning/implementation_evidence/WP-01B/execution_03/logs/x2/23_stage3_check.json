@@ -1,0 +1,25 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "src/jimu_runtime/domain/producers.py",
+    "src/jimu_runtime/domain/validation/producer_inputs.py",
+    "src/jimu_runtime/domain/validation/producers.py",
+    "tests/contract/test_b_producers_contracts.py",
+    "tests/unit/test_b_producers_data.py",
+    "tests/unit/test_b_producers_validation.py",
+    "tests/negative/test_b_producers_invalid.py",
+    "tests/negative/test_b_producers_validation_invalid.py",
+    "tests/fixtures/wp01b/x2/support.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:42:14.668565+00:00",
+  "end": "2026-11-17T17:42:14.681607+00:00",
+  "exit": 0,
+  "stdout": "All checks passed!\n",
+  "stderr": ""
+}

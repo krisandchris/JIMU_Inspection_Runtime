@@ -1,0 +1,16 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-c",
+    "import sys,platform,importlib.metadata,json; print(json.dumps({\"python\":sys.version,\"platform\":platform.platform(),\"versions\":{n:importlib.metadata.version(n) for n in (\"pydantic\",\"pydantic-core\",\"pytest\",\"jsonschema\",\"ruff\",\"mypy\")}},indent=2))"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "ended_at": "2026-11-17T16:05:10.164480+00:00",
+  "exit_code": 0,
+  "stdout": "{\n  \"python\": \"3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]\",\n  \"platform\": \"Linux-6.8.0-149-generic-x86_64-with-glibc2.39\",\n  \"versions\": {\n    \"pydantic\": \"2.12.5\",\n    \"pydantic-core\": \"2.41.5\",\n    \"pytest\": \"8.4.2\",\n    \"jsonschema\": \"4.25.1\",\n    \"ruff\": \"0.14.14\",\n    \"mypy\": \"1.18.2\"\n  }\n}\n",
+  "stderr": ""
+}

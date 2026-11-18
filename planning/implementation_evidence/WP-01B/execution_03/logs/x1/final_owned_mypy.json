@@ -1,0 +1,19 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime/domain/conditions.py",
+    "src/jimu_runtime/domain/policies.py",
+    "src/jimu_runtime/domain/definition_enums.py",
+    "src/jimu_runtime/domain/validation/policies.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:14:11.403811+00:00",
+  "end": "2026-11-17T17:14:11.545382+00:00",
+  "exit_code": 0,
+  "stdout": "Success: no issues found in 4 source files\n",
+  "stderr": ""
+}

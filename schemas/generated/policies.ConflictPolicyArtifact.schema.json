@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "ConflictPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "category_dedup": {
+          "const": "set",
+          "title": "Category Dedup",
+          "type": "string"
+        },
+        "early_exit": {
+          "$ref": "#/$defs/FalseFlag"
+        },
+        "mode": {
+          "const": "collect_all",
+          "title": "Mode",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "conflict",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "preserve_rule_refs": {
+          "$ref": "#/$defs/TrueFlag"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "mode",
+        "early_exit",
+        "category_dedup",
+        "preserve_rule_refs"
+      ],
+      "title": "ConflictPolicy",
+      "type": "object"
+    },
+    "FalseFlag": {
+      "const": false,
+      "type": "boolean"
+    },
+    "TrueFlag": {
+      "const": true,
+      "type": "boolean"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "policy": {
+      "$ref": "#/$defs/ConflictPolicy"
+    },
+    "policy_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "policy_id",
+    "version",
+    "policy"
+  ],
+  "title": "ConflictPolicyArtifact",
+  "type": "object"
+}

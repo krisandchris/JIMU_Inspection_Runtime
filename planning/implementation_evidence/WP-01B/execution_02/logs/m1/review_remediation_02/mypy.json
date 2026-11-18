@@ -1,0 +1,15 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime/domain/validation/tool_plans.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T15:28:15.664723+00:00",
+  "end": "2026-11-17T15:28:16.105458+00:00",
+  "exit_code": 1,
+  "output": "src/jimu_runtime/domain/validation/tool_plans.py:475: error: Incompatible types in assignment (expression has type \"MappingTypeContext | None\", variable has type \"MappingTypeContext\")  [assignment]\nFound 1 error in 1 file (checked 1 source file)\n"
+}

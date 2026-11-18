@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "initialized",
+    "running",
+    "completed",
+    "partial_failed",
+    "failed",
+    "cancelled"
+  ],
+  "title": "ExecutionStatus",
+  "type": "string"
+}

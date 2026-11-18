@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="9" time="0.195" timestamp="2026-11-17T22:24:24.577247+08:00" hostname="hy-System-Product-Name"><testcase classname="tests.negative.test_b_ontology_invalid" name="test_revalidation_rejects_model_copy_injected_extra[entity-EntityDefinition]" time="0.001"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">name = 'entity'
+model = &lt;class 'jimu_runtime.domain.definitions.ontology.EntityDefinition'&gt;
+
+    @pytest.mark.parametrize("name,model", ROOTS + [("capability", ExternalCapabilityRequirement)])
+    def test_revalidation_rejects_model_copy_injected_extra(
+        name: str, model: type[ContractModel]
+    ) -&gt; None:
+        original = model.model_validate(fixture(name))
+        tainted = original.model_copy(update={"injected_field": "must reject"})
+        assert tainted.__dict__["injected_field"] == "must reject"
+&gt;       with pytest.raises(ValidationError) as exc:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests/negative/test_b_ontology_invalid.py:266: Failed</failure></testcase><testcase classname="tests.negative.test_b_ontology_invalid" name="test_revalidation_rejects_model_copy_injected_extra[region-RegionDefinition]" time="0.001"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">name = 'region'
+model = &lt;class 'jimu_runtime.domain.definitions.ontology.RegionDefinition'&gt;
+
+    @pytest.mark.parametrize("name,model", ROOTS + [("capability", ExternalCapabilityRequirement)])
+    def test_revalidation_rejects_model_copy_injected_extra(
+        name: str, model: type[ContractModel]
+    ) -&gt; None:
+        original = model.model_validate(fixture(name))
+        tainted = original.model_copy(update={"injected_field": "must reject"})
+        assert tainted.__dict__["injected_field"] == "must reject"
+&gt;       with pytest.raises(ValidationError) as exc:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests/negative/test_b_ontology_invalid.py:266: Failed</failure></testcase><testcase classname="tests.negative.test_b_ontology_invalid" name="test_revalidation_rejects_model_copy_injected_extra[vocabulary-VocabularyDefinition]" time="0.001"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">name = 'vocabulary'
+model = &lt;class 'jimu_runtime.domain.definitions.resources.VocabularyDefinition'&gt;
+
+    @pytest.mark.parametrize("name,model", ROOTS + [("capability", ExternalCapabilityRequirement)])
+    def test_revalidation_rejects_model_copy_injected_extra(
+        name: str, model: type[ContractModel]
+    ) -&gt; None:
+        original = model.model_validate(fixture(name))
+        tainted = original.model_copy(update={"injected_field": "must reject"})
+        assert tainted.__dict__["injected_field"] == "must reject"
+&gt;       with pytest.raises(ValidationError) as exc:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests/negative/test_b_ontology_invalid.py:266: Failed</failure></testcase><testcase classname="tests.negative.test_b_ontology_invalid" name="test_revalidation_rejects_model_copy_injected_extra[asset-StaticAssetDescriptor]" time="0.001"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">name = 'asset'
+model = &lt;class 'jimu_runtime.domain.definitions.resources.StaticAssetDescriptor'&gt;
+
+    @pytest.mark.parametrize("name,model", ROOTS + [("capability", ExternalCapabilityRequirement)])
+    def test_revalidation_rejects_model_copy_injected_extra(
+        name: str, model: type[ContractModel]
+    ) -&gt; None:
+        original = model.model_validate(fixture(name))
+        tainted = original.model_copy(update={"injected_field": "must reject"})
+        assert tainted.__dict__["injected_field"] == "must reject"
+&gt;       with pytest.raises(ValidationError) as exc:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests/negative/test_b_ontology_invalid.py:266: Failed</failure></testcase><testcase classname="tests.negative.test_b_ontology_invalid" name="test_revalidation_rejects_model_copy_injected_extra[capability-ExternalCapabilityRequirement]" time="0.001"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">name = 'capability'
+model = &lt;class 'jimu_runtime.domain.definition_support.ExternalCapabilityRequirement'&gt;
+
+    @pytest.mark.parametrize("name,model", ROOTS + [("capability", ExternalCapabilityRequirement)])
+    def test_revalidation_rejects_model_copy_injected_extra(
+        name: str, model: type[ContractModel]
+    ) -&gt; None:
+        original = model.model_validate(fixture(name))
+        tainted = original.model_copy(update={"injected_field": "must reject"})
+        assert tainted.__dict__["injected_field"] == "must reject"
+&gt;       with pytest.raises(ValidationError) as exc:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests/negative/test_b_ontology_invalid.py:266: Failed</failure></testcase><testcase classname="tests.negative.test_b_ontology_invalid" name="test_nested_tainted_optional_contract_instance_is_rejected" time="0.001"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">def test_nested_tainted_optional_contract_instance_is_rejected() -&gt; None:
+        class RequirementHolder(ContractModel):
+            requirement: ExternalCapabilityRequirement
+    
+        valid = ExternalCapabilityRequirement.model_validate(fixture("capability"))
+        assert RequirementHolder.model_validate({"requirement": valid}).requirement == valid
+        tainted = valid.model_copy(update={"injected_field": "must reject"})
+&gt;       with pytest.raises(ValidationError) as exc:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests/negative/test_b_ontology_invalid.py:278: Failed</failure></testcase><testcase classname="tests.negative.test_b_ontology_invalid" name="test_subclass_declared_fields_are_not_lost_when_revalidating_base" time="0.002"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">def test_subclass_declared_fields_are_not_lost_when_revalidating_base() -&gt; None:
+        class ExtendedRequirement(ExternalCapabilityRequirement):
+            subclass_field: str
+    
+        extended = ExtendedRequirement.model_validate({**fixture("capability"), "subclass_field": "must reject"})
+&gt;       with pytest.raises(ValidationError) as exc:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests/negative/test_b_ontology_invalid.py:288: Failed</failure></testcase><testcase classname="tests.negative.test_b_ontology_invalid" name="test_subclass_allowed_extras_are_not_lost_when_revalidating_base" time="0.002"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">def test_subclass_allowed_extras_are_not_lost_when_revalidating_base() -&gt; None:
+        class ExtendedRequirement(ExternalCapabilityRequirement):
+            model_config = ConfigDict(extra="allow")
+    
+        extended = ExtendedRequirement.model_validate({**fixture("capability"), "subclass_extra": "must reject"})
+        assert extended.__pydantic_extra__ == {"subclass_extra": "must reject"}
+&gt;       with pytest.raises(ValidationError) as exc:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests/negative/test_b_ontology_invalid.py:299: Failed</failure></testcase><testcase classname="tests.negative.test_b_ontology_invalid" name="test_constructed_invalid_or_missing_fields_are_still_revalidated" time="0.001" /></testsuite></testsuites>

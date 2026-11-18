@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "const": "integer",
+      "title": "Kind",
+      "type": "string"
+    },
+    "value": {
+      "title": "Value",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "kind",
+    "value"
+  ],
+  "title": "IntegerValue",
+  "type": "object"
+}

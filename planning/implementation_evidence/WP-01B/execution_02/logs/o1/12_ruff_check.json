@@ -1,0 +1,21 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "src/jimu_runtime/domain/definitions/capabilities.py",
+    "src/jimu_runtime/domain/definitions/prompts.py",
+    "tests/unit/test_b_prompts.py",
+    "tests/contract/test_b_capabilities.py",
+    "tests/negative/test_b_capabilities_invalid.py"
+  ],
+  "started_at": "2026-11-17T14:42:23.767585+00:00",
+  "finished_at": "2026-11-17T14:42:23.783554+00:00",
+  "exit_code": 0,
+  "stdout": "All checks passed!\n",
+  "stderr": ""
+}

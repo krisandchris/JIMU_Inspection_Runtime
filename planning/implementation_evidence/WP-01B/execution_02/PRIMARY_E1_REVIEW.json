@@ -1,0 +1,29 @@
+{
+  "captured_at": "2026-11-17T16:12:34.468563+00:00",
+  "reviewer": "Primary Astra",
+  "scope": "\u00a710 engineering export; not Bundle digest/compiler",
+  "direct_review": [
+    "Complete generator implementation and explicit symbol inventory",
+    "Both actual test files: independent AST coverage vs inventory, semantic differences, fullsrc/cache readonly snapshots, symlinks/path confinement, local refs and unknown-file retention",
+    "Actual final logs and index/file hashes",
+    "Independent Sol final code/evidence review"
+  ],
+  "schema_count": 137,
+  "public_persisted_roots": 34,
+  "named_unions": 28,
+  "targeted_test_count": 35,
+  "test_evidence": [
+    "logs/e1/14_final_check.json",
+    "logs/e1/15_final_check.json",
+    "logs/e1/16_final_check.json",
+    "logs/e1/17_final_check.json",
+    "logs/e1/18_final_check.json",
+    "logs/e1/19_environment.json",
+    "logs/e1/final_targeted_results.xml"
+  ],
+  "code_acceptance": "PASS_LOCAL_SCOPE",
+  "test_acceptance": "TEST_PASSED_TARGETED",
+  "inventory_state": "PARTIAL_D01_BLOCKED",
+  "limitations": "No complete PolicyArtifact/Producer/authority admission; numeric, calendar, bytes, taint and relation checks require Domain stages",
+  "runtime": "RUNTIME_NOT_RUN"
+}

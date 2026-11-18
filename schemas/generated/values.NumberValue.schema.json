@@ -1,0 +1,25 @@
+{
+  "$defs": {
+    "FiniteNumber": {
+      "type": "number"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "const": "number",
+      "title": "Kind",
+      "type": "string"
+    },
+    "value": {
+      "$ref": "#/$defs/FiniteNumber"
+    }
+  },
+  "required": [
+    "kind",
+    "value"
+  ],
+  "title": "NumberValue",
+  "type": "object"
+}

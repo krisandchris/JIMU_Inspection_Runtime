@@ -1,0 +1,22 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime/domain/definition_support.py",
+    "src/jimu_runtime/domain/runtime/facts.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T15:12:30.604832+00:00",
+  "ended_at": "2026-11-17T15:12:31.098195+00:00",
+  "exit_code": 0,
+  "stdout": "Success: no issues found in 2 source files\n",
+  "stderr": "",
+  "hashes": {
+    "src/jimu_runtime/domain/definition_support.py": "9f5915d47487ee14a9a460371c25287d939dcb51a5f6a2017ea68d1a1ee44083",
+    "src/jimu_runtime/domain/runtime/facts.py": "b45c9d80eb8347d2c31911e1716623fbb4f64f67778c5acd389c74470d7577ae",
+    "tests/unit/test_b_utc_nested.py": "c10bd32f8fa14e8bb81b5c10130274dc4f9b5446733f94c68951546411bb8d49"
+  }
+}

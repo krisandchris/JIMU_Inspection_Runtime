@@ -1,0 +1,17 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-c",
+    "import sys\nsys.path.insert(0,\"tests\")\nfrom fixtures.wp01b.v1.support import fixture,entry,report,codes\nfor mutation in (\"digest\",\"missing\"):\n data=fixture()\n target=entry(data,\"prompt_template\",\"prompt-question\")[\"definition\"][\"response_schema_ref\"]\n target[\"digest\" if mutation==\"digest\" else \"artifact_id\"]=\"b\"*64 if mutation==\"digest\" else \"absent\"\n result=report(data)\n print(mutation,result.aggregate_status,sorted(codes(result)))\n"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start_utc": "2026-11-17T15:56:11.719025+00:00",
+  "end_utc": "2026-11-17T15:56:12.162988+00:00",
+  "exit_code": 0,
+  "stdout": "digest deferred ['definitions.deferred.applicability_content', 'definitions.deferred.bundle_closure', 'definitions.deferred.external_authenticity', 'definitions.deferred.geometry_body_and_asset_bytes', 'definitions.deferred.mandatory_producer_completeness', 'definitions.deferred.producer_authority_admission', 'definitions.deferred.rule_set_body', 'definitions.deferred.semantic_protocol_io', 'definitions.deferred.tool_skip_content', 'model.external_trust', 'plan.skip_conditions', 'selection.required_producer_closure', 'tool.external_admission', 'tool_plan.policy_contents', 'tool_plan.producer_authority']\nmissing deferred ['definitions.deferred.applicability_content', 'definitions.deferred.bundle_closure', 'definitions.deferred.external_authenticity', 'definitions.deferred.geometry_body_and_asset_bytes', 'definitions.deferred.mandatory_producer_completeness', 'definitions.deferred.producer_authority_admission', 'definitions.deferred.rule_set_body', 'definitions.deferred.semantic_protocol_io', 'definitions.deferred.tool_skip_content', 'model.external_trust', 'plan.skip_conditions', 'selection.required_producer_closure', 'tool.external_admission', 'tool_plan.policy_contents', 'tool_plan.producer_authority']\n",
+  "stderr": ""
+}

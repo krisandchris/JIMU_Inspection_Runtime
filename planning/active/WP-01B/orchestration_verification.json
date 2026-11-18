@@ -1,0 +1,268 @@
+{
+  "observed_at": "2026-11-17T11:59:59.788870+00:00",
+  "codex_cli_version": "0.169.0",
+  "user_config_allowlist": {
+    "model": "gpt-6-astra",
+    "model_reasoning_effort": "xhigh",
+    "agents": {
+      "enabled": true,
+      "max_concurrent_threads_per_session": 9,
+      "default_subagent_model": "gpt-6.1-sol",
+      "default_subagent_reasoning_effort": "medium"
+    }
+  },
+  "strict_config_validation": {
+    "command": "codex --strict-config app-server --print-startup-config",
+    "exit_code": 0,
+    "stdout_keys": [
+      "appServerVersion",
+      "configRequirements"
+    ],
+    "limitations": "Validation success does not by itself prove live model settings."
+  },
+  "native_spawn_overrides": {
+    "fork_turns": "none",
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "medium"
+  },
+  "sessions": [
+    {
+      "assignment": "primary",
+      "session": {
+        "id": "01a1e7c6-e83b-77f2-9c60-845bd76d12e9",
+        "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+        "source": "vscode"
+      },
+      "observed_turn": {
+        "model": "gpt-6-astra",
+        "effort": "xhigh",
+        "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+        "turn_id": "01a1e956-feaf-7c62-a4b6-e52a0571c1e0"
+      },
+      "evidence_source": "native Codex local session_meta and latest turn_context; allowlisted fields only"
+    },
+    {
+      "assignment": "A",
+      "session": {
+        "id": "01a1e95c-15b2-73a0-b036-c70c74dc38dc",
+        "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+        "source": {
+          "subagent": {
+            "thread_spawn": {
+              "parent_thread_id": "01a1e7c6-e83b-77f2-9c60-845bd76d12e9",
+              "depth": 1,
+              "agent_path": "/root/wp01b_a_ontology",
+              "agent_nickname": "Hume",
+              "agent_role": null
+            }
+          }
+        }
+      },
+      "observed_turn": {
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+        "turn_id": "01a1e95c-15e4-7310-a520-8a0e56e04b42"
+      },
+      "evidence_source": "native Codex local session_meta and latest turn_context; allowlisted fields only",
+      "observed_task_turns": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "turn_id": "01a1e95c-15e4-7310-a520-8a0e56e04b42"
+        }
+      ]
+    },
+    {
+      "assignment": "B",
+      "session": {
+        "id": "01a1e95c-58ae-7730-a42a-1117bcd93e29",
+        "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+        "source": {
+          "subagent": {
+            "thread_spawn": {
+              "parent_thread_id": "01a1e7c6-e83b-77f2-9c60-845bd76d12e9",
+              "depth": 1,
+              "agent_path": "/root/wp01b_b_facts",
+              "agent_nickname": "Ohm",
+              "agent_role": null
+            }
+          }
+        }
+      },
+      "observed_turn": {
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+        "turn_id": "01a1e95c-58bb-7021-9361-f73bbb4b341c"
+      },
+      "evidence_source": "native Codex local session_meta and latest turn_context; allowlisted fields only",
+      "observed_task_turns": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "turn_id": "01a1e95c-58bb-7021-9361-f73bbb4b341c"
+        }
+      ]
+    },
+    {
+      "assignment": "C",
+      "session": {
+        "id": "01a1e95c-993a-78a2-9621-b11e49737583",
+        "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+        "source": {
+          "subagent": {
+            "thread_spawn": {
+              "parent_thread_id": "01a1e7c6-e83b-77f2-9c60-845bd76d12e9",
+              "depth": 1,
+              "agent_path": "/root/wp01b_c_policies",
+              "agent_nickname": "Epicurus",
+              "agent_role": null
+            }
+          }
+        }
+      },
+      "observed_turn": {
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+        "turn_id": "01a1e95c-994d-7240-afeb-862e26e767c8"
+      },
+      "evidence_source": "native Codex local session_meta and latest turn_context; allowlisted fields only",
+      "observed_task_turns": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "turn_id": "01a1e95c-994d-7240-afeb-862e26e767c8"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "turn_id": "01a1e968-e1e5-7b00-b2c1-a4f8419be05b"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "turn_id": "01a1e96c-499c-7ed3-8019-e80a5ec027c3"
+        }
+      ]
+    },
+    {
+      "assignment": "D",
+      "session": {
+        "id": "01a1e95c-dc24-7190-8996-9c78cec55ad2",
+        "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+        "source": {
+          "subagent": {
+            "thread_spawn": {
+              "parent_thread_id": "01a1e7c6-e83b-77f2-9c60-845bd76d12e9",
+              "depth": 1,
+              "agent_path": "/root/wp01b_d_tests",
+              "agent_nickname": "Kant",
+              "agent_role": null
+            }
+          }
+        }
+      },
+      "observed_turn": {
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0",
+        "turn_id": "01a1e95c-dc2f-71f2-9628-6dc10a3ddafa"
+      },
+      "evidence_source": "native Codex local session_meta and latest turn_context; allowlisted fields only",
+      "observed_task_turns": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "turn_id": "01a1e95c-dc2f-71f2-9628-6dc10a3ddafa"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "turn_id": "01a1e969-16c0-7e50-89c2-2ae75776f886"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "turn_id": "01a1e96c-7a52-7953-810f-6b6fcabbab8c"
+        }
+      ]
+    }
+  ],
+  "protocol_schema_source": {
+    "command": "codex app-server generate-json-schema --experimental --out <temporary-directory>",
+    "exit_code": 0,
+    "purpose": "Read installed Codex protocol specification only, not JIMU schema generation/test",
+    "selected_schema_sha256": {
+      "ConfigReadResponse.json": "b906c06773fabf56e326a7618f4e31dbfdb84a3b84ed805e50ca0a53e61d3701",
+      "ConfigReadParams.json": "257c54a423b47c1d209ff1076765a1564d82322fd5161670fd489a2874de1bac",
+      "ThreadStartParams.json": "80a40a7fac15b4bf70efb7f893fb353acc0a0d30c68f54aee4f01923deca85de",
+      "TurnStartParams.json": "b64078d4310cb1fa591c7f63344bed6b8c08d216f9f81d86c00045136187a2b6"
+    },
+    "config_fields": {
+      "model": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "model_reasoning_effort": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/ReasoningEffort"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "turn_start_fields": {
+      "model": {
+        "description": "Override the model for this turn and subsequent turns.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "effort": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/ReasoningEffort"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Override the reasoning effort for this turn and subsequent turns."
+      }
+    }
+  },
+  "worktrees": {
+    "cli_option": "--worktree",
+    "native_tools": [
+      "list_worktrees",
+      "create_worktree",
+      "get_worktree_creation_status"
+    ],
+    "managed_inventory": [],
+    "git_worktree_count": 1,
+    "creation_test": "NOT_RUN",
+    "separate_worktree_per_collaboration_spawn": "NOT_EXPOSED; collaboration agents share current working directory"
+  },
+  "status": "STATIC_REVIEW_ONLY; TEST_NOT_RUN; RUNTIME_NOT_RUN",
+  "configuration_modified": false,
+  "probe_limitations": [
+    "codex --strict-config features list reported that strict-config is unsupported for codex features; it did not validate configuration. Subsequently used the supported app-server --print-startup-config validation (exit 0).",
+    "codex features list showed multi_agent deprecated true, multi_agent_v2 stable false and reasoning_effort_override stable true; these default CLI feature observations are not used to infer live session capabilities. Actual native spawn plus session turn_context verify the live model overrides.",
+    "App-server protocol files were exported to /tmp for installed-version documentation; no JIMU model schema generator or project test was run.",
+    "Native managed worktree creation is available but not exercised; no new branch/worktree was created."
+  ],
+  "subtask_status_at_completion": {
+    "A": "completed",
+    "B": "completed",
+    "C": "completed",
+    "D": "completed"
+  }
+}

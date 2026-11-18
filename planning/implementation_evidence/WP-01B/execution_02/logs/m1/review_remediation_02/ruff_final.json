@@ -1,0 +1,19 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "src/jimu_runtime/domain/validation/tool_plans.py",
+    "tests/unit/test_b_tool_plans.py",
+    "tests/contract/test_b_models_tools.py",
+    "tests/negative/test_b_models_tools_invalid.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T15:28:52.199886+00:00",
+  "end": "2026-11-17T15:28:52.215191+00:00",
+  "exit_code": 0,
+  "output": "All checks passed!\n"
+}

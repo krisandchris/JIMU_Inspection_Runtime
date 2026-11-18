@@ -1,0 +1,22 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "pytest",
+    "-q",
+    "tests/contract/test_b_producers_contracts.py",
+    "tests/unit/test_b_producers_data.py",
+    "tests/unit/test_b_producers_validation.py",
+    "tests/negative/test_b_producers_invalid.py",
+    "tests/negative/test_b_producers_validation_invalid.py",
+    "--junitxml=planning/implementation_evidence/WP-01B/execution_03/logs/x2/stage3_all_initial.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:40:45.376876+00:00",
+  "end": "2026-11-17T17:40:48.862196+00:00",
+  "exit": 1,
+  "stdout": "..........................................F............................. [ 66%]\n.....................................                                    [100%]\n=================================== FAILURES ===================================\n___ test_system_constraint_order_does_not_change_agreement_or_original_data ____\n\n    def test_system_constraint_order_does_not_change_agreement_or_original_data():\n>       from jimu_runtime.domain.definition_support import SystemProducerRequirement\nE       ImportError: cannot import name 'SystemProducerRequirement' from 'jimu_runtime.domain.definition_support' (/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/src/jimu_runtime/domain/definition_support.py)\n\ntests/unit/test_b_producers_validation.py:173: ImportError\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_03/logs/x2/stage3_all_initial.xml -\n=========================== short test summary info ============================\nFAILED tests/unit/test_b_producers_validation.py::test_system_constraint_order_does_not_change_agreement_or_original_data\n1 failed, 108 passed in 3.24s\n",
+  "stderr": ""
+}

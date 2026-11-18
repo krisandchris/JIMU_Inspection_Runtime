@@ -1,0 +1,7 @@
+# X0 shared Producer catalogue reference extraction
+
+Only fact_selectors.py and runtime/facts.py changed, plus the assigned new reference regression test. The sole ProducerCatalogueContentRef class now lives in fact_selectors.py; runtime/facts.py imports/re-exports that identical class. No extra field, new kind, schema dialect or runtime dependency was introduced. The class has no new docstring/metadata so its generated reference Schema remains identical to the pre-move Fact export.
+
+Before source bytes/hashes are retained. 01..05 record format/Ruff/mypy and145 targeted passes (10 initial ref tests plus135 existing A1 model regressions). A final extra test independently compares the moved class Schema against the existing pre-move generated FactRecord definition; 06..09 record format/Ruff and all11 new reference tests passed. No skips, warnings or test failure. Source did not change after the first145 tests; only the new test was added afterward. No full-package test, schema rewrite, dependency change, publication or evaluation occurred. RUNTIME_NOT_RUN. Primary acceptance pending.
+
+The final two source hashes and new test are in after_sha256.json; schema_baseline.json identifies the read-only pre-move engineering export used by the regression. Old execution_02 evidence/hashes remain untouched. Both source files are released after this handoff; future ownership is managed by Primary.

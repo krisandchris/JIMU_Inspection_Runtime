@@ -1,0 +1,21 @@
+{
+  "agent": "wp01b_d_tests",
+  "session_id": "01a1e95c-dc24-7190-8996-9c78cec55ad2",
+  "captured_at": "2026-11-17T16:22:11.113092+00:00",
+  "final_reports": [
+    {
+      "timestamp": "2026-11-17T15:24:22.624Z",
+      "text": "`STATIC_REVIEW_ONLY / TEST_NOT_RUN / RUNTIME_NOT_RUN`。核对目标 worktree HEAD=`c25bef6`；未修改文件或运行测试。§9边界总体可实现，以下3项需Primary技术补齐后再冻结。\n\n1. **Model Prompt的Question owner尚无输入来源。**  \n   `CONTRACT_FIELDS.md:919–924` 的`ModelPromptUse`只有binding/purpose，但要求Question metadata只访问“current Question”。当前模型Prompt允许`question_metadata`来源（`definitions/prompts.py:62–66`）。一个Profile有多个Question时，无法确定当前owner；不能按schema相同或第一个view匹配。  \n   **建议：**明确Model Prompt使用情境是否允许Question owner；允许则增加有条件的exact Question引用及其Profile membership约束，不允许则该来源返回incomplete/unsupported。Question自己的Prompt仍以当前Question作为owner。增加多Question同schema/不同owner负例。\n\n2. **嵌套MappingTypeContext与顶层目录的一致性未明确。**  \n   `CONTRACT_FIELDS.md:909、915、932–935`同时引入顶层descriptors与`MappingTypeContext`内置descriptors/context registrations。后者当前模型只检查内部重复与Profile owner（`tool_mappings.py:132–175`），不检查与顶层同exact ref不同body或与`ProfileUseContext.region_ref`的对应关系。  \n   **建议：**冻结嵌套输入是顶层目录的受限view还是独立声明。推荐所有共享schema/ref/body先统一冲突检查，随后核对每个mapping context的Profile、Plan和真实step；Region来源必须匹配当前use的Region。没有Region而需要Region来源时incomplete，不能套另一个use。必须在建立任何索引、调用B校验之前完成，避免局部绿灯掩盖全局冲突。\n\n3. **无validation_at时复用P1的调用策略需要明确。**  \n   `CONTRACT_FIELDS.md:912–913`允许缺时间，只在review需要时incomplete；但现有`validate_model_policies`在`validation/policies.py:235–254`强制接收并验证UTC时间，即使remote primary且fallback disabled也如此。  \n   **建议：**明确V1缺时间时的保守报告路径，禁止填now或任意fixture时间。可以对受影响检查标incomplete并继续独立Prompt/字段检查；若要调整P1入口，必须由对应owner另列变更，不能让V1复制routing/review算法。添加缺时间但无review、缺时间且有review两类用例。\n\n其余重点判断：\n\n- `fact_schema_refs + reachable refs`的有限检查范围（:927–930）正确；调用Registry失败时需将“missing”映射incomplete、已知identity错digest保留invalid，不沿用Registry原始总状态冒充V1语义。\n- Grounding应使用通用`validate_target_coverage`并核对实际消费方exact input ref（:957–960），无需伪造N03 ToolPlan step。\n- B子报告不得只收`aggregate_status`；必须保留invalid/incomplete/deferred类别及源定位。容量超限按:970–971失败关闭，仍保留固定后阶段deferred边界。\n- :972–974明确保留完整Producer、Authority、RuleSet、D01、Bundle与真实性检查，未发现将其伪报PASS或把V1扩成DefinitionRegistry/BundleCompiler的要求。\n\n本次仅Challenge当前V1契约，没有审查或验收其实现。"
+    },
+    {
+      "timestamp": "2026-11-17T15:33:25.441Z",
+      "text": "A1定向审查完成，**未发现C0–C2代码缺陷**；不代表WP-01B最终验收通过。\n\n显式workdir：`/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B`。\n\n核对`CONTRACT_FIELDS.md:532–637`与三个目标源码：\n\n- 五态Fact的值/reason分支、scope、source与producer身份约束符合冻结字段。\n- Authority三组result kind、revision/predecessor、本地唯一性与非null要求一致。\n- descriptor保留failed/late/untrusted数据，不提前授予authority；完整组、引用存在性、选权资格与Producer准入仍明确后续检查。\n- UTC共用修订后的alias；严格Python datetime与JSON RFC3339入口分开，calendar验证属于语义层。\n- 只读CPU probe确认source、actor、result、QuestionPrimaryCandidate及Attempt的`model_copy`额外字段注入全部拒绝，退出码0；未写缓存/文件。\n\n历史证据核对：\n\n- `logs/a1/22_final_check.json`：当时135 passed，exit 0。\n- `logs/shared_utc/14_final_check.json`：修订后300 passed，exit 0。\n- 当前facts摘要`b45c9d80…`、authority摘要`a4cd8d99…`与对应日志一致。\n- `authority_inputs.py`已随进行中的A2新增内容，当前摘要不同于A1快照；**未审未完A2，也不将历史测试结果泛化为当前整个文件通过**。\n\n限制：原始bytes解析、候选历史、跨目录关联与authority资格执行不属于本次A1审查；Schema通过不替代FactSchema语义或Authority准入。\n\n`STATIC_REVIEW_ONLY`；本轮未重跑pytest，只有上述只读probe。`RUNTIME_NOT_RUN`。无文件修改，停止。"
+    }
+  ],
+  "messages_to_primary": [
+    {
+      "timestamp": "2026-11-17T15:33:11.500Z",
+      "message": "gAAAAABq_HO3BMd0PQ1O5XHys_ZyxgY0tbc4OA0Fdmm_mpF1DjTHFeTpowokPhHhKfy2Lw0TKXyzSb_tECy7ROvnXgjr3gn1PwyMPpHcZrTKsVwn6IbtvBTvqnKjEYem40jyfyMk_FPzQS9uf1mXns0Hf8xuwd78sAl0KavZeeuNYrmWfLAcyo9LMagHy3Pvu8kLzENB6cRcBHY7lKJooTh0zQjmyXvmqsGU5OZIiMBxhKdAXOJTeZDZ6PwZf1Ltx58ilN3I0BfeAKCLkv6l6luwfeTujEUnoIhPg0SU69cssRGMAjfKIzMbGTZoo_3a-g7i3TgR60SnzbOZhgQdnNg13di9KDOiR2n2A8EeQHsVbMk0DTKwjL5eSZmRsChjeUCZunT_LvPWh_gf6qLeADOAMBycZ_hMR2f_LswvFO98LX3ZyfS36Y3Qn6i2f9eMl98LKNQMxPYY5KC9BJD6P2NZ4eDuqcxomGvz9WHxhJtffQbvAYzlNHjF8HnsYOXKH06XylQ5DnXrHIe9nHG09OI6tTNIDTQ3RO1azdpN_mnlSzzSLPyB_qJokEc0eOENxESnx2ARzNiM1tUFmNWhW5nQPduoggfgKf-CFOcFWbmIEURL758iqrvQhTy3H_13J3pufsMXMnucwAvgdDxmlH1A6gjgaSd1rcjJe-yYNVZKg8b5kcrTc3VjNerOuZ9T9syf3CecJikkiaBzepoBcEzooEFeG18cwBQMm4EQ4qEuFdyZnR2Ft-VvlV0w3j4b_isRuZRlZSa4VOgkbr56c9UpGtZAcnfRfi0UD469V7ded50enJlNovliYb58GMfyoIyd5li8bHMkUPc7Cd3nfqlS6L6NtlQelQ=="
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/contract/test_b_fact_selectors.py",
+    "tests/negative/test_b_fact_selectors_invalid.py",
+    "-q"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "ended_at": "2026-11-17T14:27:00.479251+00:00",
+  "exit_code": 0,
+  "stdout": "....................                                                     [100%]\n20 passed in 0.33s\n",
+  "stderr": ""
+}

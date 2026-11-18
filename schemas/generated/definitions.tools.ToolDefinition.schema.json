@@ -1,0 +1,583 @@
+{
+  "$defs": {
+    "AbsentOptional_Annotated_tuple_EvidencePath___________FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_64_____BeforeValidator__": {
+      "items": {
+        "$ref": "#/$defs/EvidencePath"
+      },
+      "maxItems": 64,
+      "type": "array"
+    },
+    "AbsentOptional_FieldPath_": {
+      "$ref": "#/$defs/FieldPath"
+    },
+    "AbsentOptional_ModelBindingContentRef_": {
+      "$ref": "#/$defs/ModelBindingContentRef"
+    },
+    "AbsentOptional_ReviewReportRef_": {
+      "$ref": "#/$defs/ReviewReportRef"
+    },
+    "CapabilityFeature": {
+      "enum": [
+        "rgb_image",
+        "typed_context",
+        "structured_output",
+        "original_xyxy",
+        "mask_output",
+        "geometry_output",
+        "ocr_text"
+      ],
+      "title": "CapabilityFeature",
+      "type": "string"
+    },
+    "EvidencePath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 1,
+      "minItems": 1,
+      "type": "array"
+    },
+    "FactSchemaContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "fact_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "FactSchemaContentRef",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FieldPath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "ModelBindingContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "model_binding",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ModelBindingContentRef",
+      "type": "object"
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "ReviewReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "review_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Review Registry Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "version",
+        "sha256",
+        "review_registry_id"
+      ],
+      "title": "ReviewReportRef",
+      "type": "object"
+    },
+    "ToolCapabilityTag": {
+      "enum": [
+        "object_grounding",
+        "segmentation",
+        "geometry",
+        "ocr",
+        "evidence_transform"
+      ],
+      "title": "ToolCapabilityTag",
+      "type": "string"
+    },
+    "ToolFactOutputDeclaration": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence_path": {
+          "$ref": "#/$defs/AbsentOptional_FieldPath_"
+        },
+        "evidence_paths": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_tuple_EvidencePath___________FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_64_____BeforeValidator__"
+        },
+        "fact_key": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Fact Key",
+          "type": "string"
+        },
+        "fact_schema_ref": {
+          "$ref": "#/$defs/FactSchemaContentRef"
+        },
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "scope": {
+          "const": "object",
+          "title": "Scope",
+          "type": "string"
+        },
+        "value_path": {
+          "$ref": "#/$defs/FieldPath"
+        }
+      },
+      "required": [
+        "output_name",
+        "fact_key",
+        "fact_schema_ref",
+        "scope",
+        "required",
+        "value_path"
+      ],
+      "title": "ToolFactOutputDeclaration",
+      "type": "object"
+    },
+    "ToolImplementationRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_implementation_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Implementation Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "capability_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "contract_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "evaluation_ref": {
+          "$ref": "#/$defs/AbsentOptional_ReviewReportRef_"
+        },
+        "family": {
+          "const": "tool_implementation",
+          "title": "Family",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "family",
+        "capability_id",
+        "contract_version",
+        "allowed_implementation_versions",
+        "required_features"
+      ],
+      "title": "ToolImplementationRequirement",
+      "type": "object"
+    },
+    "ToolInputSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool_input_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ToolInputSchemaRef",
+      "type": "object"
+    },
+    "ToolOutputSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool_output_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ToolOutputSchemaRef",
+      "type": "object"
+    },
+    "ToolProviderKind": {
+      "enum": [
+        "builtin",
+        "local_model",
+        "remote_service"
+      ],
+      "title": "ToolProviderKind",
+      "type": "string"
+    },
+    "ToolType": {
+      "enum": [
+        "grounding",
+        "segmentation",
+        "geometry",
+        "ocr",
+        "evidence_transform"
+      ],
+      "title": "ToolType",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "capability_tags": {
+      "items": {
+        "$ref": "#/$defs/ToolCapabilityTag"
+      },
+      "maxItems": 5,
+      "title": "Capability Tags",
+      "type": "array"
+    },
+    "evidence_policy_ref": {
+      "$ref": "#/$defs/PolicyContentRef"
+    },
+    "execution_policy_ref": {
+      "$ref": "#/$defs/PolicyContentRef"
+    },
+    "fact_outputs": {
+      "items": {
+        "$ref": "#/$defs/ToolFactOutputDeclaration"
+      },
+      "maxItems": 64,
+      "title": "Fact Outputs",
+      "type": "array"
+    },
+    "implementation_requirement": {
+      "$ref": "#/$defs/ToolImplementationRequirement"
+    },
+    "input_schema_ref": {
+      "$ref": "#/$defs/ToolInputSchemaRef"
+    },
+    "model_binding_ref": {
+      "$ref": "#/$defs/AbsentOptional_ModelBindingContentRef_"
+    },
+    "output_schema_ref": {
+      "$ref": "#/$defs/ToolOutputSchemaRef"
+    },
+    "provider_kind": {
+      "$ref": "#/$defs/ToolProviderKind"
+    },
+    "resource_requirements_ref": {
+      "$ref": "#/$defs/PolicyContentRef"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tool_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Tool Id",
+      "type": "string"
+    },
+    "tool_type": {
+      "$ref": "#/$defs/ToolType"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "tool_id",
+    "version",
+    "tool_type",
+    "provider_kind",
+    "input_schema_ref",
+    "output_schema_ref",
+    "resource_requirements_ref",
+    "execution_policy_ref",
+    "evidence_policy_ref",
+    "implementation_requirement",
+    "capability_tags",
+    "fact_outputs"
+  ],
+  "title": "ToolDefinition",
+  "type": "object"
+}

@@ -1,0 +1,24 @@
+03_ruff: exit 0
+uv run --locked --no-sync ruff check .
+All checks passed!
+
+
+04_format: exit 0
+uv run --locked --no-sync ruff format --check src tests scripts
+124 files already formatted
+
+
+05_mypy: exit 0
+uv run --locked --no-sync mypy src/jimu_runtime
+Success: no issues found in 48 source files
+
+
+06_schema_check: exit 0
+uv run --locked --no-sync python scripts/generate_schemas.py --check
+Schema export matches
+
+
+Disclosed separate results:
+Extra mypy scripts/generate_schemas.py failed7; see logs/e2/initial_mypy.json.
+Historical format --check . failed3 sealed audit snapshots; see execution_02.
+No claim that either supplemental/historical command passed.

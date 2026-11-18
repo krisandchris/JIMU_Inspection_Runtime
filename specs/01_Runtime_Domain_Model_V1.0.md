@@ -1118,6 +1118,34 @@ applicability cannot depend on Object Facts. Conditional producer availability i
 checked conservatively for mandatory consumers: unsupported/unproved completeness
 rejects the Bundle, rather than hiding obligations with the same condition.
 
+### 13.4 Approved WP-01B local Tool Fact selector amendment
+
+A ToolPlan-attached ToolSkipPolicy must not embed a same-Plan digest back-reference
+through ToolProducerSelector: ToolPlan -> Policy -> same ToolPlan would create a
+content-digest cycle. The user explicitly approved the following local selector
+amendment during GOAL-002 (WP-01B execution_03); existing exact selectors are retained.
+
+LocalToolFactSelector contains explicit scope=object, step_id, tool_ref (exact tool
+ContentRef), output_name, fact_key, fact_schema_ref (exact Fact Schema ContentRef),
+and the existing bounded field_path. LocalToolFactRefExpr has kind=local_tool_fact_ref
+and this selector. Only tool_condition may contain this node. It carries no
+ToolPlan/Profile/Object/Execution/Attempt reference or digest placeholder. It is not
+an IdentitySelector or an independently verified content dependency.
+
+Each use binds the enclosing pinned ToolPlan and actual Profile/current Object.
+The selected step must be a strict ancestor, with exact Tool, mapped output, key,
+Schema and field path. Self/future/sibling/cross-Plan/unmapped references reject.
+Policy reuse requires independent binding validation at every use. The resolved
+exact Plan identity may enter a temporary selector for Producer matching, but must
+never be serialized back into Policy bytes. Question/System conditional Producers
+without a ToolPlan step context cannot use this local node. Existing exact
+ToolProducerSelector remains usable in acyclic contexts, including Rule conditions
+and derived manifest-rooted catalogues. No cross-Object Fact reuse is introduced.
+
+This amendment changes condition data only. WP-01B checks shapes, references and
+finite associations; operator TypeChecker/evaluator and Bundle compilation remain
+out of scope. No new ArtifactKind/PolicyKind or digest exclusion rule is introduced.
+
 ## 14. Typed Policy Catalog (R2-04)
 
 PolicyArtifact has schema_version, policy_id/version and policy (discriminated by

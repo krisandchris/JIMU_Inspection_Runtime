@@ -1,0 +1,22 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "pytest",
+    "-q",
+    "tests/contract/test_b_producers_contracts.py",
+    "tests/unit/test_b_producers_data.py",
+    "tests/unit/test_b_producers_validation.py",
+    "tests/negative/test_b_producers_invalid.py",
+    "tests/negative/test_b_producers_validation_invalid.py",
+    "--junitxml=planning/implementation_evidence/WP-01B/execution_03/logs/x2/stage3_all_03.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:42:10.691657+00:00",
+  "end": "2026-11-17T17:42:14.668418+00:00",
+  "exit": 1,
+  "stdout": "........................................................................ [ 61%]\n............................................F                            [100%]\n=================================== FAILURES ===================================\n______ test_system_selector_requires_exact_declared_output_contract[path] ______\n\nchange = 'path'\n\n    @pytest.mark.parametrize(\"change\", [\"output\", \"key\", \"requirements\", \"path\"])\n    def test_system_selector_requires_exact_declared_output_contract(change):\n        from fixtures.wp01b.x2.support import condition_use\n    \n        data = fixture()\n        declaration = data[\"registration\"][\"definition\"][\"declarations\"][0]\n        target = data[\"system_execution\"]\n        selector = dict(\n            scope=\"execution\",\n            fact_key=target[\"fact_key\"],\n            fact_schema_ref=deepcopy(target[\"fact_schema_ref\"]),\n            field_path=[],\n            producer_selector=dict(\n                producer_kind=\"system\",\n                requirement=deepcopy(target[\"producer\"][\"requirement\"]),\n                output_name=target[\"output_name\"],\n            ),\n        )\n        if change == \"output\":\n            selector[\"producer_selector\"][\"output_name\"] = \"unknown\"\n        elif change == \"key\":\n            selector[\"fact_key\"] = \"wrong\"\n        elif change == \"requirements\":\n            selector[\"producer_selector\"][\"requirement\"][\n                \"allowed_implementation_versions\"\n            ] = [\"9.0.0\"]\n        else:\n            selector[\"field_path\"] = [\"missing\"]\n        declaration[\"activation_condition\"] = {\n            \"mode\": \"tool_condition\",\n            \"condition_ast\": dict(kind=\"fact_ref\", selector=selector),\n        }\n        data[\"context\"][\"condition_contexts\"] = [condition_use(data, declaration)]\n>       report = check(data)\n                 ^^^^^^^^^^^\n\ntests/negative/test_b_producers_validation_invalid.py:286: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\ndata = {'catalogue': {'catalogue_id': 'fixture.catalogue', 'declarations': [{'activation_condition': {'mode': 'always'}, 'car... {'constant': {'type_definition': {'kind': 'bool'}, 'value': {'kind': 'bool', 'value': True}}, 'kind': 'literal'}, ...}\n\n    def check(data):\n        return validate_producer_catalogue(\n>           ProducerCatalogueRegistration.model_validate(data[\"registration\"]),\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n            ProducerValidationContext.model_validate(data[\"context\"]),\n            fact_schemas=registry(),\n        )\nE       pydantic_core._pydantic_core.ValidationError: 1 validation error for ProducerCatalogueRegistration\nE       definition.declarations.0.activation_condition.tool_condition.condition_ast.fact_ref\nE         Value error, condition.fact_ref_requires_whole_value [type=value_error, input_value={'kind': 'fact_ref', 'sel...: 'execution.context'}}}, input_type=dict]\nE           For further information visit https://errors.pydantic.dev/2.12/v/value_error\n\ntests/fixtures/wp01b/x2/support.py:38: ValidationError\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_03/logs/x2/stage3_all_03.xml -\n=========================== short test summary info ============================\nFAILED tests/negative/test_b_producers_validation_invalid.py::test_system_selector_requires_exact_declared_output_contract[path]\n1 failed, 116 passed in 3.71s\n",
+  "stderr": ""
+}

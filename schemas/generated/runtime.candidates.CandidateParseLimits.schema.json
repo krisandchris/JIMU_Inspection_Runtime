@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "max_array_items": {
+      "maximum": 1024,
+      "minimum": 1,
+      "title": "Max Array Items",
+      "type": "integer"
+    },
+    "max_bytes": {
+      "maximum": 16777216,
+      "minimum": 1,
+      "title": "Max Bytes",
+      "type": "integer"
+    },
+    "max_json_depth": {
+      "maximum": 32,
+      "minimum": 1,
+      "title": "Max Json Depth",
+      "type": "integer"
+    },
+    "max_number_chars": {
+      "maximum": 4096,
+      "minimum": 1,
+      "title": "Max Number Chars",
+      "type": "integer"
+    },
+    "max_object_members": {
+      "maximum": 1024,
+      "minimum": 1,
+      "title": "Max Object Members",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "max_bytes",
+    "max_json_depth",
+    "max_object_members",
+    "max_array_items",
+    "max_number_chars"
+  ],
+  "title": "CandidateParseLimits",
+  "type": "object"
+}

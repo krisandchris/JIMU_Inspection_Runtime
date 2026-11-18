@@ -1,0 +1,119 @@
+"""Closed definition labels; independent of the WP-01A status domains."""
+
+from enum import unique
+
+from jimu_runtime.domain.enums import WireEnum
+
+
+@unique
+class FactScope(WireEnum):
+    OBJECT = "object"
+    EXECUTION = "execution"
+
+
+@unique
+class ProducerKind(WireEnum):
+    VLM_QUESTION = "vlm_question"
+    TOOL = "tool"
+    SYSTEM = "system"
+
+
+@unique
+class ModelCapability(WireEnum):
+    PROFILE_DISCOVERY = "profile_discovery"
+    OBJECT_GROUNDING = "object_grounding"
+    OBJECT_OBSERVATION = "object_observation"
+    CANDIDATE_PREDICTION = "candidate_prediction"
+    VISION_AUXILIARY = "vision_auxiliary"
+
+
+@unique
+class CapabilityFamily(WireEnum):
+    MODEL_DEPLOYMENT = "model_deployment"
+    TOOL_IMPLEMENTATION = "tool_implementation"
+    SYSTEM_FACT_PRODUCER = "system_fact_producer"
+    CONTEXT_DERIVATION = "context_derivation"
+
+
+@unique
+class CapabilityFeature(WireEnum):
+    RGB_IMAGE = "rgb_image"
+    TYPED_CONTEXT = "typed_context"
+    STRUCTURED_OUTPUT = "structured_output"
+    ORIGINAL_XYXY = "original_xyxy"
+    MASK_OUTPUT = "mask_output"
+    GEOMETRY_OUTPUT = "geometry_output"
+    OCR_TEXT = "ocr_text"
+
+
+@unique
+class ContextSource(WireEnum):
+    CONTEXT_SNAPSHOT = "context_snapshot"
+    REGION_METADATA = "region_metadata"
+    PROFILE_METADATA = "profile_metadata"
+
+
+@unique
+class ToolType(WireEnum):
+    GROUNDING = "grounding"
+    SEGMENTATION = "segmentation"
+    GEOMETRY = "geometry"
+    OCR = "ocr"
+    EVIDENCE_TRANSFORM = "evidence_transform"
+
+
+@unique
+class ToolProviderKind(WireEnum):
+    BUILTIN = "builtin"
+    LOCAL_MODEL = "local_model"
+    REMOTE_SERVICE = "remote_service"
+
+
+@unique
+class ToolCapabilityTag(WireEnum):
+    OBJECT_GROUNDING = "object_grounding"
+    SEGMENTATION = "segmentation"
+    GEOMETRY = "geometry"
+    OCR = "ocr"
+    EVIDENCE_TRANSFORM = "evidence_transform"
+
+
+@unique
+class PolicyKind(WireEnum):
+    APPLICABILITY = "applicability"
+    QUESTION_SELECTION = "question_selection"
+    UNKNOWN = "unknown"
+    QUESTION_VALIDATION = "question_validation"
+    EVIDENCE = "evidence"
+    TOOL_EXECUTION = "tool_execution"
+    TOOL_FAILURE = "tool_failure"
+    TOOL_SKIP = "tool_skip"
+    RESOURCE_REQUIREMENTS = "resource_requirements"
+    PROVIDER = "provider"
+    FALLBACK = "fallback"
+    RULE = "rule"
+    CONFLICT = "conflict"
+    COVERAGE = "coverage"
+    CONTEXT_PROVENANCE = "context_provenance"
+    EXECUTION = "execution"
+
+
+@unique
+class EvidenceType(WireEnum):
+    ORIGINAL_IMAGE = "original_image"
+    CROP = "crop"
+    BBOX_VISUALIZATION = "bbox_visualization"
+    MASK = "mask"
+    TOOL_OUTPUT = "tool_output"
+    GEOMETRY = "geometry"
+    MODEL_REQUEST = "model_request"
+    MODEL_RESPONSE = "model_response"
+
+
+@unique
+class ContextProvenanceSource(WireEnum):
+    TRUSTED_TASK_METADATA = "trusted_task_metadata"
+    DEVICE_REGISTRY = "device_registry"
+    CAMERA_REGISTRY = "camera_registry"
+    REGION_DEFINITION = "region_definition"
+    DECLARED_DERIVATION = "declared_derivation"

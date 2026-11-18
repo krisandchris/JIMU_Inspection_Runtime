@@ -1,0 +1,16 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:06:05.562288+00:00",
+  "end": "2026-11-17T17:06:08.278257+00:00",
+  "exit_code": 1,
+  "stdout": "src/jimu_runtime/domain/validation/definitions.py:323: error: Incompatible return value type (got \"ApplicabilityPolicyArtifact | QuestionSelectionPolicyArtifact | UnknownPolicyArtifact | QuestionValidationPolicyArtifact | EvidencePolicyArtifact | <11 more items>\", expected \"QuestionSelectionPolicyArtifact | UnknownPolicyArtifact | QuestionValidationPolicyArtifact | EvidencePolicyArtifact | ToolExecutionPolicyArtifact | <9 more items>\")  [return-value]\nsrc/jimu_runtime/domain/validation/definitions.py:323: note: Items in the first union not in the second: \"ApplicabilityPolicyArtifact\", \"ToolSkipPolicyArtifact\"\nFound 1 error in 1 file (checked 41 source files)\n",
+  "stderr": ""
+}

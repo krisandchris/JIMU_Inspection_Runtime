@@ -1,0 +1,389 @@
+{
+  "$defs": {
+    "AbsentOptional_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "type": "string"
+    },
+    "AbsentOptional_ProfileContentRef_": {
+      "$ref": "#/$defs/ProfileContentRef"
+    },
+    "AttemptRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "attempt",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "AttemptRef",
+      "type": "object"
+    },
+    "FactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "fact",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "FactRef",
+      "type": "object"
+    },
+    "ModelInvocationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "model_invocation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ModelInvocationRef",
+      "type": "object"
+    },
+    "ObservationBatchRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "observation_batch",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ObservationBatchRef",
+      "type": "object"
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "QuestionContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "question",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "QuestionContentRef",
+      "type": "object"
+    },
+    "QuestionPrimaryCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_ref": {
+          "$ref": "#/$defs/FactRef"
+        },
+        "question_ref": {
+          "$ref": "#/$defs/QuestionContentRef"
+        }
+      },
+      "required": [
+        "question_ref",
+        "fact_ref"
+      ],
+      "title": "QuestionPrimaryCandidate",
+      "type": "object"
+    },
+    "QuestionRefs": {
+      "items": {
+        "$ref": "#/$defs/QuestionContentRef"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "type": "array"
+    },
+    "QuestionSelectionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "question_selection_record",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "QuestionSelectionRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "object"
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      },
+      "then": {
+        "required": [
+          "object_id",
+          "profile_ref"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "execution"
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      },
+      "then": {
+        "properties": {
+          "object_id": false,
+          "profile_ref": false
+        }
+      }
+    }
+  ],
+  "properties": {
+    "arrival_qualification": {
+      "enum": [
+        "on_time",
+        "late",
+        "unresolved"
+      ],
+      "title": "Arrival Qualification",
+      "type": "string"
+    },
+    "association_validation": {
+      "enum": [
+        "trusted",
+        "untrusted",
+        "unresolved"
+      ],
+      "title": "Association Validation",
+      "type": "string"
+    },
+    "attempt_ref": {
+      "$ref": "#/$defs/AttemptRef"
+    },
+    "effective_question_refs": {
+      "$ref": "#/$defs/QuestionRefs"
+    },
+    "envelope_validation": {
+      "enum": [
+        "trusted",
+        "untrusted",
+        "unresolved"
+      ],
+      "title": "Envelope Validation",
+      "type": "string"
+    },
+    "execution_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "model_invocation_ref": {
+      "$ref": "#/$defs/ModelInvocationRef"
+    },
+    "object_id": {
+      "$ref": "#/$defs/AbsentOptional_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___"
+    },
+    "profile_ref": {
+      "$ref": "#/$defs/AbsentOptional_ProfileContentRef_"
+    },
+    "question_results": {
+      "items": {
+        "$ref": "#/$defs/QuestionPrimaryCandidate"
+      },
+      "maxItems": 1024,
+      "title": "Question Results",
+      "type": "array"
+    },
+    "question_selection_ref": {
+      "$ref": "#/$defs/QuestionSelectionRef"
+    },
+    "result_ref": {
+      "$ref": "#/$defs/ObservationBatchRef"
+    },
+    "scope": {
+      "const": "object",
+      "title": "Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "execution_id",
+    "scope",
+    "attempt_ref",
+    "arrival_qualification",
+    "result_ref",
+    "question_selection_ref",
+    "effective_question_refs",
+    "model_invocation_ref",
+    "envelope_validation",
+    "association_validation",
+    "question_results"
+  ],
+  "title": "ObservationResultDescriptor",
+  "type": "object"
+}

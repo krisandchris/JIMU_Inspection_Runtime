@@ -1,0 +1,650 @@
+{
+  "expressions": {
+    "literal": {
+      "kind": "literal",
+      "constant": {
+        "type_definition": {
+          "kind": "bool"
+        },
+        "value": {
+          "kind": "bool",
+          "value": true
+        }
+      }
+    },
+    "fact_ref": {
+      "kind": "fact_ref",
+      "selector": {
+        "scope": "object",
+        "fact_key": "state",
+        "fact_schema_ref": {
+          "artifact_kind": "fact_schema",
+          "artifact_id": "state",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "producer_selector": {
+          "producer_kind": "vlm_question",
+          "question_ref": {
+            "artifact_kind": "question",
+            "artifact_id": "state-question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "output_name": "primary"
+        },
+        "field_path": []
+      }
+    },
+    "record_field_ref": {
+      "kind": "record_field_ref",
+      "selector": {
+        "scope": "object",
+        "fact_key": "state",
+        "fact_schema_ref": {
+          "artifact_kind": "fact_schema",
+          "artifact_id": "state",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "producer_selector": {
+          "producer_kind": "vlm_question",
+          "question_ref": {
+            "artifact_kind": "question",
+            "artifact_id": "state-question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "output_name": "primary"
+        },
+        "field_path": [
+          "state"
+        ]
+      }
+    },
+    "context_ref": {
+      "kind": "context_ref",
+      "selector": {
+        "source": "context_snapshot",
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "context",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "field_path": [
+          "outer",
+          "leaf"
+        ]
+      }
+    },
+    "local_tool_fact_ref": {
+      "kind": "local_tool_fact_ref",
+      "selector": {
+        "scope": "object",
+        "step_id": "upstream",
+        "tool_ref": {
+          "artifact_kind": "tool",
+          "artifact_id": "tool",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "output_name": "state",
+        "fact_key": "state",
+        "fact_schema_ref": {
+          "artifact_kind": "fact_schema",
+          "artifact_id": "state",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "field_path": []
+      }
+    },
+    "comparison": {
+      "kind": "comparison",
+      "operator": "eq",
+      "left": {
+        "kind": "context_ref",
+        "selector": {
+          "source": "context_snapshot",
+          "schema_ref": {
+            "artifact_kind": "context_schema",
+            "artifact_id": "context",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "field_path": [
+            "outer",
+            "leaf"
+          ]
+        }
+      },
+      "right": {
+        "kind": "literal",
+        "constant": {
+          "type_definition": {
+            "kind": "string"
+          },
+          "value": {
+            "kind": "string",
+            "value": "synthetic"
+          }
+        }
+      }
+    },
+    "in_expr": {
+      "kind": "in",
+      "item": {
+        "kind": "literal",
+        "constant": {
+          "type_definition": {
+            "kind": "bool"
+          },
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        }
+      },
+      "collection": {
+        "kind": "literal",
+        "constant": {
+          "type_definition": {
+            "kind": "list",
+            "item_type": {
+              "kind": "bool"
+            }
+          },
+          "value": {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "bool",
+                "value": true
+              },
+              {
+                "kind": "bool",
+                "value": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    "all_expr": {
+      "kind": "all",
+      "arguments": [
+        {
+          "kind": "context_ref",
+          "selector": {
+            "source": "context_snapshot",
+            "schema_ref": {
+              "artifact_kind": "context_schema",
+              "artifact_id": "context",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "field_path": [
+              "outer",
+              "leaf"
+            ]
+          }
+        },
+        {
+          "kind": "literal",
+          "constant": {
+            "type_definition": {
+              "kind": "bool"
+            },
+            "value": {
+              "kind": "bool",
+              "value": false
+            }
+          }
+        }
+      ]
+    },
+    "any_expr": {
+      "kind": "any",
+      "arguments": [
+        {
+          "kind": "context_ref",
+          "selector": {
+            "source": "context_snapshot",
+            "schema_ref": {
+              "artifact_kind": "context_schema",
+              "artifact_id": "context",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "field_path": [
+              "outer",
+              "leaf"
+            ]
+          }
+        },
+        {
+          "kind": "literal",
+          "constant": {
+            "type_definition": {
+              "kind": "bool"
+            },
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        }
+      ]
+    },
+    "not_expr": {
+      "kind": "not",
+      "argument": {
+        "kind": "context_ref",
+        "selector": {
+          "source": "context_snapshot",
+          "schema_ref": {
+            "artifact_kind": "context_schema",
+            "artifact_id": "context",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "field_path": [
+            "outer",
+            "leaf"
+          ]
+        }
+      }
+    }
+  },
+  "bool_false": {
+    "kind": "literal",
+    "constant": {
+      "type_definition": {
+        "kind": "bool"
+      },
+      "value": {
+        "kind": "bool",
+        "value": false
+      }
+    }
+  },
+  "list_literal": {
+    "kind": "literal",
+    "constant": {
+      "type_definition": {
+        "kind": "list",
+        "item_type": {
+          "kind": "bool"
+        }
+      },
+      "value": {
+        "kind": "list",
+        "value": [
+          {
+            "kind": "bool",
+            "value": true
+          },
+          {
+            "kind": "bool",
+            "value": false
+          }
+        ]
+      }
+    }
+  },
+  "artifacts": {
+    "question_selection": {
+      "schema_version": "1.0.0",
+      "policy_id": "question_selection",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "question_selection",
+        "mode": "all_declared",
+        "mandatory_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "optional_question_refs": [],
+        "optional_source": "all",
+        "fallback": "include_all_optional",
+        "ordering": "profile_order"
+      }
+    },
+    "unknown": {
+      "schema_version": "1.0.0",
+      "policy_id": "unknown",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "unknown",
+        "insufficient_visibility": "unknown",
+        "transport_failure": "no_fact",
+        "envelope_failure": "no_fact",
+        "item_validation_failure": "error",
+        "non_known_value": "forbidden",
+        "reason_required": true
+      }
+    },
+    "question_validation": {
+      "schema_version": "1.0.0",
+      "policy_id": "question_validation",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "question_validation",
+        "coercion": "forbid",
+        "extra_fields": "forbid",
+        "association": "exact_question_ref",
+        "missing_item": "error",
+        "invalid_record": "whole_fact_error",
+        "sibling_retention": "trusted_envelope_only"
+      }
+    },
+    "evidence": {
+      "schema_version": "1.0.0",
+      "policy_id": "evidence",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "evidence",
+        "required_evidence_types": [],
+        "allowed_evidence_types": [
+          "original_image"
+        ],
+        "on_missing": "block_result",
+        "original_media_required": true,
+        "retention_class": {
+          "vocabulary_ref": {
+            "artifact_kind": "vocabulary",
+            "artifact_id": "retention",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "member": "synthetic"
+        },
+        "retention_duration_seconds": 100,
+        "access_scope": "task"
+      }
+    },
+    "tool_execution": {
+      "schema_version": "1.0.0",
+      "policy_id": "execution",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "tool_execution",
+        "timeout_ms": 100,
+        "max_attempts": 1,
+        "max_concurrency": 1,
+        "input_byte_limit": 100,
+        "retryable_error_classes": [],
+        "whole_step_retry": true
+      }
+    },
+    "tool_failure": {
+      "schema_version": "1.0.0",
+      "policy_id": "failure",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "tool_failure",
+        "requirement": "required",
+        "required_descendants": "block",
+        "fact_failure": "error",
+        "optional_continuation": "block"
+      }
+    },
+    "resource_requirements": {
+      "schema_version": "1.0.0",
+      "policy_id": "resources",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "resource_requirements",
+        "resource_class": "cpu",
+        "max_concurrency": 1,
+        "timeout_ms": 100,
+        "input_byte_limit": 100,
+        "output_byte_limit": 100
+      }
+    },
+    "provider": {
+      "schema_version": "1.0.0",
+      "policy_id": "provider",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "provider",
+        "routing_mode": "remote_primary",
+        "primary_deployment_id": "remote-deployment",
+        "deployments": [
+          {
+            "provider_id": "provider",
+            "deployment_id": "remote-deployment",
+            "logical_model_id": "logical",
+            "provider_kind": "remote",
+            "actual_version_constraints": {
+              "allowed_deployment_versions": [
+                "1.0.0"
+              ],
+              "allowed_model_versions": [
+                "1.0.0"
+              ]
+            },
+            "required_features": [
+              "structured_output"
+            ]
+          },
+          {
+            "provider_id": "provider",
+            "deployment_id": "local-deployment",
+            "logical_model_id": "logical",
+            "provider_kind": "local",
+            "actual_version_constraints": {
+              "allowed_deployment_versions": [
+                "1.0.0"
+              ],
+              "allowed_model_versions": [
+                "1.0.0"
+              ]
+            },
+            "required_features": [
+              "structured_output"
+            ]
+          }
+        ],
+        "selection": "primary_then_explicit_fallback"
+      }
+    },
+    "fallback": {
+      "schema_version": "1.0.0",
+      "policy_id": "fallback",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "fallback",
+        "mode": "disabled",
+        "trigger_errors": [],
+        "allowed_transitions": [],
+        "contract_compatibility": "exact"
+      }
+    },
+    "rule": {
+      "schema_version": "1.0.0",
+      "policy_id": "rule",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "rule",
+        "mandatory": true,
+        "missing": "unknown",
+        "unknown": "unknown",
+        "error": "unknown",
+        "not_applicable": "unknown",
+        "not_evaluated": "unknown",
+        "required_guard": "block_unavailable",
+        "scan": "all_mandatory",
+        "true_result": "violation",
+        "false_result": "no_violation",
+        "unknown_result": "uncertain"
+      }
+    },
+    "conflict": {
+      "schema_version": "1.0.0",
+      "policy_id": "conflict",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "conflict",
+        "mode": "collect_all",
+        "early_exit": false,
+        "category_dedup": "set",
+        "preserve_rule_refs": true
+      }
+    },
+    "coverage": {
+      "schema_version": "1.0.0",
+      "policy_id": "coverage",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "coverage",
+        "no_hits": "uncertain",
+        "no_target": "uncertain",
+        "partial_without_match": "uncertain",
+        "partial_with_match": "violation",
+        "complete_negative": "all_mandatory_false_with_required_evidence",
+        "absence_strategy": "conservative"
+      }
+    },
+    "context_provenance": {
+      "schema_version": "1.0.0",
+      "policy_id": "context_provenance",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "context_provenance",
+        "fields": [
+          {
+            "field_path": [
+              "outer",
+              "leaf"
+            ],
+            "schema_ref": {
+              "artifact_kind": "context_schema",
+              "artifact_id": "context",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "required": true,
+            "time_sensitive": false,
+            "allowed_sources": [
+              "trusted_task_metadata"
+            ]
+          }
+        ],
+        "conflicting_sources": "block",
+        "missing_required": "block",
+        "internal_timezone": "UTC",
+        "naive_time": "reject"
+      }
+    },
+    "execution": {
+      "schema_version": "1.0.0",
+      "policy_id": "workflow",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "execution",
+        "workflow_version": "1.0.0",
+        "node_order": [
+          "N01",
+          "N02",
+          "N03",
+          "N04",
+          "N05",
+          "N06"
+        ],
+        "coverage_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "coverage",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "context_provenance_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "context_provenance",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "resource_requirements_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "resources",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact_schema_refs": []
+      }
+    },
+    "applicability": {
+      "schema_version": "1.0.0",
+      "policy_id": "applicability",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "applicability",
+        "input_domain": "rule_applicability",
+        "context_allowlist": [
+          {
+            "source": "context_snapshot",
+            "schema_ref": {
+              "artifact_kind": "context_schema",
+              "artifact_id": "context",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "field_path": [
+              "outer",
+              "leaf"
+            ]
+          }
+        ],
+        "identity_constraints": [
+          {
+            "artifact_kind": "profile",
+            "artifact_id": "profile",
+            "version_selector": "1.0.0"
+          }
+        ],
+        "condition_ast": {
+          "kind": "context_ref",
+          "selector": {
+            "source": "context_snapshot",
+            "schema_ref": {
+              "artifact_kind": "context_schema",
+              "artifact_id": "context",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "field_path": [
+              "outer",
+              "leaf"
+            ]
+          }
+        },
+        "on_unknown": "block"
+      }
+    },
+    "tool_skip": {
+      "schema_version": "1.0.0",
+      "policy_id": "skip",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "tool_skip",
+        "condition_ast": true,
+        "on_false": "skip_with_reason",
+        "on_unknown": "block",
+        "on_missing_input": "block"
+      }
+    }
+  }
+}

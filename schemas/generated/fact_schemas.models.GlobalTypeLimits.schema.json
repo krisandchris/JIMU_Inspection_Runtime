@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "list_max_items": {
+      "maximum": 256,
+      "minimum": 1,
+      "title": "List Max Items",
+      "type": "integer"
+    },
+    "max_depth": {
+      "maximum": 8,
+      "minimum": 1,
+      "title": "Max Depth",
+      "type": "integer"
+    },
+    "record_max_fields": {
+      "maximum": 64,
+      "minimum": 1,
+      "title": "Record Max Fields",
+      "type": "integer"
+    },
+    "string_max_length": {
+      "maximum": 4096,
+      "minimum": 1,
+      "title": "String Max Length",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "string_max_length",
+    "list_max_items",
+    "record_max_fields",
+    "max_depth"
+  ],
+  "title": "GlobalTypeLimits",
+  "type": "object"
+}

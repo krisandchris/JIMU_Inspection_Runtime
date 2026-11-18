@@ -1,0 +1,39 @@
+{
+  "captured_at": "2026-11-17T16:03:41.572532+00:00",
+  "reviewer": "Primary Astra",
+  "scope": "CONTRACT_FIELDS §9 finite Definition relations only",
+  "direct_review": [
+    "Complete definition_inputs registrations/views",
+    "Definition index preflight and exact-ref lookup",
+    "Vocabulary/Facet metadata/exact intersection/Profile capability checks",
+    "Prompt iterative closure/owner/path/allowlist and independent response pin",
+    "Grounding type/target coverage",
+    "M1/P1 report delegation and missing validation_at behavior",
+    "Bounded diagnostics with preserved invalid/deferred overflow",
+    "Orphan ToolPlan/ExecutionPolicy and unused Question allowlist checks",
+    "Final response Schema remediation and actual negative regressions"
+  ],
+  "findings_closed": [
+    "Independent Model Prompt response pin without timestamp",
+    "Descriptor digest before source-owner lookup",
+    "Overflow must not downgrade invalid or drop deferred boundaries",
+    "Question/partial/orphan Prompt response descriptor resolution"
+  ],
+  "independent_review": "wp01b_c_policies directly reviewed source/tests/logs; C2 response-ref issue reproduced then verified fixed",
+  "test_log": "logs/v1/commands.jsonl",
+  "junit": "logs/v1/pytest_final.xml",
+  "targeted_count": 76,
+  "hash_checks": {
+    "src/jimu_runtime/domain/validation/definition_inputs.py": true,
+    "src/jimu_runtime/domain/validation/definitions.py": true,
+    "tests/unit/test_b_definition_relations.py": true,
+    "tests/contract/test_b_definition_catalogue.py": true,
+    "tests/negative/test_b_definition_relations_invalid.py": true,
+    "tests/fixtures/wp01b/v1/support.py": true,
+    "tests/fixtures/wp01b/v1/contracts.json": true
+  },
+  "code_acceptance": "PASS_LOCAL_SCOPE",
+  "test_acceptance": "TEST_PASSED_TARGETED",
+  "full_wp_acceptance": "INCOMPLETE_D01",
+  "runtime": "RUNTIME_NOT_RUN"
+}

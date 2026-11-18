@@ -1,0 +1,1114 @@
+{
+  "$defs": {
+    "AbsentOptional_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "type": "string"
+    },
+    "AbsentOptional_ProfileContentRef_": {
+      "$ref": "#/$defs/ProfileContentRef"
+    },
+    "AbsentOptional_ReviewReportRef_": {
+      "$ref": "#/$defs/ReviewReportRef"
+    },
+    "AttemptRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "attempt",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "AttemptRef",
+      "type": "object"
+    },
+    "CapabilityFeature": {
+      "enum": [
+        "rgb_image",
+        "typed_context",
+        "structured_output",
+        "original_xyxy",
+        "mask_output",
+        "geometry_output",
+        "ocr_text"
+      ],
+      "title": "CapabilityFeature",
+      "type": "string"
+    },
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "EmittedOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "emitted",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "fact_ref": {
+          "$ref": "#/$defs/FactRef"
+        },
+        "fact_status": {
+          "$ref": "#/$defs/FactStatus"
+        },
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "disposition",
+        "output_name",
+        "fact_status",
+        "fact_ref"
+      ],
+      "title": "EmittedOutput",
+      "type": "object"
+    },
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "evidence",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "EvidenceRefs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "ExecutionEventRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "execution_event",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ExecutionEventRef",
+      "type": "object"
+    },
+    "FactReason": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "reason_code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Reason Code",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reason_code",
+        "message",
+        "diagnostic_refs"
+      ],
+      "title": "FactReason",
+      "type": "object"
+    },
+    "FactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "fact",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "FactRef",
+      "type": "object"
+    },
+    "FactScope": {
+      "enum": [
+        "object",
+        "execution"
+      ],
+      "title": "FactScope",
+      "type": "string"
+    },
+    "FactStatus": {
+      "enum": [
+        "known",
+        "unknown",
+        "error",
+        "not_applicable",
+        "not_evaluated"
+      ],
+      "title": "FactStatus",
+      "type": "string"
+    },
+    "MappedOutputResult": {
+      "discriminator": {
+        "mapping": {
+          "emitted": "#/$defs/EmittedOutput",
+          "optional_absence": "#/$defs/OptionalAbsentOutput"
+        },
+        "propertyName": "disposition"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/EmittedOutput"
+        },
+        {
+          "$ref": "#/$defs/OptionalAbsentOutput"
+        }
+      ]
+    },
+    "ModelInvocationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "model_invocation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ModelInvocationRef",
+      "type": "object"
+    },
+    "ObservationBatchRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "observation_batch",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ObservationBatchRef",
+      "type": "object"
+    },
+    "ObservationResultDescriptor": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "scope": {
+                "const": "object"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          },
+          "then": {
+            "required": [
+              "object_id",
+              "profile_ref"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "scope": {
+                "const": "execution"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          },
+          "then": {
+            "properties": {
+              "object_id": false,
+              "profile_ref": false
+            }
+          }
+        }
+      ],
+      "properties": {
+        "arrival_qualification": {
+          "enum": [
+            "on_time",
+            "late",
+            "unresolved"
+          ],
+          "title": "Arrival Qualification",
+          "type": "string"
+        },
+        "association_validation": {
+          "enum": [
+            "trusted",
+            "untrusted",
+            "unresolved"
+          ],
+          "title": "Association Validation",
+          "type": "string"
+        },
+        "attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionRefs"
+        },
+        "envelope_validation": {
+          "enum": [
+            "trusted",
+            "untrusted",
+            "unresolved"
+          ],
+          "title": "Envelope Validation",
+          "type": "string"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "object_id": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/AbsentOptional_ProfileContentRef_"
+        },
+        "question_results": {
+          "items": {
+            "$ref": "#/$defs/QuestionPrimaryCandidate"
+          },
+          "maxItems": 1024,
+          "title": "Question Results",
+          "type": "array"
+        },
+        "question_selection_ref": {
+          "$ref": "#/$defs/QuestionSelectionRef"
+        },
+        "result_ref": {
+          "$ref": "#/$defs/ObservationBatchRef"
+        },
+        "scope": {
+          "const": "object",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_id",
+        "scope",
+        "attempt_ref",
+        "arrival_qualification",
+        "result_ref",
+        "question_selection_ref",
+        "effective_question_refs",
+        "model_invocation_ref",
+        "envelope_validation",
+        "association_validation",
+        "question_results"
+      ],
+      "title": "ObservationResultDescriptor",
+      "type": "object"
+    },
+    "OptionalAbsentOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "optional_absence",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/FactReason"
+        }
+      },
+      "required": [
+        "disposition",
+        "output_name",
+        "reason"
+      ],
+      "title": "OptionalAbsentOutput",
+      "type": "object"
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "QuestionContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "question",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "QuestionContentRef",
+      "type": "object"
+    },
+    "QuestionPrimaryCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_ref": {
+          "$ref": "#/$defs/FactRef"
+        },
+        "question_ref": {
+          "$ref": "#/$defs/QuestionContentRef"
+        }
+      },
+      "required": [
+        "question_ref",
+        "fact_ref"
+      ],
+      "title": "QuestionPrimaryCandidate",
+      "type": "object"
+    },
+    "QuestionRefs": {
+      "items": {
+        "$ref": "#/$defs/QuestionContentRef"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "type": "array"
+    },
+    "QuestionSelectionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "question_selection_record",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "QuestionSelectionRef",
+      "type": "object"
+    },
+    "ReviewReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "review_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Review Registry Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "version",
+        "sha256",
+        "review_registry_id"
+      ],
+      "title": "ReviewReportRef",
+      "type": "object"
+    },
+    "SystemOutputResultDescriptor": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "scope": {
+                "const": "object"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          },
+          "then": {
+            "required": [
+              "object_id",
+              "profile_ref"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "scope": {
+                "const": "execution"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          },
+          "then": {
+            "properties": {
+              "object_id": false,
+              "profile_ref": false
+            }
+          }
+        }
+      ],
+      "properties": {
+        "actual_implementation_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Actual Implementation Version",
+          "type": "string"
+        },
+        "arrival_qualification": {
+          "enum": [
+            "on_time",
+            "late",
+            "unresolved"
+          ],
+          "title": "Arrival Qualification",
+          "type": "string"
+        },
+        "attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "object_id": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___"
+        },
+        "output": {
+          "$ref": "#/$defs/MappedOutputResult"
+        },
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/AbsentOptional_ProfileContentRef_"
+        },
+        "requirement": {
+          "$ref": "#/$defs/SystemProducerRequirement"
+        },
+        "result_ref": {
+          "$ref": "#/$defs/ExecutionEventRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/FactScope"
+        }
+      },
+      "required": [
+        "execution_id",
+        "scope",
+        "attempt_ref",
+        "arrival_qualification",
+        "result_ref",
+        "requirement",
+        "output_name",
+        "actual_implementation_version",
+        "output"
+      ],
+      "title": "SystemOutputResultDescriptor",
+      "type": "object"
+    },
+    "SystemProducerRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_implementation_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Implementation Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "capability_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "contract_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "evaluation_ref": {
+          "$ref": "#/$defs/AbsentOptional_ReviewReportRef_"
+        },
+        "family": {
+          "const": "system_fact_producer",
+          "title": "Family",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "family",
+        "capability_id",
+        "contract_version",
+        "allowed_implementation_versions",
+        "required_features"
+      ],
+      "title": "SystemProducerRequirement",
+      "type": "object"
+    },
+    "ToolContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ToolContentRef",
+      "type": "object"
+    },
+    "ToolExecutionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "tool_execution",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ToolExecutionRef",
+      "type": "object"
+    },
+    "ToolPlanContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool_plan",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ToolPlanContentRef",
+      "type": "object"
+    },
+    "ToolStepResultDescriptor": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "scope": {
+                "const": "object"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          },
+          "then": {
+            "required": [
+              "object_id",
+              "profile_ref"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "scope": {
+                "const": "execution"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          },
+          "then": {
+            "properties": {
+              "object_id": false,
+              "profile_ref": false
+            }
+          }
+        }
+      ],
+      "properties": {
+        "actual_implementation_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Actual Implementation Version",
+          "type": "string"
+        },
+        "arrival_qualification": {
+          "enum": [
+            "on_time",
+            "late",
+            "unresolved"
+          ],
+          "title": "Arrival Qualification",
+          "type": "string"
+        },
+        "association_validation": {
+          "enum": [
+            "trusted",
+            "untrusted",
+            "unresolved"
+          ],
+          "title": "Association Validation",
+          "type": "string"
+        },
+        "attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        },
+        "envelope_validation": {
+          "enum": [
+            "trusted",
+            "untrusted",
+            "unresolved"
+          ],
+          "title": "Envelope Validation",
+          "type": "string"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "invocation_origin": {
+          "const": "tool_plan_step",
+          "title": "Invocation Origin",
+          "type": "string"
+        },
+        "mapped_outputs": {
+          "items": {
+            "$ref": "#/$defs/MappedOutputResult"
+          },
+          "maxItems": 64,
+          "title": "Mapped Outputs",
+          "type": "array"
+        },
+        "object_id": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/AbsentOptional_ProfileContentRef_"
+        },
+        "result_ref": {
+          "$ref": "#/$defs/ToolExecutionRef"
+        },
+        "scope": {
+          "const": "object",
+          "title": "Scope",
+          "type": "string"
+        },
+        "step_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Step Id",
+          "type": "string"
+        },
+        "tool_plan_ref": {
+          "$ref": "#/$defs/ToolPlanContentRef"
+        },
+        "tool_ref": {
+          "$ref": "#/$defs/ToolContentRef"
+        }
+      },
+      "required": [
+        "execution_id",
+        "scope",
+        "attempt_ref",
+        "arrival_qualification",
+        "result_ref",
+        "invocation_origin",
+        "tool_plan_ref",
+        "step_id",
+        "tool_ref",
+        "actual_implementation_version",
+        "envelope_validation",
+        "association_validation",
+        "mapped_outputs"
+      ],
+      "title": "ToolStepResultDescriptor",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "$ref": "#/$defs/ObservationResultDescriptor"
+    },
+    {
+      "$ref": "#/$defs/ToolStepResultDescriptor"
+    },
+    {
+      "$ref": "#/$defs/SystemOutputResultDescriptor"
+    }
+  ]
+}

@@ -1,0 +1,804 @@
+{
+  "parse_limits": {
+    "max_bytes": 1048576,
+    "max_json_depth": 32,
+    "max_object_members": 1024,
+    "max_array_items": 1024,
+    "max_number_chars": 4096
+  },
+  "snapshot_limits": {
+    "max_entries": 1024,
+    "max_batch_entries": 1024,
+    "max_total_raw_bytes": 8388608
+  },
+  "fact_schema": {
+    "schema_version": "1.0.0",
+    "schema_id": "fixture",
+    "version": "1.0.0",
+    "semantic_key": "parking.state",
+    "scope": "object",
+    "type_definition": {
+      "kind": "bool"
+    },
+    "payload_schema_ref": {
+      "artifact_kind": "value_schema",
+      "artifact_id": "placeholder",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "allowed_producer_kinds": [
+      "vlm_question",
+      "tool",
+      "system"
+    ],
+    "status_policy": {
+      "known_value": "required",
+      "non_known_value": "forbidden",
+      "non_known_reason": "required",
+      "error_diagnostics": "required",
+      "not_applicable_basis": "required",
+      "not_evaluated_reason": "required"
+    },
+    "units": {
+      "mode": "not_applicable"
+    },
+    "coordinate_system": {
+      "mode": "not_applicable"
+    },
+    "evidence_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "image-evidence",
+      "version": "1.0.0",
+      "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "confidence_metadata_policy": {
+      "mode": "forbidden"
+    },
+    "value_schema_generation": {
+      "projection_profile_version": "1.0.0",
+      "generator_id": "jimu.value-schema",
+      "generator_version": "1.0.0",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+      "canonicalization_id": "JCS",
+      "global_limits": {
+        "string_max_length": 4096,
+        "list_max_items": 256,
+        "record_max_fields": 64,
+        "max_depth": 8
+      }
+    }
+  },
+  "question_history": {
+    "candidates": {
+      "entries": [
+        {
+          "fact": {
+            "schema_version": "1.0.0",
+            "fact_id": "fact-1",
+            "execution_id": "execution-1",
+            "scope": "object",
+            "object_id": "object-1",
+            "profile_ref": {
+              "artifact_kind": "profile",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "fact_key": "parked",
+            "fact_schema_ref": {
+              "artifact_kind": "fact_schema",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "producer_catalogue_ref": {
+              "artifact_kind": "fact_producer_catalog",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "producer_declaration_id": "question-primary",
+            "producer_kind": "vlm_question",
+            "producer_id": "fixture",
+            "producer_version": "1.0.0",
+            "attempt_id": "attempt-1",
+            "source": {
+              "source_kind": "vlm_question",
+              "question_ref": {
+                "artifact_kind": "question",
+                "artifact_id": "fixture",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "observation_batch_ref": {
+                "record_kind": "observation_batch",
+                "record_id": "observation_batch-1"
+              },
+              "model_invocation_ref": {
+                "record_kind": "model_invocation",
+                "record_id": "model_invocation-1"
+              }
+            },
+            "status": "known",
+            "value": {
+              "kind": "bool",
+              "value": false
+            },
+            "evidence_refs": [
+              {
+                "record_kind": "evidence",
+                "record_id": "evidence-1"
+              }
+            ],
+            "created_at": "2026-11-17T12:00:00Z",
+            "trace_id": "trace-1"
+          },
+          "raw_bytes": "{\"schema_version\":\"1.0.0\",\"fact_id\":\"fact-1\",\"execution_id\":\"execution-1\",\"scope\":\"object\",\"object_id\":\"object-1\",\"profile_ref\":{\"artifact_kind\":\"profile\",\"artifact_id\":\"fixture\",\"version\":\"1.0.0\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"fact_key\":\"parked\",\"fact_schema_ref\":{\"artifact_kind\":\"fact_schema\",\"artifact_id\":\"fixture\",\"version\":\"1.0.0\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"producer_catalogue_ref\":{\"artifact_kind\":\"fact_producer_catalog\",\"artifact_id\":\"fixture\",\"version\":\"1.0.0\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"producer_declaration_id\":\"question-primary\",\"producer_kind\":\"vlm_question\",\"producer_id\":\"fixture\",\"producer_version\":\"1.0.0\",\"attempt_id\":\"attempt-1\",\"source\":{\"source_kind\":\"vlm_question\",\"question_ref\":{\"artifact_kind\":\"question\",\"artifact_id\":\"fixture\",\"version\":\"1.0.0\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"observation_batch_ref\":{\"record_kind\":\"observation_batch\",\"record_id\":\"observation_batch-1\"},\"model_invocation_ref\":{\"record_kind\":\"model_invocation\",\"record_id\":\"model_invocation-1\"}},\"status\":\"known\",\"value\":{\"kind\":\"bool\",\"value\":false},\"evidence_refs\":[{\"record_kind\":\"evidence\",\"record_id\":\"evidence-1\"}],\"created_at\":\"2026-11-17T12:00:00Z\",\"trace_id\":\"trace-1\"}"
+        }
+      ]
+    },
+    "prior_selections": [],
+    "proposed_selections": [
+      {
+        "schema_version": "1.0.0",
+        "selection_id": "selection-1",
+        "execution_id": "execution-1",
+        "scope": "object",
+        "object_id": "object-1",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected_attempt_id": "attempt-1",
+        "selected_fact_refs": [
+          {
+            "record_kind": "fact",
+            "record_id": "fact-1"
+          }
+        ],
+        "reason": "validated_success",
+        "authority_revision": 1,
+        "actor_ref": {
+          "actor_kind": "service",
+          "actor_id": "workflow",
+          "identity_registry_id": "identities"
+        },
+        "created_at": "2026-11-17T12:00:00Z",
+        "selection_group": "observation_batch",
+        "selected_result_ref": {
+          "record_kind": "observation_batch",
+          "record_id": "observation_batch-1"
+        }
+      }
+    ],
+    "objects": [
+      {
+        "object_ref": {
+          "record_kind": "object",
+          "record_id": "object-1"
+        },
+        "execution_id": "execution-1",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    ],
+    "node_runs": [
+      {
+        "node_run_ref": {
+          "record_kind": "node_run",
+          "record_id": "node_run-1"
+        },
+        "execution_id": "execution-1",
+        "node_id": "N04",
+        "status": "succeeded"
+      }
+    ],
+    "attempts": [
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "node",
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "node_run-1"
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      }
+    ],
+    "question_selections": [
+      {
+        "question_selection_ref": {
+          "record_kind": "question_selection_record",
+          "record_id": "question_selection_record-1"
+        },
+        "execution_id": "execution-1",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "eligibility_qualification": "validated",
+        "effective_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ]
+      }
+    ],
+    "observation_results": [
+      {
+        "execution_id": "execution-1",
+        "scope": "object",
+        "object_id": "object-1",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "arrival_qualification": "on_time",
+        "result_ref": {
+          "record_kind": "observation_batch",
+          "record_id": "observation_batch-1"
+        },
+        "question_selection_ref": {
+          "record_kind": "question_selection_record",
+          "record_id": "question_selection_record-1"
+        },
+        "effective_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "model_invocation_ref": {
+          "record_kind": "model_invocation",
+          "record_id": "model_invocation-1"
+        },
+        "envelope_validation": "trusted",
+        "association_validation": "trusted",
+        "question_results": [
+          {
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "fact_ref": {
+              "record_kind": "fact",
+              "record_id": "fact-1"
+            }
+          }
+        ]
+      }
+    ],
+    "tool_results": [],
+    "system_results": [],
+    "questions": [
+      {
+        "ref": {
+          "artifact_kind": "question",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "question_id": "fixture",
+          "version": "1.0.0",
+          "objective": "Synthetic observation objective",
+          "prompt_template_ref": {
+            "artifact_kind": "prompt_template",
+            "artifact_id": "synthetic.prompt",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "facet_refs": [
+            {
+              "artifact_kind": "facet",
+              "artifact_id": "synthetic.facet",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "context_allowlist": [],
+          "primary_fact_key": "parked",
+          "primary_fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "fixture",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "evidence_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "evidence",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "unknown_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "unknown",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "validation_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "question_validation",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      }
+    ],
+    "tools": [],
+    "plans": []
+  },
+  "tool_history": {
+    "candidates": {
+      "entries": [
+        {
+          "fact": {
+            "schema_version": "1.0.0",
+            "fact_id": "fact-1",
+            "execution_id": "execution-1",
+            "scope": "object",
+            "object_id": "object-1",
+            "profile_ref": {
+              "artifact_kind": "profile",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "fact_key": "parked",
+            "fact_schema_ref": {
+              "artifact_kind": "fact_schema",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "producer_catalogue_ref": {
+              "artifact_kind": "fact_producer_catalog",
+              "artifact_id": "fixture",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "producer_declaration_id": "question-primary",
+            "producer_kind": "tool",
+            "producer_id": "fixture",
+            "producer_version": "1.0.0",
+            "attempt_id": "attempt-1",
+            "source": {
+              "source_kind": "tool",
+              "tool_execution_ref": {
+                "record_kind": "tool_execution",
+                "record_id": "tool_execution-1"
+              },
+              "tool_plan_ref": {
+                "artifact_kind": "tool_plan",
+                "artifact_id": "fixture",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "step_id": "measure",
+              "tool_ref": {
+                "artifact_kind": "tool",
+                "artifact_id": "fixture",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "output_name": "relation"
+            },
+            "status": "known",
+            "value": {
+              "kind": "bool",
+              "value": false
+            },
+            "evidence_refs": [
+              {
+                "record_kind": "evidence",
+                "record_id": "evidence-1"
+              }
+            ],
+            "created_at": "2026-11-17T12:00:00Z",
+            "trace_id": "trace-1"
+          },
+          "raw_bytes": "{\"schema_version\":\"1.0.0\",\"fact_id\":\"fact-1\",\"execution_id\":\"execution-1\",\"scope\":\"object\",\"object_id\":\"object-1\",\"profile_ref\":{\"artifact_kind\":\"profile\",\"artifact_id\":\"fixture\",\"version\":\"1.0.0\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"fact_key\":\"parked\",\"fact_schema_ref\":{\"artifact_kind\":\"fact_schema\",\"artifact_id\":\"fixture\",\"version\":\"1.0.0\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"producer_catalogue_ref\":{\"artifact_kind\":\"fact_producer_catalog\",\"artifact_id\":\"fixture\",\"version\":\"1.0.0\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"producer_declaration_id\":\"question-primary\",\"producer_kind\":\"tool\",\"producer_id\":\"fixture\",\"producer_version\":\"1.0.0\",\"attempt_id\":\"attempt-1\",\"source\":{\"source_kind\":\"tool\",\"tool_execution_ref\":{\"record_kind\":\"tool_execution\",\"record_id\":\"tool_execution-1\"},\"tool_plan_ref\":{\"artifact_kind\":\"tool_plan\",\"artifact_id\":\"fixture\",\"version\":\"1.0.0\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"step_id\":\"measure\",\"tool_ref\":{\"artifact_kind\":\"tool\",\"artifact_id\":\"fixture\",\"version\":\"1.0.0\",\"digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"output_name\":\"relation\"},\"status\":\"known\",\"value\":{\"kind\":\"bool\",\"value\":false},\"evidence_refs\":[{\"record_kind\":\"evidence\",\"record_id\":\"evidence-1\"}],\"created_at\":\"2026-11-17T12:00:00Z\",\"trace_id\":\"trace-1\"}"
+        }
+      ]
+    },
+    "prior_selections": [],
+    "proposed_selections": [
+      {
+        "schema_version": "1.0.0",
+        "selection_id": "selection-1",
+        "execution_id": "execution-1",
+        "scope": "object",
+        "object_id": "object-1",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "selected_attempt_id": "attempt-1",
+        "selected_fact_refs": [
+          {
+            "record_kind": "fact",
+            "record_id": "fact-1"
+          }
+        ],
+        "reason": "validated_success",
+        "authority_revision": 1,
+        "actor_ref": {
+          "actor_kind": "service",
+          "actor_id": "workflow",
+          "identity_registry_id": "identities"
+        },
+        "created_at": "2026-11-17T12:00:00Z",
+        "selection_group": "tool_step",
+        "tool_plan_ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "step_id": "measure",
+        "selected_result_ref": {
+          "record_kind": "tool_execution",
+          "record_id": "tool_execution-1"
+        }
+      }
+    ],
+    "objects": [
+      {
+        "object_ref": {
+          "record_kind": "object",
+          "record_id": "object-1"
+        },
+        "execution_id": "execution-1",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    ],
+    "node_runs": [
+      {
+        "node_run_ref": {
+          "record_kind": "node_run",
+          "record_id": "node_run-1"
+        },
+        "execution_id": "execution-1",
+        "node_id": "N05",
+        "status": "succeeded"
+      }
+    ],
+    "attempts": [
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "node",
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "node_run-1"
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      }
+    ],
+    "question_selections": [],
+    "observation_results": [],
+    "tool_results": [
+      {
+        "execution_id": "execution-1",
+        "scope": "object",
+        "object_id": "object-1",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "arrival_qualification": "on_time",
+        "result_ref": {
+          "record_kind": "tool_execution",
+          "record_id": "tool_execution-1"
+        },
+        "invocation_origin": "tool_plan_step",
+        "tool_plan_ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "step_id": "measure",
+        "tool_ref": {
+          "artifact_kind": "tool",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "actual_implementation_version": "1.2.0",
+        "envelope_validation": "trusted",
+        "association_validation": "trusted",
+        "mapped_outputs": [
+          {
+            "disposition": "emitted",
+            "output_name": "relation",
+            "fact_status": "known",
+            "fact_ref": {
+              "record_kind": "fact",
+              "record_id": "fact-1"
+            }
+          }
+        ]
+      }
+    ],
+    "system_results": [],
+    "questions": [],
+    "tools": [
+      {
+        "ref": {
+          "artifact_kind": "tool",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "tool_id": "fixture",
+          "version": "1.0.0",
+          "tool_type": "geometry",
+          "provider_kind": "builtin",
+          "input_schema_ref": {
+            "artifact_kind": "tool_input_schema",
+            "artifact_id": "input",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "output_schema_ref": {
+            "artifact_kind": "tool_output_schema",
+            "artifact_id": "output",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "resource_requirements_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "resources",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "execution_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "execution",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "evidence_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "evidence",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "implementation_requirement": {
+            "family": "tool_implementation",
+            "capability_id": "geometry-worker",
+            "contract_version": "1.0.0",
+            "allowed_implementation_versions": [
+              "1.2.0"
+            ],
+            "required_features": [
+              "geometry_output"
+            ]
+          },
+          "capability_tags": [
+            "geometry"
+          ],
+          "fact_outputs": [
+            {
+              "output_name": "relation",
+              "fact_key": "parked",
+              "fact_schema_ref": {
+                "artifact_kind": "fact_schema",
+                "artifact_id": "fixture",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "scope": "object",
+              "required": true,
+              "value_path": []
+            }
+          ]
+        }
+      }
+    ],
+    "plans": [
+      {
+        "ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "fixture",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "definition": {
+          "schema_version": "1.0.0",
+          "tool_plan_id": "fixture",
+          "version": "1.0.0",
+          "steps": [
+            {
+              "step_id": "measure",
+              "tool_ref": {
+                "artifact_kind": "tool",
+                "artifact_id": "fixture",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "depends_on": [],
+              "input_bindings": [],
+              "fact_output_mappings": [
+                {
+                  "output_name": "relation",
+                  "target_fact_key": "parked"
+                }
+              ],
+              "requirement": "required",
+              "failure_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "execution",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "skip_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "execution",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "system_history": {
+    "candidates": {
+      "entries": []
+    },
+    "prior_selections": [],
+    "proposed_selections": [
+      {
+        "schema_version": "1.0.0",
+        "selection_id": "selection-1",
+        "execution_id": "execution-1",
+        "scope": "execution",
+        "selected_attempt_id": "attempt-1",
+        "selected_fact_refs": [],
+        "reason": "validated_success",
+        "authority_revision": 1,
+        "actor_ref": {
+          "actor_kind": "service",
+          "actor_id": "workflow",
+          "identity_registry_id": "identities"
+        },
+        "created_at": "2026-11-17T12:00:00Z",
+        "selection_group": "system_output",
+        "requirement": {
+          "family": "system_fact_producer",
+          "capability_id": "system-context",
+          "contract_version": "1.0.0",
+          "allowed_implementation_versions": [
+            "1.2.0"
+          ],
+          "required_features": []
+        },
+        "output_name": "context",
+        "selected_result_ref": {
+          "record_kind": "execution_event",
+          "record_id": "execution_event-1"
+        }
+      }
+    ],
+    "objects": [],
+    "node_runs": [],
+    "attempts": [
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "system",
+          "requirement": {
+            "family": "system_fact_producer",
+            "capability_id": "system-context",
+            "contract_version": "1.0.0",
+            "allowed_implementation_versions": [
+              "1.2.0"
+            ],
+            "required_features": []
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      }
+    ],
+    "question_selections": [],
+    "observation_results": [],
+    "tool_results": [],
+    "system_results": [
+      {
+        "execution_id": "execution-1",
+        "scope": "execution",
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "arrival_qualification": "on_time",
+        "result_ref": {
+          "record_kind": "execution_event",
+          "record_id": "execution_event-1"
+        },
+        "requirement": {
+          "family": "system_fact_producer",
+          "capability_id": "system-context",
+          "contract_version": "1.0.0",
+          "allowed_implementation_versions": [
+            "1.2.0"
+          ],
+          "required_features": []
+        },
+        "output_name": "context",
+        "actual_implementation_version": "1.2.0",
+        "output": {
+          "disposition": "optional_absence",
+          "output_name": "context",
+          "reason": {
+            "reason_code": "visibility",
+            "message": "Synthetic unavailable observation",
+            "diagnostic_refs": []
+          }
+        }
+      }
+    ],
+    "questions": [],
+    "tools": [],
+    "plans": []
+  }
+}

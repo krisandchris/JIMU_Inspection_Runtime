@@ -1,0 +1,22 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "scripts/generate_schemas.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T16:01:57.371715+00:00",
+  "ended_at": "2026-11-17T16:02:01.734500+00:00",
+  "exit_code": 0,
+  "stdout": "Schema export written; PARTIAL_D01_BLOCKED\n",
+  "stderr": "",
+  "hashes": {
+    "scripts/generate_schemas.py": "ac29043a3e7f4c305d3de5489ea4200ad8b57ab3ff926691dc2f6721a107eaa7",
+    "tests/contract/test_b_schema_inventory.py": "2c2207d102322aa0c2d630d5029d08e235a7e2ffa164c35ebbb05bd8abf86819",
+    "tests/unit/test_b_schema_export.py": "92d2fc7d6f73a00b5666d11b6a74d5492243a14e17d3d9a50bd91fc2f4f070ea",
+    "schemas/generated/index.json": "5ec730e838b84b48587f94a5fe661ff8b5f89d7703e63a31d2ac7939f8625f41"
+  }
+}

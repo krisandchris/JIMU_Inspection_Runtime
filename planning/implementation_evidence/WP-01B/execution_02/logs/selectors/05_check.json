@@ -1,0 +1,21 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime/domain/fact_selectors.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T14:27:28.032522+00:00",
+  "ended_at": "2026-11-17T14:27:28.443338+00:00",
+  "exit_code": 0,
+  "stdout": "Success: no issues found in 1 source file\n",
+  "stderr": "",
+  "hashes": {
+    "src/jimu_runtime/domain/fact_selectors.py": "b02e850b37957f849c8703d8f6800e7bc89e7c547dfa733260ed7c332747305a",
+    "tests/contract/test_b_fact_selectors.py": "034ffa251832307593ed3043ed6864bd81fe1b729eec1390d3180f3150f26b77",
+    "tests/negative/test_b_fact_selectors_invalid.py": "0d91c31e0d371821021cb85c2eca3bb5357c53ed67425c1abbe7d8a511009177"
+  }
+}

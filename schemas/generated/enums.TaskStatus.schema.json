@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "created",
+    "accepted",
+    "queued",
+    "running",
+    "completed",
+    "partial_failed",
+    "failed",
+    "cancelled"
+  ],
+  "title": "TaskStatus",
+  "type": "string"
+}

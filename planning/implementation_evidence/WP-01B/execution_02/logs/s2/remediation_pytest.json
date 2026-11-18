@@ -1,0 +1,19 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_schema_descriptors.py",
+    "tests/contract/test_b_mapping_contracts.py",
+    "tests/negative/test_b_mapping_invalid.py",
+    "-q"
+  ],
+  "start": "2026-11-17T14:46:47.907409+00:00",
+  "end": "2026-11-17T14:46:49.122440+00:00",
+  "exit_code": 0,
+  "output": "........................................................................ [ 86%]\n...........                                                              [100%]\n83 passed in 0.98s\n"
+}

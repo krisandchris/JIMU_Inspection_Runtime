@@ -1,0 +1,23 @@
+{
+  "after_inventory_sha256": "c662bbc36301e66ff37994f2a41d86d4f7fd83d4dacda6e77b82df74fa8cfb4e",
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-c",
+    "import sys,platform,importlib.metadata as m; print(sys.version); print(platform.platform()); print({p:m.version(p) for p in ['pydantic','pytest','ruff','mypy','rfc8785','jsonschema']})"
+  ],
+  "before_inventory_sha256": "c662bbc36301e66ff37994f2a41d86d4f7fd83d4dacda6e77b82df74fa8cfb4e",
+  "changed_paths": [],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "ended_at": "2026-11-17T18:15:35.834766+00:00",
+  "exit": 0,
+  "snapshot_unchanged": true,
+  "started_at": "2026-11-17T18:15:35.778441+00:00",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]\nLinux-6.8.0-149-generic-x86_64-with-glibc2.39\n{'pydantic': '2.12.5', 'pytest': '8.4.2', 'ruff': '0.14.14', 'mypy': '1.18.2', 'rfc8785': '0.1.4', 'jsonschema': '4.25.1'}\n",
+  "stdout_sha256": "2a6ddc8bd7f10d8222b0a7e6d13d0bcfd0a63bfa36f3d55371624f86000b65bd"
+}

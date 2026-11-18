@@ -1,0 +1,279 @@
+{
+  "$defs": {
+    "BindingRefs": {
+      "items": {
+        "$ref": "#/$defs/ReviewBindingRef"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "type": "array"
+    },
+    "BindingReviewScope": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_refs": {
+          "$ref": "#/$defs/BindingRefs"
+        },
+        "scope_kind": {
+          "const": "binding",
+          "title": "Scope Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "binding_refs",
+        "scope_kind"
+      ],
+      "title": "BindingReviewScope",
+      "type": "object"
+    },
+    "ProfileRefs": {
+      "items": {
+        "$ref": "#/$defs/ReviewProfileRef"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "type": "array"
+    },
+    "ProfileRegionReviewScope": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_refs": {
+          "$ref": "#/$defs/BindingRefs"
+        },
+        "profile_refs": {
+          "$ref": "#/$defs/ProfileRefs"
+        },
+        "region_refs": {
+          "$ref": "#/$defs/RegionRefs"
+        },
+        "scope_kind": {
+          "const": "profile_region",
+          "title": "Scope Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope_kind",
+        "binding_refs",
+        "profile_refs",
+        "region_refs"
+      ],
+      "title": "ProfileRegionReviewScope",
+      "type": "object"
+    },
+    "ProfileReviewScope": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_refs": {
+          "$ref": "#/$defs/BindingRefs"
+        },
+        "profile_refs": {
+          "$ref": "#/$defs/ProfileRefs"
+        },
+        "scope_kind": {
+          "const": "profile",
+          "title": "Scope Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "binding_refs",
+        "scope_kind",
+        "profile_refs"
+      ],
+      "title": "ProfileReviewScope",
+      "type": "object"
+    },
+    "RegionRefs": {
+      "items": {
+        "$ref": "#/$defs/ReviewRegionRef"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "type": "array"
+    },
+    "RegionReviewScope": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_refs": {
+          "$ref": "#/$defs/BindingRefs"
+        },
+        "region_refs": {
+          "$ref": "#/$defs/RegionRefs"
+        },
+        "scope_kind": {
+          "const": "region",
+          "title": "Scope Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "binding_refs",
+        "scope_kind",
+        "region_refs"
+      ],
+      "title": "RegionReviewScope",
+      "type": "object"
+    },
+    "ReviewBindingRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "model_binding",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ReviewBindingRef",
+      "type": "object"
+    },
+    "ReviewProfileRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ReviewProfileRef",
+      "type": "object"
+    },
+    "ReviewRegionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "region",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ReviewRegionRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "binding": "#/$defs/BindingReviewScope",
+      "profile": "#/$defs/ProfileReviewScope",
+      "profile_region": "#/$defs/ProfileRegionReviewScope",
+      "region": "#/$defs/RegionReviewScope"
+    },
+    "propertyName": "scope_kind"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/BindingReviewScope"
+    },
+    {
+      "$ref": "#/$defs/ProfileReviewScope"
+    },
+    {
+      "$ref": "#/$defs/RegionReviewScope"
+    },
+    {
+      "$ref": "#/$defs/ProfileRegionReviewScope"
+    }
+  ]
+}

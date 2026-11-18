@@ -1,0 +1,462 @@
+{
+  "$defs": {
+    "AbsentOptional_Annotated_tuple_ContextFieldSelector___________FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_64_____BeforeValidator__": {
+      "items": {
+        "$ref": "#/$defs/ContextFieldSelector"
+      },
+      "maxItems": 64,
+      "type": "array"
+    },
+    "AbsentOptional_ContextDerivationRequirement_": {
+      "$ref": "#/$defs/ContextDerivationRequirement"
+    },
+    "AbsentOptional_NonNegativeBudget_": {
+      "$ref": "#/$defs/NonNegativeBudget"
+    },
+    "AbsentOptional_ReviewReportRef_": {
+      "$ref": "#/$defs/ReviewReportRef"
+    },
+    "CapabilityFeature": {
+      "enum": [
+        "rgb_image",
+        "typed_context",
+        "structured_output",
+        "original_xyxy",
+        "mask_output",
+        "geometry_output",
+        "ocr_text"
+      ],
+      "title": "CapabilityFeature",
+      "type": "string"
+    },
+    "ContextDerivationRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_implementation_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Implementation Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "capability_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "contract_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "evaluation_ref": {
+          "$ref": "#/$defs/AbsentOptional_ReviewReportRef_"
+        },
+        "family": {
+          "const": "context_derivation",
+          "title": "Family",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "family",
+        "capability_id",
+        "contract_version",
+        "allowed_implementation_versions",
+        "required_features"
+      ],
+      "title": "ContextDerivationRequirement",
+      "type": "object"
+    },
+    "ContextFieldRequirement": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "not": {
+              "required": [
+                "clock_tolerance_ms"
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "time_sensitive": {
+                "const": true
+              }
+            },
+            "required": [
+              "time_sensitive"
+            ]
+          },
+          "then": {
+            "required": [
+              "clock_tolerance_ms"
+            ]
+          }
+        },
+        {
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "derivation_requirement"
+                  ]
+                },
+                {
+                  "required": [
+                    "input_selectors"
+                  ]
+                }
+              ]
+            }
+          },
+          "if": {
+            "properties": {
+              "allowed_sources": {
+                "contains": {
+                  "const": "declared_derivation"
+                }
+              }
+            },
+            "required": [
+              "allowed_sources"
+            ]
+          },
+          "then": {
+            "required": [
+              "derivation_requirement",
+              "input_selectors"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "allowed_sources": {
+          "items": {
+            "$ref": "#/$defs/ContextProvenanceSource"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Allowed Sources",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "clock_tolerance_ms": {
+          "$ref": "#/$defs/AbsentOptional_NonNegativeBudget_"
+        },
+        "derivation_requirement": {
+          "$ref": "#/$defs/AbsentOptional_ContextDerivationRequirement_"
+        },
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        },
+        "input_selectors": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_tuple_ContextFieldSelector___________FieldInfo_annotation_NoneType__required_True__metadata__MaxLen_max_length_64_____BeforeValidator__"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "time_sensitive": {
+          "title": "Time Sensitive",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "field_path",
+        "schema_ref",
+        "required",
+        "time_sensitive",
+        "allowed_sources"
+      ],
+      "title": "ContextFieldRequirement",
+      "type": "object"
+    },
+    "ContextFieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "items": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Field Path",
+          "type": "array"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "$ref": "#/$defs/ContextSource"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "ContextFieldSelector",
+      "type": "object"
+    },
+    "ContextProvenancePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "conflicting_sources": {
+          "const": "block",
+          "title": "Conflicting Sources",
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/ContextFieldRequirement"
+          },
+          "maxItems": 64,
+          "title": "Fields",
+          "type": "array"
+        },
+        "internal_timezone": {
+          "const": "UTC",
+          "title": "Internal Timezone",
+          "type": "string"
+        },
+        "missing_required": {
+          "const": "block",
+          "title": "Missing Required",
+          "type": "string"
+        },
+        "naive_time": {
+          "const": "reject",
+          "title": "Naive Time",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "context_provenance",
+          "title": "Policy Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "fields",
+        "conflicting_sources",
+        "missing_required",
+        "internal_timezone",
+        "naive_time"
+      ],
+      "title": "ContextProvenancePolicy",
+      "type": "object"
+    },
+    "ContextProvenanceSource": {
+      "enum": [
+        "trusted_task_metadata",
+        "device_registry",
+        "camera_registry",
+        "region_definition",
+        "declared_derivation"
+      ],
+      "title": "ContextProvenanceSource",
+      "type": "string"
+    },
+    "ContextSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "context_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ContextSchemaRef",
+      "type": "object"
+    },
+    "ContextSource": {
+      "enum": [
+        "context_snapshot",
+        "region_metadata",
+        "profile_metadata"
+      ],
+      "title": "ContextSource",
+      "type": "string"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FieldPath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "NonNegativeBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "ReviewReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "review_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Review Registry Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "version",
+        "sha256",
+        "review_registry_id"
+      ],
+      "title": "ReviewReportRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "policy": {
+      "$ref": "#/$defs/ContextProvenancePolicy"
+    },
+    "policy_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "policy_id",
+    "version",
+    "policy"
+  ],
+  "title": "ContextProvenancePolicyArtifact",
+  "type": "object"
+}

@@ -1,0 +1,21 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_schema_export.py",
+    "tests/contract/test_b_schema_inventory.py",
+    "-q",
+    "--junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_03/logs/e2/final_pytest.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_utc": "2026-11-17T18:11:34.192634+00:00",
+  "finished_utc": "2026-11-17T18:13:37.182711+00:00",
+  "exit_code": 0,
+  "stdout": ".........................................                                [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_03/logs/e2/final_pytest.xml -\n41 passed in 122.73s (0:02:02)\n",
+  "stderr": ""
+}

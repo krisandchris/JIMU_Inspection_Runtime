@@ -1,0 +1,157 @@
+{
+  "$defs": {
+    "AdditionalSelectionCallPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "additional_resource_requirements_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "max_additional_invocations_per_execution": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "mode": {
+          "const": "explicit_additional",
+          "title": "Mode",
+          "type": "string"
+        },
+        "proposal_binding_ref": {
+          "$ref": "#/$defs/ModelBindingContentRef"
+        }
+      },
+      "required": [
+        "mode",
+        "proposal_binding_ref",
+        "additional_resource_requirements_ref",
+        "max_additional_invocations_per_execution"
+      ],
+      "title": "AdditionalSelectionCallPolicy",
+      "type": "object"
+    },
+    "ModelBindingContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "model_binding",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ModelBindingContentRef",
+      "type": "object"
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "PositiveBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "SharedN02SelectionCallPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "shared_n02",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "SharedN02SelectionCallPolicy",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "explicit_additional": "#/$defs/AdditionalSelectionCallPolicy",
+      "shared_n02": "#/$defs/SharedN02SelectionCallPolicy"
+    },
+    "propertyName": "mode"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SharedN02SelectionCallPolicy"
+    },
+    {
+      "$ref": "#/$defs/AdditionalSelectionCallPolicy"
+    }
+  ]
+}

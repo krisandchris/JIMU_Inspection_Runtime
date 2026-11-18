@@ -1,0 +1,21 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_authority_models.py",
+    "tests/contract/test_b_fact_records.py",
+    "tests/negative/test_b_authority_models_invalid.py",
+    "-q"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T14:47:34.065458+00:00",
+  "ended_at": "2026-11-17T14:47:34.575989+00:00",
+  "exit_code": 2,
+  "stdout": "\n==================================== ERRORS ====================================\n____________ ERROR collecting tests/unit/test_b_authority_models.py ____________\ntests/unit/test_b_authority_models.py:11: in <module>\n    from jimu_runtime.domain.runtime.authority import AuthoritativeResultSelection\nsrc/jimu_runtime/domain/runtime/authority.py:21: in <module>\n    from jimu_runtime.domain.runtime.facts import (\nsrc/jimu_runtime/domain/runtime/facts.py:121: in <module>\n    def scope_constraints() -> list[JsonSchemaValue]:\n                                    ^^^^^^^^^^^^^^^\nE   NameError: name 'JsonSchemaValue' is not defined\n____________ ERROR collecting tests/contract/test_b_fact_records.py ____________\ntests/contract/test_b_fact_records.py:11: in <module>\n    from jimu_runtime.domain.runtime.authority import AuthoritativeResultSelection\nsrc/jimu_runtime/domain/runtime/authority.py:21: in <module>\n    from jimu_runtime.domain.runtime.facts import (\nsrc/jimu_runtime/domain/runtime/facts.py:121: in <module>\n    def scope_constraints() -> list[JsonSchemaValue]:\n                                    ^^^^^^^^^^^^^^^\nE   NameError: name 'JsonSchemaValue' is not defined\n______ ERROR collecting tests/negative/test_b_authority_models_invalid.py ______\ntests/negative/test_b_authority_models_invalid.py:11: in <module>\n    from jimu_runtime.domain.runtime.authority import AuthoritativeResultSelection\nsrc/jimu_runtime/domain/runtime/authority.py:21: in <module>\n    from jimu_runtime.domain.runtime.facts import (\nsrc/jimu_runtime/domain/runtime/facts.py:121: in <module>\n    def scope_constraints() -> list[JsonSchemaValue]:\n                                    ^^^^^^^^^^^^^^^\nE   NameError: name 'JsonSchemaValue' is not defined\n=========================== short test summary info ============================\nERROR tests/unit/test_b_authority_models.py - NameError: name 'JsonSchemaValu...\nERROR tests/contract/test_b_fact_records.py - NameError: name 'JsonSchemaValu...\nERROR tests/negative/test_b_authority_models_invalid.py - NameError: name 'Js...\n!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!\n3 errors in 0.29s\n",
+  "stderr": ""
+}

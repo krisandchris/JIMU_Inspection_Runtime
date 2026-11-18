@@ -1,0 +1,16 @@
+{
+  "additionalProperties": false,
+  "description": "Persisted B definition root; nested contracts remain unversioned helpers.",
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version"
+  ],
+  "title": "DefinitionContract",
+  "type": "object"
+}

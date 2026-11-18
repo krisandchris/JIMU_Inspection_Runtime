@@ -1,0 +1,17 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime/domain/schema_types.py",
+    "src/jimu_runtime/domain/tool_mappings.py",
+    "src/jimu_runtime/domain/validation"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T14:33:11.416108+00:00",
+  "end": "2026-11-17T14:33:11.888741+00:00",
+  "exit_code": 1,
+  "output": "src/jimu_runtime/domain/validation/schema_descriptors.py:78: error: Need type annotation for \"descriptor\"  [var-annotated]\nsrc/jimu_runtime/domain/validation/schema_descriptors.py:125: error: Need type annotation for \"path\"  [var-annotated]\nsrc/jimu_runtime/domain/validation/schema_descriptors.py:133: error: Need type annotation for \"item\"  [var-annotated]\nsrc/jimu_runtime/domain/validation/schema_descriptors.py:177: error: Need type annotation for \"output\"  [var-annotated]\nsrc/jimu_runtime/domain/validation/schema_descriptors.py:196: error: Need type annotation for \"path\"  [var-annotated]\nsrc/jimu_runtime/domain/validation/schema_descriptors.py:290: error: Need type annotation for \"field\"  [var-annotated]\nFound 6 errors in 1 file (checked 6 source files)\n"
+}

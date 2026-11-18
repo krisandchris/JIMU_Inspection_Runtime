@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "max_batch_entries": {
+      "maximum": 1024,
+      "minimum": 1,
+      "title": "Max Batch Entries",
+      "type": "integer"
+    },
+    "max_entries": {
+      "maximum": 1024,
+      "minimum": 1,
+      "title": "Max Entries",
+      "type": "integer"
+    },
+    "max_total_raw_bytes": {
+      "maximum": 67108864,
+      "minimum": 1,
+      "title": "Max Total Raw Bytes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "max_entries",
+    "max_batch_entries",
+    "max_total_raw_bytes"
+  ],
+  "title": "CandidateSnapshotLimits",
+  "type": "object"
+}

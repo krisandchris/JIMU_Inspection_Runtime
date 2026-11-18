@@ -1,0 +1,674 @@
+{
+  "raw": {
+    "descriptor_kind": "raw_dto",
+    "schema_ref": {
+      "artifact_kind": "context_schema",
+      "artifact_id": "context",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "type_definition": {
+      "kind": "record",
+      "fields": [
+        {
+          "name": "outer",
+          "required": false,
+          "type_definition": {
+            "kind": "record",
+            "fields": [
+              {
+                "name": "leaf",
+                "required": true,
+                "type_definition": {
+                  "kind": "string",
+                  "min_length": 0,
+                  "max_length": 128
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "typed": {
+    "descriptor_kind": "typed_value",
+    "schema_ref": {
+      "artifact_kind": "value_schema",
+      "artifact_id": "fact-value",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "type_definition": {
+      "kind": "enum",
+      "members": [
+        "parked",
+        "moving"
+      ]
+    }
+  },
+  "mixed": {
+    "descriptor_kind": "tool_input_record",
+    "schema_ref": {
+      "artifact_kind": "tool_input_schema",
+      "artifact_id": "input",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "fields": [
+      {
+        "name": "image",
+        "required": true,
+        "representation": "raw_dto",
+        "type_definition": {
+          "kind": "record",
+          "fields": [
+            {
+              "name": "asset_id",
+              "required": true,
+              "type_definition": {
+                "kind": "string",
+                "min_length": 0,
+                "max_length": 128
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "state",
+        "required": true,
+        "representation": "typed_value",
+        "type_definition": {
+          "kind": "enum",
+          "members": [
+            "parked",
+            "moving"
+          ]
+        }
+      }
+    ]
+  },
+  "tool": {
+    "descriptor_kind": "tool_result",
+    "schema_ref": {
+      "artifact_kind": "tool_output_schema",
+      "artifact_id": "output",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "payload_representation": "typed_value",
+    "payload_type": {
+      "kind": "record",
+      "fields": [
+        {
+          "name": "state",
+          "required": false,
+          "type_definition": {
+            "kind": "enum",
+            "members": [
+              "parked",
+              "moving"
+            ]
+          }
+        }
+      ]
+    },
+    "evidence_fields": [
+      {
+        "name": "mask",
+        "required": false,
+        "multiple": true
+      }
+    ],
+    "output_declarations": [
+      {
+        "output_name": "state",
+        "value_path": [
+          "state"
+        ],
+        "required": true
+      }
+    ]
+  },
+  "bindings": [
+    {
+      "source": {
+        "source_kind": "image",
+        "selector": {
+          "schema_ref": {
+            "artifact_kind": "attribute_schema",
+            "artifact_id": "image",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "field_path": []
+        }
+      },
+      "target": {
+        "schema_ref": {
+          "artifact_kind": "tool_input_schema",
+          "artifact_id": "input",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "field_path": [
+          "image"
+        ]
+      },
+      "required": true,
+      "on_missing": "block"
+    },
+    {
+      "source": {
+        "source_kind": "fact",
+        "selector": {
+          "scope": "object",
+          "fact_key": "state",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "state",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "producer_selector": {
+            "producer_kind": "vlm_question",
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "state-question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "output_name": "primary"
+          },
+          "field_path": []
+        }
+      },
+      "target": {
+        "schema_ref": {
+          "artifact_kind": "tool_input_schema",
+          "artifact_id": "input",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "field_path": [
+          "state"
+        ]
+      },
+      "required": true,
+      "on_missing": "block"
+    }
+  ],
+  "sources": [
+    {
+      "source_kind": "image",
+      "selector": {
+        "schema_ref": {
+          "artifact_kind": "attribute_schema",
+          "artifact_id": "image",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "field_path": []
+      }
+    },
+    {
+      "source_kind": "fact",
+      "selector": {
+        "scope": "object",
+        "fact_key": "state",
+        "fact_schema_ref": {
+          "artifact_kind": "fact_schema",
+          "artifact_id": "state",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "producer_selector": {
+          "producer_kind": "vlm_question",
+          "question_ref": {
+            "artifact_kind": "question",
+            "artifact_id": "state-question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "output_name": "primary"
+        },
+        "field_path": []
+      }
+    },
+    {
+      "source_kind": "context",
+      "selector": {
+        "source": "context_snapshot",
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "context",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "field_path": [
+          "outer",
+          "leaf"
+        ]
+      }
+    },
+    {
+      "source_kind": "object",
+      "selector": {
+        "schema_ref": {
+          "artifact_kind": "object_schema",
+          "artifact_id": "object",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "field_path": []
+      }
+    },
+    {
+      "source_kind": "step_output",
+      "step_id": "upstream",
+      "selector": {
+        "schema_ref": {
+          "artifact_kind": "tool_output_schema",
+          "artifact_id": "output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "field_path": [
+          "state"
+        ]
+      }
+    }
+  ],
+  "review": {
+    "report_ref": {
+      "report_id": "report",
+      "version": "1.0.0",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "review_registry_id": "trusted-registry"
+    },
+    "verdict": "approved",
+    "valid_from": "2026-01-01T00:00:00Z",
+    "valid_until": "2027-01-01T00:00:00Z",
+    "assessments": [
+      {
+        "assessment_kind": "fallback_transition",
+        "source": {
+          "provider_id": "provider",
+          "deployment_id": "remote-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "remote",
+          "deployment_version": "1.0.0",
+          "model_version": "1.0.0"
+        },
+        "target": {
+          "provider_id": "provider",
+          "deployment_id": "local-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "local",
+          "deployment_version": "1.0.0",
+          "model_version": "1.0.0"
+        },
+        "capability": "object_observation",
+        "scope": {
+          "scope_kind": "binding",
+          "binding_refs": [
+            {
+              "artifact_kind": "model_binding",
+              "artifact_id": "binding",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ]
+        },
+        "trigger_errors": [
+          "timeout"
+        ],
+        "input_schema_ref": {
+          "artifact_kind": "tool_input_schema",
+          "artifact_id": "input",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "output_schema_ref": {
+          "artifact_kind": "tool_output_schema",
+          "artifact_id": "output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "contract_compatibility": "exact",
+        "quality_evaluated": true
+      },
+      {
+        "assessment_kind": "local_primary_exception",
+        "exception_id": "exception",
+        "exception_version": "1.0.0",
+        "primary": {
+          "provider_id": "provider",
+          "deployment_id": "local-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "local",
+          "deployment_version": "1.0.0",
+          "model_version": "1.0.0"
+        },
+        "applicable_capabilities": [
+          "object_observation"
+        ],
+        "scope": {
+          "scope_kind": "binding",
+          "binding_refs": [
+            {
+              "artifact_kind": "model_binding",
+              "artifact_id": "binding",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ]
+        },
+        "reason": "privacy_restriction"
+      }
+    ]
+  },
+  "scopes": [
+    {
+      "scope_kind": "binding",
+      "binding_refs": [
+        {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    {
+      "scope_kind": "profile",
+      "binding_refs": [
+        {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    {
+      "scope_kind": "region",
+      "binding_refs": [
+        {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "region_refs": [
+        {
+          "artifact_kind": "region",
+          "artifact_id": "region",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    {
+      "scope_kind": "profile_region",
+      "binding_refs": [
+        {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "region_refs": [
+        {
+          "artifact_kind": "region",
+          "artifact_id": "region",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    }
+  ],
+  "mapping_context": {
+    "profile_ref": {
+      "artifact_kind": "profile",
+      "artifact_id": "profile",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "tool_plan_ref": {
+      "artifact_kind": "tool_plan",
+      "artifact_id": "plan",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "current_step_id": "current",
+    "context_registrations": [
+      {
+        "source": "context_snapshot",
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "context",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        }
+      },
+      {
+        "source": "profile_metadata",
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "context",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      {
+        "source": "region_metadata",
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "context",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "region_ref": {
+          "artifact_kind": "region",
+          "artifact_id": "region",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    ],
+    "object_schema_ref": {
+      "artifact_kind": "object_schema",
+      "artifact_id": "object",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "image_schema_ref": {
+      "artifact_kind": "attribute_schema",
+      "artifact_id": "image",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "descriptors": [
+      {
+        "descriptor_kind": "raw_dto",
+        "schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "context",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "record",
+          "fields": [
+            {
+              "name": "outer",
+              "required": false,
+              "type_definition": {
+                "kind": "record",
+                "fields": [
+                  {
+                    "name": "leaf",
+                    "required": true,
+                    "type_definition": {
+                      "kind": "string",
+                      "min_length": 0,
+                      "max_length": 128
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "descriptor_kind": "typed_value",
+        "schema_ref": {
+          "artifact_kind": "value_schema",
+          "artifact_id": "fact-value",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "type_definition": {
+          "kind": "enum",
+          "members": [
+            "parked",
+            "moving"
+          ]
+        }
+      },
+      {
+        "descriptor_kind": "tool_input_record",
+        "schema_ref": {
+          "artifact_kind": "tool_input_schema",
+          "artifact_id": "input",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "fields": [
+          {
+            "name": "image",
+            "required": true,
+            "representation": "raw_dto",
+            "type_definition": {
+              "kind": "record",
+              "fields": [
+                {
+                  "name": "asset_id",
+                  "required": true,
+                  "type_definition": {
+                    "kind": "string",
+                    "min_length": 0,
+                    "max_length": 128
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "representation": "typed_value",
+            "type_definition": {
+              "kind": "enum",
+              "members": [
+                "parked",
+                "moving"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "descriptor_kind": "tool_result",
+        "schema_ref": {
+          "artifact_kind": "tool_output_schema",
+          "artifact_id": "output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "payload_representation": "typed_value",
+        "payload_type": {
+          "kind": "record",
+          "fields": [
+            {
+              "name": "state",
+              "required": false,
+              "type_definition": {
+                "kind": "enum",
+                "members": [
+                  "parked",
+                  "moving"
+                ]
+              }
+            }
+          ]
+        },
+        "evidence_fields": [
+          {
+            "name": "mask",
+            "required": false,
+            "multiple": true
+          }
+        ],
+        "output_declarations": [
+          {
+            "output_name": "state",
+            "value_path": [
+              "state"
+            ],
+            "required": true
+          }
+        ]
+      }
+    ]
+  }
+}

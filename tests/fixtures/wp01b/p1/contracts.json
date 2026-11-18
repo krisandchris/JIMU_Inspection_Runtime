@@ -1,0 +1,1052 @@
+{
+  "artifacts": {
+    "question_selection": {
+      "schema_version": "1.0.0",
+      "policy_id": "question_selection",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "question_selection",
+        "mode": "all_declared",
+        "mandatory_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "optional_question_refs": [],
+        "optional_source": "all",
+        "fallback": "include_all_optional",
+        "ordering": "profile_order"
+      }
+    },
+    "unknown": {
+      "schema_version": "1.0.0",
+      "policy_id": "unknown",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "unknown",
+        "insufficient_visibility": "unknown",
+        "transport_failure": "no_fact",
+        "envelope_failure": "no_fact",
+        "item_validation_failure": "error",
+        "non_known_value": "forbidden",
+        "reason_required": true
+      }
+    },
+    "question_validation": {
+      "schema_version": "1.0.0",
+      "policy_id": "question_validation",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "question_validation",
+        "coercion": "forbid",
+        "extra_fields": "forbid",
+        "association": "exact_question_ref",
+        "missing_item": "error",
+        "invalid_record": "whole_fact_error",
+        "sibling_retention": "trusted_envelope_only"
+      }
+    },
+    "evidence": {
+      "schema_version": "1.0.0",
+      "policy_id": "evidence",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "evidence",
+        "required_evidence_types": [],
+        "allowed_evidence_types": [
+          "original_image"
+        ],
+        "on_missing": "block_result",
+        "original_media_required": true,
+        "retention_class": {
+          "vocabulary_ref": {
+            "artifact_kind": "vocabulary",
+            "artifact_id": "retention",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "member": "synthetic"
+        },
+        "retention_duration_seconds": 100,
+        "access_scope": "task"
+      }
+    },
+    "tool_execution": {
+      "schema_version": "1.0.0",
+      "policy_id": "execution",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "tool_execution",
+        "timeout_ms": 100,
+        "max_attempts": 1,
+        "max_concurrency": 1,
+        "input_byte_limit": 100,
+        "retryable_error_classes": [],
+        "whole_step_retry": true
+      }
+    },
+    "tool_failure": {
+      "schema_version": "1.0.0",
+      "policy_id": "failure",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "tool_failure",
+        "requirement": "required",
+        "required_descendants": "block",
+        "fact_failure": "error",
+        "optional_continuation": "block"
+      }
+    },
+    "resource_requirements": {
+      "schema_version": "1.0.0",
+      "policy_id": "resources",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "resource_requirements",
+        "resource_class": "cpu",
+        "max_concurrency": 1,
+        "timeout_ms": 100,
+        "input_byte_limit": 100,
+        "output_byte_limit": 100
+      }
+    },
+    "provider": {
+      "schema_version": "1.0.0",
+      "policy_id": "provider",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "provider",
+        "routing_mode": "remote_primary",
+        "primary_deployment_id": "remote-deployment",
+        "deployments": [
+          {
+            "provider_id": "provider",
+            "deployment_id": "remote-deployment",
+            "logical_model_id": "logical",
+            "provider_kind": "remote",
+            "actual_version_constraints": {
+              "allowed_deployment_versions": [
+                "1.0.0"
+              ],
+              "allowed_model_versions": [
+                "1.0.0"
+              ]
+            },
+            "required_features": [
+              "structured_output"
+            ]
+          },
+          {
+            "provider_id": "provider",
+            "deployment_id": "local-deployment",
+            "logical_model_id": "logical",
+            "provider_kind": "local",
+            "actual_version_constraints": {
+              "allowed_deployment_versions": [
+                "1.0.0"
+              ],
+              "allowed_model_versions": [
+                "1.0.0"
+              ]
+            },
+            "required_features": [
+              "structured_output"
+            ]
+          }
+        ],
+        "selection": "primary_then_explicit_fallback"
+      }
+    },
+    "fallback": {
+      "schema_version": "1.0.0",
+      "policy_id": "fallback",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "fallback",
+        "mode": "disabled",
+        "trigger_errors": [],
+        "allowed_transitions": [],
+        "contract_compatibility": "exact"
+      }
+    },
+    "rule": {
+      "schema_version": "1.0.0",
+      "policy_id": "rule",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "rule",
+        "mandatory": true,
+        "missing": "unknown",
+        "unknown": "unknown",
+        "error": "unknown",
+        "not_applicable": "unknown",
+        "not_evaluated": "unknown",
+        "required_guard": "block_unavailable",
+        "scan": "all_mandatory",
+        "true_result": "violation",
+        "false_result": "no_violation",
+        "unknown_result": "uncertain"
+      }
+    },
+    "conflict": {
+      "schema_version": "1.0.0",
+      "policy_id": "conflict",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "conflict",
+        "mode": "collect_all",
+        "early_exit": false,
+        "category_dedup": "set",
+        "preserve_rule_refs": true
+      }
+    },
+    "coverage": {
+      "schema_version": "1.0.0",
+      "policy_id": "coverage",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "coverage",
+        "no_hits": "uncertain",
+        "no_target": "uncertain",
+        "partial_without_match": "uncertain",
+        "partial_with_match": "violation",
+        "complete_negative": "all_mandatory_false_with_required_evidence",
+        "absence_strategy": "conservative"
+      }
+    },
+    "context_provenance": {
+      "schema_version": "1.0.0",
+      "policy_id": "context_provenance",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "context_provenance",
+        "fields": [
+          {
+            "field_path": [
+              "outer",
+              "leaf"
+            ],
+            "schema_ref": {
+              "artifact_kind": "context_schema",
+              "artifact_id": "context",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "required": true,
+            "time_sensitive": false,
+            "allowed_sources": [
+              "trusted_task_metadata"
+            ]
+          }
+        ],
+        "conflicting_sources": "block",
+        "missing_required": "block",
+        "internal_timezone": "UTC",
+        "naive_time": "reject"
+      }
+    },
+    "execution": {
+      "schema_version": "1.0.0",
+      "policy_id": "workflow",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "execution",
+        "workflow_version": "1.0.0",
+        "node_order": [
+          "N01",
+          "N02",
+          "N03",
+          "N04",
+          "N05",
+          "N06"
+        ],
+        "coverage_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "coverage",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "context_provenance_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "context_provenance",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "resource_requirements_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "resources",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "artifact_schema_refs": []
+      }
+    }
+  },
+  "registrations": [
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "question_selection",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "question_selection",
+          "mode": "all_declared",
+          "mandatory_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_question_refs": [],
+          "optional_source": "all",
+          "fallback": "include_all_optional",
+          "ordering": "profile_order"
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "unknown",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "unknown",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "unknown",
+          "insufficient_visibility": "unknown",
+          "transport_failure": "no_fact",
+          "envelope_failure": "no_fact",
+          "item_validation_failure": "error",
+          "non_known_value": "forbidden",
+          "reason_required": true
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_validation",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "question_validation",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "question_validation",
+          "coercion": "forbid",
+          "extra_fields": "forbid",
+          "association": "exact_question_ref",
+          "missing_item": "error",
+          "invalid_record": "whole_fact_error",
+          "sibling_retention": "trusted_envelope_only"
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "evidence",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "evidence",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "evidence",
+          "required_evidence_types": [],
+          "allowed_evidence_types": [
+            "original_image"
+          ],
+          "on_missing": "block_result",
+          "original_media_required": true,
+          "retention_class": {
+            "vocabulary_ref": {
+              "artifact_kind": "vocabulary",
+              "artifact_id": "retention",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "member": "synthetic"
+          },
+          "retention_duration_seconds": 100,
+          "access_scope": "task"
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "execution",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "execution",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "tool_execution",
+          "timeout_ms": 100,
+          "max_attempts": 1,
+          "max_concurrency": 1,
+          "input_byte_limit": 100,
+          "retryable_error_classes": [],
+          "whole_step_retry": true
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "failure",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "failure",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "tool_failure",
+          "requirement": "required",
+          "required_descendants": "block",
+          "fact_failure": "error",
+          "optional_continuation": "block"
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "resources",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "resources",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "resource_requirements",
+          "resource_class": "cpu",
+          "max_concurrency": 1,
+          "timeout_ms": 100,
+          "input_byte_limit": 100,
+          "output_byte_limit": 100
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "provider",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "provider",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "provider",
+          "routing_mode": "remote_primary",
+          "primary_deployment_id": "remote-deployment",
+          "deployments": [
+            {
+              "provider_id": "provider",
+              "deployment_id": "remote-deployment",
+              "logical_model_id": "logical",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "structured_output"
+              ]
+            },
+            {
+              "provider_id": "provider",
+              "deployment_id": "local-deployment",
+              "logical_model_id": "logical",
+              "provider_kind": "local",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "structured_output"
+              ]
+            }
+          ],
+          "selection": "primary_then_explicit_fallback"
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "fallback",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "fallback",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "fallback",
+          "mode": "disabled",
+          "trigger_errors": [],
+          "allowed_transitions": [],
+          "contract_compatibility": "exact"
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "rule",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "rule",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "rule",
+          "mandatory": true,
+          "missing": "unknown",
+          "unknown": "unknown",
+          "error": "unknown",
+          "not_applicable": "unknown",
+          "not_evaluated": "unknown",
+          "required_guard": "block_unavailable",
+          "scan": "all_mandatory",
+          "true_result": "violation",
+          "false_result": "no_violation",
+          "unknown_result": "uncertain"
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "conflict",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "conflict",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "conflict",
+          "mode": "collect_all",
+          "early_exit": false,
+          "category_dedup": "set",
+          "preserve_rule_refs": true
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "coverage",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "coverage",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "coverage",
+          "no_hits": "uncertain",
+          "no_target": "uncertain",
+          "partial_without_match": "uncertain",
+          "partial_with_match": "violation",
+          "complete_negative": "all_mandatory_false_with_required_evidence",
+          "absence_strategy": "conservative"
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "context_provenance",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "context_provenance",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "context_provenance",
+          "fields": [
+            {
+              "field_path": [
+                "outer",
+                "leaf"
+              ],
+              "schema_ref": {
+                "artifact_kind": "context_schema",
+                "artifact_id": "context",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+              },
+              "required": true,
+              "time_sensitive": false,
+              "allowed_sources": [
+                "trusted_task_metadata"
+              ]
+            }
+          ],
+          "conflicting_sources": "block",
+          "missing_required": "block",
+          "internal_timezone": "UTC",
+          "naive_time": "reject"
+        }
+      }
+    },
+    {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "workflow",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "workflow",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "execution",
+          "workflow_version": "1.0.0",
+          "node_order": [
+            "N01",
+            "N02",
+            "N03",
+            "N04",
+            "N05",
+            "N06"
+          ],
+          "coverage_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "coverage",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "context_provenance_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "context_provenance",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "resource_requirements_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "resources",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "artifact_schema_refs": []
+        }
+      }
+    }
+  ],
+  "evaluated_fallback": {
+    "schema_version": "1.0.0",
+    "policy_id": "fallback",
+    "version": "1.0.0",
+    "policy": {
+      "policy_kind": "fallback",
+      "mode": "explicit_evaluated",
+      "trigger_errors": [
+        "timeout"
+      ],
+      "allowed_transitions": [
+        {
+          "from_deployment_id": "remote-deployment",
+          "to_deployment_id": "local-deployment"
+        }
+      ],
+      "contract_compatibility": "exact",
+      "evaluation_refs": [
+        {
+          "report_id": "report",
+          "version": "1.0.0",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "review_registry_id": "trusted-registry"
+        }
+      ]
+    }
+  },
+  "local_provider": {
+    "schema_version": "1.0.0",
+    "policy_id": "provider",
+    "version": "1.0.0",
+    "policy": {
+      "policy_kind": "provider",
+      "routing_mode": "local_primary_exception",
+      "primary_deployment_id": "local-deployment",
+      "deployments": [
+        {
+          "provider_id": "provider",
+          "deployment_id": "remote-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "remote",
+          "actual_version_constraints": {
+            "allowed_deployment_versions": [
+              "1.0.0"
+            ],
+            "allowed_model_versions": [
+              "1.0.0"
+            ]
+          },
+          "required_features": [
+            "structured_output"
+          ]
+        },
+        {
+          "provider_id": "provider",
+          "deployment_id": "local-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "local",
+          "actual_version_constraints": {
+            "allowed_deployment_versions": [
+              "1.0.0"
+            ],
+            "allowed_model_versions": [
+              "1.0.0"
+            ]
+          },
+          "required_features": [
+            "structured_output"
+          ]
+        }
+      ],
+      "selection": "primary_then_explicit_fallback",
+      "local_primary_exception": {
+        "exception_id": "exception",
+        "version": "1.0.0",
+        "applicable_capabilities": [
+          "object_observation"
+        ],
+        "reason": "privacy_restriction",
+        "rationale": "Synthetic exception fixture",
+        "approval_ref": {
+          "report_id": "report",
+          "version": "1.0.0",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "review_registry_id": "trusted-registry"
+        },
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_until": "2027-01-01T00:00:00Z"
+      }
+    }
+  },
+  "review": {
+    "report_ref": {
+      "report_id": "report",
+      "version": "1.0.0",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "review_registry_id": "trusted-registry"
+    },
+    "verdict": "approved",
+    "valid_from": "2026-01-01T00:00:00Z",
+    "valid_until": "2027-01-01T00:00:00Z",
+    "assessments": [
+      {
+        "assessment_kind": "fallback_transition",
+        "source": {
+          "provider_id": "provider",
+          "deployment_id": "remote-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "remote",
+          "deployment_version": "1.0.0",
+          "model_version": "1.0.0"
+        },
+        "target": {
+          "provider_id": "provider",
+          "deployment_id": "local-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "local",
+          "deployment_version": "1.0.0",
+          "model_version": "1.0.0"
+        },
+        "capability": "object_observation",
+        "scope": {
+          "scope_kind": "binding",
+          "binding_refs": [
+            {
+              "artifact_kind": "model_binding",
+              "artifact_id": "binding",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ]
+        },
+        "trigger_errors": [
+          "timeout"
+        ],
+        "input_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-input",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "output_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "contract_compatibility": "exact",
+        "quality_evaluated": true
+      },
+      {
+        "assessment_kind": "local_primary_exception",
+        "exception_id": "exception",
+        "exception_version": "1.0.0",
+        "primary": {
+          "provider_id": "provider",
+          "deployment_id": "local-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "local",
+          "deployment_version": "1.0.0",
+          "model_version": "1.0.0"
+        },
+        "applicable_capabilities": [
+          "object_observation"
+        ],
+        "scope": {
+          "scope_kind": "binding",
+          "binding_refs": [
+            {
+              "artifact_kind": "model_binding",
+              "artifact_id": "binding",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ]
+        },
+        "reason": "privacy_restriction"
+      }
+    ]
+  },
+  "model": {
+    "schema_version": "1.0.0",
+    "model_binding_id": "binding",
+    "version": "1.0.0",
+    "capability": "object_observation",
+    "logical_model_id": "logical",
+    "provider_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "provider",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "resource_requirements_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "resources",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "fallback_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "fallback",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "input_schema_ref": {
+      "artifact_kind": "response_schema",
+      "artifact_id": "model-input",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "output_schema_ref": {
+      "artifact_kind": "response_schema",
+      "artifact_id": "model-output",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "prompt_template_ref": {
+      "artifact_kind": "prompt_template",
+      "artifact_id": "prompt",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "binding_ref": {
+    "artifact_kind": "model_binding",
+    "artifact_id": "binding",
+    "version": "1.0.0",
+    "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "prompt": {
+    "ref": {
+      "artifact_kind": "prompt_template",
+      "artifact_id": "prompt",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "definition": {
+      "schema_version": "1.0.0",
+      "prompt_template_id": "prompt",
+      "version": "1.0.0",
+      "purpose": "object_observation",
+      "template_text": "{image}",
+      "variables": [
+        {
+          "name": "image",
+          "source": "image_reference",
+          "field_path": [],
+          "schema_ref": {
+            "artifact_kind": "attribute_schema",
+            "artifact_id": "image",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "required": true,
+          "on_missing": "block"
+        }
+      ],
+      "response_schema_ref": {
+        "artifact_kind": "response_schema",
+        "artifact_id": "model-output",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "rendering_policy": "literal_substitution"
+    }
+  },
+  "context_descriptor": {
+    "descriptor_kind": "raw_dto",
+    "schema_ref": {
+      "artifact_kind": "context_schema",
+      "artifact_id": "context",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "type_definition": {
+      "kind": "record",
+      "fields": [
+        {
+          "name": "outer",
+          "required": false,
+          "type_definition": {
+            "kind": "record",
+            "fields": [
+              {
+                "name": "leaf",
+                "required": true,
+                "type_definition": {
+                  "kind": "string",
+                  "min_length": 0,
+                  "max_length": 128
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "selection_profile": {
+    "schema_version": "1.0.0",
+    "profile_id": "synthetic.profile",
+    "version": "1.0.0",
+    "entity_ref": {
+      "artifact_kind": "entity",
+      "artifact_id": "synthetic",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "discovery_binding_ref": {
+      "artifact_kind": "model_binding",
+      "artifact_id": "discovery",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "grounding_binding": {
+      "kind": "model",
+      "model_binding_ref": {
+        "artifact_kind": "model_binding",
+        "artifact_id": "grounding",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    "observation_binding_ref": {
+      "artifact_kind": "model_binding",
+      "artifact_id": "observation",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "facet_refs": [],
+    "question_refs": [
+      {
+        "artifact_kind": "question",
+        "artifact_id": "question",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "question_selection_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "question_selection",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "rule_set_refs": [],
+    "tool_plan_ref": {
+      "artifact_kind": "tool_plan",
+      "artifact_id": "synthetic",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "applicability_policy_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "applicability",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/contract/test_b_schema_inventory.py",
+    "tests/unit/test_b_schema_export.py",
+    "-q",
+    "-k",
+    "not cli_check_is_read_only_and_detects_mismatch",
+    "--junitxml=planning/implementation_evidence/WP-01B/execution_02/logs/e1/independent_targeted.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T15:59:02.393781+00:00",
+  "ended_at": "2026-11-17T15:59:46.637876+00:00",
+  "exit_code": 0,
+  "stdout": "...............................                                          [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_02/logs/e1/independent_targeted.xml -\n31 passed, 4 deselected in 44.01s\n",
+  "stderr": ""
+}

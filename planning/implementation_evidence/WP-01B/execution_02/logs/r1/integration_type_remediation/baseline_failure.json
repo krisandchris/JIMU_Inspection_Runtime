@@ -1,0 +1,20 @@
+{
+  "source": "planning/implementation_evidence/WP-01B/execution_02/logs/integration/mypy.json",
+  "sha256": "cc029beb4b50c13ef947c4017fdabcc09fff7d48fdb4d7a87e294441a693eed8",
+  "original_result": {
+    "command": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "mypy",
+      "src/jimu_runtime"
+    ],
+    "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+    "start": "2026-11-17T16:06:45.484696+00:00",
+    "end": "2026-11-17T16:06:46.509302+00:00",
+    "exit_code": 1,
+    "stdout": "src/jimu_runtime/domain/fact_schemas/registry.py:154: error: Argument 4 to \"_fail\" has incompatible type \"tuple[str | int, ...]\"; expected \"tuple[str, ...]\"  [arg-type]\nFound 1 error in 1 file (checked 40 source files)\n",
+    "stderr": ""
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "$defs": {
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "items": {
+    "$ref": "#/$defs/FieldName"
+  },
+  "maxItems": 8,
+  "type": "array"
+}

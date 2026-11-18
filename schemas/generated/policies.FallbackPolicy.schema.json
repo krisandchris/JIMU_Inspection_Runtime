@@ -1,0 +1,213 @@
+{
+  "$defs": {
+    "DisabledFallbackPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_transitions": {
+          "items": {
+            "$ref": "#/$defs/FallbackTransition"
+          },
+          "maxItems": 0,
+          "title": "Allowed Transitions",
+          "type": "array"
+        },
+        "contract_compatibility": {
+          "const": "exact",
+          "title": "Contract Compatibility",
+          "type": "string"
+        },
+        "mode": {
+          "const": "disabled",
+          "title": "Mode",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "fallback",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "trigger_errors": {
+          "items": {
+            "$ref": "#/$defs/TriggerError"
+          },
+          "maxItems": 0,
+          "title": "Trigger Errors",
+          "type": "array"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "contract_compatibility",
+        "mode",
+        "trigger_errors",
+        "allowed_transitions"
+      ],
+      "title": "DisabledFallbackPolicy",
+      "type": "object"
+    },
+    "EvaluatedFallbackPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_transitions": {
+          "items": {
+            "$ref": "#/$defs/FallbackTransition"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Transitions",
+          "type": "array"
+        },
+        "contract_compatibility": {
+          "const": "exact",
+          "title": "Contract Compatibility",
+          "type": "string"
+        },
+        "evaluation_refs": {
+          "items": {
+            "$ref": "#/$defs/ReviewReportRef"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Evaluation Refs",
+          "type": "array"
+        },
+        "mode": {
+          "const": "explicit_evaluated",
+          "title": "Mode",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "fallback",
+          "title": "Policy Kind",
+          "type": "string"
+        },
+        "trigger_errors": {
+          "items": {
+            "$ref": "#/$defs/TriggerError"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Trigger Errors",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "policy_kind",
+        "contract_compatibility",
+        "mode",
+        "trigger_errors",
+        "allowed_transitions",
+        "evaluation_refs"
+      ],
+      "title": "EvaluatedFallbackPolicy",
+      "type": "object"
+    },
+    "FallbackTransition": {
+      "additionalProperties": false,
+      "properties": {
+        "from_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "From Deployment Id",
+          "type": "string"
+        },
+        "to_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "To Deployment Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from_deployment_id",
+        "to_deployment_id"
+      ],
+      "title": "FallbackTransition",
+      "type": "object"
+    },
+    "ReviewReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "review_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Review Registry Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "version",
+        "sha256",
+        "review_registry_id"
+      ],
+      "title": "ReviewReportRef",
+      "type": "object"
+    },
+    "TriggerError": {
+      "enum": [
+        "transport",
+        "timeout",
+        "rate_limit",
+        "unavailable"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "disabled": "#/$defs/DisabledFallbackPolicy",
+      "explicit_evaluated": "#/$defs/EvaluatedFallbackPolicy"
+    },
+    "propertyName": "mode"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/DisabledFallbackPolicy"
+    },
+    {
+      "$ref": "#/$defs/EvaluatedFallbackPolicy"
+    }
+  ]
+}

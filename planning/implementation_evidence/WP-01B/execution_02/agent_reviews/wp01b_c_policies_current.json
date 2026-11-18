@@ -1,0 +1,45 @@
+{
+  "agent": "wp01b_c_policies",
+  "session_id": "01a1e95c-993a-78a2-9621-b11e49737583",
+  "captured_at": "2026-11-17T16:22:11.113092+00:00",
+  "final_reports": [
+    {
+      "timestamp": "2026-11-17T15:21:13.737Z",
+      "text": "P1独立代码审查：**C0=0，C1=1，C2=1；建议整改C1后再验收。** 未写文件、未运行pytest、未进行Git操作。\n\n**C1：Prompt目录冲突未检测，结果依赖输入顺序。**\n\n位置：`src/jimu_runtime/domain/validation/policies.py:448–461`。\n\n`validate_model_policies`逐项验证PromptRegistration后直接`next()`取首个匹配ref，没有与Policy/Model目录一致的数量、唯一身份及冲突检查。相同Prompt exact-ref可以配两份不同的合法definition；一份purpose匹配、一份不匹配时：\n\n- 输入 `(正确, 冲突)`：`model.prompt_compatibility=passed`\n- 输入 `(冲突, 正确)`：`model.prompt_compatibility=invalid`\n\n已用`.venv/bin/python -B`只读probe实际复现，exit 0。probe从现有fixture构造同ref、不同purpose的两个registration，两个body均经模型重新验证。\n\n建议：索引前限制目录大小，检测kind/id/version以及exact-ref对应body冲突；冲突时两种顺序均拒绝。明确相同内容重复是拒绝还是去重。补同ref异body、异digest、反序及tainted-instance测试。不能以“未验证真实digest”作为接受互相矛盾内容的理由。\n\n**C2：无关窄scope assessment会阻止有效宽scope coverage。**\n\n位置：同文件`:193–209`，调用位于local/fallback coverage循环。\n\n`_scope_covers`遇到profile/region scope且调用未提供owner时立即抛`incomplete`。即使同一report另有足以覆盖当前binding的合法binding-scope assessment，整个检查仍被中断。\n\n只读probe：在原已通过fallback fixture中同时放入有效binding assessment和额外profile assessment，不传profile_ref；两种assessment顺序均返回`review.profile_scope_missing`，不再得到fallback coverage passed。\n\n这是保守误拒，未发现越权放行。建议先累计适用assessment的覆盖；仅在最终覆盖不足且确实需要缺失owner时返回incomplete。补“完整宽scope覆盖+额外窄scope”的回归例。\n\n已确认的代码证据：\n\n- `policies.py:844–860`明确导出`NonExpressionPolicyArtifact`，无完整`PolicyArtifact`；14个体没有冒充16分支完整union。\n- fixed bool使用显式bool校验；资源分支、retry、selection、clock/derivation presence有严格模型约束及生成Schema条件。\n- `resolve_policy:156–175`拒绝重复身份/异digest并重新验证registration；probe确认copy注入extra的root/artifact/policy/ref全部拒绝。\n- fallback逐transition、trigger及所有允许版本组合检查exact IO、capability和scope；local exception核对独立窗口、reason和版本覆盖，没有自动切换实现。\n- ReviewMetadata仅作为可信resolver输出参与一致性检查，未重新计算含Binding digest的report hash，符合冻结的防摘要环边界。\n- context derivation显式source owner/schema输入，缺失/歧义分开，derived依赖cycle拒绝；不执行派生。\n- Tool execution预算只允许收紧ResourceRequirements；unknown、false、no_fact没有合并。\n\n日志证据：P1 `final_pytest.json/xml`记录指定三文件 **121 passed**；Ruff、format、mypy均exit 0；环境为Python3.12.3/Pydantic2.12.5。本次独立核对`after_sha256.json`全部7项与当前字节一致，probe输出`p1_logged_file_hashes_match True`。这些是既有执行日志，我没有重跑测试。\n\n`RUNTIME_NOT_RUN`：真实review可信解析、独立质量、Provider切换、实际预算执行、派生执行及完整Bundle/AST/工作流均未验证。"
+    },
+    {
+      "timestamp": "2026-11-17T15:32:01.450Z",
+      "text": "定向复核通过：此前 **C1、C2均已修复**；本次修复范围未发现新增C0–C2。\n\n- **C1**：`validation/policies.py:211–233`先限制Prompt目录≤1024，重新验证实例并拒绝重复kind/id/version；再匹配目标。新增回归覆盖异body、异digest、重复、tainted、超限及正反顺序。独立CPU probe确认冲突两种顺序均返回`invalid/model.prompt_catalogue_conflict`。\n- **C2**：`:183–208`将scope匹配区分已覆盖、已排除、owner缺失；local/fallback分别累计有效与未决版本覆盖。独立probe确认宽scope已覆盖时，两种assessment顺序均保留coverage passed；仅窄scope且owner缺失仍为incomplete，不授予权限。测试另覆盖local、profile/region及已知排除不能被unknown覆盖。\n\n证据已直接核对：`review_remediation_01/before_fix.json`记录18个回归失败；修复后`pytest.json`记录140 passed、exit 0，Ruff/format/mypy均exit 0。该目录`after_sha256.json`两项与实际源码/测试字节完全一致。\n\n本次只运行`.venv/bin/python -B`只读probes，未运行pytest、修改文件或操作Git。`RUNTIME_NOT_RUN`；结论仅关闭上述两项代码审查问题，不代表整包验收。"
+    },
+    {
+      "timestamp": "2026-11-17T15:44:27.470Z",
+      "text": "两轮定向复核通过，相关missing-vs-known-wrong-digest问题已修复；本次范围未发现新增C0–C2。\n\n- **P1 remediation_02**：`validation/policies.py:184–224`新增有类型的内容/report resolver。Prompt、nested/proposal ModelBinding、retention Vocabulary均先比较kind/id/version，再检查digest；report比较registry/id/version后检查SHA。已知身份异摘要为`invalid`，真正缺失为`incomplete`，未重新计算report正文摘要。\n- **M1 remediation_03**：`validation/tool_plans.py:92–131`仅将`registry.unknown_identity`转为`incomplete`；其余错误保持`invalid`。两处consumer调用共享adapter，保留原code/path/message/related_refs，不再把JSON报告塞入message。\n\n实际证据：\n\n- P1：before日志 **6 failed、10 passed**；最终 **156 passed**。\n- M1：修正fixture后的before逻辑日志 **5 failed**；最终 **50 passed**。\n- 两轮最终pytest、Ruff、format、mypy均exit 0；两份`after_sha256.json`全部与当前文件匹配。\n- 独立只读CPU probe确认：Prompt缺失→incomplete、异digest→invalid；Tool definition/plan两处Registry缺失→incomplete、异digest→invalid；4096字符原诊断完整保留。\n\n未运行pytest、修改文件或操作Git。一次probe因函数名拼写错误退出1，随后改用直接API probe成功，未计为验证通过。`RUNTIME_NOT_RUN`；结论仅覆盖上述整改。"
+    },
+    {
+      "timestamp": "2026-11-17T15:55:28.618Z",
+      "text": "V1独立审查：**C0=0、C1=0、C2=1；尚不能最终PASS。**\n\n**C2：Question组件Prompt的response Schema未做有限目录解析。**\n\n位置：`validation/definitions.py:390–395、468`。\n\nQuestion检查只验证Prompt purpose；Prompt closure检查变量/partial图，未解析每个Prompt的`response_schema_ref`。Model层response pin检查已存在，但覆盖不到独立Question组件Prompt及未被Model引用的Prompt。\n\n独立只读probe：\n\n1. 使用V1正例；\n2. 修改`prompt-question.response_schema_ref.digest`为另一合法摘要；另测将artifact_id改为不存在的值；\n3. 两例均仍仅`deferred`，没有invalid/incomplete诊断，questions及prompt_closure仍有passed。\n\n建议：在Prompt closure逐节点解析其response descriptor。已知身份异digest→invalid，缺descriptor→incomplete；这只是§9规定的exact-ref检查，不实现业务Schema compiler。补Question组件、未使用Prompt及partial的回归例。\n\n其余已审范围：typed registration adapter、目录冲突preflight、Facet精确交集、partial/变量闭包、Context/current owner、Grounding输入覆盖、P1/M1状态合并、unused入口以及always-deferred边界，暂未发现新增实质缺陷。Primary要求的model responsepin、overflow保留invalid、sourcepin优先检查已见实际代码与回归例。\n\n当前日志最后记录三文件 **55 passed**、Ruff/mypy exit 0；最终日志/hash封套尚未出现，不能视为最终快照证据。未运行pytest、写文件或操作Git；CPU probes exit 0。`RUNTIME_NOT_RUN`。"
+    },
+    {
+      "timestamp": "2026-11-17T16:01:49.309Z",
+      "text": "定向复核通过，V1 response Schema **C2已关闭**；本次修复范围未发现新增C0–C2。\n\n- `validation/definitions.py:480`在closure逐个Prompt解析`response_schema_ref`，覆盖Question、partial及孤立Prompt。\n- 六个回归分别验证异digest→`invalid/schema_digest_mismatch`、缺descriptor→`incomplete/descriptor_unavailable`。\n- before日志真实保留原bug的两例deferred结果。\n- 最终JUnit：**76 passed，0失败/错误/跳过**；Ruff、format、mypy均exit 0。\n- `after_sha256.json`全部7项与当前文件一致。\n\n仅文本读取及标准库`python -B`核对日志/hash，未import项目源码、运行pytest、修改文件或操作Git。`RUNTIME_NOT_RUN`；不代表整WP验收。"
+    }
+  ],
+  "messages_to_primary": [
+    {
+      "timestamp": "2026-11-17T15:19:39.100Z",
+      "message": "gAAAAABq_HCKIhDXQ5o3ZfBYk0MhYFWmJRI9EKkrL0gy7SvFJgA2P3efm7uQxd904DcqiWMQy-z3DfId18qUVp7PpZ9iIQz3aYYg8MBcUWmENnmFGL6w_XCwwP3Ep1rFURBm2xov88PhfjhYNija8HKTvCeBEqlXHgwBTk_5WmeuP_7UsEyM-fU5bmY0xSNLtoiTIB4XYflR-vmoyQakUtVWfaiRbzrg6BBpD4NNBWTNDVv83bm4M9O-CCLtwsQNkr8Xh_vG2DNGrHZSgPpS4ANdTFRO29ybQE-1jxFOw84b5DsIl47nfTmEvVUImIKWdaW7efzvYCl3LQJVIjUcVGUOfnCDQ-oF4JQG-fvWNN61KnB3qj8UYJ8ymZbCc-qV5HjdyNYFsSYbkNZmQDbGAPU5mPWsMpaLk9YbFfMM0VcznKyGQQqMtEyrXao1DsRC9WKEdPCG_kD2gKdwA6xRJAq-ji6JyDGCuQ=="
+    },
+    {
+      "timestamp": "2026-11-17T15:54:26.328Z",
+      "message": "gAAAAABq_HiyzxhLEEwK5nVyKg3j36NAW5ipVVJ7fCLRiCgevPqreJsV1g_-CSkpEWRXigaNMNkvco1ajvD3qQjqCE76A-jK_T7jX-QRDJpwM6-S_woj5iJRfP2VWyNT2vTVD6pEKL3wrExE3qDc6MBXAiaiZHxhhsF_tmftUpYthvY8b24e3EhI8S6cncM86DfJOjQkQiNQcji4jSj-E0ht9yBdtDh8zk7OKp2pNHKoXoqDDz9etOduY_ccKZjihqeQaFO4lAbtV5hdolDor2w7MEGArLB5BSqTjl8eEW3_FrLWcqt85mXpWgkWeSpL_28Espc4LstJhD3B8ChsWmeTWAG_lxshWtk0Ie-FCnGCz5hNB-9RJ5U5eoqMzjEZVieAmbocoHoivUQyD8ENEXrccsxHMVSSmzuyZ_R3hES1tXgDMy3LFGKFZ31KBWDoSMChPhRjOYxPE_BWKWRmp7My2M6X-JnisRVsrT9h-qGmzSkB4NFEuGc="
+    },
+    {
+      "timestamp": "2026-11-17T15:54:48.514Z",
+      "message": "gAAAAABq_HjIXrmhscobs3QjmlyKLFFxcJjw5iLUBBsb3AcqBte4ni1wEfudQ7eiII05nwppCsOIsGK9xZrwVBG3I8KBKOcXsPULgVNrdGjwRMtfiWLB1_wdhPjZkYxR27xGswn88J8ZGqhWsl7d7mIH-JTfxYe-jltZHnA0W4QIGDD6FY99B6cR4JLX-D4LQsO5R48zOP69B3kMPQ0ZGtDgmfZ2QHOqiKTXi6viqcZz0nt6QlmSk_AXvaH3oSS_pwDTTwAHue6xQqhfFLA8oZi9OM6JbpCYqjltvNUc8eAD4-OtUGiz-ea3NVtzXzFATiJ1inUNe_V8919Vhdm-1V5RHQFVyjCUp8Ey0--yS3W-i8pYuywH3HbEVf0ypQvyYIsse9i2Peke5u6kn1xQeP9HIaDypL0iHV-bGn7VgcmEMVv7ruYVrIGBZ3k6817yfX1RancorTiFkbXhEaio7VY_EYiKXwyxh3PnZWUjWl-ViQorVqfXAEpSZpTSf7shpY2cW7-pXM30sX0P0pcaCsmq7YCj0KxZMIBoDwWM3tOFzfurEtH63f638g285wU1lt7_unJgHsoeAVCBg7jqn8DT-LUni0-WbmszvjXDNEqeuRWikSHb84KyMj3xOxOqd12HJEVge2zEgolt1H-kbJuv86kIDhX0n4kIRooTO6FDaaN0zh5t664bhVfmy9Tk-aqtZkcuZ8S3_5u9u8npqaxddnbRujB55X2UvHN58q0VFTB4GUS5RC976mY6NMoRCPc9i2R-eKfKGfxmZVhkVkqtqylC8aNJFMW6iOfEglhCjfX4_H51e0gyu7bjxDmAIMayzD_sr9OrsyOcbpxSfMPl0tHDgZgQm2OVapNnEmJAYWrbxW_mx8TdkbgWEIrynUukF8lx4SANIHoP3nmi52VBbSYNrptt8cV1tHWTy5kg3BkbTXW-48GJJuHY3liu3DCYJr-RVpo-"
+    },
+    {
+      "timestamp": "2026-11-17T15:55:15.045Z",
+      "message": "gAAAAABq_HjigjhBmj7o_GDuN3JKuEjikWCzkl5dwdMVo4ahVk2ZTZW_5cKSMImGGX_-5WyHPHKSdcJKB5PwjMeevqaSpKk6QDpinF7dk_XckVfnB3PIdftG4QjOm4HuG6VUtpePIew_VRI5RI3P0IKTY7wcrlgvqfcBtN1qQcFYY0xtIJR__wDMjYJv_hHJ7pJS-tro_rjvTGZESNLLRJ614X2a1RNSTTf9D107m9GN6lk0sX-fkkew0oc-iaj7AHU4p3s4oMdGnHAdmhy8LkkGER6qvNavoanl50-vYdwrvZhECbW91dUl04ACdOaybzilzNVD2c77FLUZYuhO16vNbWlirzOh3bWEtiA7F0xDFT1_jQZ5-Bt4AR44bTb46938HQ4xnpLDizUvWr3k2bQgKbDXWyqqlscNrKFrgMq3zFLdURCWt3gzhKXCek_Lu5ixrEFR5sCzVofgXLKow0rA0WIDo28Y9SFlfOkR11PbG_ij6jzmW4y3lC2rcPhBQHMQWNcgCo0I0FJZmM_BoFYKW_w_v_gu2o-oXA1TEORzE95t95Uq6YY="
+    }
+  ]
+}

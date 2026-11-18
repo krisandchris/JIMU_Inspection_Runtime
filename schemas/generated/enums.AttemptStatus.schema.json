@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "created",
+    "running",
+    "succeeded",
+    "failed",
+    "timed_out",
+    "cancelled",
+    "superseded"
+  ],
+  "title": "AttemptStatus",
+  "type": "string"
+}

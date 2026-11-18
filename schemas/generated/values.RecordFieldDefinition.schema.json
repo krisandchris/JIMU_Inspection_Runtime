@@ -1,0 +1,285 @@
+{
+  "$defs": {
+    "BooleanTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BooleanTypeDefinition",
+      "type": "object"
+    },
+    "BoundedString": {
+      "maxLength": 4096,
+      "type": "string"
+    },
+    "EnumTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enum",
+          "title": "Kind",
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "$ref": "#/$defs/BoundedString"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "members"
+      ],
+      "title": "EnumTypeDefinition",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "IntegerTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "IntegerTypeDefinition",
+      "type": "object"
+    },
+    "ListTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "item_type": {
+          "$ref": "#/$defs/TypeDefinition"
+        },
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_items": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__2",
+          "default": 256
+        },
+        "min_items": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__2",
+          "default": 0
+        }
+      },
+      "required": [
+        "kind",
+        "item_type"
+      ],
+      "title": "ListTypeDefinition",
+      "type": "object"
+    },
+    "NumberTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NumberTypeDefinition",
+      "type": "object"
+    },
+    "RecordFieldDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/FieldName"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "type_definition": {
+          "$ref": "#/$defs/TypeDefinition"
+        }
+      },
+      "required": [
+        "name",
+        "required",
+        "type_definition"
+      ],
+      "title": "RecordFieldDefinition",
+      "type": "object"
+    },
+    "RecordTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/RecordFieldDefinition"
+          },
+          "maxItems": 64,
+          "title": "Fields",
+          "type": "array"
+        },
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fields"
+      ],
+      "title": "RecordTypeDefinition",
+      "type": "object"
+    },
+    "StringTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_length": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__1",
+          "default": 4096
+        },
+        "min_length": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__1",
+          "default": 0
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "StringTypeDefinition",
+      "type": "object"
+    },
+    "TypeDefinition": {
+      "discriminator": {
+        "mapping": {
+          "bool": "#/$defs/BooleanTypeDefinition",
+          "enum": "#/$defs/EnumTypeDefinition",
+          "integer": "#/$defs/IntegerTypeDefinition",
+          "list": "#/$defs/ListTypeDefinition",
+          "number": "#/$defs/NumberTypeDefinition",
+          "record": "#/$defs/RecordTypeDefinition",
+          "string": "#/$defs/StringTypeDefinition"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BooleanTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/IntegerTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/NumberTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/StringTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/EnumTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/ListTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/RecordTypeDefinition"
+        }
+      ]
+    },
+    "jimu_runtime__domain__values__Size__1": {
+      "maximum": 4096,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "jimu_runtime__domain__values__Size__2": {
+      "maximum": 256,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$ref": "#/$defs/RecordFieldDefinition",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

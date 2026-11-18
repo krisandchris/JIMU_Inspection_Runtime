@@ -1,0 +1,22 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_support.py",
+    "tests/contract/test_b_ontology.py",
+    "tests/negative/test_b_ontology_invalid.py",
+    "-q",
+    "--junitxml=planning/implementation_evidence/WP-01B/execution_02/logs/s1/15_junit.xml"
+  ],
+  "started_at": "2026-11-17T14:15:03.850329+00:00",
+  "finished_at": "2026-11-17T14:15:04.663970+00:00",
+  "exit_code": 1,
+  "stdout": ".........................................F.............................. [ 59%]\n..................................................                       [100%]\n=================================== FAILURES ===================================\n________________ test_utc_schema_requires_explicit_zero_offset _________________\n\n    def test_utc_schema_requires_explicit_zero_offset() -> None:\n        schema = TypeAdapter(UTCDateTime).json_schema()\n        validator = Draft202012Validator(schema, format_checker=FormatChecker())\n        assert validator.is_valid(\"2026-01-01T00:00:00Z\")\n        assert validator.is_valid(\"2026-01-01T00:00:00+00:00\")\n        for invalid in (\n            \"2026-01-01T00:00:00\",\n            \"2026-01-01T00:00:00+08:00\",\n            \"not-a-date\",\n            None,\n        ):\n>           assert not validator.is_valid(invalid)\nE           AssertionError: assert not True\nE            +  where True = is_valid('2026-01-01T00:00:00')\nE            +    where is_valid = Draft202012Validator(schema={'format': 'date-time', 'type': 'string'}, format_checker=<FormatChecker checkers=['date', 'email', 'idn-email', 'ipv4', 'ipv6', 'regex', 'time', 'uuid']>).is_valid\n\ntests/contract/test_b_ontology.py:176: AssertionError\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/planning/implementation_evidence/WP-01B/execution_02/logs/s1/15_junit.xml -\n=========================== short test summary info ============================\nFAILED tests/contract/test_b_ontology.py::test_utc_schema_requires_explicit_zero_offset\n1 failed, 121 passed in 0.58s\n",
+  "stderr": ""
+}

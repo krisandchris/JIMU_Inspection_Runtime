@@ -1,0 +1,978 @@
+{
+  "$defs": {
+    "BooleanTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BooleanTypeDefinition",
+      "type": "object"
+    },
+    "BoundedString": {
+      "maxLength": 4096,
+      "type": "string"
+    },
+    "ConfidenceMetadataPolicy": {
+      "discriminator": {
+        "mapping": {
+          "forbidden": "#/$defs/ForbiddenConfidenceMetadataPolicy",
+          "optional": "#/$defs/OptionalConfidenceMetadataPolicy",
+          "required": "#/$defs/RequiredConfidenceMetadataPolicy"
+        },
+        "propertyName": "mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ForbiddenConfidenceMetadataPolicy"
+        },
+        {
+          "$ref": "#/$defs/OptionalConfidenceMetadataPolicy"
+        },
+        {
+          "$ref": "#/$defs/RequiredConfidenceMetadataPolicy"
+        }
+      ]
+    },
+    "CoordinateBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "coordinate_system": {
+          "$ref": "#/$defs/VocabularyMemberRef"
+        },
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        }
+      },
+      "required": [
+        "field_path",
+        "coordinate_system"
+      ],
+      "title": "CoordinateBinding",
+      "type": "object"
+    },
+    "CoordinateMetadata": {
+      "discriminator": {
+        "mapping": {
+          "declared": "#/$defs/DeclaredCoordinateMetadata",
+          "not_applicable": "#/$defs/NoCoordinateMetadata"
+        },
+        "propertyName": "mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NoCoordinateMetadata"
+        },
+        {
+          "$ref": "#/$defs/DeclaredCoordinateMetadata"
+        }
+      ]
+    },
+    "DeclaredCoordinateMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/CoordinateBinding"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Bindings",
+          "type": "array"
+        },
+        "mode": {
+          "const": "declared",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "bindings"
+      ],
+      "title": "DeclaredCoordinateMetadata",
+      "type": "object"
+    },
+    "DeclaredUnitMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/UnitBinding"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Bindings",
+          "type": "array"
+        },
+        "mode": {
+          "const": "declared",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "bindings"
+      ],
+      "title": "DeclaredUnitMetadata",
+      "type": "object"
+    },
+    "EnumTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enum",
+          "title": "Kind",
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "$ref": "#/$defs/BoundedString"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "members"
+      ],
+      "title": "EnumTypeDefinition",
+      "type": "object"
+    },
+    "FactScope": {
+      "enum": [
+        "object",
+        "execution"
+      ],
+      "title": "FactScope",
+      "type": "string"
+    },
+    "FactStatus": {
+      "enum": [
+        "known",
+        "unknown",
+        "error",
+        "not_applicable",
+        "not_evaluated"
+      ],
+      "title": "FactStatus",
+      "type": "string"
+    },
+    "FactStatusPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "error_diagnostics": {
+          "const": "required",
+          "title": "Error Diagnostics",
+          "type": "string"
+        },
+        "known_value": {
+          "const": "required",
+          "title": "Known Value",
+          "type": "string"
+        },
+        "non_known_reason": {
+          "const": "required",
+          "title": "Non Known Reason",
+          "type": "string"
+        },
+        "non_known_value": {
+          "const": "forbidden",
+          "title": "Non Known Value",
+          "type": "string"
+        },
+        "not_applicable_basis": {
+          "const": "required",
+          "title": "Not Applicable Basis",
+          "type": "string"
+        },
+        "not_evaluated_reason": {
+          "const": "required",
+          "title": "Not Evaluated Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "known_value",
+        "non_known_value",
+        "non_known_reason",
+        "error_diagnostics",
+        "not_applicable_basis",
+        "not_evaluated_reason"
+      ],
+      "title": "FactStatusPolicy",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FieldPath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "ForbiddenConfidenceMetadataPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "forbidden",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "ForbiddenConfidenceMetadataPolicy",
+      "type": "object"
+    },
+    "GlobalTypeLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "list_max_items": {
+          "maximum": 256,
+          "minimum": 1,
+          "title": "List Max Items",
+          "type": "integer"
+        },
+        "max_depth": {
+          "maximum": 8,
+          "minimum": 1,
+          "title": "Max Depth",
+          "type": "integer"
+        },
+        "record_max_fields": {
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Record Max Fields",
+          "type": "integer"
+        },
+        "string_max_length": {
+          "maximum": 4096,
+          "minimum": 1,
+          "title": "String Max Length",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "string_max_length",
+        "list_max_items",
+        "record_max_fields",
+        "max_depth"
+      ],
+      "title": "GlobalTypeLimits",
+      "type": "object"
+    },
+    "IntegerTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "IntegerTypeDefinition",
+      "type": "object"
+    },
+    "ListTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "item_type": {
+          "$ref": "#/$defs/TypeDefinition"
+        },
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_items": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__2",
+          "default": 256
+        },
+        "min_items": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__2",
+          "default": 0
+        }
+      },
+      "required": [
+        "kind",
+        "item_type"
+      ],
+      "title": "ListTypeDefinition",
+      "type": "object"
+    },
+    "NoCoordinateMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "not_applicable",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "NoCoordinateMetadata",
+      "type": "object"
+    },
+    "NoUnitMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "not_applicable",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "NoUnitMetadata",
+      "type": "object"
+    },
+    "NumberTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NumberTypeDefinition",
+      "type": "object"
+    },
+    "OptionalConfidenceMetadataPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_fact_statuses": {
+          "items": {
+            "$ref": "#/$defs/FactStatus"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Allowed Fact Statuses",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "interpretation": {
+          "const": "model_reported_not_calibrated_probability",
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "mode": {
+          "const": "optional",
+          "title": "Mode",
+          "type": "string"
+        },
+        "numeric_format": {
+          "const": "finite_number",
+          "title": "Numeric Format",
+          "type": "string"
+        }
+      },
+      "required": [
+        "allowed_fact_statuses",
+        "interpretation",
+        "numeric_format",
+        "mode"
+      ],
+      "title": "OptionalConfidenceMetadataPolicy",
+      "type": "object"
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "ProducerKind": {
+      "enum": [
+        "vlm_question",
+        "tool",
+        "system"
+      ],
+      "title": "ProducerKind",
+      "type": "string"
+    },
+    "RecordFieldDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/FieldName"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "type_definition": {
+          "$ref": "#/$defs/TypeDefinition"
+        }
+      },
+      "required": [
+        "name",
+        "required",
+        "type_definition"
+      ],
+      "title": "RecordFieldDefinition",
+      "type": "object"
+    },
+    "RecordTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/RecordFieldDefinition"
+          },
+          "maxItems": 64,
+          "title": "Fields",
+          "type": "array"
+        },
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fields"
+      ],
+      "title": "RecordTypeDefinition",
+      "type": "object"
+    },
+    "RequiredConfidenceMetadataPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_fact_statuses": {
+          "items": {
+            "$ref": "#/$defs/FactStatus"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Allowed Fact Statuses",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "interpretation": {
+          "const": "model_reported_not_calibrated_probability",
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "mode": {
+          "const": "required",
+          "title": "Mode",
+          "type": "string"
+        },
+        "numeric_format": {
+          "const": "finite_number",
+          "title": "Numeric Format",
+          "type": "string"
+        }
+      },
+      "required": [
+        "allowed_fact_statuses",
+        "interpretation",
+        "numeric_format",
+        "mode"
+      ],
+      "title": "RequiredConfidenceMetadataPolicy",
+      "type": "object"
+    },
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "StringTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_length": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__1",
+          "default": 4096
+        },
+        "min_length": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__1",
+          "default": 0
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "StringTypeDefinition",
+      "type": "object"
+    },
+    "TypeDefinition": {
+      "discriminator": {
+        "mapping": {
+          "bool": "#/$defs/BooleanTypeDefinition",
+          "enum": "#/$defs/EnumTypeDefinition",
+          "integer": "#/$defs/IntegerTypeDefinition",
+          "list": "#/$defs/ListTypeDefinition",
+          "number": "#/$defs/NumberTypeDefinition",
+          "record": "#/$defs/RecordTypeDefinition",
+          "string": "#/$defs/StringTypeDefinition"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BooleanTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/IntegerTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/NumberTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/StringTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/EnumTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/ListTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/RecordTypeDefinition"
+        }
+      ]
+    },
+    "UnitBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        },
+        "unit": {
+          "$ref": "#/$defs/VocabularyMemberRef"
+        }
+      },
+      "required": [
+        "field_path",
+        "unit"
+      ],
+      "title": "UnitBinding",
+      "type": "object"
+    },
+    "UnitMetadata": {
+      "discriminator": {
+        "mapping": {
+          "declared": "#/$defs/DeclaredUnitMetadata",
+          "not_applicable": "#/$defs/NoUnitMetadata"
+        },
+        "propertyName": "mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NoUnitMetadata"
+        },
+        {
+          "$ref": "#/$defs/DeclaredUnitMetadata"
+        }
+      ]
+    },
+    "ValueSchemaContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "value_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ValueSchemaContentRef",
+      "type": "object"
+    },
+    "ValueSchemaGenerationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "canonicalization_id": {
+          "const": "JCS",
+          "title": "Canonicalization Id",
+          "type": "string"
+        },
+        "generator_id": {
+          "const": "jimu.value-schema",
+          "title": "Generator Id",
+          "type": "string"
+        },
+        "generator_version": {
+          "const": "1.0.0",
+          "title": "Generator Version",
+          "type": "string"
+        },
+        "global_limits": {
+          "$ref": "#/$defs/GlobalTypeLimits"
+        },
+        "projection_profile_version": {
+          "const": "1.0.0",
+          "title": "Projection Profile Version",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        }
+      },
+      "required": [
+        "projection_profile_version",
+        "generator_id",
+        "generator_version",
+        "schema_dialect",
+        "canonicalization_id",
+        "global_limits"
+      ],
+      "title": "ValueSchemaGenerationSpec",
+      "type": "object"
+    },
+    "VocabularyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "vocabulary",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "VocabularyContentRef",
+      "type": "object"
+    },
+    "VocabularyMemberRef": {
+      "additionalProperties": false,
+      "properties": {
+        "member": {
+          "$ref": "#/$defs/ShortText"
+        },
+        "vocabulary_ref": {
+          "$ref": "#/$defs/VocabularyContentRef"
+        }
+      },
+      "required": [
+        "vocabulary_ref",
+        "member"
+      ],
+      "title": "VocabularyMemberRef",
+      "type": "object"
+    },
+    "jimu_runtime__domain__values__Size__1": {
+      "maximum": 4096,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "jimu_runtime__domain__values__Size__2": {
+      "maximum": 256,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "execution"
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      },
+      "then": {
+        "properties": {
+          "allowed_producer_kinds": {
+            "const": [
+              "system"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "allowed_producer_kinds": {
+      "items": {
+        "$ref": "#/$defs/ProducerKind"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "title": "Allowed Producer Kinds",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "confidence_metadata_policy": {
+      "$ref": "#/$defs/ConfidenceMetadataPolicy"
+    },
+    "coordinate_system": {
+      "$ref": "#/$defs/CoordinateMetadata"
+    },
+    "evidence_policy_ref": {
+      "$ref": "#/$defs/PolicyContentRef"
+    },
+    "payload_schema_ref": {
+      "$ref": "#/$defs/ValueSchemaContentRef"
+    },
+    "schema_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Schema Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/FactScope"
+    },
+    "semantic_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Semantic Key",
+      "type": "string"
+    },
+    "status_policy": {
+      "$ref": "#/$defs/FactStatusPolicy"
+    },
+    "type_definition": {
+      "$ref": "#/$defs/TypeDefinition"
+    },
+    "units": {
+      "$ref": "#/$defs/UnitMetadata"
+    },
+    "value_schema_generation": {
+      "$ref": "#/$defs/ValueSchemaGenerationSpec"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "schema_id",
+    "version",
+    "semantic_key",
+    "scope",
+    "type_definition",
+    "payload_schema_ref",
+    "value_schema_generation",
+    "allowed_producer_kinds",
+    "status_policy",
+    "units",
+    "coordinate_system",
+    "evidence_policy_ref",
+    "confidence_metadata_policy"
+  ],
+  "title": "FactSchemaDefinition",
+  "type": "object"
+}

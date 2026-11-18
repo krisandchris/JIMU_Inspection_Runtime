@@ -1,0 +1,14 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-B",
+    "-c",
+    "import importlib.metadata,json;print(json.dumps({d.metadata[\"Name\"]:d.version for d in importlib.metadata.distributions()},sort_keys=True))"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T17:53:52.579220+00:00",
+  "ended_at": "2026-11-17T17:53:52.633373+00:00",
+  "exit_code": 0,
+  "stdout": "{\"Pygments\": \"2.21.0\", \"annotated-types\": \"0.8.0\", \"attrs\": \"26.1.0\", \"iniconfig\": \"2.3.1\", \"jimu-runtime\": \"0.1.0\", \"jsonschema\": \"4.25.1\", \"jsonschema-specifications\": \"2025.9.1\", \"mypy\": \"1.18.2\", \"mypy_extensions\": \"1.2.0\", \"packaging\": \"26.3\", \"pathspec\": \"1.1.1\", \"pluggy\": \"1.7.0\", \"pydantic\": \"2.12.5\", \"pydantic_core\": \"2.41.5\", \"pytest\": \"8.4.2\", \"referencing\": \"0.37.0\", \"rfc8785\": \"0.1.4\", \"rpds-py\": \"2026.9.1\", \"ruff\": \"0.14.14\", \"typing-inspection\": \"0.4.5\", \"typing_extensions\": \"4.16.0\", \"uv-build\": \"0.9.15\"}\n",
+  "stderr": ""
+}

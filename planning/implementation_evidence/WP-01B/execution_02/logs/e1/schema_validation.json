@@ -1,0 +1,28 @@
+{
+  "status": "PARTIAL_D01_BLOCKED",
+  "documents": 137,
+  "generated_files_including_index": 138,
+  "coverage": {
+    "persisted_public_roots": 34,
+    "named_unions": 28
+  },
+  "validation_evidence": [
+    "14_final_check.json",
+    "15_final_check.json",
+    "18_final_check.json",
+    "final_targeted_results.xml"
+  ],
+  "validation_mode": "validation",
+  "by_alias": true,
+  "union_format": "any_of",
+  "dialect": "https://json-schema.org/draft/2020-12/schema",
+  "offline_metaschema_and_local_json_pointer_checks": "executed in render_exports before output writes, with file equality checked by CLI --check",
+  "deferred_groups": [
+    "ApplicabilityPolicy expression contract",
+    "ToolSkipPolicy expression contract",
+    "PolicyArtifact complete union",
+    "FactProducerDeclaration",
+    "ProducerCatalogue",
+    "full_authority_admission"
+  ]
+}

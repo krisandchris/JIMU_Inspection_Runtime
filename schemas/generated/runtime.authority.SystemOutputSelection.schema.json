@@ -1,0 +1,512 @@
+{
+  "$defs": {
+    "AbsentOptional_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "type": "string"
+    },
+    "AbsentOptional_AuthoritySelectionRef_": {
+      "$ref": "#/$defs/AuthoritySelectionRef"
+    },
+    "AbsentOptional_ProfileContentRef_": {
+      "$ref": "#/$defs/ProfileContentRef"
+    },
+    "AbsentOptional_ReviewReportRef_": {
+      "$ref": "#/$defs/ReviewReportRef"
+    },
+    "ActorRef": {
+      "additionalProperties": false,
+      "properties": {
+        "actor_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "actor_kind": {
+          "enum": [
+            "service",
+            "human"
+          ],
+          "title": "Actor Kind",
+          "type": "string"
+        },
+        "identity_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Identity Registry Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor_kind",
+        "actor_id",
+        "identity_registry_id"
+      ],
+      "title": "ActorRef",
+      "type": "object"
+    },
+    "AuthoritySelectionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "authoritative_result_selection",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "AuthoritySelectionRef",
+      "type": "object"
+    },
+    "CapabilityFeature": {
+      "enum": [
+        "rgb_image",
+        "typed_context",
+        "structured_output",
+        "original_xyxy",
+        "mask_output",
+        "geometry_output",
+        "ocr_text"
+      ],
+      "title": "CapabilityFeature",
+      "type": "string"
+    },
+    "ExecutionEventRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "execution_event",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ExecutionEventRef",
+      "type": "object"
+    },
+    "FactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "fact",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "FactRef",
+      "type": "object"
+    },
+    "FactRefs": {
+      "items": {
+        "$ref": "#/$defs/FactRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "FactScope": {
+      "enum": [
+        "object",
+        "execution"
+      ],
+      "title": "FactScope",
+      "type": "string"
+    },
+    "PositiveBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "ReviewReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "review_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Review Registry Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "version",
+        "sha256",
+        "review_registry_id"
+      ],
+      "title": "ReviewReportRef",
+      "type": "object"
+    },
+    "RuntimeUTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    },
+    "SystemProducerRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_implementation_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Implementation Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "capability_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "contract_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "evaluation_ref": {
+          "$ref": "#/$defs/AbsentOptional_ReviewReportRef_"
+        },
+        "family": {
+          "const": "system_fact_producer",
+          "title": "Family",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "family",
+        "capability_id",
+        "contract_version",
+        "allowed_implementation_versions",
+        "required_features"
+      ],
+      "title": "SystemProducerRequirement",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "object"
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      },
+      "then": {
+        "required": [
+          "object_id",
+          "profile_ref"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "execution"
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      },
+      "then": {
+        "properties": {
+          "object_id": false,
+          "profile_ref": false
+        }
+      }
+    },
+    {
+      "else": {
+        "required": [
+          "expected_previous_selection_ref"
+        ]
+      },
+      "if": {
+        "properties": {
+          "authority_revision": {
+            "const": 1
+          }
+        },
+        "required": [
+          "authority_revision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "expected_previous_selection_ref": false
+        }
+      }
+    }
+  ],
+  "properties": {
+    "actor_ref": {
+      "$ref": "#/$defs/ActorRef"
+    },
+    "authority_revision": {
+      "$ref": "#/$defs/PositiveBudget"
+    },
+    "created_at": {
+      "$ref": "#/$defs/RuntimeUTCDateTime"
+    },
+    "execution_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "expected_previous_selection_ref": {
+      "$ref": "#/$defs/AbsentOptional_AuthoritySelectionRef_"
+    },
+    "object_id": {
+      "$ref": "#/$defs/AbsentOptional_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___"
+    },
+    "output_name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Output Name",
+      "type": "string"
+    },
+    "profile_ref": {
+      "$ref": "#/$defs/AbsentOptional_ProfileContentRef_"
+    },
+    "reason": {
+      "enum": [
+        "validated_success",
+        "explicit_retry_resolution",
+        "manual_review"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "requirement": {
+      "$ref": "#/$defs/SystemProducerRequirement"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/FactScope"
+    },
+    "selected_attempt_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Selected Attempt Id",
+      "type": "string"
+    },
+    "selected_fact_refs": {
+      "$ref": "#/$defs/FactRefs"
+    },
+    "selected_result_ref": {
+      "$ref": "#/$defs/ExecutionEventRef"
+    },
+    "selection_group": {
+      "const": "system_output",
+      "title": "Selection Group",
+      "type": "string"
+    },
+    "selection_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Selection Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "execution_id",
+    "scope",
+    "schema_version",
+    "selection_id",
+    "selected_attempt_id",
+    "selected_fact_refs",
+    "reason",
+    "authority_revision",
+    "actor_ref",
+    "created_at",
+    "selection_group",
+    "requirement",
+    "output_name",
+    "selected_result_ref"
+  ],
+  "title": "SystemOutputSelection",
+  "type": "object"
+}

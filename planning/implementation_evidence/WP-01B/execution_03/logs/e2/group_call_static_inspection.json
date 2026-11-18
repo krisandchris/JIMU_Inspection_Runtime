@@ -1,0 +1,337 @@
+{
+  "utc": "2026-11-17T17:41:52.578519+00:00",
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "scope": "AST call arity and argument shape only; no runtime import/test/schema execution",
+  "calls": [
+    {
+      "line": 94,
+      "module": "primitives",
+      "names": "ArtifactId RecordId Version Digest",
+      "role": "foundation"
+    },
+    {
+      "line": 95,
+      "module": "references",
+      "names": "ContentRef IdentitySelector RuntimeRecordRef SchemaRef",
+      "role": "foundation"
+    },
+    {
+      "line": 100,
+      "module": "enums",
+      "names": "ArtifactKind RuntimeRecordKind TaskStatus ExecutionStatus NodeRunStatus AttemptStatus FactStatus DecisionResult",
+      "role": "foundation"
+    },
+    {
+      "line": 105,
+      "module": "values",
+      "names": "BooleanValue IntegerValue NumberValue StringValue EnumValue ListValue RecordValue BooleanTypeDefinition IntegerTypeDefinition NumberTypeDefinition StringTypeDefinition EnumTypeDefinition ListTypeDefinition RecordTypeDefinition RecordFieldDefinition ValueContract",
+      "role": "foundation"
+    },
+    {
+      "line": 110,
+      "module": "values",
+      "names": "Value TypeDefinition",
+      "role": "named_union"
+    },
+    {
+      "line": 111,
+      "module": "definition_enums",
+      "names": "ConditionInputDomain ComparisonOperator ProducerCardinality",
+      "role": "foundation"
+    },
+    {
+      "line": 116,
+      "module": "conditions",
+      "names": "ConditionExpr",
+      "role": "named_union"
+    },
+    {
+      "line": 117,
+      "module": "conditions",
+      "names": "LocalToolFactSelector",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 118,
+      "module": "conditions",
+      "names": "ConditionReferences",
+      "role": "nonpersistent_output"
+    },
+    {
+      "line": 119,
+      "module": "definition_support",
+      "names": "UTCDateTime FieldPath ReviewReportRef ExternalCapabilityRequirement VocabularyMemberRef VersionConstraint ContextFieldSelector AssetDimensions",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 124,
+      "module": "ontology",
+      "names": "EntityDefinition RegionDefinition",
+      "role": "definition_root"
+    },
+    {
+      "line": 125,
+      "module": "resources",
+      "names": "VocabularyDefinition StaticAssetDescriptor",
+      "role": "definition_root"
+    },
+    {
+      "line": 128,
+      "module": "capabilities",
+      "names": "FacetDefinition QuestionDefinition ProfileDefinition",
+      "role": "definition_root"
+    },
+    {
+      "line": 133,
+      "module": "capabilities",
+      "names": "GroundingInputSource GroundingBinding",
+      "role": "named_union"
+    },
+    {
+      "line": 134,
+      "module": "prompts",
+      "names": "PromptTemplateDefinition",
+      "role": "definition_root"
+    },
+    {
+      "line": 135,
+      "module": "models",
+      "names": "ModelBinding",
+      "role": "definition_root"
+    },
+    {
+      "line": 136,
+      "module": "tools",
+      "names": "ToolDefinition ToolPlanDefinition",
+      "role": "definition_root"
+    },
+    {
+      "line": 137,
+      "module": "fact_schemas",
+      "names": "FactSchemaDefinition",
+      "role": "definition_root"
+    },
+    {
+      "line": 138,
+      "module": "fact_schemas",
+      "names": "GlobalTypeLimits ValueSchemaGenerationSpec ValueSchemaGenerationInput",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 143,
+      "module": "fact_schemas",
+      "names": "GeneratedValueSchema",
+      "role": "nonpersistent_output"
+    },
+    {
+      "line": 144,
+      "module": "fact_schemas",
+      "names": "UnitMetadata CoordinateMetadata ConfidenceMetadataPolicy",
+      "role": "named_union"
+    },
+    {
+      "line": 149,
+      "module": "fact_selectors",
+      "names": "FactSelector",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 150,
+      "module": "fact_selectors",
+      "names": "ProducerCatalogueContentRef",
+      "role": "foundation"
+    },
+    {
+      "line": 151,
+      "module": "producers",
+      "names": "ProducerCatalogue",
+      "role": "definition_root"
+    },
+    {
+      "line": 152,
+      "module": "producers",
+      "names": "FactProducerDeclaration",
+      "role": "definition_component"
+    },
+    {
+      "line": 153,
+      "module": "producers",
+      "names": "Producer ActivationCondition",
+      "role": "named_union"
+    },
+    {
+      "line": 154,
+      "module": "fact_selectors",
+      "names": "ProducerSelector",
+      "role": "named_union"
+    },
+    {
+      "line": 155,
+      "module": "schema_types",
+      "names": "FieldSelector ResolvedFieldType",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 156,
+      "module": "schema_types",
+      "names": "SchemaDescriptor",
+      "role": "named_union"
+    },
+    {
+      "line": 157,
+      "module": "tool_mappings",
+      "names": "InputBinding MappingTypeContext",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 160,
+      "module": "tool_mappings",
+      "names": "InputSource ContextTypeRegistration",
+      "role": "named_union"
+    },
+    {
+      "line": 161,
+      "module": "review_inputs",
+      "names": "ReviewMetadata",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 162,
+      "module": "review_inputs",
+      "names": "ReviewScope ReviewAssessment",
+      "role": "named_union"
+    },
+    {
+      "line": 163,
+      "module": "policies",
+      "names": "QuestionSelectionPolicyArtifact UnknownPolicyArtifact QuestionValidationPolicyArtifact EvidencePolicyArtifact ToolExecutionPolicyArtifact ToolFailurePolicyArtifact ResourceRequirementsArtifact ProviderPolicyArtifact FallbackPolicyArtifact RulePolicyArtifact ConflictPolicyArtifact CoveragePolicyArtifact ContextProvenancePolicyArtifact ExecutionPolicyArtifact ApplicabilityPolicyArtifact ToolSkipPolicyArtifact",
+      "role": "definition_root"
+    },
+    {
+      "line": 168,
+      "module": "policies",
+      "names": "ResourceRequirements ProviderPolicy FallbackPolicy SelectionCallPolicy NonExpressionPolicyArtifact PolicyArtifact",
+      "role": "named_union"
+    },
+    {
+      "line": 173,
+      "module": "policy_inputs",
+      "names": "PolicyRegistration ModelBindingRegistration PromptRegistration RetentionVocabularyRegistration",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 178,
+      "module": "tool_plans",
+      "names": "ToolRegistration",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 179,
+      "module": "producer_inputs",
+      "names": "ProducerCatalogueRegistration SystemCapabilityRegistration ProducerValidationContext ProducerCatalogueContext",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 184,
+      "module": "producer_authority_inputs",
+      "names": "ExecutionDefinitionPin ProducerAuthorityValidationInput",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 189,
+      "module": "condition_inputs",
+      "names": "ApplicabilityConditionContext ToolStepGuardConditionContext ProducerActivationConditionContext",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 194,
+      "module": "condition_inputs",
+      "names": "ConditionReferenceContext",
+      "role": "named_union"
+    },
+    {
+      "line": 195,
+      "module": "condition_inputs",
+      "names": "ConditionReferenceResult",
+      "role": "nonpersistent_output"
+    },
+    {
+      "line": 196,
+      "module": "facts",
+      "names": "KnownFact UnknownFact ErrorFact NotApplicableFact NotEvaluatedFact",
+      "role": "runtime_root"
+    },
+    {
+      "line": 201,
+      "module": "facts",
+      "names": "FactRecord FactSource",
+      "role": "named_union"
+    },
+    {
+      "line": 202,
+      "module": "authority",
+      "names": "ObservationBatchSelection ToolStepSelection SystemOutputSelection",
+      "role": "runtime_root"
+    },
+    {
+      "line": 207,
+      "module": "authority",
+      "names": "AuthoritativeResultSelection",
+      "role": "named_union"
+    },
+    {
+      "line": 208,
+      "module": "authority_inputs",
+      "names": "ObjectDescriptor NodeRunDescriptor AttemptDescriptor QuestionSelectionDescriptor ObservationResultDescriptor ToolStepResultDescriptor SystemOutputResultDescriptor FactCandidateSubmission AuthorityQuestionInput AuthorityToolPlanInput",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 213,
+      "module": "authority_inputs",
+      "names": "AttemptOwner MappedOutputResult",
+      "role": "named_union"
+    },
+    {
+      "line": 214,
+      "module": "candidates",
+      "names": "CandidateParseLimits CandidateSnapshotLimits CandidateSnapshot",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 219,
+      "module": "candidates",
+      "names": "CandidateParseOutcome RejectedPrior CandidateAppendOutcome",
+      "role": "named_union"
+    },
+    {
+      "line": 224,
+      "module": "authority_checks",
+      "names": "LocalAuthorityHistoryInput",
+      "role": "nonpersistent_input"
+    },
+    {
+      "line": 225,
+      "module": "authority_checks",
+      "names": "ResultDescriptor",
+      "role": "named_union"
+    },
+    {
+      "line": 226,
+      "module": "issues",
+      "names": "ValidationIssue CheckResult ValidationReport",
+      "role": "nonpersistent_output"
+    },
+    {
+      "line": 231,
+      "module": "definition_inputs",
+      "names": "DefinitionRegistration",
+      "role": "named_union"
+    },
+    {
+      "line": 232,
+      "module": "definition_inputs",
+      "names": "DefinitionValidationInput ProfileUseContext ModelPromptUse",
+      "role": "nonpersistent_input"
+    }
+  ]
+}

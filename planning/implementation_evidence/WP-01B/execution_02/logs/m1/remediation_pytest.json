@@ -1,0 +1,18 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_tool_plans.py",
+    "tests/contract/test_b_models_tools.py",
+    "tests/negative/test_b_models_tools_invalid.py",
+    "-q"
+  ],
+  "exit_code": 0,
+  "output": ".................................                                        [100%]\n33 passed in 0.55s\n",
+  "recorded_at": "2026-11-17T15:02:24.640755+00:00"
+}

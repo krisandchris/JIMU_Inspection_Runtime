@@ -977,3 +977,20 @@ AGENTS 与历史保护以摘要核对为证。回滚仅参考本轮 before/patch
 用户审批的材料条件，不等于 WP-01 已授权或验收。立即停止，等待 GPT-6 独立复审及用户。
 `STATIC_REVIEW_ONLY` / `TEST_NOT_RUN` / `RUNTIME_NOT_RUN`。无代码、安装、测试、模型、
 服务、Commit 或 Push。
+
+
+## GOAL-002 WP-01B approved implementation amendments
+
+The user explicitly approved shared condition AST **data models** in WP-01B while
+retaining RuleDefinition, semantic TypeChecker and evaluator as later work. Exact
+implementation fields/tests are in the unique active WP-01B PLAN-4-A and its field
+appendix; this master plan does not create a second active work-package plan.
+
+The user also approved LocalToolFactSelector/LocalToolFactRefExpr, restricted to
+`tool_condition`, to remove a same-ToolPlan Policy→ToolPlan digest back-reference.
+Domain §13.4 is normative: the selector omits enclosing Plan identity and binds it
+only at the consuming Plan/ancestor-step use; exact Tool and FactSchema pins remain.
+Existing exact FactSelector and IdentitySelector contracts are unchanged. Future
+operator TypeChecker/Bundle work must handle this approved node and its use-site scope;
+WP-01B does not implement those later services. No historical audit or immutable
+published artifact is rewritten. Approval evidence: WP-01B execution_03/AUTHORIZATION.md.

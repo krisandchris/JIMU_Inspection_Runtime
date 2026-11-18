@@ -1,0 +1,126 @@
+{
+  "$defs": {
+    "FactStatus": {
+      "enum": [
+        "known",
+        "unknown",
+        "error",
+        "not_applicable",
+        "not_evaluated"
+      ],
+      "title": "FactStatus",
+      "type": "string"
+    },
+    "ForbiddenConfidenceMetadataPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "forbidden",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "ForbiddenConfidenceMetadataPolicy",
+      "type": "object"
+    },
+    "OptionalConfidenceMetadataPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_fact_statuses": {
+          "items": {
+            "$ref": "#/$defs/FactStatus"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Allowed Fact Statuses",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "interpretation": {
+          "const": "model_reported_not_calibrated_probability",
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "mode": {
+          "const": "optional",
+          "title": "Mode",
+          "type": "string"
+        },
+        "numeric_format": {
+          "const": "finite_number",
+          "title": "Numeric Format",
+          "type": "string"
+        }
+      },
+      "required": [
+        "allowed_fact_statuses",
+        "interpretation",
+        "numeric_format",
+        "mode"
+      ],
+      "title": "OptionalConfidenceMetadataPolicy",
+      "type": "object"
+    },
+    "RequiredConfidenceMetadataPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_fact_statuses": {
+          "items": {
+            "$ref": "#/$defs/FactStatus"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Allowed Fact Statuses",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "interpretation": {
+          "const": "model_reported_not_calibrated_probability",
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "mode": {
+          "const": "required",
+          "title": "Mode",
+          "type": "string"
+        },
+        "numeric_format": {
+          "const": "finite_number",
+          "title": "Numeric Format",
+          "type": "string"
+        }
+      },
+      "required": [
+        "allowed_fact_statuses",
+        "interpretation",
+        "numeric_format",
+        "mode"
+      ],
+      "title": "RequiredConfidenceMetadataPolicy",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "forbidden": "#/$defs/ForbiddenConfidenceMetadataPolicy",
+      "optional": "#/$defs/OptionalConfidenceMetadataPolicy",
+      "required": "#/$defs/RequiredConfidenceMetadataPolicy"
+    },
+    "propertyName": "mode"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ForbiddenConfidenceMetadataPolicy"
+    },
+    {
+      "$ref": "#/$defs/OptionalConfidenceMetadataPolicy"
+    },
+    {
+      "$ref": "#/$defs/RequiredConfidenceMetadataPolicy"
+    }
+  ]
+}

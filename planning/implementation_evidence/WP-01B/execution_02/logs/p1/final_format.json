@@ -1,0 +1,22 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "format",
+    "--check",
+    "src/jimu_runtime/domain/policies.py",
+    "src/jimu_runtime/domain/validation/policies.py",
+    "src/jimu_runtime/domain/definition_enums.py",
+    "tests/unit/test_b_policies.py",
+    "tests/contract/test_b_policy_contracts.py",
+    "tests/negative/test_b_policy_invalid.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T15:15:34.747327+00:00",
+  "end": "2026-11-17T15:15:34.782277+00:00",
+  "exit_code": 0,
+  "output": "6 files already formatted\n"
+}

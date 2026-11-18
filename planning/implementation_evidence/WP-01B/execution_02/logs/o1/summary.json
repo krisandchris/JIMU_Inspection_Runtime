@@ -1,0 +1,47 @@
+{
+  "scope": "O1 frozen local shapes and literal syntax only",
+  "status": "DELIVERED_PENDING_PRIMARY_REVIEW",
+  "baseline": "c25bef668136acc651e7313ba608ec6fdefd39a5",
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "changed_files": [
+    "src/jimu_runtime/domain/definitions/capabilities.py",
+    "src/jimu_runtime/domain/definitions/prompts.py",
+    "tests/unit/test_b_prompts.py",
+    "tests/contract/test_b_capabilities.py",
+    "tests/negative/test_b_capabilities_invalid.py",
+    "tests/fixtures/wp01b/o1/contracts.json"
+  ],
+  "test_acceptance": {
+    "status": "TEST_PASSED",
+    "passed": 132,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "log": "11_pytest.json",
+    "junit": "11_junit.xml"
+  },
+  "static_checks": {
+    "ruff": "12_ruff_check.json",
+    "mypy": "13_mypy.json",
+    "format": "14_ruff_format_check.json",
+    "schemas": "15_schema_audit.json",
+    "generated_schema_count": 24
+  },
+  "environment": "16_environment.json",
+  "preserved_failures": [
+    "04_mypy.json",
+    "07_ruff_check.json"
+  ],
+  "runtime": "RUNTIME_NOT_RUN",
+  "deps_installed_by_this_task": false,
+  "schema_contract_change": "new B definition shapes only; no A changes/migrations",
+  "ownership_released": true,
+  "limitations": [
+    "No injected catalogue relation checks, Facet intersection or metadata typed descriptor conformance",
+    "No vocabulary member/domain/content identity verification",
+    "No model/tool/policy capability/IO target admission",
+    "No partial closure, inherited variable registration/context owner resolution",
+    "No runtime ProfileHit effective-set validation or coverage conclusion",
+    "No rendering, joint-request compiler, AST or Rule/Policy implementation"
+  ]
+}

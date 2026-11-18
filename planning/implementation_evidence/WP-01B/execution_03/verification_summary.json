@@ -1,0 +1,42 @@
+{
+  "captured_at": "2026-11-17T18:33:02.513743+00:00",
+  "baseline": "c25bef668136acc651e7313ba608ec6fdefd39a5",
+  "branch": "dev/wp-01b-definition-fact-registry",
+  "acceptance": {
+    "code": "PASS",
+    "test": "PASS / TEST_PASSED",
+    "independent_review": "PASS",
+    "overall_engineering": "PASS",
+    "runtime": "N/A / RUNTIME_NOT_RUN",
+    "user": "PENDING_USER_ACCEPTANCE"
+  },
+  "tests": {
+    "passed": 1907,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "directories": {
+      "unit": 552,
+      "contract": 305,
+      "negative": 1050
+    }
+  },
+  "static": {
+    "ruff_check_all": "PASS",
+    "format_maintained_files": 124,
+    "mypy_source_files": 48,
+    "schema_check": "PASS"
+  },
+  "schemas": 162,
+  "stable_tested_files": 305,
+  "main_protected_files": 170,
+  "baseline_audit_and_instruction_files": 664,
+  "unresolved_C0_C1_C2": [],
+  "C3": [
+    "X-N01 supplemental exporter-only mypy failure7"
+  ],
+  "historical_failures_disclosed": true,
+  "git_actions": "NO_COMMIT_NO_PUSH_NO_PR_NO_MERGE",
+  "next_wp": "NOT_STARTED",
+  "final_report": "planning/active/WP-01B/FINAL_ACCEPTANCE_REPORT.md"
+}

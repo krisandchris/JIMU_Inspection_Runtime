@@ -1,0 +1,12 @@
+{
+  "argv": [
+    ".venv/bin/mypy",
+    "src"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start_utc": "2026-11-17T17:35:32.621279+00:00",
+  "end_utc": "2026-11-17T17:35:33.225089+00:00",
+  "exit_code": 1,
+  "stdout": "src/jimu_runtime/domain/validation/producers.py:239: error: Incompatible types in assignment (expression has type \"SystemCapabilityRegistration | None\", variable has type \"SystemCapabilityRegistration\")  [assignment]\nsrc/jimu_runtime/domain/validation/producers.py:253: error: Argument 1 to \"validate_condition_references\" has incompatible type \"LiteralExpr | FactRefExpr | RecordFieldRefExpr | ContextRefExpr | LocalToolFactRefExpr | <6 more items>\"; expected \"LiteralExpr | FactRefExpr | RecordFieldRefExpr | ContextRefExpr | LocalToolFactRefExpr | ComparisonExpr | InExpr | AllExpr | AnyExpr | NotExpr | Literal[True]\"  [arg-type]\nFound 2 errors in 1 file (checked 47 source files)\n",
+  "stderr": ""
+}

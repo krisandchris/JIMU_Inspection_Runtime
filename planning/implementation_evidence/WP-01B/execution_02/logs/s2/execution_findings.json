@@ -1,0 +1,20 @@
+[
+  {
+    "id": "S2-E01",
+    "status": "REMEDIATED_PENDING_PRIMARY_REVIEW",
+    "issue": "Nine new S2 files initially written to original starter due to omitted exec workdir. No preexisting source file modified. All nine moved to unique worktree after validating source existence and target absence. No pre-move hashes were captured. Only self-created empty directories were removed.",
+    "verification": "All nine wrong-source paths absent; final hashes recorded. Initial pytest exit4 preserved. Initial static probe commands ran before move but their wrapper failed to save results; outcomes of those two static probes are UNVERIFIED."
+  },
+  {
+    "id": "S2-E02",
+    "status": "FIXED",
+    "issue": "Initial actual source Ruff check found import ordering/blind exception; mypy found missing union annotations; subsequent mypy found missing NoReturn narrowing. Fix preserved strict types and specific ValidationError assertions.",
+    "verification": "initial_ruff/initial_mypy/verification_mypy and final logs retained."
+  },
+  {
+    "id": "S2-E03",
+    "status": "FIXED",
+    "issue": "During NoReturn edit, mechanical deletion left malformed indentation. Ruff format exited2 with Failed to parse schema_descriptors.py:139:13 Expected an indented block after if statement. No tests ran against malformed intermediate file.",
+    "verification": "Indentation fixed immediately; final Ruff/format/mypy/82 pytest all exit0."
+  }
+]

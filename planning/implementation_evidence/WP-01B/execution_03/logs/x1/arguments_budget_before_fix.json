@@ -1,0 +1,19 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/negative/test_b_conditions_invalid.py::test_oversized_logical_arguments_reject_before_descendant_traversal",
+    "-q",
+    "--tb=short"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "recorded_at": "2026-11-17T17:10:48.139558+00:00",
+  "exit_code": 1,
+  "stdout": "FF                                                                       [100%]\n=================================== FAILURES ===================================\n__ test_oversized_logical_arguments_reject_before_descendant_traversal[False] __\ntests/negative/test_b_conditions_invalid.py:207: in test_oversized_logical_arguments_reject_before_descendant_traversal\n    validate_condition_data(raw, input_domain=ConditionInputDomain.TOOL_CONDITION)\nsrc/jimu_runtime/domain/conditions.py:320: in validate_condition_data\n    expr = _validated_expr(raw)\n           ^^^^^^^^^^^^^^^^^^^^\nsrc/jimu_runtime/domain/conditions.py:297: in _validated_expr\n    _prewalk(raw)\nsrc/jimu_runtime/domain/conditions.py:102: in _prewalk\n    raise ConditionDataError(\"condition.cycle\")\nE   jimu_runtime.domain.conditions.ConditionDataError: condition.cycle\n\nDuring handling of the above exception, another exception occurred:\ntests/negative/test_b_conditions_invalid.py:206: in test_oversized_logical_arguments_reject_before_descendant_traversal\n    with pytest.raises(ConditionDataError, match=\"condition.arguments_limit\"):\nE   AssertionError: Regex pattern did not match.\nE    Regex: 'condition.arguments_limit'\nE    Input: 'condition.cycle'\n__ test_oversized_logical_arguments_reject_before_descendant_traversal[True] ___\ntests/negative/test_b_conditions_invalid.py:207: in test_oversized_logical_arguments_reject_before_descendant_traversal\n    validate_condition_data(raw, input_domain=ConditionInputDomain.TOOL_CONDITION)\nsrc/jimu_runtime/domain/conditions.py:320: in validate_condition_data\n    expr = _validated_expr(raw)\n           ^^^^^^^^^^^^^^^^^^^^\nsrc/jimu_runtime/domain/conditions.py:297: in _validated_expr\n    _prewalk(raw)\nsrc/jimu_runtime/domain/conditions.py:102: in _prewalk\n    raise ConditionDataError(\"condition.cycle\")\nE   jimu_runtime.domain.conditions.ConditionDataError: condition.cycle\n\nDuring handling of the above exception, another exception occurred:\ntests/negative/test_b_conditions_invalid.py:206: in test_oversized_logical_arguments_reject_before_descendant_traversal\n    with pytest.raises(ConditionDataError, match=\"condition.arguments_limit\"):\nE   AssertionError: Regex pattern did not match.\nE    Regex: 'condition.arguments_limit'\nE    Input: 'condition.cycle'\n=========================== short test summary info ============================\nFAILED tests/negative/test_b_conditions_invalid.py::test_oversized_logical_arguments_reject_before_descendant_traversal[False]\nFAILED tests/negative/test_b_conditions_invalid.py::test_oversized_logical_arguments_reject_before_descendant_traversal[True]\n2 failed in 0.14s\n",
+  "stderr": ""
+}

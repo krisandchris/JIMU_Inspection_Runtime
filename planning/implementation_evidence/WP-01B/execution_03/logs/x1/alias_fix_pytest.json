@@ -1,0 +1,26 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_b_conditions.py",
+    "tests/contract/test_b_conditions_schema.py",
+    "tests/negative/test_b_conditions_invalid.py",
+    "tests/contract/test_b_complete_policies.py",
+    "tests/negative/test_b_complete_policies_invalid.py",
+    "tests/unit/test_b_policies.py",
+    "tests/negative/test_b_policy_invalid.py",
+    "tests/contract/test_b_policy_contracts.py",
+    "-q"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T17:06:05.562348+00:00",
+  "end": "2026-11-17T17:06:11.664684+00:00",
+  "exit_code": 0,
+  "stdout": "........................................................................ [ 29%]\n........................................................................ [ 59%]\n........................................................................ [ 89%]\n..........................                                               [100%]\n242 passed in 5.88s\n",
+  "stderr": ""
+}

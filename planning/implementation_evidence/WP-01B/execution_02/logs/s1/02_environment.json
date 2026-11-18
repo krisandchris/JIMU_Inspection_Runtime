@@ -1,0 +1,17 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-c",
+    "import sys,platform,importlib.metadata,json; print(json.dumps({\"python\":sys.version,\"executable\":sys.executable,\"platform\":platform.platform(),\"packages\":{d.metadata[\"Name\"]:d.version for d in importlib.metadata.distributions()}},indent=2))"
+  ],
+  "started_at": "2026-11-17T14:10:17.839412+00:00",
+  "finished_at": "2026-11-17T14:10:17.944230+00:00",
+  "exit_code": 0,
+  "stdout": "{\n  \"python\": \"3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]\",\n  \"executable\": \"/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B/.venv/bin/python3\",\n  \"platform\": \"Linux-6.8.0-149-generic-x86_64-with-glibc2.39\",\n  \"packages\": {\n    \"pytest\": \"8.4.2\",\n    \"typing-inspection\": \"0.4.5\",\n    \"pathspec\": \"1.1.1\",\n    \"uv-build\": \"0.9.15\",\n    \"jsonschema-specifications\": \"2025.9.1\",\n    \"iniconfig\": \"2.3.1\",\n    \"ruff\": \"0.14.14\",\n    \"pluggy\": \"1.7.0\",\n    \"pydantic_core\": \"2.41.5\",\n    \"Pygments\": \"2.21.0\",\n    \"attrs\": \"26.1.0\",\n    \"mypy\": \"1.18.2\",\n    \"typing_extensions\": \"4.16.0\",\n    \"jsonschema\": \"4.25.1\",\n    \"pydantic\": \"2.12.5\",\n    \"packaging\": \"26.3\",\n    \"rpds-py\": \"2026.9.1\",\n    \"mypy_extensions\": \"1.2.0\",\n    \"annotated-types\": \"0.8.0\",\n    \"referencing\": \"0.37.0\",\n    \"jimu-runtime\": \"0.1.0\"\n  }\n}\n",
+  "stderr": ""
+}

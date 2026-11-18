@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "pending",
+    "ready",
+    "running",
+    "succeeded",
+    "failed",
+    "blocked",
+    "skipped",
+    "cancelled"
+  ],
+  "title": "NodeRunStatus",
+  "type": "string"
+}

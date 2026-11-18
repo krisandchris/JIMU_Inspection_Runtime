@@ -1,0 +1,52 @@
+..........F............................                                  [100%]
+=================================== FAILURES ===================================
+_____ test_conditional_false_tool_still_requires_complete_selected_output ______
+
+    def test_conditional_false_tool_still_requires_complete_selected_output():
+        from fixtures.wp01b.x3.integration import codes
+        raw=fixture("tool")
+        catalogue=raw["producer_catalogues"][0]
+        literal={"node_type":"literal","value":{"value_type":"boolean","value":False}}
+        # The frozen expression wire comes from the actual X2 conditional declaration;
+        # no Boolean interpretation or expression simplification occurs in X3.
+        import json
+        from pathlib import Path
+        x2=json.loads((Path(__file__).parents[1]/"fixtures/wp01b/x2/contracts.json").read_text())
+        literal=x2["literal_false"]
+        declaration=next(d for d in catalogue["registration"]["definition"]["declarations"] if d["producer_kind"]=="tool")
+        declaration["activation_condition"]["condition_ast"]=literal
+        policy=next(p for p in catalogue["context"]["policies"] if p["artifact"]["policy"]["policy_kind"]=="tool_skip")
+        policy["artifact"]["policy"]["run_if"]=literal
+>       assert check(raw).aggregate_status=="deferred"
+               ^^^^^^^^^^
+
+tests/unit/test_b_producer_authority_integration.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/fixtures/wp01b/x3/integration.py:99: in check
+    parse(raw),
+    ^^^^^^^^^^
+tests/fixtures/wp01b/x3/integration.py:57: in parse
+    "producer_catalogues": tuple(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+.0 = <list_iterator object at 0x74b3600f5510>
+
+            "producer_catalogues": tuple(
+>               ProducerCatalogueContext.model_validate_json(json.dumps(item))
+                for item in raw["producer_catalogues"]
+            ),
+            "execution_pins": tuple(
+                ExecutionDefinitionPin.model_validate_json(json.dumps(item))
+                for item in raw["execution_pins"]
+            ),
+        }
+    )
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for ProducerCatalogueContext
+E   context.policies.0.artifact.tool_skip.policy.run_if
+E     Extra inputs are not permitted [type=extra_forbidden, input_value={'kind': 'literal', 'cons...bool', 'value': False}}}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+
+tests/fixtures/wp01b/x3/integration.py:58: ValidationError
+=========================== short test summary info ============================
+FAILED tests/unit/test_b_producer_authority_integration.py::test_conditional_false_tool_still_requires_complete_selected_output
+1 failed, 38 passed in 2.33s

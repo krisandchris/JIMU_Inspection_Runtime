@@ -1,0 +1,20 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "check",
+    "src/jimu_runtime/domain/fact_schemas",
+    "tests/unit/test_b_projection.py",
+    "tests/contract/test_b_fact_schema.py",
+    "tests/negative/test_b_fact_schema_invalid.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T14:33:59.420720+00:00",
+  "ended_at": "2026-11-17T14:33:59.437110+00:00",
+  "exit_code": 1,
+  "stdout": "I001 [*] Import block is un-sorted or un-formatted\n  --> src/jimu_runtime/domain/fact_schemas/models.py:3:1\n   |\n 1 |   \"\"\"Closed Fact Schema contracts and bounded normalization before A defaults.\"\"\"\n 2 |\n 3 | / from collections.abc import Mapping\n 4 | | from typing import Annotated, Literal, Self, cast\n 5 | |\n 6 | | from pydantic import (\n 7 | |     BaseModel,\n 8 | |     ConfigDict,\n 9 | |     Field,\n10 | |     StrictInt,\n11 | |     TypeAdapter,\n12 | |     model_validator,\n13 | | )\n14 | |\n15 | | from jimu_runtime.domain.base import ContractModel\n16 | | from jimu_runtime.domain.definition_enums import FactScope, ProducerKind\n17 | | from jimu_runtime.domain.definition_support import (\n18 | |     DefinitionContract,\n19 | |     FieldPath,\n20 | |     VocabularyMemberRef,\n21 | |     immutable_sequence,\n22 | | )\n23 | | from jimu_runtime.domain.enums import ArtifactKind, FactStatus\n24 | | from jimu_runtime.domain.primitives import ArtifactId, Digest, Version\n25 | | from jimu_runtime.domain.references import ContentRef\n26 | | from jimu_runtime.domain.values import (\n27 | |     ListTypeDefinition,\n28 | |     RecordTypeDefinition,\n29 | |     TypeDefinition,\n30 | | )\n31 | |\n32 | | from pydantic import BeforeValidator\n   | |____________________________________^\n33 |\n34 |   type ProjectionErrorCode = Literal[\n   |\nhelp: Organize imports\n\nF401 [*] `collections.abc.Mapping` imported but unused\n --> src/jimu_runtime/domain/fact_schemas/models.py:3:29\n  |\n1 | \"\"\"Closed Fact Schema contracts and bounded normalization before A defaults.\"\"\"\n2 |\n3 | from collections.abc import Mapping\n  |                             ^^^^^^^\n4 | from typing import Annotated, Literal, Self, cast\n  |\nhelp: Remove unused import: `collections.abc.Mapping`\n\nF401 [*] `jimu_runtime.domain.values.ListTypeDefinition` imported but unused\n  --> src/jimu_runtime/domain/fact_schemas/models.py:27:5\n   |\n25 | from jimu_runtime.domain.references import ContentRef\n26 | from jimu_runtime.domain.values import (\n27 |     ListTypeDefinition,\n   |     ^^^^^^^^^^^^^^^^^^\n28 |     RecordTypeDefinition,\n29 |     TypeDefinition,\n   |\nhelp: Remove unused import: `jimu_runtime.domain.values.ListTypeDefinition`\n\nFound 3 errors.\n[*] 3 fixable with the `--fix` option.\n",
+  "stderr": ""
+}

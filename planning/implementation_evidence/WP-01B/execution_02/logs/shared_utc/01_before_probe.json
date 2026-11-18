@@ -1,0 +1,17 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-c",
+    "import json\nfrom pydantic import TypeAdapter\nfrom jimu_runtime.domain.definition_support import UTCDateTime\nfrom jimu_runtime.domain.policies import LocalPrimaryProviderPolicy, ProviderPolicyArtifact\nraw=json.load(open(\"tests/fixtures/wp01b/p1/contracts.json\"))\nprint(\"FIXTURE_KEYS\",list(raw))\nfor s in ('\"0\"','\"2026-11-17 12:00:00Z\"'):\n try: print(\"BEFORE_LEXICAL\",s,TypeAdapter(UTCDateTime).validate_json(s))\n except ValueError as e: print(\"BEFORE_LEXICAL_REJECT\",str(e))\nfor key,value in raw.items():\n print(\"FIXTURE_SECTION\",key, list(value) if isinstance(value,dict) else type(value).__name__)\n"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "started_at": "2026-11-17T15:09:26.580047+00:00",
+  "ended_at": "2026-11-17T15:09:26.802585+00:00",
+  "exit_code": 0,
+  "stdout": "FIXTURE_KEYS ['artifacts', 'registrations', 'evaluated_fallback', 'local_provider', 'review', 'model', 'binding_ref', 'prompt', 'context_descriptor']\nBEFORE_LEXICAL \"0\" 1970-01-01 00:00:00+00:00\nBEFORE_LEXICAL \"2026-11-17 12:00:00Z\" 2026-11-17 12:00:00+00:00\nFIXTURE_SECTION artifacts ['question_selection', 'unknown', 'question_validation', 'evidence', 'tool_execution', 'tool_failure', 'resource_requirements', 'provider', 'fallback', 'rule', 'conflict', 'coverage', 'context_provenance', 'execution']\nFIXTURE_SECTION registrations list\nFIXTURE_SECTION evaluated_fallback ['schema_version', 'policy_id', 'version', 'policy']\nFIXTURE_SECTION local_provider ['schema_version', 'policy_id', 'version', 'policy']\nFIXTURE_SECTION review ['report_ref', 'verdict', 'valid_from', 'valid_until', 'assessments']\nFIXTURE_SECTION model ['schema_version', 'model_binding_id', 'version', 'capability', 'logical_model_id', 'provider_policy_ref', 'resource_requirements_ref', 'fallback_policy_ref', 'input_schema_ref', 'output_schema_ref', 'prompt_template_ref']\nFIXTURE_SECTION binding_ref ['artifact_kind', 'artifact_id', 'version', 'digest']\nFIXTURE_SECTION prompt ['ref', 'definition']\nFIXTURE_SECTION context_descriptor ['descriptor_kind', 'schema_ref', 'type_definition']\n",
+  "stderr": ""
+}

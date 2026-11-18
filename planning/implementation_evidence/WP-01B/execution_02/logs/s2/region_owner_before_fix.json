@@ -1,0 +1,16 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/negative/test_b_mapping_invalid.py::test_region_context_owner_same_version_different_digest_rejected",
+    "-q"
+  ],
+  "exit_code": 1,
+  "output": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_______ test_region_context_owner_same_version_different_digest_rejected _______\n\n    def test_region_context_owner_same_version_different_digest_rejected() -> None:\n        from copy import deepcopy\n        from jimu_runtime.domain.tool_mappings import MappingTypeContext\n        data = cast(dict[str, object], fixture()[\"mapping_context\"])\n        registrations = cast(list[dict[str, object]], data[\"context_registrations\"])\n        conflicting = deepcopy(registrations[2])\n        cast(dict[str, object], conflicting[\"region_ref\"])[\"digest\"] = \"b\" * 64\n        registrations.append(conflicting)\n>       with pytest.raises(ValidationError):\nE       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>\n\ntests/negative/test_b_mapping_invalid.py:204: Failed\n=========================== short test summary info ============================\nFAILED tests/negative/test_b_mapping_invalid.py::test_region_context_owner_same_version_different_digest_rejected\n1 failed in 0.21s\n",
+  "recorded_at": "2026-11-17T14:50:47.412175+00:00"
+}

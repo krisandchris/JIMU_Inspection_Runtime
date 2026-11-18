@@ -1,0 +1,14 @@
+{
+  "argv": [
+    ".venv/bin/ruff",
+    "check",
+    "--fix",
+    "planning/implementation_evidence/WP-01B/execution_03/logs/x4/record.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start_utc": "2026-11-17T17:26:15.487993+00:00",
+  "end_utc": "2026-11-17T17:26:15.495096+00:00",
+  "exit_code": 1,
+  "stdout": "E701 Multiple statements on one line (colon)\n  --> planning/implementation_evidence/WP-01B/execution_03/logs/x4/record.py:15:17\n   |\n13 | end=datetime.datetime.now(datetime.UTC).isoformat()\n14 | path=root/'planning/implementation_evidence/WP-01B/execution_03/logs/x4'/f'{name}.json'\n15 | if path.exists():raise RuntimeError('Refuse to replace prior evidence')\n   |                 ^\n16 | path.write_text(json.dumps(dict(argv=args,cwd=str(root),start_utc=start,end_utc=end,exit_code=result.returncode,stdout=result.stdout,s\u2026\n17 | print(result.stdout,end='')\n   |\n\nFound 2 errors (1 fixed, 1 remaining).\n",
+  "stderr": ""
+}

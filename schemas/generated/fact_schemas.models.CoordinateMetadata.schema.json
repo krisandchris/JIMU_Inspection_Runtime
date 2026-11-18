@@ -1,0 +1,157 @@
+{
+  "$defs": {
+    "CoordinateBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "coordinate_system": {
+          "$ref": "#/$defs/VocabularyMemberRef"
+        },
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        }
+      },
+      "required": [
+        "field_path",
+        "coordinate_system"
+      ],
+      "title": "CoordinateBinding",
+      "type": "object"
+    },
+    "DeclaredCoordinateMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/CoordinateBinding"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Bindings",
+          "type": "array"
+        },
+        "mode": {
+          "const": "declared",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "bindings"
+      ],
+      "title": "DeclaredCoordinateMetadata",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FieldPath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "NoCoordinateMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "not_applicable",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "NoCoordinateMetadata",
+      "type": "object"
+    },
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "VocabularyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "vocabulary",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "VocabularyContentRef",
+      "type": "object"
+    },
+    "VocabularyMemberRef": {
+      "additionalProperties": false,
+      "properties": {
+        "member": {
+          "$ref": "#/$defs/ShortText"
+        },
+        "vocabulary_ref": {
+          "$ref": "#/$defs/VocabularyContentRef"
+        }
+      },
+      "required": [
+        "vocabulary_ref",
+        "member"
+      ],
+      "title": "VocabularyMemberRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "declared": "#/$defs/DeclaredCoordinateMetadata",
+      "not_applicable": "#/$defs/NoCoordinateMetadata"
+    },
+    "propertyName": "mode"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/NoCoordinateMetadata"
+    },
+    {
+      "$ref": "#/$defs/DeclaredCoordinateMetadata"
+    }
+  ]
+}

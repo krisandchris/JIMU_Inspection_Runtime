@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="31" time="62.631" timestamp="2026-11-17T23:52:36.028498+08:00" hostname="hy-System-Product-Name"><testcase classname="tests.contract.test_b_schema_inventory" name="test_independent_ast_coverage_for_public_roots_and_named_unions" time="0.043" /><testcase classname="tests.contract.test_b_schema_inventory" name="test_coverage_probe_detects_a_new_root_without_changing_export_mapping" time="0.002" /><testcase classname="tests.contract.test_b_schema_inventory" name="test_generated_inventory_is_partial_exact_and_self_consistent" time="7.189" /><testcase classname="tests.contract.test_b_schema_inventory" name="test_real_definition_fixture_and_missing_version[EntityDefinition-s1/contracts.json]" time="3.792" /><testcase classname="tests.contract.test_b_schema_inventory" name="test_real_definition_fixture_and_missing_version[QuestionDefinition-o1/contracts.json]" time="3.774" /><testcase classname="tests.contract.test_b_schema_inventory" name="test_fact_source_scope_status_constraints_are_structural" time="3.769" /><testcase classname="tests.contract.test_b_schema_inventory" name="test_numeric_and_relation_strictness_do_not_claim_false_schema_equivalence" time="0.025" /><testcase classname="tests.contract.test_b_schema_inventory" name="test_utc_schema_lexical_and_pydantic_calendar_boundaries" time="0.001" /><testcase classname="tests.unit.test_b_schema_export" name="test_repeated_generation_is_identical" time="7.499" /><testcase classname="tests.unit.test_b_schema_export" name="test_cli_check_is_read_only_and_detects_mismatch[valid]" time="4.146" /><testcase classname="tests.unit.test_b_schema_export" name="test_cli_check_is_read_only_and_detects_mismatch[missing]" time="4.205" /><testcase classname="tests.unit.test_b_schema_export" name="test_cli_check_is_read_only_and_detects_mismatch[stale]" time="4.273" /><testcase classname="tests.unit.test_b_schema_export" name="test_cli_check_is_read_only_and_detects_mismatch[additional]" time="4.194"><failure message="AssertionError: assert {'jimu_runtim...51, 288), ...} == {'jimu_runtim...51, 288), ...}&#10;  &#10;  Omitting 91 identical items, use -vv to show&#10;  Differing items:&#10;  {'jimu_runtime/domain/validation/definitions.py': ('608d7cf2435470dfc8e9d19f704e103dc33f24744f87bd509cfd1329041bba2e', 1794930795466994342, 48884)} != {'jimu_runtime/domain/validation/definitions.py': ('7da8a9d772740d84faeaba600ec4a0ec831ef5b0408836e68aecd2d6c6118ff5', 1794930740579360148, 48644)}&#10;  Use -v to get more diff">tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-97/test_cli_check_is_read_only_an3')
+rendered = {'definition_support.AssetDimensions.schema.json': b'{\n  "$defs": {\n    "PositiveBudget": {\n      "maximum": 922337.../2020-12/schema",\n  "items": {\n    "$ref": "#/$defs/FieldName"\n  },\n  "maxItems": 8,\n  "type": "array"\n}\n', ...}
+change = 'additional'
+
+    @pytest.mark.parametrize("change", ["valid", "missing", "stale", "additional"])
+    def test_cli_check_is_read_only_and_detects_mismatch(
+        tmp_path: Path, rendered: dict[str, bytes], change: str
+    ) -&gt; None:
+        output = tmp_path / "generated"
+        seed(output, rendered)
+        chosen = next(name for name in rendered if name != "index.json")
+        if change == "missing":
+            (output / chosen).unlink()
+        elif change == "stale":
+            (output / chosen).write_bytes(b"{}\n")
+        elif change == "additional":
+            (output / "unknown.txt").write_text("preserve")
+        before = tree(tmp_path)
+        sources = tree(ROOT / "src")
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), "--check", "--output", str(output)],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+        )
+        assert completed.returncode == (0 if change == "valid" else 1), completed.stderr
+        assert tree(tmp_path) == before
+&gt;       assert tree(ROOT / "src") == sources  # includes cache directories and pyc mtimes.
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert {'jimu_runtim...51, 288), ...} == {'jimu_runtim...51, 288), ...}
+E         
+E         Omitting 91 identical items, use -vv to show
+E         Differing items:
+E         {'jimu_runtime/domain/validation/definitions.py': ('608d7cf2435470dfc8e9d19f704e103dc33f24744f87bd509cfd1329041bba2e', 1794930795466994342, 48884)} != {'jimu_runtime/domain/validation/definitions.py': ('7da8a9d772740d84faeaba600ec4a0ec831ef5b0408836e68aecd2d6c6118ff5', 1794930740579360148, 48644)}
+E         Use -v to get more diff
+
+tests/unit/test_b_schema_export.py:78: AssertionError</failure></testcase><testcase classname="tests.unit.test_b_schema_export" name="test_check_missing_directory_creates_nothing" time="4.127" /><testcase classname="tests.unit.test_b_schema_export" name="test_bootstrap_installs_no_bytecode_before_all_source_imports" time="0.002" /><testcase classname="tests.unit.test_b_schema_export" name="test_invalid_filenames_reject_before_generation[../escape.schema.json]" time="0.000" /><testcase classname="tests.unit.test_b_schema_export" name="test_invalid_filenames_reject_before_generation[a/b.schema.json]" time="0.000" /><testcase classname="tests.unit.test_b_schema_export" name="test_invalid_filenames_reject_before_generation[/tmp/escape.schema.json]" time="0.000" /><testcase classname="tests.unit.test_b_schema_export" name="test_invalid_filenames_reject_before_generation[index.json]" time="0.000" /><testcase classname="tests.unit.test_b_schema_export" name="test_invalid_filenames_reject_before_generation[x.schema.json\n]" time="0.000" /><testcase classname="tests.unit.test_b_schema_export" name="test_inventory_source_and_filename_collisions_are_explicit" time="0.000" /><testcase classname="tests.unit.test_b_schema_export" name="test_symlinks_never_followed[directory]" time="0.001" /><testcase classname="tests.unit.test_b_schema_export" name="test_symlinks_never_followed[file]" time="3.769" /><testcase classname="tests.unit.test_b_schema_export" name="test_symlinks_never_followed[unknown]" time="3.743" /><testcase classname="tests.unit.test_b_schema_export" name="test_symlinks_never_followed[broken]" time="3.888" /><testcase classname="tests.unit.test_b_schema_export" name="test_invalid_refs_reject_offline[https://example.invalid/schema]" time="0.001" /><testcase classname="tests.unit.test_b_schema_export" name="test_invalid_refs_reject_offline[#/$defs/missing]" time="0.000" /><testcase classname="tests.unit.test_b_schema_export" name="test_invalid_refs_reject_offline[#anchor]" time="0.000" /><testcase classname="tests.unit.test_b_schema_export" name="test_invalid_refs_reject_offline[#/$defs/bad~2escape]" time="0.000" /><testcase classname="tests.unit.test_b_schema_export" name="test_local_pointer_escaped_names_resolve_without_network" time="0.001" /><testcase classname="tests.unit.test_b_schema_export" name="test_unknown_entries_are_preserved_and_never_deleted" time="3.749" /></testsuite></testsuites>

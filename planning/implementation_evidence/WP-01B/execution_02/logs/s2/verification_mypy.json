@@ -1,0 +1,17 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "mypy",
+    "src/jimu_runtime/domain/schema_types.py",
+    "src/jimu_runtime/domain/tool_mappings.py",
+    "src/jimu_runtime/domain/validation"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01B",
+  "start": "2026-11-17T14:35:38.079892+00:00",
+  "end": "2026-11-17T14:35:38.566498+00:00",
+  "exit_code": 1,
+  "output": "src/jimu_runtime/domain/validation/schema_descriptors.py:391: error: Item \"ToolResultSchemaDescriptor\" of \"RawDtoSchemaDescriptor | TypedValueSchemaDescriptor | ToolResultSchemaDescriptor\" has no attribute \"type_definition\"  [union-attr]\nFound 1 error in 1 file (checked 6 source files)\n"
+}

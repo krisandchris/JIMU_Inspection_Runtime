@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "CoveragePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "absence_strategy": {
+          "const": "conservative",
+          "title": "Absence Strategy",
+          "type": "string"
+        },
+        "complete_negative": {
+          "const": "all_mandatory_false_with_required_evidence",
+          "title": "Complete Negative",
+          "type": "string"
+        },
+        "no_hits": {
+          "const": "uncertain",
+          "title": "No Hits",
+          "type": "string"
+        },
+        "no_target": {
+          "const": "uncertain",
+          "title": "No Target",
+          "type": "string"
+        },
+        "partial_with_match": {
+          "const": "violation",
+          "title": "Partial With Match",
+          "type": "string"
+        },
+        "partial_without_match": {
+          "const": "uncertain",
+          "title": "Partial Without Match",
+          "type": "string"
+        },
+        "policy_kind": {
+          "const": "coverage",
+          "title": "Policy Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_kind",
+        "no_hits",
+        "no_target",
+        "partial_without_match",
+        "partial_with_match",
+        "complete_negative",
+        "absence_strategy"
+      ],
+      "title": "CoveragePolicy",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "policy": {
+      "$ref": "#/$defs/CoveragePolicy"
+    },
+    "policy_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "policy_id",
+    "version",
+    "policy"
+  ],
+  "title": "CoveragePolicyArtifact",
+  "type": "object"
+}

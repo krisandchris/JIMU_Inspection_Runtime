@@ -1,0 +1,32 @@
+{
+  "status": "DELIVERED_PENDING_PRIMARY_REVIEW",
+  "scope": "Frozen \u00a79 independent finite Definition relations, no full admission",
+  "test_status": "TEST_PASSED",
+  "final_tests": {
+    "total": 76,
+    "v1": 74,
+    "existing_boundary": 2,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "log": "commands.jsonl",
+    "junit": "pytest_final.xml"
+  },
+  "static_checks": {
+    "ruff_check_exit": 0,
+    "ruff_format_check_exit": 0,
+    "mypy_two_owned_source_files_exit": 0
+  },
+  "schema_validation": "Draft202012 metavalidation, positive full input, all11 registration branches and nonnullable optional fields executed by contract tests",
+  "runtime_acceptance": "N/A",
+  "runtime_evidence": "RUNTIME_NOT_RUN",
+  "independent_review": "PENDING_PRIMARY",
+  "source_write_released": true,
+  "known_limits": [
+    "Caller-pinned definition/schema/report identity is asserted, not authenticated",
+    "Applicability/ToolSkip/RuleSet/complete Producer/Authority/mandatory completeness deferred",
+    "No Rule AST, workflow, compiler, deployment or real model/tool calls",
+    "Diagnostic overflow retains bounded prefix/known-invalid severity and marks incomplete enumeration",
+    "ReviewMetadata scopes are trusted resolver associations, not report hash inputs containing reverse owner digests"
+  ]
+}

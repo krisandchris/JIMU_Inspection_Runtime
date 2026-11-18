@@ -1,0 +1,28 @@
+{
+  "verified_at": "2026-11-17T18:29:31.598272+00:00",
+  "schemas": 162,
+  "index": "schemas/generated/index.json",
+  "index_sha256": "ce0bc5b36eb5b8a3dac04adc2f3d97c558f0a10c4487678f018cbafcd7a476b0",
+  "dialect": "https://json-schema.org/draft/2020-12/schema",
+  "actual_check_record": "planning/implementation_evidence/WP-01B/execution_03/logs/integration/run_20261117T181535_729429Z_c92df4e0/06_schema_check.json",
+  "status": "PASS",
+  "primary_review": "PRIMARY_E2_REVIEW.json",
+  "component_tests": 41,
+  "validation": "Actual E2 CLI/Schema tests and final full-suite regression; offline Draft2020-12, local ref closure, deterministic generation, --check equality",
+  "limits": {
+    "bytes": "Nonpersistent candidate/snapshot bytes are Python inputs, not a specified JSON byte-transport or semantic roundtrip protocol.",
+    "digest": "Engineering file SHA256 is not RFC8785 child projection or parent/Bundle digest; F1 owns value_schema derivation.",
+    "numeric": "JSON Schema mathematical integer/number do not enforce A strict Python int/float representation or all dynamic bounds.",
+    "relations": "Finite reference/policy/Producer/history checks are separate from shape validation. Schemas do not prove expression typing, condition truth, model calls, runtime authority, external authenticity/history completeness or Release/Bundle admission.",
+    "taint": "Constructed/copied-instance revalidation and deep immutability require Pydantic checks, not JSON Schema alone.",
+    "utc": "Schema states normalized UTC lexical support; Pydantic checks calendar/aware semantics. No leap-second support; -00:00 provenance is not normalized away."
+  },
+  "deferred_groups": [
+    "expression TypeChecker",
+    "RuleDefinition and Rule evaluation",
+    "dynamic condition activation",
+    "Release and Bundle admission",
+    "external authenticity and history completeness",
+    "consumer-ready runtime authority"
+  ]
+}

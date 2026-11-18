@@ -1,0 +1,429 @@
+{
+  "$defs": {
+    "AbsentOptional_GroundingInputBindings_": {
+      "$ref": "#/$defs/GroundingInputBindings"
+    },
+    "ContextFieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "items": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Field Path",
+          "type": "array"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "$ref": "#/$defs/ContextSource"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "ContextFieldSelector",
+      "type": "object"
+    },
+    "ContextInput": {
+      "additionalProperties": false,
+      "properties": {
+        "selector": {
+          "$ref": "#/$defs/ContextFieldSelector"
+        },
+        "source_kind": {
+          "const": "context",
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_kind",
+        "selector"
+      ],
+      "title": "ContextInput",
+      "type": "object"
+    },
+    "ContextSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "context_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ContextSchemaRef",
+      "type": "object"
+    },
+    "ContextSource": {
+      "enum": [
+        "context_snapshot",
+        "region_metadata",
+        "profile_metadata"
+      ],
+      "title": "ContextSource",
+      "type": "string"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FieldPath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "FieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/SchemaRef"
+        }
+      },
+      "required": [
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "FieldSelector",
+      "type": "object"
+    },
+    "GroundingInputBinding": {
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "required": {
+            "const": true
+          }
+        },
+        "required": [
+          "required"
+        ]
+      },
+      "properties": {
+        "on_missing": {
+          "enum": [
+            "block",
+            "omit"
+          ],
+          "title": "On Missing",
+          "type": "string"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/$defs/GroundingInputSource"
+        },
+        "target": {
+          "$ref": "#/$defs/FieldSelector"
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "required",
+        "on_missing"
+      ],
+      "then": {
+        "properties": {
+          "on_missing": {
+            "const": "block"
+          }
+        }
+      },
+      "title": "GroundingInputBinding",
+      "type": "object"
+    },
+    "GroundingInputBindings": {
+      "items": {
+        "$ref": "#/$defs/GroundingInputBinding"
+      },
+      "maxItems": 64,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "GroundingInputSource": {
+      "discriminator": {
+        "mapping": {
+          "context": "#/$defs/ContextInput",
+          "image": "#/$defs/ImageInput"
+        },
+        "propertyName": "source_kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ContextInput"
+        },
+        {
+          "$ref": "#/$defs/ImageInput"
+        }
+      ]
+    },
+    "ImageFieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ImageSchemaRef"
+        }
+      },
+      "required": [
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "ImageFieldSelector",
+      "type": "object"
+    },
+    "ImageInput": {
+      "additionalProperties": false,
+      "properties": {
+        "selector": {
+          "$ref": "#/$defs/ImageFieldSelector"
+        },
+        "source_kind": {
+          "const": "image",
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_kind",
+        "selector"
+      ],
+      "title": "ImageInput",
+      "type": "object"
+    },
+    "ImageSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "attribute_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ImageSchemaRef",
+      "type": "object"
+    },
+    "SchemaRef": {
+      "additionalProperties": false,
+      "description": "A constrained ContentRef, not a second schema identity system.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "enum": [
+            "fact_schema",
+            "value_schema",
+            "response_schema",
+            "attribute_schema",
+            "context_schema",
+            "tool_input_schema",
+            "tool_output_schema",
+            "object_schema",
+            "decision_schema"
+          ],
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "SchemaRef",
+      "type": "object"
+    },
+    "ToolContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ToolContentRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "input_bindings": {
+      "$ref": "#/$defs/AbsentOptional_GroundingInputBindings_"
+    },
+    "kind": {
+      "const": "tool",
+      "title": "Kind",
+      "type": "string"
+    },
+    "tool_ref": {
+      "$ref": "#/$defs/ToolContentRef"
+    }
+  },
+  "required": [
+    "kind",
+    "tool_ref"
+  ],
+  "title": "ToolGroundingBinding",
+  "type": "object"
+}

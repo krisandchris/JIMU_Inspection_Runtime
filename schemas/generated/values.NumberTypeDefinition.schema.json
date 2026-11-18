@@ -1,0 +1,51 @@
+{
+  "$defs": {
+    "FiniteNumber": {
+      "type": "number"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "const": "number",
+      "title": "Kind",
+      "type": "string"
+    },
+    "maximum": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "$ref": "#/$defs/FiniteNumber"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Maximum"
+    },
+    "minimum": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "$ref": "#/$defs/FiniteNumber"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Minimum"
+    }
+  },
+  "required": [
+    "kind"
+  ],
+  "title": "NumberTypeDefinition",
+  "type": "object"
+}

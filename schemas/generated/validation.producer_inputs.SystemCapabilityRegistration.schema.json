@@ -1,0 +1,91 @@
+{
+  "$defs": {
+    "CapabilityFeature": {
+      "enum": [
+        "rgb_image",
+        "typed_context",
+        "structured_output",
+        "original_xyxy",
+        "mask_output",
+        "geometry_output",
+        "ocr_text"
+      ],
+      "title": "CapabilityFeature",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "available_implementation_versions": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 5,
+        "not": {
+          "pattern": "\\s"
+        },
+        "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+        "type": "string"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "title": "Available Implementation Versions",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "capability_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Capability Id",
+      "type": "string"
+    },
+    "contract_version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "family": {
+      "const": "system_fact_producer",
+      "title": "Family",
+      "type": "string"
+    },
+    "registry_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Registry Id",
+      "type": "string"
+    },
+    "supported_features": {
+      "items": {
+        "$ref": "#/$defs/CapabilityFeature"
+      },
+      "maxItems": 7,
+      "title": "Supported Features",
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "registry_id",
+    "family",
+    "capability_id",
+    "contract_version",
+    "available_implementation_versions",
+    "supported_features"
+  ],
+  "title": "SystemCapabilityRegistration",
+  "type": "object"
+}

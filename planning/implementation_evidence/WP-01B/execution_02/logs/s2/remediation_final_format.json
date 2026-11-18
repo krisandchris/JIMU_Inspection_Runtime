@@ -1,0 +1,22 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "ruff",
+    "format",
+    "--check",
+    "src/jimu_runtime/domain/schema_types.py",
+    "src/jimu_runtime/domain/tool_mappings.py",
+    "src/jimu_runtime/domain/validation/schema_descriptors.py",
+    "src/jimu_runtime/domain/validation/review_inputs.py",
+    "tests/unit/test_b_schema_descriptors.py",
+    "tests/contract/test_b_mapping_contracts.py",
+    "tests/negative/test_b_mapping_invalid.py"
+  ],
+  "start": "2026-11-17T14:51:15.341899+00:00",
+  "end": "2026-11-17T14:51:15.359730+00:00",
+  "exit_code": 0,
+  "output": "7 files already formatted\n"
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-c",
+    "import sys,platform,importlib.metadata,json; print(json.dumps({\"python\":sys.version,\"platform\":platform.platform(),\"versions\":{n:importlib.metadata.version(n) for n in (\"pydantic\",\"pydantic-core\",\"rfc8785\",\"pytest\",\"jsonschema\",\"ruff\",\"mypy\")}},indent=2))"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"python\": \"3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]\",\n  \"platform\": \"Linux-6.8.0-149-generic-x86_64-with-glibc2.39\",\n  \"versions\": {\n    \"pydantic\": \"2.12.5\",\n    \"pydantic-core\": \"2.41.5\",\n    \"rfc8785\": \"0.1.4\",\n    \"pytest\": \"8.4.2\",\n    \"jsonschema\": \"4.25.1\",\n    \"ruff\": \"0.14.14\",\n    \"mypy\": \"1.18.2\"\n  }\n}\n",
+  "stderr": "",
+  "ended_at": "2026-11-17T14:36:23.987032+00:00"
+}
