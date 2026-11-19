@@ -1,0 +1,773 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>巡检能力编排台 · JIMU Studio</title><style>
+:root{--ink:#1b2928;--muted:#52645e;--line:#cbd4cd;--surface:#fdfefb;--bg:#eff2eb;--green:#154d3c;--pale:#e1f2ce;--orange:#ad421c;--code:#182f2a;--mono:"IBM Plex Mono",ui-monospace,Consolas,monospace}*{box-sizing:border-box}body{margin:0;background:var(--bg);font:15px/1.65 "Inter","Noto Sans CJK SC","Microsoft YaHei",sans-serif;color:var(--ink)}button,input,select,textarea{font:inherit;color:inherit}button,select,summary{cursor:pointer}button,select,input[type=text],textarea{border:1px solid #9daea3;background:#fff;border-radius:6px;padding:7px 11px}button{font-weight:600}button:hover,summary:hover{color:var(--green);border-color:var(--green)}button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #cb6732;outline-offset:3px}button.primary{background:var(--green);border-color:var(--green);color:white}button.primary:hover{background:#226448}button:disabled{opacity:.45;cursor:default}input[type=checkbox]{accent-color:var(--green);width:18px;height:18px;cursor:pointer}textarea{resize:vertical;width:100%;min-height:68px}pre,code,.mono,.stage-num,.over,.stepkey{font-family:var(--mono)}h1,h2,h3,p,dl,dd{margin:0}h1{font-size:clamp(30px,3.35vw,49px);line-height:1.18;letter-spacing:-.055em}h2{font-size:21px;letter-spacing:-.035em}h3{font-size:16px}a{color:#205544}header{background:var(--code);color:white;display:flex;align-items:center;gap:13px;padding:12px max(4vw,18px);border-bottom:3px solid #a7c47a}.wordmark{font:800 22px/1 Arial;letter-spacing:.06em}.mark{display:grid;gap:3px;transform:skew(-20deg)}.mark i{background:#c0de95;width:18px;height:4px}.brand-sub{font:12px var(--mono);letter-spacing:.13em;border-left:1px solid #769387;padding-left:14px}.offline{margin-left:auto;color:#dcebcf;font-size:13px}.offline:before{content:"";display:inline-block;background:#bbdf8e;width:7px;height:7px;border-radius:100%;margin-right:7px}
+main{max-width:1440px;padding:28px clamp(15px,4vw,62px) 45px;margin:auto}.hero{display:flex;align-items:end;justify-content:space-between;gap:18px}.hero p,.sub,.fine,dt{color:var(--muted)}.hero p{margin-top:8px}.site{padding:6px 10px;border-left:2px solid #75926f;font-size:13px}.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}.stage{display:flex;align-items:center;gap:13px;border:1px solid var(--line);background:var(--surface);padding:12px 16px;text-align:left;position:relative;min-width:0}.stage[aria-current=step]{background:var(--code);color:white;border-color:var(--code)}.stage strong,.stage small{display:block}.stage small{color:var(--muted);font-size:12px;font-weight:400}.stage[aria-current=step] small{color:#c5d8cd}.stage-num{font-size:20px;font-weight:normal;color:#4c714b}.stage[aria-current=step] .stage-num{color:#c5e4a7}.stage:after{content:"→";margin-left:auto;opacity:.55}.stage:last-child:after{content:"↳"}
+.grid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(295px,1fr);gap:16px;align-items:start}.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:19px 21px;min-width:0}.head{display:flex;align-items:start;justify-content:space-between;gap:12px}.over{font-size:11px;letter-spacing:.1em;color:#52745e}.sub{font-size:14px;margin:5px 0 15px}.status{font-size:12px;color:#5b471e;background:#faf0cc;border:1px solid #dfd1a8;padding:3px 8px;white-space:nowrap;border-radius:20px}.switches,.btns,.chiprow{display:flex;flex-wrap:wrap;align-items:center;gap:7px}.switches{border-bottom:1px solid var(--line);gap:2px;margin-bottom:16px}.switches button{background:none;border:0;border-bottom:3px solid transparent;border-radius:0;padding:8px 12px;font-size:14px;color:var(--muted)}.switches button[aria-pressed=true]{color:var(--green);border-color:var(--green);font-weight:750}.matrix{border-collapse:collapse;width:100%;text-align:center}.matrix th,.matrix td{padding:10px 6px;border-bottom:1px solid #e0e5de}.matrix th{font-size:13px;font-weight:600;background:#f0f4ec}.matrix th:first-child{text-align:left}.matrix tbody th{background:transparent}.matrix small,.mini{display:block;color:var(--muted);font:11px var(--mono);overflow-wrap:anywhere}.matrix label{display:inline-grid;place-items:center;min-width:38px;min-height:32px;cursor:pointer}.footrow{margin-top:17px;padding-top:13px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}.fine{font-size:13px}.paneltitle{margin-bottom:10px}.summary{background:var(--code);color:#f4f7f2;border-color:var(--code)}.summary .over{color:#bbd79f}.summary .sub,.summary .fine{color:#c9d7ce}.summary hr{border:0;border-top:1px solid #4a6256;margin:15px 0}.numbers{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}.numbers b,.numbers small{display:block}.numbers b{font:32px var(--mono);color:#d6edae}.numbers small{color:#c4d4c8;font-size:12px}.trace-line{border-left:2px solid #799668;padding:0 0 12px 12px;margin-left:4px}.trace-line:last-child{padding-bottom:0}.trace-line b,.trace-line span{display:block}.trace-line span{font-size:13px;color:#d1dcd0}.detailsbox,details{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}summary{color:var(--green);font-weight:600}pre{background:#edf2ed;border-radius:6px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:365px;overflow:auto;font-size:12px;line-height:1.55}
+fieldset{border:1px solid var(--line);border-radius:7px;padding:9px 12px 12px;margin:12px 0;min-width:0}legend{padding:0 4px;font-weight:650;font-size:14px}.choices{display:flex;flex-wrap:wrap;gap:7px 12px}.choice{display:inline-flex;gap:6px;align-items:center;min-height:34px;font-size:14px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.field{display:block;font-size:13px;font-weight:650;margin:8px 0}.field select,.field input,.field textarea{display:block;width:100%;margin-top:4px;font-weight:400;font-size:15px}.notice{border-left:3px solid #d57e32;background:#fff2da;padding:9px 12px;font-size:14px;white-space:pre-line}.ok{border-color:#6d9a59;background:#eaf4e1}.hide,[hidden]{display:none!important}.tag{background:#e8efe2;color:#37523e;padding:2px 7px;border-radius:4px;font-size:12px}
+.rail{display:flex;gap:5px;flex-wrap:wrap;margin:12px 0}.rail button{font:12px var(--mono);padding:7px 10px}.rail button[aria-pressed=true]{background:var(--green);color:white}.badge{color:var(--orange);font-weight:700}.resultrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:9px 0;border-bottom:1px solid #dfe5dc}.resultrow small{grid-column:1/-1;color:var(--muted)}.flowbar{margin:16px 0 0;border:1px solid var(--line);border-radius:9px;background:#e5ebdf;padding:12px 16px;font-size:13px;color:#3e5041;display:flex;gap:13px;flex-wrap:wrap;align-items:center}.flowbar strong{font-weight:700;color:#243829}.flowbar em{font-style:normal;color:#71826e}.pagefoot{color:var(--muted);font-size:12px;margin-top:13px}.logtitle{margin:13px 0 3px}.mono{overflow-wrap:anywhere}#export-data{max-height:410px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.site{display:none}.summary{display:block}.stages{gap:5px}.stage{padding:10px;gap:7px}.stage:after{display:none}}
+@media(max-width:550px){.brand-sub{display:none}.stage-num{font-size:14px}.stage{display:block;padding:7px 8px}.stage small{display:none}.stage strong{font-size:14px}.card{padding:14px 12px}.matrix th,.matrix td{font-size:12px;padding:7px 3px}.matrix small{font-size:10px}.fields{grid-template-columns:1fr}.switches button{padding:7px}.head{flex-wrap:wrap}.stage-num{display:block}.hero p{font-size:14px}.flowbar{gap:6px}.offline{font-size:11px}}
+</style></head><body>
+<header><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span class="wordmark">JIMU</span><span class="brand-sub">INSPECTION STUDIO</span><span class="offline">本地模拟 · 离线可用</span></header>
+<main><div class="hero"><div><h1>巡检能力编排台</h1><p>把场景需求装配为 Bundle，追踪一张巡检图如何得到逐项判定。</p></div><div class="site">示例场景<br><strong>园区安全巡检</strong> <code>campus</code></div></div>
+<nav class="stages" aria-label="操作流程"><button class="stage" data-stage="web"><span class="stage-num">01</span><span><strong>WEB 能力管理</strong><small>设备、主体与检查义务</small></span></button><button class="stage" data-stage="bundle"><span class="stage-num">02</span><span><strong>Bundle 导出</strong><small>预检、冻结与下载</small></span></button><button class="stage" data-stage="runtime"><span class="stage-num">03</span><span><strong>Runtime 解析</strong><small>六节点追踪与结果</small></span></button></nav>
+<section id="web" class="grid"><article class="card"><div class="head"><div><div class="over">WEB / AUTHORING</div><h2 tabindex="-1">场景装配</h2></div><span class="status" id="draft-state">编辑中</span></div><p class="sub">为每种拍摄来源选择检查义务，再配置主体提示词和证据依赖。</p>
+<div class="switches" aria-label="管理内容"><button data-tab="matrix">来源 × 检查项</button><button data-tab="prompts">主体与提示词</button><button data-tab="deps">Check 与能力条目</button></div><div id="editor"></div>
+<div class="footrow"><span class="fine">草稿仅在本页会话内保存</span><button class="primary" id="to-bundle">预检并查看 Bundle →</button></div></article>
+<aside class="card summary"><div class="over">SCENE / CAMPUS</div><h2>场景配置摘要</h2><div class="numbers" id="numbers"></div><hr><h3 class="paneltitle">当前启用关系</h3><div id="connections"></div></aside></section>
+<section id="bundle" class="grid" hidden><article class="card"><div class="over">BUNDLE / COMPILER</div><h2 tabindex="-1">预检与导出</h2><p class="sub">从 Web 草稿生成独立 JSON 快照。修改草稿后，需重新冻结才能更新运行版本。</p><div class="btns"><button id="validate">预检草稿</button><button class="primary" id="freeze">冻结当前 Bundle</button><button id="download">下载 JSON</button></div><div id="diagnostic" role="status" tabindex="-1" style="margin-top:13px"></div><div id="frozen-info"></div><details id="export-details"><summary>查看完整 Bundle JSON</summary><pre id="export-data">尚未冻结。</pre></details>
+<div class="footrow"><button data-go="web">← 返回草稿</button><button class="primary" data-go="runtime">前往 Runtime →</button></div></article>
+<aside class="card"><div class="over">BUNDLE / ROUTES</div><h2>来源加载索引</h2><p class="sub">以下关系取自冻结快照。</p><div id="route-list"></div></aside></section>
+<section id="runtime" hidden><div class="grid"><article class="card"><div class="over">RUNTIME / EXECUTION</div><h2 tabindex="-1">模拟单图巡检</h2><p class="sub">解析冻结或导入的 JSON，以模拟图片输出驱动六个节点。</p><div id="active-pkg" class="notice"></div><form id="runform" aria-label="巡检请求"><div class="fields"><label class="field">上下文 · 场景 ID<input name="scene" id="request-scene" value="campus" maxlength="64"></label><label class="field">上下文 · 设备来源<select id="device" name="source"><option value="fixed">固定摄像头</option><option value="patrol">移动巡拍</option><option value="unknown">未知设备</option></select></label></div><label class="field">模拟图片与证据<select id="fixture" name="fixture"><option value="mixed">人员与灭火器 · 含异常</option><option value="clear">人员与灭火器 · 证据完整、无异常</option><option value="missing">人员与灭火器 · 工具证据缺失</option><option value="person">仅命中人员</option><option value="none">JEV 无主体命中</option></select></label><button type="submit" class="primary">运行模拟 →</button></form>
+<details><summary>从本地文件载入已导出的快照</summary><label class="field">模拟 Bundle JSON<input type="file" accept=".json,application/json" id="import"></label><span class="fine">校验格式、响应契约和派生索引。导入 /1 时使用旧 Question 文本作提示词，并补齐此演示的固定响应契约。</span></details><p role="status" id="run-msg" class="fine"></p></article>
+<aside class="card"><div class="over">RUNTIME / DECISION</div><h2>逐项判定</h2><div id="decision"></div></aside></div>
+<article class="card" style="margin-top:16px"><div class="over">TRACE / N01–N06</div><h2>节点输入与交付</h2><div id="trace"></div></article></section>
+<div class="flowbar"><strong>数据流</strong><span>N01 来源选能力</span><em>→</em><span>N02 JEV 路由</span><em>→</em><span>N03 Grounding</span><em>→</em><span>N04 观察 ∥ N05 工具</span><em>→</em><span>N06 Check 判定</span></div><p class="pagefoot">本页生成离线演示 JSON，使用预置识别结果。生产 Runtime Bundle 使用独立规范。本页在浏览器内运行，作者平台和真实推理服务均未接入。</p></main><script>
+
+const Engine = (() => {
+  "use strict";
+
+  const format = "jimu.scene-demo/2";
+  const legacyFormat = "jimu.scene-demo/1";
+  const contractRefs = {
+    discovery: "demo.profile_hit@1",
+    slots: "demo.fixed_slot_hit@1",
+    grounding: "demo.profile_boxes@1",
+    question: "demo.boolean_observation@1",
+  };
+  const fixtureImageSize = 1000;
+  const responseContracts = {
+    [contractRefs.discovery]: {
+      node: "N02", fields: { profile_id: "request_profile_id", hit: "boolean" },
+      multiplicity: "one_per_eligible_profile",
+    },
+    [contractRefs.slots]: {
+      node: "N02", fields: { slot: "registered_model_slot", value: "boolean" },
+      multiplicity: "one_per_eligible_slot",
+    },
+    [contractRefs.grounding]: {
+      node: "N03", fields: { profile_id: "request_profile_id", boxes_xyxy: "fixture_pixel_boxes" },
+      multiplicity: "one_per_grounding_request",
+      coordinate_space: { units: "pixel", width: fixtureImageSize, height: fixtureImageSize, max_boxes: 1 },
+    },
+    [contractRefs.question]: {
+      node: "N04",
+      envelope: { object_ref: "request_object_ref", answers: "question_answers" },
+      answer_fields: {
+        known: { object_ref: "request_object_ref", question_id: "request_question_id", status: "known", value: "boolean" },
+        unknown: { object_ref: "request_object_ref", question_id: "request_question_id", status: "unknown", reason: "non_blank_text" },
+      },
+      multiplicity: "one_per_requested_question",
+      missing_or_invalid: "error",
+      invalid_envelope: "no_facts",
+    },
+  };
+  const catalog = {
+    subjects: ["person", "equipment"],
+    questions: ["q_helmet", "q_uniform", "q_ext"],
+    tools: ["t_zone", "t_gauge"],
+    checks: ["helmet", "uniform", "pressure"],
+    sources: ["fixed", "patrol"],
+  };
+  const fixedModelSlots = { person: "person_present", equipment: "extinguisher_present" };
+  const fixtures = {
+    mixed: {
+      subjects: ["person", "equipment"],
+      values: { q_helmet: true, q_uniform: false, q_ext: true, t_zone: true, t_gauge: true },
+    },
+    clear: {
+      subjects: ["person", "equipment"],
+      values: { q_helmet: false, q_uniform: false, q_ext: false, t_zone: true, t_gauge: false },
+    },
+    missing: {
+      subjects: ["person", "equipment"],
+      values: { q_helmet: true, q_uniform: false, q_ext: true, t_zone: true, t_gauge: null },
+    },
+    none: { subjects: [], values: {} },
+    person: {
+      subjects: ["person"],
+      values: { q_helmet: true, q_uniform: false, t_zone: true },
+    },
+  };
+  const fixtureSubjects = {
+    q_helmet: "person", q_uniform: "person", q_ext: "equipment",
+    t_zone: "person", t_gauge: "equipment",
+  };
+  const boxes = {
+    person: [100, 150, 310, 790],
+    equipment: [630, 470, 750, 790],
+  };
+
+  function seed() {
+    return withPromptContracts({
+      scene: "campus",
+      subjects: {
+        person: {
+          label: "作业人员", jev: "识别现场图像中可见的作业人员。",
+          slot: fixedModelSlots.person, ground: "框出作业人员全身，保留头部与着装区域。",
+        },
+        equipment: {
+          label: "灭火器", jev: "识别现场图像中可见的灭火器。",
+          slot: fixedModelSlots.equipment, ground: "框出灭火器主体，保留表盘与指针区域。",
+        },
+      },
+      questions: {
+        q_helmet: { subject: "person", label: "作业人员是否未佩戴安全帽？" },
+        q_uniform: { subject: "person", label: "作业人员是否存在不规范着装？" },
+        q_ext: { subject: "equipment", label: "灭火器表盘指针是否在绿色区间外？" },
+      },
+      tools: {
+        t_zone: { subject: "person", label: "核验人员是否在作业区内" },
+        t_gauge: { subject: "equipment", label: "核验表盘指针是否在绿色区间外" },
+      },
+      checks: {
+        helmet: {
+          label: "作业区未戴安全帽", category: "未戴安全帽", subject: "person",
+          questions: ["q_helmet"], tools: ["t_zone"], build: "build.helmet@1", jev_hint: "关注作业区域内可见的人员。",
+        },
+        uniform: {
+          label: "着装不规范", category: "着装不规范", subject: "person",
+          questions: ["q_uniform"], tools: [], build: "build.uniform@1", jev_hint: "",
+        },
+        pressure: {
+          label: "灭火器压力异常", category: "灭火器压力异常", subject: "equipment",
+          questions: ["q_ext"], tools: ["t_gauge"], build: "build.pressure@1", jev_hint: "关注墙边或箱内可见的灭火器。",
+        },
+      },
+      sources: {
+        fixed: { label: "固定相机", checks: ["helmet", "uniform", "pressure"] },
+        patrol: { label: "巡拍拍摄", checks: ["helmet", "uniform"] },
+      },
+      mode: "text",
+    });
+  }
+
+  function withPromptContracts(config) {
+    for (const subject of Object.values(config.subjects)) {
+      subject.jev_response_ref = contractRefs.discovery;
+      subject.slot_response_ref = contractRefs.slots;
+      subject.ground_response_ref = contractRefs.grounding;
+    }
+    for (const question of Object.values(config.questions)) {
+      question.prompt = question.label;
+      question.response_ref = contractRefs.question;
+    }
+    return config;
+  }
+
+  function isRecord(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value)
+      && [Object.prototype, null].includes(Object.getPrototypeOf(value));
+  }
+
+  function shape(value, expected) {
+    return isRecord(value) && Object.keys(value).length === expected.length
+      && expected.every((key) => Object.hasOwn(value, key));
+  }
+
+  function validText(value, limit) {
+    return typeof value === "string" && value.trim().length > 0 && value.length <= limit;
+  }
+
+  function validate(draft, legacy = false) {
+    const issues = [];
+    const expected = ["scene", "mode", ...Object.keys(catalog)];
+    if (!shape(draft, expected)) return ["配置顶层字段缺失或包含未知字段。"];
+    if (draft.scene !== "campus") issues.push("场景标识必须为 campus。");
+    if (!["text", "slots"].includes(draft.mode)) issues.push("N02 发现方式必须为 text 或 slots。");
+
+    const layouts = {
+      subjects: ["label", "jev", "slot", "ground", ...(legacy ? [] : ["jev_response_ref", "slot_response_ref", "ground_response_ref"])],
+      questions: ["label", "subject", ...(legacy ? [] : ["prompt", "response_ref"])],
+      tools: ["label", "subject"],
+      checks: ["label", "category", "subject", "questions", "tools", "build", "jev_hint"],
+      sources: ["label", "checks"],
+    };
+    const textLimits = { label: 100, jev: 600, slot: 80, ground: 600, prompt: 600, category: 100, build: 100 };
+    const bindings = {
+      subjects: {
+        jev_response_ref: contractRefs.discovery,
+        slot_response_ref: contractRefs.slots,
+        ground_response_ref: contractRefs.grounding,
+      },
+      questions: { response_ref: contractRefs.question },
+    };
+
+    for (const [group, ids] of Object.entries(catalog)) {
+      if (!shape(draft[group], ids)) {
+        issues.push(group + " 目录缺少固定标识或包含未知标识。");
+        continue;
+      }
+      for (const id of ids) {
+        const entry = draft[group][id];
+        if (!shape(entry, layouts[group])) {
+          issues.push(id + " 的字段缺失或包含未知字段。");
+          continue;
+        }
+        for (const field of layouts[group]) {
+          if (Object.hasOwn(textLimits, field) && !validText(entry[field], textLimits[field])) {
+            issues.push(id + " 的 " + field + " 必须为非空文本且不超过 " + textLimits[field] + " 字符。");
+          }
+        }
+        if (!legacy && Object.hasOwn(bindings, group)) {
+          for (const [field, expectedRef] of Object.entries(bindings[group])) {
+            if (entry[field] !== expectedRef) {
+              issues.push(id + " 的 " + field + " 必须绑定 " + expectedRef + "。");
+            }
+          }
+        }
+        if (Object.hasOwn(entry, "subject") && !catalog.subjects.includes(entry.subject)) {
+          issues.push(id + " 引用了未知主体。");
+        }
+        if (group === "subjects" && typeof entry.slot === "string" && !/^[a-z][a-z0-9_]{0,79}$/.test(entry.slot)) {
+          issues.push(id + " 的 slot 必须使用小写字母开头的字母、数字或下划线标识。");
+        }
+        if (group === "subjects" && draft.mode === "slots" && entry.slot !== fixedModelSlots[id]) {
+          issues.push(id + " 的固定模型槽位必须绑定 " + fixedModelSlots[id] + "。");
+        }
+        if (group === "checks") {
+          if (typeof entry.jev_hint !== "string" || entry.jev_hint.length > 240) {
+            issues.push(id + " 的 JEV 补充提示须为不超过 240 字符的文本，可留空。");
+          }
+          validateRefs(id, "questions", entry.questions, catalog.questions, issues);
+          validateRefs(id, "tools", entry.tools, catalog.tools, issues);
+          if (Array.isArray(entry.questions) && Array.isArray(entry.tools) && !entry.questions.length && !entry.tools.length) {
+            issues.push(id + " 至少需要一项 Question 或 Tool 证据。");
+          }
+          for (const field of ["questions", "tools"]) {
+            if (!Array.isArray(entry[field]) || !isRecord(draft[field])) continue;
+            for (const ref of entry[field]) {
+              if (!catalog[field].includes(ref)) continue;
+              if (draft[field][ref]?.subject !== entry.subject) {
+                issues.push(id + " 与证据 " + ref + " 的主体不一致。");
+              }
+            }
+          }
+        }
+        if (group === "sources") {
+          validateRefs(id, "checks", entry.checks, catalog.checks, issues);
+          if (Array.isArray(entry.checks) && !entry.checks.length) {
+            issues.push(id + " 至少需要配置一项 Check。");
+          }
+        }
+      }
+    }
+    if (shape(draft.subjects, catalog.subjects)
+        && typeof draft.subjects.person?.slot === "string"
+        && draft.subjects.person.slot === draft.subjects.equipment?.slot) {
+      issues.push("N02 固定槽位标识必须唯一。");
+    }
+    return issues;
+  }
+
+  function validateRefs(id, field, refs, allowed, issues) {
+    if (!Array.isArray(refs) || refs.length > allowed.length
+        || Array.from(refs).some((ref) => !allowed.includes(ref))
+        || new Set(refs).size !== refs.length) {
+      issues.push(id + " 的 " + field + " 必须是已登记、类型正确且不重复的引用列表。");
+    }
+  }
+
+  function compile(draft) {
+    const issues = validate(draft);
+    if (issues.length) throw new Error(issues.join("\n"));
+    const config = JSON.parse(JSON.stringify(draft));
+    return { format, config, routes: buildRoutes(config), response_contracts: structuredClone(responseContracts) };
+  }
+
+  function buildRoutes(config) {
+    const routes = {};
+    for (const sourceId of catalog.sources) {
+      const source = config.sources[sourceId];
+      const groups = new Map();
+      for (const checkId of source.checks) {
+        const check = config.checks[checkId];
+        if (!groups.has(check.subject)) {
+          groups.set(check.subject, { id: check.subject, checks: [], questions: [], tools: [] });
+        }
+        const group = groups.get(check.subject);
+        group.checks.push(checkId);
+        group.questions = [...new Set([...group.questions, ...check.questions])];
+        group.tools = [...new Set([...group.tools, ...check.tools])];
+      }
+      routes[sourceId] = { label: source.label, checks: [...source.checks], subjects: [...groups.values()] };
+    }
+    return routes;
+  }
+
+  function sameShapeAndValues(left, right) {
+    if (left === right) return true;
+    if (Array.isArray(right)) {
+      return Array.isArray(left) && left.length === right.length
+        && right.every((value, index) => sameShapeAndValues(left[index], value));
+    }
+    if (isRecord(right)) {
+      const keys = Object.keys(right);
+      return shape(left, keys) && keys.every((key) => sameShapeAndValues(left[key], right[key]));
+    }
+    return false;
+  }
+
+  function validatePayload(payload) {
+    if (shape(payload, ["format", "config", "routes"]) && payload.format === legacyFormat) {
+      const issues = validate(payload.config, true);
+      if (issues.length) throw new Error(issues.join("\n"));
+      if (!sameShapeAndValues(payload.routes, buildRoutes(payload.config))) {
+        throw new Error("旧版 Bundle 的派生路由与配置不一致。");
+      }
+      return compile(withPromptContracts(structuredClone(payload.config)));
+    }
+    if (!shape(payload, ["format", "config", "routes", "response_contracts"]) || payload.format !== format) {
+      throw new Error("Bundle 格式无效，预期 " + format + " 或 " + legacyFormat + "。");
+    }
+    const compiled = compile(payload.config);
+    if (!sameShapeAndValues(payload.routes, compiled.routes)) {
+      throw new Error("Bundle 的派生路由与配置不一致。请重新编译后导出。");
+    }
+    if (!sameShapeAndValues(payload.response_contracts, compiled.response_contracts)) {
+      throw new Error("Bundle 的提示词响应契约目录缺失或与演示格式定义不一致。");
+    }
+    return payload;
+  }
+
+  function parse(text) {
+    if (typeof text !== "string" || text.length > 100_000) {
+      throw new Error("Bundle 必须是 100000 字符以内的 JSON 文本。");
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error("Bundle 无法解析。请提供有效的 JSON。");
+    }
+    return validatePayload(parsed);
+  }
+
+  function hasResponseShape(contracts, ref, value) {
+    return shape(value, Object.keys(contracts[ref].fields));
+  }
+
+  function fixtureBoxesValid(boxes) {
+    // This demo has an at-most-one-instance fixture per Profile on a 1000 × 1000 pixel canvas.
+    return Array.isArray(boxes) && boxes.length <= 1 && boxes.every(box =>
+      Array.isArray(box) && box.length === 4 && box.every(x => Number.isInteger(x) && x >= 0 && x <= fixtureImageSize)
+      && box[0] < box[2] && box[1] < box[3]);
+  }
+
+  function run(payload, request) {
+    const { config, routes, response_contracts: contracts } = validatePayload(payload);
+    const { scene, source, fixture, execution_id } = request ?? {};
+    const nodes = [];
+    function stage(id, input, output, summary) {
+      nodes.push({ id, input, output, summary });
+    }
+
+    let invalid = null;
+    if (scene !== config.scene) {
+      invalid = { code: "unknown_scene", message: "请求场景与 Bundle 场景不匹配。" };
+    } else if (!catalog.sources.includes(source)) {
+      invalid = { code: "unsupported_source", message: "此 Bundle 未登记该来源。" };
+    } else if (typeof fixture !== "string" || !Object.hasOwn(fixtures, fixture)) {
+      invalid = { code: "unknown_fixture", message: "未登记该模拟图像样本。" };
+    } else if (!validText(execution_id, 100)) {
+      invalid = { code: "missing_execution_id", message: "缺少有效的执行标识。" };
+    }
+
+    const intake = { scene, source, fixture, execution_id };
+    if (invalid) {
+      stage("N01", intake, { status: "rejected", ...invalid }, invalid.message);
+      for (const id of ["N02", "N03", "N04", "N05", "N06"]) {
+        stage(id, { execution_id }, { status: "not_run", reason: invalid.code }, "接入校验未通过。");
+      }
+      return {
+        nodes, checks: [], categories: [], result: "invalid_request",
+        coverage: { status: "unavailable", total: 0, evaluated: 0, matched: 0, blocked: 0, skipped: 0 },
+        error: invalid,
+      };
+    }
+
+    const route = routes[source];
+    const image_ref = "fixture:" + fixture;
+    const context = { execution_id, scene, source, image_ref, bundle_format: format };
+    const fixtureData = fixtures[fixture];
+    const unlocked_categories = [...new Set(route.checks.map((id) => config.checks[id].category))];
+    const builds = Object.fromEntries(route.checks.map((id) => [id, config.checks[id].build]));
+    stage("N01", intake, { context, obligations: route.checks, unlocked_categories, builds },
+      "已匹配「" + route.label + "」并锁定本次检查清单。");
+
+    const active = route.subjects.map((group) => ({ profile_id: group.id, questions: group.questions }));
+    const textMode = config.mode === "text";
+    const selector = textMode
+      ? {
+          mode: "text",
+          response_ref: contractRefs.discovery,
+          response_contract: contracts[contractRefs.discovery],
+          prompt: route.subjects.map(({ id, checks }) => {
+            const hints = checks.map(key => config.checks[key].jev_hint.trim()).filter(Boolean);
+            return id + "：" + [...new Set([config.subjects[id].jev.trim(), ...hints])].join(" ");
+          }).join("\n"),
+          fragment_sources: route.subjects.map(({ id, checks }) => ({
+            profile_id: id, response_ref: config.subjects[id].jev_response_ref,
+            inherited_jev_hints: checks.filter(key => config.checks[key].jev_hint.trim()).map(check_id => ({
+              check_id, response_ref: config.subjects[id].jev_response_ref,
+            })),
+          })),
+        }
+      : {
+          mode: "slots",
+          prompt_injected: false,
+          response_ref: contractRefs.slots,
+          response_contract: contracts[contractRefs.slots],
+          slots: route.subjects.map(({ id }) => ({
+            profile_id: id, slot: config.subjects[id].slot, response_ref: config.subjects[id].slot_response_ref,
+          })),
+        };
+    const findings = active.map((profile) => {
+      const hit = fixtureData.subjects.includes(profile.profile_id);
+      return textMode ? { profile_id: profile.profile_id, hit }
+        : { slot: config.subjects[profile.profile_id].slot, value: hit };
+    });
+    const hits = active.filter(({ profile_id }, index) => {
+      const finding = findings[index];
+      const [idField, hitField, expectedId] = textMode
+        ? ["profile_id", "hit", profile_id] : ["slot", "value", config.subjects[profile_id].slot];
+      if (!hasResponseShape(contracts, selector.response_ref, finding)
+          || finding[idField] !== expectedId || typeof finding[hitField] !== "boolean") {
+        throw new Error("N02 模拟响应与已请求的主体或槽位契约不一致。");
+      }
+      return finding[hitField];
+    });
+    stage("N02", { context, eligible_profiles: active, selector },
+      { status: hits.length ? "hits" : "no_hits", response_validation: "passed", hits, fixture_response: findings },
+      hits.length ? "发现 " + hits.length + " 个合格 Profile。" : "合格 Profile 无命中，保留覆盖缺口。");
+
+    const grounding = hits.map(({ profile_id }) => {
+      const { ground, ground_response_ref } = config.subjects[profile_id];
+      return { profile_id, prompt: ground, response_ref: ground_response_ref, response_contract: contracts[ground_response_ref] };
+    });
+    const groundingResponses = grounding.map(({ profile_id }) => ({
+      profile_id, boxes_xyxy: boxes[profile_id] ? [[...boxes[profile_id]]] : [],
+    }));
+    const objects = grounding.flatMap(({ profile_id, response_ref }, index) => {
+      const response = groundingResponses[index];
+      if (!hasResponseShape(contracts, response_ref, response) || response.profile_id !== profile_id
+          || !fixtureBoxesValid(response.boxes_xyxy)) {
+        throw new Error("N03 模拟响应与已请求的主体或坐标契约不一致。");
+      }
+      return response.boxes_xyxy.map((bbox_xyxy, boxIndex) => ({
+        execution_id, profile_id, object_ref: execution_id + "/" + profile_id + "/" + (boxIndex + 1),
+        bbox_xyxy, coordinate_space: "fixture_pixels", image_ref,
+        marked_image_ref: image_ref + "#mark=" + profile_id,
+      }));
+    });
+    stage("N03", { context, grounding }, {
+      response_validation: grounding.length ? "passed" : "no_grounding_requests",
+      fixture_responses: groundingResponses, objects,
+    }, "生成 " + objects.length + " 个定位对象。");
+
+    function fact(object, ref, kind, data) {
+      const identity = { execution_id, object_ref: object.object_ref };
+      return {
+        ...identity,
+        [kind + "_id"]: ref,
+        ...data,
+        evidence: { ...identity, image_ref, marked_image_ref: object.marked_image_ref, producer: kind, producer_id: ref },
+      };
+    }
+
+    const questionSets = new Map(hits.map(({ profile_id, questions }) => [profile_id, questions]));
+    const joint = objects.map((object) => ({
+      object,
+      questions: questionSets.get(object.profile_id).map((id) => {
+        const { prompt, response_ref } = config.questions[id];
+        return { id, prompt, response_ref, response_contract: contracts[response_ref] };
+      }),
+    })).filter(({ questions }) => questions.length);
+    const observationResponses = joint.map(({ object, questions }) => ({
+      object_ref: object.object_ref,
+      answers: questions.filter(({ id }) => fixtureSubjects[id] === object.profile_id && Object.hasOwn(fixtureData.values, id))
+        .map(({ id }) => ({ object_ref: object.object_ref, question_id: id, status: "known", value: fixtureData.values[id] })),
+    }));
+    const observationValidation = joint.map(({ object, questions }, index) => {
+      const response = observationResponses[index];
+      const validEnvelope = shape(response, ["object_ref", "answers"])
+        && response.object_ref === object.object_ref && Array.isArray(response.answers);
+      const answers = validEnvelope ? response.answers : [];
+      const requestedIds = new Set(questions.map(({ id }) => id));
+      const rejectedAnswerCount = answers.filter(answer => !requestedIds.has(answer?.question_id)).length;
+      const facts = !validEnvelope ? [] : questions.map(({ id, response_ref }) => {
+        const matches = answers.filter(answer => answer?.question_id === id);
+        const [answer] = matches;
+        if (matches.length === 1 && answer.object_ref === object.object_ref) {
+          const { known, unknown } = contracts[response_ref].answer_fields;
+          if (answer.status === "known" && shape(answer, Object.keys(known)) && typeof answer.value === "boolean") {
+            return fact(object, id, "question", { status: "known", value: answer.value });
+          }
+          if (answer.status === "unknown" && shape(answer, Object.keys(unknown)) && validText(answer.reason, 600)) {
+            return fact(object, id, "question", { status: "unknown", reason: answer.reason });
+          }
+        }
+        return fact(object, id, "question", { status: "error", reason: "模拟响应缺少唯一且有效的逐题答案。" });
+      });
+      return {
+        facts,
+        report: {
+          object_ref: object.object_ref, envelope_valid: validEnvelope,
+          rejected_answer_count: rejectedAnswerCount,
+          invalid_question_ids: facts.filter(({ status }) => status === "error").map(({ question_id }) => question_id),
+        },
+      };
+    });
+    const questionFacts = observationValidation.flatMap(({ facts }) => facts);
+    stage("N04", { context, joint_requests: joint },
+      {
+        fixture_responses: observationResponses, response_validation: observationValidation.map(({ report }) => report),
+        question_facts: questionFacts, joint_request_count: joint.length,
+      },
+      "按对象执行 " + joint.length + " 次模拟联合观察，逐题记录 Fact。");
+
+    const toolPlans = objects.map((object) => ({
+      object,
+      tools: route.subjects.find(({ id }) => id === object.profile_id).tools.map((id) => ({
+        id, label: config.tools[id].label,
+      })),
+    })).filter(({ tools }) => tools.length);
+    const toolFacts = toolPlans.flatMap(({ object, tools }) => tools.map(({ id }) => {
+      const available = fixtureSubjects[id] === object.profile_id && Object.hasOwn(fixtureData.values, id);
+      const value = available ? fixtureData.values[id] : null;
+      if (typeof value === "boolean") return fact(object, id, "tool", { status: "known", value });
+      const data = available ? { status: "error", reason: "模拟工具未能返回有效观测。" }
+        : { status: "not_evaluated", reason: "模拟图片缺少此工具的响应。" };
+      return fact(object, id, "tool", data);
+    }));
+    stage("N05", { context, tool_plans: toolPlans }, { tool_facts: toolFacts, execution_count: toolFacts.length },
+      "执行 " + toolFacts.length + " 项预绑定模拟工具。");
+
+    const allChecks = [...route.checks, ...catalog.checks.filter((id) => !route.checks.includes(id))];
+    const checks = allChecks.map((id) => {
+      const { label, category, subject, build, questions, tools } = config.checks[id];
+      const base = { id, label, category, build };
+      if (!route.checks.includes(id)) {
+        return { ...base, status: "skipped", reason: "该来源未配置此项检查。", evidence: [] };
+      }
+      const object = objects.find(({ profile_id }) => profile_id === subject);
+      if (!object) {
+        return { ...base, status: "blocked", reason: "该检查所需的主体未命中。", evidence: [] };
+      }
+
+      const facts = [
+        ...questions.map((ref) => questionFacts.find((fact) => fact.execution_id === execution_id
+          && fact.object_ref === object.object_ref && fact.question_id === ref)),
+        ...tools.map((ref) => toolFacts.find((fact) => fact.execution_id === execution_id
+          && fact.object_ref === object.object_ref && fact.tool_id === ref)),
+      ];
+      const evidence = facts.filter(Boolean).map(({ evidence, status, value, reason }) => ({
+        ...evidence, status, ...(status === "known" ? { value } : { reason }),
+      }));
+      const refs = [...questions, ...tools];
+      const gaps = refs.filter((_, index) => facts[index]?.status !== "known");
+      if (gaps.length) {
+        return { ...base, status: "blocked", reason: "缺少必需 Fact：" + gaps.join("、"), evidence };
+      }
+      if (facts.every(({ value }) => value === true)) {
+        return { ...base, status: "matched", reason: "所有必需 Fact 为真。", evidence };
+      }
+      return { ...base, status: "clear", reason: "必需 Fact 齐备，至少一项为假。", evidence };
+    });
+
+    const matched = checks.filter(({ status }) => status === "matched");
+    const clear = checks.filter(({ status }) => status === "clear").length;
+    const blocked = checks.filter(({ status }) => status === "blocked").length;
+    const skipped = checks.filter(({ status }) => status === "skipped").length;
+    const categories = [...new Set(matched.map(({ category }) => category))];
+    const coverage = {
+      status: blocked ? (matched.length + clear ? "partial" : "missing") : "complete",
+      total: route.checks.length, evaluated: matched.length + clear, matched: matched.length, blocked, skipped,
+    };
+    const result = matched.length ? "violation" : blocked ? "uncertain" : "no_violation";
+    stage("N06", {
+      context, strategy: "collect_all", candidate_prediction: "disabled",
+      checks: route.checks.map((id) => {
+        const { label, category, subject, questions, tools, build } = config.checks[id];
+        return { id, label, category, subject, questions, tools, build };
+      }),
+      question_facts: questionFacts, tool_facts: toolFacts,
+    }, { checks, categories, coverage, result },
+    "候选预测未启用。已按规则判定 " + coverage.evaluated + " / " + coverage.total + " 项，命中 " + coverage.matched + " 项。");
+    return { nodes, checks, categories, coverage, result };
+  }
+
+  function responseContract(ref) {
+    return structuredClone(responseContracts[ref]);
+  }
+
+  return { seed, validate, compile, parse, run, responseContract };
+})();
+
+const byId=id=>document.getElementById(id);
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const pretty=value=>JSON.stringify(value,null,2);
+const option=(value,label,selected)=>'<option value="'+esc(value)+'"'+(selected?' selected':'')+'>'+esc(label)+'</option>';
+const tag=value=>'<span class="tag">'+esc(value)+'</span>';
+const only=(obj,id)=>Object.hasOwn(obj,id)?obj[id]:undefined;
+const contractDetails=ref=>'<details><summary>响应契约 <code>'+esc(ref)+'</code></summary><pre>'+esc(pretty(Engine.responseContract(ref)))+'</pre></details>';
+const draft=Engine.seed();
+let stage='web',tab='matrix',selectedSubject='person',selectedCheck='helmet';
+let frozenText='',loadedText='',loadedFrom='',frozenRev=0,lastRun=null,lastConfig=null,activeNode=0,executions=0;
+function note(id,message,ok=false){
+ const element=byId(id);element.className='notice'+(ok?' ok':'');element.textContent=message;
+}
+function stageTo(id,focus=true){
+ stage=id;
+ for(const name of ['web','bundle','runtime'])byId(name).hidden=name!==stage;
+ document.querySelectorAll('[data-stage]').forEach(button=>{
+  if(button.dataset.stage===stage)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');
+ });
+ if(stage==='web') renderWeb();
+ if(stage==='bundle') renderBundle();
+ if(stage==='runtime') renderRuntime();
+ if(focus)byId(id).querySelector('h2').focus({preventScroll:true});
+}
+function changed(){
+ const equal=frozenText&&pretty(JSON.parse(frozenText).config)===pretty(draft);
+ byId('draft-state').textContent=!frozenText?'本地草稿':equal?'与快照一致':'草稿有新修改';
+ renderSummary();
+}
+function renderSummary(){
+ const entries=Object.entries(draft.sources),active=[...new Set(entries.flatMap(([,s])=>s.checks))];
+ const subjects=new Set(active.map(key=>draft.checks[key].subject));
+ byId('numbers').innerHTML=[[entries.length,'设备来源'],[subjects.size,'启用主体'],[active.length,'启用 Check']].map(([n,l])=>'<div><b>'+n+'</b><small>'+l+'</small></div>').join('');
+ byId('connections').innerHTML=entries.map(([id,s])=>'<div class="trace-line"><b>'+esc(s.label)+' <code>'+esc(id)+'</code></b><span>'+esc(s.checks.map(c=>draft.checks[c].label).join(' · ')||'未配置检查项')+'</span></div>').join('');
+}
+function renderWeb(){
+ document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));
+ const editor=byId('editor');
+ if(tab==='matrix'){
+  const items=Object.entries(draft.checks);
+  editor.innerHTML='<h3 class="paneltitle">设备检查矩阵</h3><table class="matrix"><thead><tr><th scope="col">设备来源</th>'+items.map(([,c])=>'<th scope="col">'+esc(c.label)+'</th>').join('')+'</tr></thead><tbody>'+Object.entries(draft.sources).map(([id,s])=>'<tr><th scope="row">'+esc(s.label)+'<small>'+esc(id)+'</small></th>'+items.map(([k,c])=>'<td><label><input type="checkbox" data-source="'+id+'" data-check="'+k+'" aria-label="'+esc(s.label+'启用'+c.label)+'" '+(s.checks.includes(k)?'checked':'')+'></label></td>').join('')+'</tr>').join('')+'</tbody></table><div class="detailsbox"><h3>主体目录</h3><p class="fine">点击主体可维护 N02 发现提示与 N03 定位提示。</p><div class="btns" style="margin-top:8px">'+Object.entries(draft.subjects).map(([id,s])=>'<button type="button" data-subject="'+id+'">'+esc(s.label)+' ↗</button>').join('')+'</div></div>';
+ }else if(tab==='prompts'){
+  const s=draft.subjects[selectedSubject];
+  const textMode=draft.mode==='text';
+  const questions=Object.entries(draft.questions).filter(([,q])=>q.subject===selectedSubject);
+  editor.innerHTML='<div class="fields"><label class="field">管理主体<select id="subject-choice">'+Object.entries(draft.subjects).map(([k,v])=>option(k,v.label,k===selectedSubject)).join('')+'</select></label><label class="field">N02 通用路由模式<select id="mode">'+option('text','文本提示注入',textMode)+option('slots','固定模型输出槽位',!textMode)+'</select></label></div>'+
+   '<fieldset><legend>N02 · JEV 发现</legend><label class="field">'+(textMode?'发现提示片段':'固定模型输出槽位')+'<input type="text" id="jev-value" maxlength="'+(textMode?600:80)+'" value="'+esc(textMode?s.jev:s.slot)+'"></label>'+
+   '<p class="fine">'+(textMode?'Check 的 jev_hint 仅为该主体补充提示，共用主体的响应契约。':'仅解析固定布尔槽位。主体发现提示及 Check 补充提示的注入已停用。')+'</p>'+contractDetails(textMode?s.jev_response_ref:s.slot_response_ref)+'</fieldset>'+
+   '<fieldset><legend>N03 · Grounding 定位</legend><label class="field">定位提示词<textarea id="ground-value" maxlength="600">'+esc(s.ground)+'</textarea></label><p class="fine">仅对已命中主体加载。盒坐标使用模拟图像像素。</p>'+contractDetails(s.ground_response_ref)+'</fieldset>'+
+   '<fieldset><legend>N04 · Question 观察</legend><p class="fine">同一对象合并请求，逐题校验并生成 Fact。</p>'+questions.map(([id,q])=>'<label class="field">'+esc(q.label)+' <code>'+esc(id)+'</code><textarea data-question-prompt="'+esc(id)+'" maxlength="600">'+esc(q.prompt)+'</textarea></label>'+contractDetails(q.response_ref)).join('')+'</fieldset>'+
+   '<p class="fine">N06 候选预测未启用，运行时逐项执行来源配置的 Check 规则。</p>';
+ }else{
+  const c=draft.checks[selectedCheck];
+  const dependencies=(field,catalog,label)=>'<fieldset><legend>'+label+'</legend><div class="choices">'+Object.entries(catalog).filter(([,v])=>v.subject===c.subject).map(([id,v])=>'<label class="choice"><input type="checkbox" name="'+field+'" data-rel="'+field+'" value="'+id+'" '+(c[field].includes(id)?'checked':'')+'>'+esc(v.label)+'</label>').join('')+'</div></fieldset>';
+  const hintNote=draft.mode==='text'
+   ? '继承主体的 JEV 响应契约 <code>'+esc(draft.subjects[c.subject].jev_response_ref)+'</code>。'
+   : '固定槽位模式已停用此提示的注入，保留内容供切回文本模式时使用。';
+  editor.innerHTML='<label class="field">选择 Check<select id="check-choice">'+Object.entries(draft.checks).map(([k,v])=>option(k,v.label,k===selectedCheck)).join('')+'</select></label><div class="chiprow">'+tag('主体 · '+draft.subjects[c.subject].label)+tag('类别 · '+c.category)+'</div>'+'<div class="fields"><label class="field">N06 · 违规类别名称<input type="text" id="category-label" maxlength="100" value="'+esc(c.category)+'"></label><label class="field">N02 · 此能力补充的 JEV 提示（可选）<input type="text" id="cap-hint" aria-describedby="cap-hint-note" maxlength="240" value="'+esc(c.jev_hint)+'"><span id="cap-hint-note" class="fine">'+hintNote+'</span></label></div>'+dependencies('questions',draft.questions,'N04 · 需要的 Question')+dependencies('tools',draft.tools,'N05 · 需要的 Tool')+'<div class="fine">本演示将所选项作为该 Check 的必需证据，按布尔条件联合判定。来源 Build：<code>'+esc(c.build)+'</code></div>';
+ }
+ changed();
+}
+function toggleIn(list,key,on,order){
+ const selected=new Set(list);if(on)selected.add(key);else selected.delete(key);
+ return Object.keys(order).filter(k=>selected.has(k));
+}
+byId('editor').onchange=e=>{
+ const t=e.target;
+ if(t.dataset.source){const source=draft.sources[t.dataset.source];source.checks=toggleIn(source.checks,t.dataset.check,t.checked,draft.checks);changed()}
+ else if(t.dataset.rel){const c=draft.checks[selectedCheck],f=t.dataset.rel;c[f]=toggleIn(c[f],t.value,t.checked,draft[f]);changed()}
+ else if(t.id==='subject-choice'){selectedSubject=t.value;renderWeb();byId('subject-choice').focus()}
+ else if(t.id==='check-choice'){selectedCheck=t.value;renderWeb();byId('check-choice').focus()}
+ else if(t.id==='mode'){draft.mode=t.value;renderWeb();byId('mode').focus()}
+};
+byId('editor').oninput=e=>{
+ const s=draft.subjects[selectedSubject];
+ if(e.target.id==='jev-value')s[draft.mode==='text'?'jev':'slot']=e.target.value;
+ else if(e.target.id==='ground-value')s.ground=e.target.value;
+ else if(e.target.dataset.questionPrompt)draft.questions[e.target.dataset.questionPrompt].prompt=e.target.value;
+ else if(e.target.id==='cap-hint')draft.checks[selectedCheck].jev_hint=e.target.value;
+ else if(e.target.id==='category-label'){draft.checks[selectedCheck].category=e.target.value;byId('editor').querySelector('.chiprow').lastElementChild.textContent='类别 · '+e.target.value}
+ else return;
+ changed();
+};
+byId('editor').onclick=e=>{const b=e.target.closest('[data-subject]');if(b){selectedSubject=b.dataset.subject;tab='prompts';renderWeb();byId('subject-choice').focus()}};
+function validateDraft(){
+ const issues=Engine.validate(draft);
+ note('diagnostic',issues.length?'预检未通过\n'+issues.join('\n'):'预检通过 · 场景、提示词响应契约和 Check 依赖可解析。',!issues.length);
+ return !issues.length;
+}
+function renderBundle(){
+ byId('download').disabled=!frozenText;byId('export-data').textContent=frozenText||'尚未冻结。';
+ const pkg=frozenText?JSON.parse(frozenText):null;
+ byId('frozen-info').innerHTML=pkg?'<p class="fine" style="margin-top:10px">会话快照 #'+frozenRev+' · <code>'+esc(pkg.format)+'</code> · '+new Blob([frozenText]).size+' 字节 · '+(pretty(pkg.config)===pretty(draft)?'与草稿一致':'草稿已修改，当前仍显示旧快照')+'</p><details><summary>查看冻结的响应契约</summary><pre>'+esc(pretty(pkg.response_contracts))+'</pre></details>':'';
+ byId('route-list').innerHTML=!pkg?'<p class="fine">冻结后展示各设备的主体、问题和工具索引。</p>':Object.entries(pkg.routes).map(([id,r])=>'<div class="detailsbox"><h3>'+esc(r.label)+' <code>'+esc(id)+'</code></h3>'+r.subjects.map(s=>'<p class="fine">'+esc(pkg.config.subjects[s.id].label)+' · '+s.questions.length+' 个 Question / '+s.tools.length+' 个 Tool</p>').join('')+'<details><summary>解析该来源的引用</summary><pre>'+esc(pretty(r))+'</pre></details></div>').join('');
+}
+function clearRun(){lastRun=null;lastConfig=null;activeNode=0;byId('run-msg').textContent=''}
+byId('validate').onclick=validateDraft;
+byId('to-bundle').onclick=()=>{stageTo('bundle');validateDraft()};
+byId('freeze').onclick=()=>{
+ if(!validateDraft()){byId('diagnostic').focus();return}
+ try{
+ const text=pretty(Engine.compile(draft));Engine.parse(text);
+ if(text!==frozenText)frozenRev++;frozenText=text;loadedText=text;loadedFrom='会话快照 #'+frozenRev;clearRun();renderBundle();
+ note('diagnostic','已冻结并载入 Runtime。后续草稿编辑不会改变这份快照。',true);
+ }catch(err){note('diagnostic',err.message)}
+};
+byId('download').onclick=()=>{
+ const url=URL.createObjectURL(new Blob([frozenText],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='campus-bundle-demo-'+frozenRev+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+};
+byId('import').onchange=async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{
+  if(file.size>250000)throw Error('文件超过演示上限 250 KB');
+  const text=await file.text(),pkg=Engine.parse(text);
+  const migrated=JSON.parse(text).format!==pkg.format;
+  loadedText=pretty(pkg);loadedFrom='本地文件 '+file.name+(migrated?' · 已补齐旧版演示契约':'');
+  clearRun();renderRuntime();byId('run-msg').textContent='已校验并载入本地 Bundle。';
+ }
+ catch(error){byId('run-msg').textContent='导入失败。'+error.message+'。当前快照保留。'}
+ e.target.value='';
+};
+const statusLabels={matched:'违规命中',clear:'检查未命中',blocked:'证据不足',skipped:'未执行',not_configured:'来源未配置',unresolved:'不确定',uncertain:'不确定',violation:'存在违规',no_violation:'未发现违规',invalid_request:'请求未受理',complete:'完整',partial:'部分',none:'无覆盖',missing:'无覆盖',unavailable:'未进入执行'};
+const describe=k=>statusLabels[k]||k;
+function renderRuntime(){
+ note('active-pkg',loadedText?'已载入 · '+loadedFrom:'尚未加载 Bundle。请先在上一步冻结，或从下方载入文件。',!!loadedText);
+ byId('decision').innerHTML=lastRun?'<p><b class="badge">'+esc(describe(lastRun.result))+'</b> · '+esc(describe(lastRun.coverage.status))+'</p><p class="fine">违规类别：'+esc(lastRun.categories.join('、')||'无已确认类别')+'</p>':'<p class="sub">运行后按 Check 查看违规类别、证据和覆盖缺口。</p>';
+ if(lastRun){
+ const byCheck=Object.fromEntries(lastRun.checks.map(c=>[c.id,c]));
+ for(const [id,definition] of Object.entries(lastConfig.checks)){
+ const c=only(byCheck,id);
+ const row=document.createElement('div');row.className='resultrow';
+ const unassigned=lastRun.result==='invalid_request'?'未建立检查义务':'该来源未配置';
+ row.innerHTML='<strong>'+esc(definition.label)+'</strong><span>'+esc(c?describe(c.status):unassigned)+'</span>'+
+ (c?'<small>'+esc(c.reason||'')+'</small><details style="grid-column:1/-1;margin-top:0"><summary>查看检查证据</summary><pre>'+esc(pretty({check_ref:id,source_build:definition.build,category:c.category,evidence:c.evidence}))+'</pre></details>':'');
+ byId('decision').append(row);
+ }
+ }
+ renderTrace();
+}
+const names=['场景选能力','JEV 主体路由','Grounding 定位','联合观察','工具核验','Check 判定'];
+function renderTrace(){
+ const container=byId('trace');
+ if(!lastRun){container.innerHTML='<p class="sub">运行后可逐节点检查提示片段、输出槽位、观察组与事实引用。</p>';return}
+ const n=lastRun.nodes[activeNode];
+ const caps=lastConfig.checks, catalog=lastConfig.subjects;
+ let artifact='';
+ if(lastRun.result!=='invalid_request'){
+  if(activeNode===0) artifact=n.output.obligations.map(id=>caps[id].label).join('、');
+  if(activeNode===1) artifact=n.output.hits.map(hit=>catalog[hit.profile_id].label).join('、')||'未发现适用主体';
+  if(activeNode===2) artifact=n.output.objects.map(o=>o.object_ref).join(' · ')||'无观察组';
+  if(activeNode===3) artifact=n.output.question_facts.map(f=>lastConfig.questions[f.question_id].label).join('、')||'无观察任务';
+  if(activeNode===4) artifact=n.output.tool_facts.map(f=>lastConfig.tools[f.tool_id].label).join('、')||'无工具任务';
+  if(activeNode===5) artifact=n.output.categories.join('、')||describe(n.output.result);
+ }
+ container.innerHTML='<nav class="rail" aria-label="查看节点数据">'+lastRun.nodes.map((x,i)=>'<button data-node="'+i+'" aria-pressed="'+(activeNode===i)+'">N0'+(i+1)+' '+names[i]+'</button>').join('')+'</nav><h3>'+esc(n.summary)+'</h3>'+(artifact?'<p class="fine">'+esc(artifact)+'</p>':'')+'<div class="fields"><div><h3 class="logtitle">输入</h3><pre>'+esc(pretty(n.input))+'</pre></div><div><h3 class="logtitle">交付</h3><pre>'+esc(pretty(n.output))+'</pre></div></div>';
+}
+byId('trace').onclick=e=>{const b=e.target.closest('[data-node]');if(b){activeNode=Number(b.dataset.node);renderTrace();byId('trace').querySelector('[data-node="'+activeNode+'"]').focus({preventScroll:true})}};
+byId('runform').onsubmit=e=>{
+ e.preventDefault();if(!loadedText){byId('run-msg').textContent='请先冻结或导入一份 Bundle。';return}
+ try{const pkg=Engine.parse(loadedText),id='EX-'+String(++executions).padStart(3,'0');lastRun=Engine.run(pkg,{scene:byId('request-scene').value.trim(),source:byId('device').value,fixture:byId('fixture').value,execution_id:id});lastConfig=pkg.config;activeNode=0;renderRuntime();byId('run-msg').textContent=id+' · '+loadedFrom+' · 本次模拟已结束。'}
+ catch(err){clearRun();renderRuntime();byId('run-msg').textContent='运行失败。'+err.message}
+};
+byId('runform').oninput=()=>{if(lastRun){clearRun();renderRuntime()}};
+document.querySelectorAll('[data-go],[data-stage]').forEach(b=>b.onclick=()=>{const id=b.dataset.go||b.dataset.stage;stageTo(id);if(id==='bundle')validateDraft()});
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;renderWeb()});
+stageTo('web',false);
+
+</script></body></html>

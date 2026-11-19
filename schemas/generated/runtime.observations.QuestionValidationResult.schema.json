@@ -1,0 +1,202 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "entity",
+        "region",
+        "profile",
+        "facet",
+        "question",
+        "tool",
+        "tool_plan",
+        "rule",
+        "rule_set",
+        "model_binding",
+        "fact_schema",
+        "prompt_template",
+        "response_schema",
+        "attribute_schema",
+        "context_schema",
+        "tool_input_schema",
+        "tool_output_schema",
+        "object_schema",
+        "decision_schema",
+        "value_schema",
+        "policy",
+        "vocabulary",
+        "geometry_resource",
+        "static_asset",
+        "fact_producer_catalog"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ContentRef",
+      "type": "object"
+    },
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "InvalidQuestionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "issues": {
+          "$ref": "#/$defs/PerceptionValidationIssues",
+          "minLength": 1
+        },
+        "status": {
+          "const": "invalid",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "issues"
+      ],
+      "title": "InvalidQuestionResult",
+      "type": "object"
+    },
+    "IssueIndex": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "IssuePath": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/FieldName"
+          },
+          {
+            "$ref": "#/$defs/IssueIndex"
+          }
+        ]
+      },
+      "maxItems": 32,
+      "type": "array"
+    },
+    "PerceptionValidationIssues": {
+      "items": {
+        "$ref": "#/$defs/ValidationIssue"
+      },
+      "maxItems": 1024,
+      "type": "array"
+    },
+    "ValidQuestionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "validated",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "ValidQuestionResult",
+      "type": "object"
+    },
+    "ValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "path": {
+          "$ref": "#/$defs/IssuePath"
+        },
+        "related_refs": {
+          "items": {
+            "$ref": "#/$defs/ContentRef"
+          },
+          "maxItems": 16,
+          "title": "Related Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "path",
+        "message",
+        "related_refs"
+      ],
+      "title": "ValidationIssue",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "invalid": "#/$defs/InvalidQuestionResult",
+      "validated": "#/$defs/ValidQuestionResult"
+    },
+    "propertyName": "status"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ValidQuestionResult"
+    },
+    {
+      "$ref": "#/$defs/InvalidQuestionResult"
+    }
+  ]
+}

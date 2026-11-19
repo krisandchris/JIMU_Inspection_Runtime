@@ -1,0 +1,1513 @@
+--- /dev/null
++++ b/src/jimu_runtime/replay/artifact.py
+@@ -0,0 +1,303 @@
++"""Scoped PostgreSQL Artifact Replay service for finalized workflow evidence."""
++
++from datetime import UTC, datetime
++from hashlib import sha256
++from uuid import uuid4
++
++from pydantic import TypeAdapter
++from sqlalchemy import text
++from sqlalchemy.engine import RowMapping
++from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
++
++from jimu_runtime.domain.definition_support import ShortText
++from jimu_runtime.domain.enums import RuntimeRecordKind
++from jimu_runtime.domain.primitives import RecordId
++from jimu_runtime.domain.runtime.facts import EvidenceRef
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.replay import (
++    ArtifactReplayRequest,
++    ArtifactReplayRun,
++    ReplayExecutionSource,
++    ReplayKind,
++    ReplayScoringEvidence,
++)
++from jimu_runtime.replay.artifact_journal import read_journal_witnesses
++from jimu_runtime.replay.artifact_records import (
++    SCORE_PROTOCOL,
++    SCORING_PROTOCOL_PIN,
++    ArtifactScoringEvidence,
++    score_history,
++)
++from jimu_runtime.replay.artifact_source import (
++    ArtifactReplayError,
++    HistoricalSource,
++    load_historical_source,
++)
++from jimu_runtime.workflow.mock_support import record_digest
++from jimu_runtime.workflow.repository import RepositoryError
++
++_KEY = TypeAdapter[str](ShortText)
++_ID = TypeAdapter[str](RecordId)
++_SCOPE = "project_id = :project_id AND client_id = :client_id"
++_TABLE = "jimu_workflow.artifact_replay_runs"
++_COLUMNS = """
++    replay_run_id, evidence_id, source_execution_id, request_digest, run_digest,
++    evidence_digest, run_record::text, evidence_record::text
++"""
++
++
++def _scope(scope: IdempotencyScope) -> dict[str, str]:
++    return {"project_id": scope.project_id, "client_id": scope.client_id}
++
++
++def _read_row(
++    scope: IdempotencyScope, row: RowMapping
++) -> tuple[ArtifactReplayRun, ArtifactScoringEvidence]:
++    try:
++        run = ArtifactReplayRun.model_validate_json(row["run_record"])
++        evidence = ArtifactScoringEvidence.model_validate_json(row["evidence_record"])
++    except ValueError as error:
++        raise ArtifactReplayError("artifact_replay_record_corrupt") from error
++    source = run.request.source
++    if (
++        run.stable_json() != row["run_record"]
++        or evidence.stable_json() != row["evidence_record"]
++        or record_digest(run) != row["run_digest"]
++        or record_digest(evidence) != row["evidence_digest"]
++        or run.scoring_evidence.digest != row["evidence_digest"]
++        or run.scoring_evidence.ref != evidence.evidence_ref
++        or evidence.evidence_ref.record_id != row["evidence_id"]
++        or record_digest(run.request) != row["request_digest"]
++        or evidence.request_digest != row["request_digest"]
++        or run.replay_run_id != row["replay_run_id"]
++        or evidence.replay_run_id != run.replay_run_id
++        or evidence.source_execution_id != row["source_execution_id"]
++        or source.execution_ref.record_id != row["source_execution_id"]
++        or source.pins != evidence.execution_pins
++        or evidence.scoring_protocol.protocol_id
++        != run.request.scoring_protocol.protocol_id
++        or evidence.scoring_protocol.version != run.request.scoring_protocol.version
++        or record_digest(evidence.scoring_protocol)
++        != run.request.scoring_protocol.digest
++        or evidence.scope != scope
++    ):
++        raise ArtifactReplayError("artifact_replay_record_corrupt")
++    return run, evidence
++
++
++async def _read_key(
++    connection: AsyncConnection, scope: IdempotencyScope, key: bytes
++) -> RowMapping | None:
++    return (
++        (
++            await connection.execute(
++                text(f"""
++                SELECT {_COLUMNS} FROM {_TABLE}
++                WHERE {_SCOPE} AND idempotency_key = :key
++            """),
++                {**_scope(scope), "key": key},
++            )
++        )
++        .mappings()
++        .one_or_none()
++    )
++
++
++def _match_request(
++    scope: IdempotencyScope, row: RowMapping, request: ArtifactReplayRequest
++) -> ArtifactReplayRun:
++    run, _ = _read_row(scope, row)
++    if run.request != request:
++        raise ArtifactReplayError("artifact_replay_idempotency_conflict")
++    return run
++
++
++async def _load_source(
++    connection: AsyncConnection, scope: IdempotencyScope, source: ReplayExecutionSource
++) -> HistoricalSource:
++    try:
++        return await load_historical_source(connection, scope, source)
++    except ArtifactReplayError:
++        raise
++    except RepositoryError as error:
++        raise ArtifactReplayError(f"artifact_history_{error.code}") from error
++    except ValueError as error:
++        raise ArtifactReplayError("artifact_history_inconsistent") from error
++
++
++class ArtifactReplayService:
++    """Replay within a trusted caller's Scope and persist the score atomically."""
++
++    def __init__(self, engine: AsyncEngine) -> None:
++        self._engine = engine
++
++    async def prepare_request(
++        self, scope: IdempotencyScope, source: ReplayExecutionSource
++    ) -> ArtifactReplayRequest:
++        """Discover the exact normalized artifact pins required by this protocol."""
++        scope = IdempotencyScope.model_validate(scope)
++        source = ReplayExecutionSource.model_validate(source)
++        async with self._engine.connect() as connection:
++            history = await _load_source(connection, scope, source)
++            await read_journal_witnesses(connection, scope, history)
++        if len(history.artifacts) > 1024:
++            raise ArtifactReplayError("artifact_replay_inventory_limit")
++        return ArtifactReplayRequest(
++            schema_version="1.0.0",
++            kind=ReplayKind.ARTIFACT,
++            source=source,
++            scoring_protocol=SCORING_PROTOCOL_PIN,
++            source_artifacts=history.artifacts,
++        )
++
++    async def get_run(
++        self, scope: IdempotencyScope, replay_run_id: str
++    ) -> ArtifactReplayRun | None:
++        scope = IdempotencyScope.model_validate(scope)
++        async with self._engine.connect() as connection:
++            row = (
++                (
++                    await connection.execute(
++                        text(f"""
++                        SELECT {_COLUMNS} FROM {_TABLE}
++                        WHERE {_SCOPE} AND replay_run_id = :identity
++                    """),
++                        {
++                            **_scope(scope),
++                            "identity": _ID.validate_python(replay_run_id),
++                        },
++                    )
++                )
++                .mappings()
++                .one_or_none()
++            )
++        return None if row is None else _read_row(scope, row)[0]
++
++    async def read_scoring_evidence(
++        self, scope: IdempotencyScope, pin: ReplayScoringEvidence
++    ) -> ArtifactScoringEvidence | None:
++        scope = IdempotencyScope.model_validate(scope)
++        pin = ReplayScoringEvidence.model_validate(pin)
++        async with self._engine.connect() as connection:
++            row = (
++                (
++                    await connection.execute(
++                        text(f"""
++                        SELECT {_COLUMNS} FROM {_TABLE}
++                        WHERE {_SCOPE} AND evidence_id = :identity
++                    """),
++                        {**_scope(scope), "identity": pin.ref.record_id},
++                    )
++                )
++                .mappings()
++                .one_or_none()
++            )
++        if row is None:
++            return None
++        run, evidence = _read_row(scope, row)
++        if run.scoring_evidence != pin:
++            raise ArtifactReplayError("artifact_scoring_evidence_pin_mismatch")
++        return evidence
++
++    async def run(
++        self,
++        scope: IdempotencyScope,
++        idempotency_key: str,
++        request: ArtifactReplayRequest,
++    ) -> ArtifactReplayRun:
++        scope = IdempotencyScope.model_validate(scope)
++        key = _KEY.validate_python(idempotency_key).encode("utf-8")
++        if b"\x00" in key:
++            raise ArtifactReplayError("artifact_replay_invalid_idempotency_key")
++        request = ArtifactReplayRequest.model_validate(request)
++        if request.scoring_protocol != SCORING_PROTOCOL_PIN:
++            raise ArtifactReplayError("artifact_scoring_protocol_unavailable")
++        async with self._engine.begin() as connection:
++            # Serialize a scoped key before reading history to avoid duplicate scoring.
++            lock = sha256(
++                f"artifact-replay\x00{scope.stable_json()}\x00".encode() + key
++            )
++            await connection.execute(
++                text("SELECT pg_catalog.pg_advisory_xact_lock(:lock)"),
++                {"lock": int.from_bytes(lock.digest()[:8], signed=True)},
++            )
++            previous = await _read_key(connection, scope, key)
++            if previous is not None:
++                return _match_request(scope, previous, request)
++            history = await _load_source(connection, scope, request.source)
++            self._verify_inventory(request, history)
++            evidence = ArtifactScoringEvidence(
++                schema_version="1.0.0",
++                evidence_ref=EvidenceRef(
++                    record_kind=RuntimeRecordKind.EVIDENCE,
++                    record_id=f"artifact-score.{uuid4().hex}",
++                ),
++                replay_run_id=f"artifact-replay.{uuid4().hex}",
++                scope=scope,
++                source_execution_id=history.execution.execution_id,
++                execution_pins=history.execution.pins,
++                source_execution_digest=record_digest(history.execution),
++                finalization_digest=record_digest(history.finalization),
++                request_digest=record_digest(request),
++                scoring_protocol=SCORE_PROTOCOL,
++                historical_dispatches=await read_journal_witnesses(
++                    connection, scope, history
++                ),
++                score=score_history(history.finalization, history.facts),
++                model_calls=0,
++                tool_calls=0,
++            )
++            run = ArtifactReplayRun(
++                schema_version="1.0.0",
++                kind=ReplayKind.ARTIFACT,
++                replay_run_id=evidence.replay_run_id,
++                request=request,
++                scoring_evidence=ReplayScoringEvidence(
++                    ref=evidence.evidence_ref, digest=record_digest(evidence)
++                ),
++                recorded_at=datetime.now(UTC),
++            )
++            await connection.execute(
++                text(f"""
++                    INSERT INTO {_TABLE}
++                        (project_id, client_id, replay_run_id, evidence_id,
++                         source_execution_id, idempotency_key, request_digest,
++                         run_digest, evidence_digest, run_record, evidence_record)
++                    VALUES
++                        (:project_id, :client_id, :run_id, :evidence_id,
++                         :source_id, :key, :request, :run_digest, :evidence_digest,
++                         CAST(:run AS json), CAST(:evidence AS json))
++                """),
++                {
++                    **_scope(scope),
++                    "run_id": run.replay_run_id,
++                    "evidence_id": evidence.evidence_ref.record_id,
++                    "source_id": evidence.source_execution_id,
++                    "key": key,
++                    "request": evidence.request_digest,
++                    "run_digest": record_digest(run),
++                    "evidence_digest": run.scoring_evidence.digest,
++                    "run": run.stable_json(),
++                    "evidence": evidence.stable_json(),
++                },
++            )
++        return run
++
++    @staticmethod
++    def _verify_inventory(
++        request: ArtifactReplayRequest, history: HistoricalSource
++    ) -> None:
++        expected = {
++            (pin.ref.record_kind, pin.ref.record_id): pin.digest
++            for pin in history.artifacts
++        }
++        offered = {
++            (pin.ref.record_kind, pin.ref.record_id): pin.digest
++            for pin in request.source_artifacts
++        }
++        if offered.keys() - expected.keys():
++            raise ArtifactReplayError("artifact_replay_input_unavailable")
++        if expected.keys() - offered.keys():
++            raise ArtifactReplayError("artifact_replay_input_missing")
++        if offered != expected:
++            raise ArtifactReplayError("artifact_replay_input_digest_mismatch")
+--- /dev/null
++++ b/src/jimu_runtime/replay/artifact_journal.py
+@@ -0,0 +1,137 @@
++"""Compare historical normalized producers with the scoped dispatch receipts."""
++
++from sqlalchemy import text
++from sqlalchemy.ext.asyncio import AsyncConnection
++
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.runtime.tool_executions import ToolExecution
++from jimu_runtime.gateway.journal_records import (
++    RESULT_ADAPTER,
++    DispatchIntent,
++    ModelDispatchResult,
++    ToolDispatchResult,
++    ToolDispatchTarget,
++)
++from jimu_runtime.replay.artifact_records import JournalWitness
++from jimu_runtime.replay.artifact_source import ArtifactReplayError, HistoricalSource
++from jimu_runtime.workflow.mock_support import record_digest
++
++
++def _match_tool(receipt: ToolDispatchResult, execution: ToolExecution) -> bool:
++    original = receipt.execution
++    if original is None:
++        return False
++    provisional, selected = (
++        original.authority_observation,
++        execution.authority_observation,
++    )
++    if provisional is None or selected is None:
++        return original == execution
++    return (
++        provisional.model_copy(
++            update={"arrival_qualification": selected.arrival_qualification}
++        )
++        == selected
++        and original.model_copy(update={"authority_observation": selected}) == execution
++    )
++
++
++async def read_journal_witnesses(
++    connection: AsyncConnection, scope: IdempotencyScope, history: HistoricalSource
++) -> tuple[JournalWitness, ...]:
++    producers: dict[str, ModelInvocation | ToolExecution] = {
++        **{item.model_invocation_id: item for item in history.models},
++        **{item.tool_execution_id: item for item in history.tools},
++    }
++    if len(producers) != len(history.models) + len(history.tools):
++        raise ArtifactReplayError("artifact_dispatch_identity_conflict")
++    if not producers:
++        return ()
++    rows = await connection.execute(
++        text("""
++            SELECT i.dispatch_id, i.node_run_id, i.attempt_id,
++                i.record::text AS intent_body, i.send_admitted,
++                r.record::text AS result_body, r.fence_qualified
++            FROM jimu_workflow.dispatch_intents AS i
++            LEFT JOIN jimu_workflow.dispatch_results AS r
++                ON (r.project_id, r.client_id, r.execution_id, r.dispatch_id)
++                    = (i.project_id, i.client_id, i.execution_id, i.dispatch_id)
++                AND NOT r.late
++            WHERE (i.project_id, i.client_id, i.execution_id)
++                = (:project, :client, :execution)
++                AND i.dispatch_id = ANY(:ids)
++            ORDER BY i.dispatch_id COLLATE "C"
++        """),
++        {
++            "project": scope.project_id,
++            "client": scope.client_id,
++            "execution": history.execution.execution_id,
++            "ids": list(producers),
++        },
++    )
++    witnesses = []
++    for row in rows:
++        producer = producers.pop(row.dispatch_id)
++        if row.result_body is None:
++            raise ArtifactReplayError("artifact_dispatch_receipt_missing")
++        try:
++            intent = DispatchIntent.model_validate_json(row.intent_body)
++            result = RESULT_ADAPTER.validate_json(row.result_body)
++        except ValueError as error:
++            raise ArtifactReplayError("artifact_dispatch_receipt_corrupt") from error
++        if (
++            intent.dispatch_id != row.dispatch_id
++            or intent.stable_json() != row.intent_body
++            or result.stable_json() != row.result_body
++            or (row.node_run_id, row.attempt_id)
++            != (producer.node_run_ref.record_id, producer.attempt_ref.record_id)
++        ):
++            raise ArtifactReplayError("artifact_dispatch_receipt_mismatch")
++        target = intent.target
++        if isinstance(producer, ModelInvocation):
++            if (
++                not isinstance(result, ModelDispatchResult)
++                or result.invocation != producer
++                or intent.request_digest != producer.request_digest
++                or isinstance(target, ToolDispatchTarget)
++                or (target.configured_provider, target.object_ref, target.profile_refs)
++                != (
++                    producer.configured_provider,
++                    producer.object_ref,
++                    producer.profile_refs,
++                )
++            ):
++                raise ArtifactReplayError("artifact_model_journal_mismatch")
++        elif (
++            not isinstance(result, ToolDispatchResult)
++            or not isinstance(target, ToolDispatchTarget)
++            or (
++                target.tool_ref,
++                target.invocation_origin,
++                target.profile_ref,
++                target.object_ref,
++            )
++            != (
++                producer.tool_ref,
++                producer.invocation_origin,
++                producer.profile_ref,
++                producer.object_ref,
++            )
++            or not _match_tool(result, producer)
++        ):
++            raise ArtifactReplayError("artifact_tool_journal_mismatch")
++        witnesses.append(
++            JournalWitness(
++                dispatch_id=row.dispatch_id,
++                intent_digest=record_digest(intent),
++                on_time_result_digest=record_digest(result),
++                send_admitted=row.send_admitted,
++                fence_qualified=row.fence_qualified,
++            )
++        )
++    # The legacy offline adapters created explicitly namespaced fixture records
++    # before the dispatch journal existed. They have no physical receipt.
++    if any(not identity.startswith("synthetic.") for identity in producers):
++        raise ArtifactReplayError("artifact_dispatch_intent_missing")
++    return tuple(witnesses)
+--- /dev/null
++++ b/src/jimu_runtime/replay/artifact_records.py
+@@ -0,0 +1,100 @@
++"""Versioned evidence for a deterministic, historical artifact score."""
++
++from collections import Counter
++from typing import Literal
++
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_support import NonNegativeBudget
++from jimu_runtime.domain.enums import DecisionResult, FactStatus
++from jimu_runtime.domain.primitives import Digest, RecordId
++from jimu_runtime.domain.runtime.coverage import CoverageStatus
++from jimu_runtime.domain.runtime.decisions import RecordList
++from jimu_runtime.domain.runtime.executions import ExecutionPins
++from jimu_runtime.domain.runtime.facts import EvidenceRef, FactRecord
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.replay import ScoringProtocolPin
++from jimu_runtime.workflow.engine import ExecutionFinalization
++from jimu_runtime.workflow.mock_support import record_digest
++
++
++class HistoricalScoreProtocol(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    protocol_id: Literal["historical_outcome_counts"] = "historical_outcome_counts"
++    version: Literal["1.0.0"] = "1.0.0"
++    decision_population: Literal["finalized_decisions"] = "finalized_decisions"
++    fact_population: Literal["distinct_selected_facts"] = "distinct_selected_facts"
++    source_population: Literal["normalized_workflow"] = "normalized_workflow"
++    result_kind: Literal["outcome_counts"] = "outcome_counts"
++
++
++SCORE_PROTOCOL = HistoricalScoreProtocol()
++SCORING_PROTOCOL_PIN = ScoringProtocolPin(
++    protocol_id=SCORE_PROTOCOL.protocol_id,
++    version=SCORE_PROTOCOL.version,
++    digest=record_digest(SCORE_PROTOCOL),
++)
++
++
++class DecisionCount(ContractModel):
++    result: DecisionResult
++    count: NonNegativeBudget
++
++
++class FactCount(ContractModel):
++    status: FactStatus
++    count: NonNegativeBudget
++
++
++class HistoricalScore(ContractModel):
++    coverage_status: CoverageStatus
++    summary_result: DecisionResult
++    object_count: NonNegativeBudget
++    decision_counts: RecordList[DecisionCount]
++    selected_fact_counts: RecordList[FactCount]
++
++
++class JournalWitness(ContractModel):
++    dispatch_id: RecordId
++    intent_digest: Digest
++    on_time_result_digest: Digest
++    send_admitted: bool
++    fence_qualified: bool | None
++
++
++class ArtifactScoringEvidence(ContractModel):
++    """Small inline evidence in the scoped replay store's EvidenceRef namespace."""
++
++    schema_version: Literal["1.0.0"]
++    evidence_ref: EvidenceRef
++    replay_run_id: RecordId
++    scope: IdempotencyScope
++    source_execution_id: RecordId
++    execution_pins: ExecutionPins
++    source_execution_digest: Digest
++    finalization_digest: Digest
++    request_digest: Digest
++    scoring_protocol: HistoricalScoreProtocol
++    historical_dispatches: RecordList[JournalWitness]
++    score: HistoricalScore
++    model_calls: Literal[0]
++    tool_calls: Literal[0]
++
++
++def score_history(
++    finalization: ExecutionFinalization, facts: tuple[FactRecord, ...]
++) -> HistoricalScore:
++    decisions = Counter(decision.result for decision in finalization.decisions)
++    statuses = Counter(fact.status for fact in facts)
++    coverage = finalization.coverage
++    return HistoricalScore(
++        coverage_status=coverage.coverage_status,
++        summary_result=coverage.summary_result,
++        object_count=coverage.object_count,
++        decision_counts=tuple(
++            DecisionCount(result=result, count=decisions[result])
++            for result in DecisionResult
++        ),
++        selected_fact_counts=tuple(
++            FactCount(status=status, count=statuses[status]) for status in FactStatus
++        ),
++    )
+--- /dev/null
++++ b/src/jimu_runtime/replay/artifact_source.py
+@@ -0,0 +1,466 @@
++"""Read and verify the frozen workflow records consumed by artifact scoring."""
++
++from dataclasses import dataclass
++
++from pydantic import TypeAdapter
++from sqlalchemy import text
++from sqlalchemy.ext.asyncio import AsyncConnection
++
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.enums import ExecutionStatus, RuntimeRecordKind
++from jimu_runtime.domain.nodes.decision import DecisionOutput
++from jimu_runtime.domain.nodes.envelopes import NodeOutputEnvelope
++from jimu_runtime.domain.references import RuntimeRecordRef
++from jimu_runtime.domain.runtime.authority import (
++    AuthoritativeResultSelection,
++    ObservationBatchSelection,
++    ToolStepSelection,
++)
++from jimu_runtime.domain.runtime.coverage import EvaluatedCoverageScope
++from jimu_runtime.domain.runtime.decisions import (
++    BlockedRuleOutcome,
++    EvaluatedRuleOutcome,
++)
++from jimu_runtime.domain.runtime.executions import (
++    ExecutionRecord,
++    NodeId,
++    PinnedRuntimeInput,
++)
++from jimu_runtime.domain.runtime.facts import (
++    ErrorFact,
++    FactRecord,
++    KnownFact,
++    NotApplicableFact,
++    NotEvaluatedFact,
++    UnknownFact,
++)
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.runtime.observations import ObservationBatch
++from jimu_runtime.domain.runtime.replay import ReplayExecutionSource
++from jimu_runtime.domain.runtime.tool_executions import ToolExecution
++from jimu_runtime.tools.step_attempts import load_parent_step_history
++from jimu_runtime.workflow import repository as repo
++from jimu_runtime.workflow.engine import DecisionDraft, ExecutionFinalization
++from jimu_runtime.workflow.jobs import NODE_OUTPUT_KEY
++from jimu_runtime.workflow.mock_support import record_digest
++from jimu_runtime.workflow.worker_records import (
++    ContextMessage,
++    DecisionMessage,
++    DiscoveryMessage,
++    GroundingMessage,
++    NodeMessage,
++    ObservationMessage,
++    ToolMessage,
++)
++from jimu_runtime.workflow.worker_state import load_records, read_context_snapshot
++from jimu_runtime.workflow.worker_validation import check_tool_history
++
++K = RuntimeRecordKind
++_NODE_OUTPUT = TypeAdapter[NodeOutputEnvelope](NodeOutputEnvelope)
++FACT_TYPES = (ErrorFact, KnownFact, NotApplicableFact, NotEvaluatedFact, UnknownFact)
++type ArtifactKey = tuple[RuntimeRecordKind, str]
++
++
++class ArtifactReplayError(ValueError):
++    def __init__(self, code: str) -> None:
++        self.code = code
++        super().__init__(code)
++
++
++@dataclass(frozen=True, slots=True)
++class HistoricalSource:
++    execution: ExecutionRecord
++    finalization: ExecutionFinalization
++    artifacts: tuple[PinnedRuntimeInput, ...]
++    facts: tuple[FactRecord, ...]
++    models: tuple[ModelInvocation, ...]
++    tools: tuple[ToolExecution, ...]
++
++
++def _ref(kind: RuntimeRecordKind, identity: str) -> RuntimeRecordRef:
++    return RuntimeRecordRef(record_kind=kind, record_id=identity)
++
++
++def _key(ref: RuntimeRecordRef) -> ArtifactKey:
++    return ref.record_kind, ref.record_id
++
++
++def _pin(ref: RuntimeRecordRef, item: ContractModel) -> PinnedRuntimeInput:
++    return PinnedRuntimeInput(ref=ref, digest=record_digest(item))
++
++
++def _models(rows: tuple[ModelInvocation, ...]) -> dict[ArtifactKey, ContractModel]:
++    return {(K.MODEL_INVOCATION, item.model_invocation_id): item for item in rows}
++
++
++def _tools(rows: tuple[ToolExecution, ...]) -> dict[ArtifactKey, ContractModel]:
++    return {(K.TOOL_EXECUTION, item.tool_execution_id): item for item in rows}
++
++
++def _facts(rows: tuple[FactRecord, ...]) -> dict[ArtifactKey, ContractModel]:
++    return {(K.FACT, item.fact_id): item for item in rows}
++
++
++def _selections(
++    rows: tuple[AuthoritativeResultSelection, ...],
++) -> dict[ArtifactKey, ContractModel]:
++    return {
++        (K.AUTHORITATIVE_RESULT_SELECTION, item.selection_id): item for item in rows
++    }
++
++
++def _message_records(message: NodeMessage) -> dict[ArtifactKey, ContractModel]:
++    if isinstance(message, ContextMessage) and message.snapshot is not None:
++        return {
++            (K.CONTEXT_SNAPSHOT, message.snapshot.context_snapshot_id): message.snapshot
++        }
++    if isinstance(message, DiscoveryMessage):
++        return {
++            **{
++                (K.QUESTION_SELECTION_RECORD, item.selection_id): item
++                for item in message.selections
++            },
++            **_models(message.invocations),
++        }
++    if isinstance(message, GroundingMessage):
++        return {
++            **{(K.OBJECT, item.object_id): item for item in message.objects},
++            **{
++                (K.GROUNDING_RECORD, item.grounding_record_id): item
++                for item in message.records
++            },
++            **_models((*message.invocations, *message.nested_invocations)),
++            **_tools(message.tool_executions),
++        }
++    if isinstance(message, ObservationMessage):
++        return {
++            (K.OBSERVATION_BATCH, message.batch.observation_batch_id): message.batch,
++            **_facts(message.facts),
++            **_models((message.invocation,)),
++            **_selections(() if message.authority is None else (message.authority,)),
++        }
++    if isinstance(message, ToolMessage):
++        return {
++            **_facts(message.facts),
++            **_tools(message.executions),
++            **_selections(message.authorities),
++            **_models(message.nested_invocations),
++        }
++    if isinstance(message, DecisionMessage):
++        return {
++            (K.DECISION, message.draft.decision.decision_id): message.draft.decision,
++            **_models(() if message.invocation is None else (message.invocation,)),
++        }
++    return {}
++
++
++async def _verified_message_records(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    eid: str,
++    message: NodeMessage,
++) -> dict[ArtifactKey, ContractModel]:
++    env = message.output_envelope()
++    records = _message_records(message)
++    pins = {_key(pin.ref): pin.digest for pin in env.output_artifacts}
++    child_records: dict[ArtifactKey, ContractModel] = {}
++    if isinstance(message, ToolMessage):
++        history = await load_parent_step_history(connection, scope, message.inputs)
++        if history is not None:
++            check_tool_history(message, history)
++            for entry in history.entries:
++                child_records.update(_facts(entry.facts))
++                child_records.update(_tools((entry.execution,)))
++                child_records.update(_models(entry.invocations))
++                if entry.selection is not None:
++                    child_records.update(_selections((entry.selection,)))
++    for (kind, identity), record in records.items():
++        key = (kind, identity)
++        if (kind is not K.AUTHORITATIVE_RESULT_SELECTION or key in pins) and pins.get(
++            key
++        ) != record_digest(record):
++            raise ArtifactReplayError("artifact_manifest_digest_mismatch")
++        if key in child_records:
++            # The child reader verifies the exact archived output and bytes digest.
++            if child_records[key] != record:
++                raise ArtifactReplayError("artifact_child_output_mismatch")
++            continue
++        persisted = await repo.read_output(
++            connection,
++            scope,
++            eid,
++            env.node_run_id,
++            env.attempt_id,
++            f"{kind.value}.{identity}",
++            type(record),
++        )
++        if persisted is None:
++            raise ArtifactReplayError("artifact_source_output_missing")
++        if persisted != record:
++            raise ArtifactReplayError("artifact_source_output_mismatch")
++    return records
++
++
++async def _archived_models(
++    connection: AsyncConnection, scope: IdempotencyScope, eid: str, ids: set[str]
++) -> dict[ArtifactKey, ContractModel]:
++    """Find invocations appended to Execution before a later Attempt won."""
++    if not ids:
++        return {}
++    owners = await connection.execute(
++        text("""
++            SELECT node_run_id, attempt_id, output_key
++            FROM jimu_workflow.produced_outputs
++            WHERE (project_id, client_id, execution_id)
++                = (:project, :client, :execution)
++                AND output_kind = 'model_invocation' AND output_key = ANY(:keys)
++        """),
++        {
++            "project": scope.project_id,
++            "client": scope.client_id,
++            "execution": eid,
++            "keys": [f"model_invocation.{identity}" for identity in ids],
++        },
++    )
++    archived: dict[ArtifactKey, ContractModel] = {}
++    for nid, aid, key in owners:
++        record = await repo.read_output(
++            connection, scope, eid, nid, aid, key, ModelInvocation
++        )
++        output = await repo.read_output(
++            connection, scope, eid, nid, aid, NODE_OUTPUT_KEY, _NODE_OUTPUT
++        )
++        if (
++            record is None
++            or output is None
++            or record.model_invocation_id not in ids
++            or key != f"model_invocation.{record.model_invocation_id}"
++            or not any(
++                pin.ref.record_kind is K.MODEL_INVOCATION
++                and pin.ref.record_id == record.model_invocation_id
++                and pin.digest == record_digest(record)
++                for pin in output.output_artifacts
++            )
++        ):
++            raise ArtifactReplayError("artifact_archived_model_mismatch")
++        identity = K.MODEL_INVOCATION, record.model_invocation_id
++        if identity in archived:
++            raise ArtifactReplayError("artifact_archived_model_ambiguous")
++        archived[identity] = record
++    if len(archived) != len(ids):
++        raise ArtifactReplayError("artifact_archived_model_missing")
++    return archived
++
++
++async def _check_decision_output(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    final: ExecutionFinalization,
++    message: DecisionMessage,
++) -> None:
++    env = message.output_envelope()
++    output = await repo.read_output(
++        connection,
++        scope,
++        final.execution_id,
++        env.node_run_id,
++        env.attempt_id,
++        "worker.decision.final",
++        DecisionOutput,
++    )
++    draft = await repo.read_decision_draft(
++        connection,
++        scope,
++        final.execution_id,
++        env.node_run_id,
++        env.attempt_id,
++        DecisionDraft,
++    )
++    if output is None or draft is None:
++        raise ArtifactReplayError("artifact_decision_publication_missing")
++    if (
++        draft != message.draft
++        or output.envelope != env
++        or output.decision_ref != message.draft.decision.decision_ref
++        or output.execution_coverage_ref != final.coverage.coverage_ref
++        or output.mandatory_rule_coverage != final.coverage.mandatory_rule_coverage
++    ):
++        raise ArtifactReplayError("artifact_decision_publication_mismatch")
++
++
++async def load_historical_source(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    source: ReplayExecutionSource,
++) -> HistoricalSource:
++    eid = source.execution_ref.record_id
++    locked = await repo.get_execution(connection, scope, eid)
++    if locked is None:
++        raise ArtifactReplayError("artifact_source_execution_unavailable")
++    execution = locked.execution
++    try:
++        source.validate_execution(execution)
++    except ValueError as error:
++        raise ArtifactReplayError("artifact_source_execution_pin_mismatch") from error
++    if execution.status in (ExecutionStatus.INITIALIZED, ExecutionStatus.RUNNING):
++        raise ArtifactReplayError("artifact_source_execution_unsettled")
++    final = await repo.read_finalization(connection, scope, eid, ExecutionFinalization)
++    if final is None:
++        raise ArtifactReplayError("artifact_source_finalization_missing")
++    if (final.coverage.release_id, final.coverage.bundle_digest) != (
++        execution.pins.release_id,
++        execution.pins.bundle_digest,
++    ):
++        raise ArtifactReplayError("artifact_finalization_pin_mismatch")
++    data = await load_records(connection, scope, locked)
++    context = await read_context_snapshot(connection, scope, locked)
++    records: dict[ArtifactKey, ContractModel] = {
++        (K.EXECUTION_COVERAGE, final.coverage.coverage_id): final.coverage,
++    }
++    if context is not None:
++        records[K.CONTEXT_SNAPSHOT, context.context_snapshot_id] = context
++    coverage_scope = final.coverage.applicability_scope
++    if isinstance(coverage_scope, EvaluatedCoverageScope):
++        if (
++            context is None
++            or data.gate is None
++            or data.gate.evaluation.evaluation_ref
++            != coverage_scope.profile_eligibility_evaluation_ref
++            or data.gate.evaluation.context_snapshot_ref
++            != coverage_scope.context_snapshot_ref
++        ):
++            raise ArtifactReplayError(
++                "artifact_eligibility_source_missing_or_mismatched"
++            )
++        eligibility = data.gate.evaluation
++        records[
++            K.PROFILE_ELIGIBILITY_EVALUATION, eligibility.evaluation_ref.record_id
++        ] = eligibility
++    elif data.gate is not None or coverage_scope.blocker_node_run_ref.record_id not in {
++        node.node_run_id
++        for branch, node in data.runs.items()
++        if branch.node_id is NodeId.N01
++    }:
++        raise ArtifactReplayError("artifact_coverage_blocker_mismatch")
++
++    for branch, message in data.messages.items():
++        if tuple(map(_key, data.runs[branch].output_refs)) != tuple(
++            _key(pin.ref) for pin in message.output_envelope().output_artifacts
++        ):
++            raise ArtifactReplayError("artifact_node_manifest_mismatch")
++        if isinstance(message, DecisionMessage):
++            await _check_decision_output(connection, scope, final, message)
++        for key, record in (
++            await _verified_message_records(connection, scope, eid, message)
++        ).items():
++            if records.setdefault(key, record) != record:
++                raise ArtifactReplayError("artifact_source_identity_conflict")
++    if {item for (kind, _), item in records.items() if kind is K.DECISION} != set(
++        final.decisions
++    ):
++        raise ArtifactReplayError("artifact_finalization_decisions_mismatch")
++    if {identity for kind, identity in records if kind is K.OBJECT} != {
++        ref.record_id
++        for profile in final.coverage.profiles
++        for ref in profile.object_refs
++    }:
++        raise ArtifactReplayError("artifact_coverage_objects_mismatch")
++    selected_model_ids = {
++        identity for kind, identity in records if kind is K.MODEL_INVOCATION
++    }
++    execution_model_ids = {ref.record_id for ref in execution.model_invocation_refs}
++    if selected_model_ids - execution_model_ids:
++        raise ArtifactReplayError("artifact_source_model_invocations_mismatch")
++    records.update(
++        await _archived_models(
++            connection, scope, eid, execution_model_ids - selected_model_ids
++        )
++    )
++    models = tuple(
++        item for item in records.values() if isinstance(item, ModelInvocation)
++    )
++    tools = tuple(item for item in records.values() if isinstance(item, ToolExecution))
++
++    selections = {
++        key: item
++        for key, item in records.items()
++        if isinstance(item, (ObservationBatchSelection, ToolStepSelection))
++    }
++    selected_ids: set[str] = set()
++    for selection in selections.values():
++        target = records.get(_key(selection.selected_result_ref))
++        if target is None:
++            raise ArtifactReplayError("artifact_selected_result_missing")
++        if isinstance(target, ObservationBatch) and isinstance(
++            selection, ObservationBatchSelection
++        ):
++            facts = {row.primary_fact.fact_id for row in target.question_results}
++            arrived_on_time = target.arrival_qualification == "on_time"
++        elif isinstance(target, ToolExecution) and isinstance(
++            selection, ToolStepSelection
++        ):
++            facts = {ref.record_id for ref in target.generated_fact_refs}
++            arrived_on_time = (
++                target.authority_observation is not None
++                and target.authority_observation.arrival_qualification == "on_time"
++            )
++        else:
++            raise ArtifactReplayError("artifact_selected_result_kind_mismatch")
++        if (
++            not arrived_on_time
++            or target.object_ref is None
++            or (
++                target.attempt_ref.record_id,
++                target.object_ref.record_id,
++                target.profile_ref,
++            )
++            != (
++                selection.selected_attempt_id,
++                selection.object_id,
++                selection.profile_ref,
++            )
++            or {ref.record_id for ref in selection.selected_fact_refs} != facts
++        ):
++            raise ArtifactReplayError("artifact_selected_result_mismatch")
++        for ref in selection.selected_fact_refs:
++            fact = records.get(_key(ref))
++            if not isinstance(fact, FACT_TYPES):
++                raise ArtifactReplayError("artifact_selected_fact_missing")
++            if (fact.attempt_id, fact.object_id, fact.profile_ref) != (
++                selection.selected_attempt_id,
++                selection.object_id,
++                selection.profile_ref,
++            ):
++                raise ArtifactReplayError("artifact_selected_fact_owner_mismatch")
++            selected_ids.add(ref.record_id)
++    for decision in final.decisions:
++        if any(
++            ref.record_id not in selected_ids for ref in decision.explanation.fact_refs
++        ):
++            raise ArtifactReplayError("artifact_decision_fact_missing")
++        for row in decision.rule_evaluations:
++            proofs = row.optional_fact_proofs
++            if isinstance(row.result, (EvaluatedRuleOutcome, BlockedRuleOutcome)):
++                proofs += row.result.guard.fact_proofs
++            for proof in proofs:
++                selected = selections.get(_key(proof.authority_selection_ref))
++                if (
++                    selected is None
++                    or proof.fact_ref not in selected.selected_fact_refs
++                ):
++                    raise ArtifactReplayError("artifact_decision_selection_missing")
++
++    ordered = sorted(records, key=lambda key: (key[0].value, key[1]))
++    return HistoricalSource(
++        execution=execution,
++        finalization=final,
++        artifacts=tuple(_pin(_ref(*key), records[key]) for key in ordered),
++        facts=tuple(
++            item
++            for item in records.values()
++            if isinstance(item, FACT_TYPES) and item.fact_id in selected_ids
++        ),
++        models=models,
++        tools=tools,
++    )
+--- /dev/null
++++ b/src/jimu_runtime/workflow/migrations/009_artifact_replay.sql
+@@ -0,0 +1,22 @@
++-- Scoring evidence and its owning run are accepted in one immutable row.
++CREATE TABLE jimu_workflow.artifact_replay_runs (
++    project_id text NOT NULL,
++    client_id text NOT NULL,
++    replay_run_id text NOT NULL,
++    evidence_id text NOT NULL,
++    source_execution_id text NOT NULL,
++    idempotency_key bytea NOT NULL
++        CHECK (octet_length(idempotency_key) BETWEEN 1 AND 2048),
++    request_digest jimu_workflow.digest NOT NULL,
++    run_digest jimu_workflow.digest NOT NULL,
++    evidence_digest jimu_workflow.digest NOT NULL,
++    run_record json NOT NULL,
++    evidence_record json NOT NULL,
++    PRIMARY KEY (project_id, client_id, replay_run_id),
++    UNIQUE (project_id, client_id, idempotency_key),
++    UNIQUE (project_id, client_id, evidence_id),
++    FOREIGN KEY (project_id, client_id, source_execution_id)
++        REFERENCES jimu_workflow.executions (project_id, client_id, execution_id)
++);
++
++GRANT SELECT, INSERT ON jimu_workflow.artifact_replay_runs TO jimu_workflow_app;
+--- /dev/null
++++ b/tests/contract/test_wp06_artifact_replay.py
+@@ -0,0 +1,467 @@
++"""Artifact Replay opens real workflow and scoring records in isolated PostgreSQL."""
++
++import asyncio
++import json
++from collections import Counter
++from pathlib import Path
++
++import pytest
++from sqlalchemy import text
++from sqlalchemy.exc import DBAPIError
++
++from examples.nonmotor_vehicle_illegal_parking.compilable.lifecycle import ACTOR
++from examples.nonmotor_vehicle_illegal_parking.compilable.scene import LIMITS
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.domain.definitions.tools import ToolDefinition
++from jimu_runtime.domain.enums import ArtifactKind, DecisionResult, RuntimeRecordKind
++from jimu_runtime.domain.runtime.coverage import CoverageStatus
++from jimu_runtime.domain.runtime.replay import ExecutionRef, ReplayExecutionSource
++from jimu_runtime.gateway.bridge_tools import ToolExecutionAdapter
++from jimu_runtime.inspection.geometry import synthetic_cpu_implementations
++from jimu_runtime.inspection.geometry.node import GeometryNodeAdapter
++from jimu_runtime.replay.artifact import ArtifactReplayService
++from jimu_runtime.replay.artifact_records import SCORING_PROTOCOL_PIN
++from jimu_runtime.replay.artifact_source import ArtifactReplayError
++from jimu_runtime.tools.executor import ToolExecutor
++from jimu_runtime.tools.registry import ToolWorkerRegistry
++from jimu_runtime.tools.step_attempts import StepAttemptStore
++from jimu_runtime.workflow import repository
++from jimu_runtime.workflow.postgres import apply_migrations, create_postgres_engine
++from jimu_runtime.workflow.worker import WorkerStep
++from jimu_runtime.workflow.worker_inspection import (
++    VerifiedMediaWorkerHost,
++    inspection_worker,
++)
++from jimu_runtime.workflow.worker_source import SyntheticScenario
++from tests.fixtures.wp03.intake.support import migrated_application
++from tests.fixtures.wp03.jobs.support import inspect
++from tests.fixtures.wp03.postgres.support import isolated_postgres
++from tests.fixtures.wp03.worker.support import accepted_worker
++from tests.fixtures.wp04 import http_support
++from tests.fixtures.wp05.perception import perception_fixture
++
++loopback_only = http_support.loopback_only
++
++
++async def _history_snapshot(engine, scope, eid):
++    async with engine.connect() as connection:
++        execution = await repository.get_execution(connection, scope, eid)
++        produced = (
++            await connection.execute(
++                text("""
++                    SELECT node_run_id, attempt_id, output_key, output_digest
++                    FROM jimu_workflow.produced_outputs ORDER BY 1, 2, 3
++                """)
++            )
++        ).all()
++        dispatches = tuple(
++            (
++                await connection.execute(
++                    text("""
++                    SELECT (SELECT count(*) FROM jimu_workflow.dispatch_intents),
++                           (SELECT count(*) FROM jimu_workflow.dispatch_results)
++                """)
++                )
++            ).one()
++        )
++    return execution, produced, dispatches, await inspect(engine, scope, eid)
++
++
++def test_scoped_reopen_idempotency_and_unchanged_history(tmp_path: Path) -> None:
++    async def run() -> None:
++        async with migrated_application() as engine:
++            worker, accepted, _ = await accepted_worker(engine, tmp_path)
++            scope, execution = accepted.task.idempotency_scope, accepted.execution
++            eid = execution.execution_id
++            source = ReplayExecutionSource(
++                execution_ref=ExecutionRef(
++                    record_kind=RuntimeRecordKind.EXECUTION, record_id=eid
++                ),
++                task_id=accepted.task.task_id,
++                pins=execution.pins,
++            )
++            service = ArtifactReplayService(engine)
++            with pytest.raises(
++                ArtifactReplayError, match="artifact_source_execution_unsettled"
++            ):
++                await service.prepare_request(scope, source)
++            for _ in range(7):
++                step = await worker.run_once(
++                    scope, eid, owner="artifact.fixture", lease_ms=1000
++                )
++            assert step is WorkerStep.FINALIZED
++            baseline = await _history_snapshot(engine, scope, eid)
++
++            request = await service.prepare_request(scope, source)
++            assert request.scoring_protocol == SCORING_PROTOCOL_PIN
++            kinds = {item.ref.record_kind for item in request.source_artifacts}
++            assert {
++                RuntimeRecordKind.EXECUTION_COVERAGE,
++                RuntimeRecordKind.DECISION,
++                RuntimeRecordKind.FACT,
++                RuntimeRecordKind.AUTHORITATIVE_RESULT_SELECTION,
++                RuntimeRecordKind.QUESTION_SELECTION_RECORD,
++            } <= kinds
++            left, right = await asyncio.gather(
++                service.run(scope, "fixture-key", request),
++                ArtifactReplayService(engine).run(scope, "fixture-key", request),
++            )
++            assert left == right
++            await engine.dispose()
++            reopened = ArtifactReplayService(engine)
++            assert await reopened.get_run(scope, left.replay_run_id) == left
++            evidence = await reopened.read_scoring_evidence(
++                scope, left.scoring_evidence
++            )
++            assert evidence is not None
++            assert evidence.model_calls == evidence.tool_calls == 0
++            assert evidence.score.summary_result is DecisionResult.VIOLATION
++            assert evidence.score.object_count == 1
++            assert {row.result: row.count for row in evidence.score.decision_counts}[
++                DecisionResult.VIOLATION
++            ] == 1
++            assert sum(row.count for row in evidence.score.selected_fact_counts) > 0
++
++            inactive_scope = scope.model_copy(update={"client_id": "different-client"})
++            assert await reopened.get_run(inactive_scope, left.replay_run_id) is None
++            assert (
++                await reopened.read_scoring_evidence(
++                    inactive_scope, left.scoring_evidence
++                )
++                is None
++            )
++            with pytest.raises(
++                ArtifactReplayError, match="artifact_source_execution_unavailable"
++            ):
++                await reopened.run(inactive_scope, "fixture-key", request)
++
++            with pytest.raises(
++                ArtifactReplayError, match="artifact_scoring_evidence_pin_mismatch"
++            ):
++                await reopened.read_scoring_evidence(
++                    scope, left.scoring_evidence.model_copy(update={"digest": "0" * 64})
++                )
++            missing = request.model_copy(
++                update={"source_artifacts": request.source_artifacts[1:]}
++            )
++            with pytest.raises(
++                ArtifactReplayError, match="artifact_replay_input_missing"
++            ):
++                await reopened.run(scope, "missing", missing)
++            with pytest.raises(
++                ArtifactReplayError, match="artifact_replay_idempotency_conflict"
++            ):
++                await reopened.run(scope, "fixture-key", missing)
++
++            first, *rest = request.source_artifacts
++            tampered = request.model_copy(
++                update={
++                    "source_artifacts": (
++                        first.model_copy(update={"digest": "0" * 64}),
++                        *rest,
++                    )
++                }
++            )
++            with pytest.raises(
++                ArtifactReplayError, match="artifact_replay_input_digest_mismatch"
++            ):
++                await reopened.run(scope, "tampered", tampered)
++            wrong_protocol = request.model_copy(
++                update={
++                    "scoring_protocol": SCORING_PROTOCOL_PIN.model_copy(
++                        update={"digest": "0" * 64}
++                    )
++                }
++            )
++            with pytest.raises(
++                ArtifactReplayError, match="artifact_scoring_protocol_unavailable"
++            ):
++                await reopened.run(scope, "wrong-protocol", wrong_protocol)
++            wrong_source = request.model_copy(
++                update={
++                    "source": source.model_copy(
++                        update={
++                            "pins": source.pins.model_copy(
++                                update={"input_digest": "0" * 64}
++                            )
++                        }
++                    )
++                }
++            )
++            with pytest.raises(
++                ArtifactReplayError, match="artifact_source_execution_pin_mismatch"
++            ):
++                await reopened.run(scope, "wrong-source", wrong_source)
++
++            assert await _history_snapshot(engine, scope, eid) == baseline
++            async with engine.connect() as connection:
++                assert (
++                    await connection.scalar(
++                        text("SELECT count(*) FROM jimu_workflow.artifact_replay_runs")
++                    )
++                    == 1
++                )
++
++    asyncio.run(run())
++
++
++@pytest.mark.parametrize("retry_observation", [False, True])
++def test_replay_matches_configured_model_and_tool_receipts(
++    tmp_path: Path, loopback_only: set[int], retry_observation: bool
++) -> None:
++    async def peer(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
++        received = await http_support.read_request(reader)
++        request = json.loads(received.body)
++        schema = request["response_format"]["json_schema"]["schema"]
++        response_kind = schema["$id"].split(":")[-2]
++        calls[response_kind] += 1
++        reply = {
++            "profile_discovery-result": {"profile_hits": ["nonmotor_vehicle"]},
++            "object_grounding-result": {"boxes": [{"xyxy": [40, 23, 52, 33]}]},
++            "object_observation-result": {
++                "vehicle_type": "electric_bicycle",
++                "parking_state": "parked",
++                "parking_position": "over_boundary",
++            },
++            "candidate_prediction-result": {"categories": []},
++        }[response_kind]
++        if (
++            retry_observation
++            and response_kind == "object_observation-result"
++            and calls[response_kind] == 1
++        ):
++            reply = {**reply, "object_id": "invalid.provider.object"}
++        response = http_support.chat_body(
++            model=request["model"], content=json.dumps(reply)
++        )
++        writer.write(
++            http_support.response(
++                response,
++                headers=(
++                    (b"X-Request-ID", f"artifact-{sum(calls.values())}".encode()),
++                    (b"X-Jimu-Deployment-Version", b"1.0.0"),
++                    (b"X-Jimu-Model-Version", b"1.0.0"),
++                ),
++            )
++        )
++        await writer.drain()
++
++    calls: Counter[str] = Counter()
++
++    async def run() -> None:
++        async with http_support.http_peer(loopback_only, peer) as url:
++            async with perception_fixture(tmp_path, url, with_media=True) as fixture:
++                media = fixture.media_store
++                assert media is not None
++                accepted = fixture.accepted
++                scope, execution = accepted.task.idempotency_scope, accepted.execution
++                eid = execution.execution_id
++                catalogue = fixture.scene.execution.catalogue
++                definitions = tuple(
++                    require_definition(catalogue, item.ref, ToolDefinition)
++                    for item in catalogue.of_kind(ArtifactKind.TOOL)
++                )
++                registry = ToolWorkerRegistry(
++                    synthetic_cpu_implementations(
++                        fixture.resources,
++                        "cpu",
++                        "inspection-tools",
++                        definitions,
++                        fixture.tool_proofs,
++                        synthetic_image_digests=frozenset(
++                            {accepted.task.media_ref.sha256}
++                        ),
++                    )
++                )
++                tools = GeometryNodeAdapter(
++                    media,
++                    ToolExecutionAdapter(
++                        ToolExecutor(registry),
++                        StepAttemptStore(fixture.application, actor=ACTOR),
++                        fixture.journal,
++                        fixture.host.capabilities,
++                    ),
++                )
++
++                async def capture_registry(request_scope, task):
++                    source = await fixture.host.worker_source(request_scope, task)
++                    return source.device, source.camera
++
++                worker = inspection_worker(
++                    fixture.application,
++                    fixture.releases,
++                    fixture.store,
++                    host=VerifiedMediaWorkerHost(
++                        media, fixture.host.capabilities, capture_registry
++                    ),
++                    bundle_limits=LIMITS,
++                    media=media,
++                    gateway=fixture.gateway,
++                    execute_tools=tools.execute,
++                    model_resource_scope_id="model",
++                )
++                statuses = []
++                for index in range(20):
++                    step = await worker.run_once(
++                        scope, eid, owner=f"artifact-{index}", lease_ms=10000
++                    )
++                    statuses.append(step)
++                    if step is WorkerStep.FINALIZED:
++                        break
++                    if step in {WorkerStep.IDLE, WorkerStep.RETRY_SCHEDULED}:
++                        await asyncio.sleep(0.025)
++                assert statuses[-1] is WorkerStep.FINALIZED, statuses
++                assert sum(calls.values()) == 4 + retry_observation
++                dispatched = calls.copy()
++                baseline = await _history_snapshot(fixture.application, scope, eid)
++                historical_dispatch_count = 7 + retry_observation
++                assert baseline[2] == (historical_dispatch_count,) * 2
++
++                service = ArtifactReplayService(fixture.application)
++                source = ReplayExecutionSource(
++                    execution_ref=ExecutionRef(
++                        record_kind=RuntimeRecordKind.EXECUTION, record_id=eid
++                    ),
++                    task_id=accepted.task.task_id,
++                    pins=execution.pins,
++                )
++                request = await service.prepare_request(scope, source)
++                replay = await service.run(scope, "configured", request)
++                scored = await service.read_scoring_evidence(
++                    scope, replay.scoring_evidence
++                )
++                assert scored is not None
++                assert len(scored.historical_dispatches) == historical_dispatch_count
++                assert scored.model_calls == scored.tool_calls == 0
++                assert scored.score.summary_result is DecisionResult.VIOLATION
++                assert calls == dispatched
++                assert (
++                    await _history_snapshot(fixture.application, scope, eid) == baseline
++                )
++
++    asyncio.run(run())
++
++
++def test_replay_detects_durable_fact_and_report_corruption(tmp_path: Path) -> None:
++    async def run() -> None:
++        with isolated_postgres() as database:
++            owner = create_postgres_engine(database.migration_url)
++            app = create_postgres_engine(database.application_url)
++            try:
++                await apply_migrations(owner, database.target)
++                worker, accepted, _ = await accepted_worker(app, tmp_path)
++                scope = accepted.task.idempotency_scope
++                eid = accepted.execution.execution_id
++                for _ in range(7):
++                    step = await worker.run_once(
++                        scope, eid, owner="artifact-corruption", lease_ms=1000
++                    )
++                assert step is WorkerStep.FINALIZED
++                service = ArtifactReplayService(app)
++                request = await service.prepare_request(
++                    scope,
++                    ReplayExecutionSource(
++                        execution_ref=ExecutionRef(
++                            record_kind=RuntimeRecordKind.EXECUTION, record_id=eid
++                        ),
++                        task_id=accepted.task.task_id,
++                        pins=accepted.execution.pins,
++                    ),
++                )
++                replay = await service.run(scope, "before-fault", request)
++                with pytest.raises(DBAPIError) as denied:
++                    async with app.begin() as connection:
++                        await connection.execute(
++                            text(
++                                "UPDATE jimu_workflow.artifact_replay_runs SET evidence_record = '{}'::json"
++                            )
++                        )
++                assert denied.value.orig.sqlstate == "42501"
++
++                # Corrupt only the isolated owner's historical record, retaining its raw digest.
++                async with owner.begin() as connection:
++                    await connection.execute(
++                        text("""
++                            UPDATE jimu_workflow.produced_outputs
++                            SET record = '{}'::json WHERE output_kind = 'fact'
++                        """)
++                    )
++                with pytest.raises(
++                    ArtifactReplayError, match="artifact_history_output_digest_mismatch"
++                ):
++                    await service.run(scope, "after-fault", request)
++
++                # The accepted run and evidence re-open even if the old input is no
++                # longer available, preserving the original review/scoring history.
++                assert await service.run(scope, "before-fault", request) == replay
++                assert (
++                    await service.read_scoring_evidence(scope, replay.scoring_evidence)
++                    is not None
++                )
++                async with owner.begin() as connection:
++                    await connection.execute(
++                        text("""
++                            UPDATE jimu_workflow.artifact_replay_runs
++                            SET evidence_record = jsonb_set(evidence_record::jsonb,
++                                '{score,object_count}', '99'::jsonb)::json
++                        """)
++                    )
++                with pytest.raises(
++                    ArtifactReplayError, match="artifact_replay_record_corrupt"
++                ):
++                    await service.read_scoring_evidence(scope, replay.scoring_evidence)
++                async with app.connect() as connection:
++                    assert (
++                        await connection.scalar(
++                            text(
++                                "SELECT count(*) FROM jimu_workflow.artifact_replay_runs"
++                            )
++                        )
++                        == 1
++                    )
++            finally:
++                await app.dispose()
++                await owner.dispose()
++
++    asyncio.run(run())
++
++
++def test_replay_keeps_empty_coverage_separate_from_negative_decisions(
++    tmp_path: Path,
++) -> None:
++    async def run() -> None:
++        async with migrated_application() as engine:
++            worker, accepted, host = await accepted_worker(engine, tmp_path)
++            scope = accepted.task.idempotency_scope
++            eid = accepted.execution.execution_id
++            host.scenario = SyntheticScenario(discovery_hits=())
++            for _ in range(7):
++                step = await worker.run_once(
++                    scope, eid, owner="artifact-no-hits", lease_ms=1000
++                )
++                if step is WorkerStep.FINALIZED:
++                    break
++            assert step is WorkerStep.FINALIZED
++
++            service = ArtifactReplayService(engine)
++            request = await service.prepare_request(
++                scope,
++                ReplayExecutionSource(
++                    execution_ref=ExecutionRef(
++                        record_kind=RuntimeRecordKind.EXECUTION, record_id=eid
++                    ),
++                    task_id=accepted.task.task_id,
++                    pins=accepted.execution.pins,
++                ),
++            )
++            replay = await service.run(scope, "no-target", request)
++            evidence = await service.read_scoring_evidence(
++                scope, replay.scoring_evidence
++            )
++            assert evidence is not None
++            assert evidence.score.coverage_status is CoverageStatus.NONE
++            assert evidence.score.object_count == 0
++            assert all(row.count == 0 for row in evidence.score.decision_counts)
++            assert all(row.count == 0 for row in evidence.score.selected_fact_counts)
++
++    asyncio.run(run())

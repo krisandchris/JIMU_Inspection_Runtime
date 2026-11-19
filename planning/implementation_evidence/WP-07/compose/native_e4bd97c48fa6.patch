@@ -1,0 +1,1369 @@
+--- /dev/null
++++ b/ops/compose/Dockerfile
+@@ -0,0 +1,11 @@
++ARG PYTHON_IMAGE
++FROM ${PYTHON_IMAGE}
++ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
++COPY vendor/ /usr/local/lib/python3.12/site-packages/
++COPY wheel/ /tmp/jimu-wheel/
++RUN python -m pip install --no-index --no-deps --no-cache-dir /tmp/jimu-wheel/*.whl \
++    && rm -rf /tmp/jimu-wheel \
++    && install -d -m 0700 -o 10001 -g 10001 /var/lib/jimu
++COPY host/ /opt/jimu/host/
++WORKDIR /opt/jimu/host
++USER 10001:10001
+--- /dev/null
++++ b/ops/compose/build.sh
+@@ -0,0 +1,32 @@
++#!/bin/sh
++# Assemble an offline image from the reviewed runtime lock and local base image.
++set -eu
++case "${1:-}" in
++  jimu-wp07-local:*) ;;
++  *) echo 'Usage: build.sh jimu-wp07-local:UNIQUE_TAG' >&2; exit 2 ;;
++esac
++if [ "$#" -ne 1 ]; then exit 2; fi
++project=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
++cd "$project"
++base=python@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
++base_id=$(docker image inspect "$base" --format '{{.Id}}')
++if docker image inspect "$1" >/dev/null 2>&1; then
++    echo 'Use an unused application image tag.' >&2
++    exit 2
++fi
++context=$(mktemp -d)
++trap 'rm -rf "$context"' EXIT HUP INT TERM
++mkdir -p "$context/wheel" "$context/host/examples/nonmotor_vehicle_illegal_parking"
++UV_PROJECT_ENVIRONMENT="$context/venv" uv sync --locked --offline --no-dev --no-install-project --python 3.12
++mkdir "$context/vendor"
++cp -R "$context"/venv/lib/python3.12/site-packages/. "$context/vendor/"
++rm -rf "$context/venv"
++uv build --offline --wheel --out-dir "$context/wheel"
++cp ops/compose/Dockerfile "$context/"
++cp ops/compose/synthetic_host.py ops/compose/synthetic_provider.py "$context/host/"
++(
++    cd examples/nonmotor_vehicle_illegal_parking
++    tar --exclude='__pycache__' --exclude='test_scene.py' -cf - compilable
++) | tar -C "$context/host/examples/nonmotor_vehicle_illegal_parking" -xf -
++DOCKER_BUILDKIT=0 docker build --network=none --pull=false --build-arg "PYTHON_IMAGE=$base_id" -t "$1" "$context"
++docker image inspect "$1" --format '{{.Id}}'
+--- /dev/null
++++ b/ops/compose/synthetic_host.py
+@@ -0,0 +1,641 @@
++"""Opt-in local fixture host. All operational trust is supplied here explicitly."""
++
++import argparse
++import asyncio
++import os
++from dataclasses import dataclass, field
++from datetime import UTC, datetime
++from pathlib import Path
++from secrets import compare_digest
++from typing import Literal
++
++import uvicorn
++from sqlalchemy.ext.asyncio import AsyncEngine
++from synthetic_provider import MODEL_ID, PROVIDER_PORT, synthetic_provider
++
++from examples.nonmotor_vehicle_illegal_parking.compilable import scene
++from examples.nonmotor_vehicle_illegal_parking.compilable.lifecycle import (
++    ACTOR,
++    CAMERA,
++    DEVICE,
++    NEXT_RELEASE_ID,
++    RELEASE_ID,
++    SCOPE,
++    exercise_lifecycle,
++    local_submission,
++)
++from jimu_runtime.api.app import create_app
++from jimu_runtime.api.auth import Action, Identity, Resource
++from jimu_runtime.api.contracts import EvidenceCoordinates
++from jimu_runtime.api.lifecycle import LifecycleEvidence
++from jimu_runtime.bundle.archive import read_bundle
++from jimu_runtime.bundle.capabilities import CapabilitySnapshot
++from jimu_runtime.bundle.catalogue import build_catalogue
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.bundle.releases import (
++    ReleaseAction,
++    ReleaseManager,
++    ReleaseTarget,
++    ResolvedTaskScope,
++)
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.bundle.store import LocalBundleStore
++from jimu_runtime.bundle.trust import TrustPin
++from jimu_runtime.deployment.database import app_url, database_target, read_secret
++from jimu_runtime.deployment.service import Service, mount_service, wait_for_database
++from jimu_runtime.domain.definition_enums import ModelCapability
++from jimu_runtime.domain.definition_support import VocabularyMemberRef
++from jimu_runtime.domain.definitions.capabilities import (
++    ModelBindingContentRef,
++    ProfileDefinition,
++)
++from jimu_runtime.domain.definitions.models import ModelBinding
++from jimu_runtime.domain.definitions.ontology import RegionDefinition
++from jimu_runtime.domain.definitions.tools import ToolDefinition
++from jimu_runtime.domain.enums import ArtifactKind
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.domain.runtime.executions import NodeId
++from jimu_runtime.domain.runtime.intake import (
++    AcceptedTask,
++    IdempotencyScope,
++    RegistryRecordRef,
++    TaskSubmission,
++)
++from jimu_runtime.domain.runtime.media import ImageDimensions, MediaAsset, MediaRef
++from jimu_runtime.gateway.bridge import CapabilityGateway, ModelCallLimits
++from jimu_runtime.gateway.bridge_tools import ToolExecutionAdapter
++from jimu_runtime.gateway.http import ChatEndpoint, HttpLimits, HttpModelTransport
++from jimu_runtime.gateway.journal import DispatchJournal
++from jimu_runtime.gateway.routing import (
++    CurrentRoutingState,
++    DeploymentOwnership,
++    DeploymentOwnershipRegistration,
++)
++from jimu_runtime.inspection.geometry import CPU_ARTIFACT, synthetic_cpu_implementations
++from jimu_runtime.inspection.geometry.node import GeometryNodeAdapter
++from jimu_runtime.inspection.media import LocalMediaStore
++from jimu_runtime.inspection.media.retention import LocalEvidenceLifecycle
++from jimu_runtime.inspection.media.retention_models import (
++    EvidenceAccessGrant,
++    EvidenceLocator,
++)
++from jimu_runtime.inspection.media.retention_policy import HistoricalEvidencePolicies
++from jimu_runtime.inspection.perception import build_chat_contract
++from jimu_runtime.tools.executor import ToolExecutor
++from jimu_runtime.tools.registry import ToolWorkerRegistry
++from jimu_runtime.tools.step_attempts import StepAttemptStore
++from jimu_runtime.workers.resource_inventory import (
++    HostInventory,
++    RemoteCapacity,
++    RemoteQuota,
++    ResourceScope,
++)
++from jimu_runtime.workers.resources import ResourceAdmission
++from jimu_runtime.workflow.intake import (
++    IntakeAuthorizationError,
++    IntakeIdentity,
++    IntakeService,
++)
++from jimu_runtime.workflow.mock_support import VerifiedExecutionScope
++from jimu_runtime.workflow.pins import ResolvedExecutionPins
++from jimu_runtime.workflow.postgres import create_postgres_engine
++from jimu_runtime.workflow.scheduling import (
++    JobBudget,
++    NodeBudgetOverride,
++    SchedulingLimits,
++)
++from jimu_runtime.workflow.worker_capabilities import ToolOwnershipPin
++from jimu_runtime.workflow.worker_inspection import (
++    VerifiedMediaWorkerHost,
++    inspection_worker,
++)
++
++_ROOT = Path("/var/lib/jimu")
++_VERSION: Literal["1.0.0"] = "1.0.0"
++_VALID_FROM = datetime(2025, 1, 1, tzinfo=UTC)
++_VALID_UNTIL = datetime(2100, 1, 1, tzinfo=UTC)
++_ID = IntakeIdentity(issuer="jimu.compose.local", subject="synthetic.inspector")
++_ACTOR = ActorRef(
++    actor_kind="service",
++    actor_id=_ID.subject,
++    identity_registry_id="jimu.compose.local",
++)
++_ACTIONS = frozenset(
++    {
++        Action.ACCESS_SCOPE,
++        Action.TASK_SUBMIT,
++        Action.TASK_READ,
++        Action.TASK_RESULT,
++        Action.EXECUTION_READ,
++        Action.EXECUTION_TRACE,
++        Action.EVIDENCE_READ,
++        Action.EVIDENCE_NORMALIZED,
++        Action.EVIDENCE_RAW,
++    }
++)
++
++
++def _frame() -> bytes:
++    return (scene.DIRECTORY / "assets/synthetic-frame.png").read_bytes()
++
++
++def _submission(frame: bytes) -> TaskSubmission:
++    return TaskSubmission.model_validate(
++        {
++            **local_submission(frame).model_dump(),
++            "request_id": "synthetic.compose.request",
++            "idempotency_key": "synthetic.compose.frame",
++        }
++    )
++
++
++def _scheduling() -> SchedulingLimits:
++    default = JobBudget(
++        max_attempts=2,
++        timeout_ms=15000,
++        retry_backoff_ms=(50,),
++        retryable_error_classes=("transport", "timeout", "resource"),
++        retry_on_lease_loss=True,
++    )
++    observation = JobBudget.model_validate(
++        {
++            **default.model_dump(),
++            "retryable_error_classes": (
++                *default.retryable_error_classes,
++                "validation",
++            ),
++        }
++    )
++    return SchedulingLimits(
++        schema_version=_VERSION,
++        version=_VERSION,
++        default=default,
++        overrides=(NodeBudgetOverride(node_id=NodeId.N04, budget=observation),),
++    )
++
++
++def _capabilities() -> CapabilitySnapshot:
++    base = scene.capability_snapshot(scene.load_source())
++    window = {"valid_from": _VALID_FROM, "valid_until": _VALID_UNTIL}
++    return base.model_copy(
++        update={
++            **window,
++            "capabilities": tuple(
++                item.model_copy(update=window) for item in base.capabilities
++            ),
++            "model_deployments": tuple(
++                item.model_copy(update=window) for item in base.model_deployments
++            ),
++            "runtime_protocols": tuple(
++                item.model_copy(update=window) for item in base.runtime_protocols
++            ),
++        }
++    )
++
++
++@dataclass(frozen=True, slots=True)
++class LocalAuthority:
++    submission: TaskSubmission
++    media: LocalMediaStore
++    token: str = field(repr=False)
++    principal: object = field(default_factory=object, repr=False)
++
++    def verify_scope(self, scope: IdempotencyScope) -> None:
++        if scope != self.submission.idempotency_scope:
++            raise IntakeAuthorizationError()
++
++    async def authenticate(self, credential: str) -> Identity | None:
++        if not credential.isascii() or not compare_digest(credential, self.token):
++            return None
++        return Identity(self.principal, _ACTOR)
++
++    async def allows(self, identity: Identity, resource: Resource) -> bool:
++        return (
++            identity.principal is self.principal
++            and resource.scope == self.submission.idempotency_scope
++            and resource.action in _ACTIONS
++        )
++
++    async def authorize_submission(
++        self, principal: object, submission: TaskSubmission
++    ) -> IntakeIdentity:
++        self.verify_scope(submission.idempotency_scope)
++        expected = self.submission
++        if principal is not self.principal or (
++            submission.media_ref,
++            submission.context,
++        ) != (expected.media_ref, expected.context):
++            raise IntakeAuthorizationError()
++        return _ID
++
++    async def restore_principal(
++        self, identity: IntakeIdentity, submission: TaskSubmission
++    ) -> object:
++        if identity != _ID:
++            raise IntakeAuthorizationError()
++        await self.authorize_submission(self.principal, submission)
++        return self.principal
++
++    async def verified_original(
++        self, scope: IdempotencyScope, media_ref: MediaRef
++    ) -> MediaAsset:
++        self.verify_scope(scope)
++        return await self.media.verified_original(scope, media_ref)
++
++    async def references(
++        self, scope: IdempotencyScope, task: AcceptedTask
++    ) -> tuple[RegistryRecordRef, RegistryRecordRef]:
++        self.verify_scope(scope)
++        return (
++            RegistryRecordRef(
++                record_id=task.context.device_id,
++                version=_VERSION,
++                digest=sha256_digest(DEVICE.encode()),
++            ),
++            RegistryRecordRef(
++                record_id=task.context.camera_id,
++                version=_VERSION,
++                digest=sha256_digest(CAMERA.encode()),
++            ),
++        )
++
++
++def _manager(
++    store: LocalBundleStore,
++    authority: LocalAuthority,
++    scene_type: VocabularyMemberRef | None,
++) -> ReleaseManager:
++    def authorize(
++        principal: object, action: ReleaseAction, target: ReleaseTarget
++    ) -> ActorRef | None:
++        return (
++            ACTOR
++            if principal is authority.principal
++            and action is ReleaseAction.ACCEPT_TASK
++            and (
++                target.scope == SCOPE
++                and target.release_id in {RELEASE_ID, NEXT_RELEASE_ID}
++            )
++            else None
++        )
++
++    def resolve(principal: object, request: TaskSubmission) -> ResolvedTaskScope | None:
++        if (
++            principal is not authority.principal
++            or scene_type is None
++            or request.idempotency_scope != authority.submission.idempotency_scope
++        ):
++            return None
++        return ResolvedTaskScope(
++            device_id=DEVICE,
++            camera_id=CAMERA,
++            region_id=scene.REGION,
++            scene_type=scene_type,
++        )
++
++    return ReleaseManager(
++        store,
++        authorize=authorize,
++        clock=lambda: datetime.now(UTC),
++        resolve_task_scope=resolve,
++        scope_precedence=("device", "region", "scene", "global"),
++        allow_new_task=lambda _release, activation, resolved, _now: activation.scope
++        == SCOPE
++        and resolved.region_id == scene.REGION,
++    )
++
++
++async def serve(engine: AsyncEngine, frame: bytes) -> None:
++    target = database_target()
++    await wait_for_database(engine, target.database_comment)
++    store = LocalBundleStore(_ROOT / "releases")
++    media = LocalMediaStore(_ROOT / "media", engine)
++    submission = _submission(frame)
++    scope = submission.idempotency_scope
++    authority = LocalAuthority(submission, media, read_secret("fixture_token"))
++    releases = _manager(store, authority, None)
++    activation = releases.active_activation(SCOPE)
++    if activation is None:
++        await asyncio.to_thread(exercise_lifecycle, _ROOT)
++        activation = releases.active_activation(SCOPE)
++    if activation is None or activation.release_ref.record_id not in {
++        RELEASE_ID,
++        NEXT_RELEASE_ID,
++    }:
++        raise ValueError("unexpected local Release activation")
++    release = releases.get_release(activation.release_ref.record_id, scope=SCOPE)
++    if release is None or release.admission_receipt is None:
++        raise ValueError("local Release admission unavailable")
++    bundle = read_bundle(
++        store.read_archive(release.admission_receipt.receipt_id), scene.LIMITS
++    )
++    catalogue = build_catalogue(bundle.manifest, bundle.payloads, **scene.JSON_LIMITS)
++    (region_ref,) = (
++        artifact.ref
++        for artifact in catalogue.of_kind(ArtifactKind.REGION)
++        if artifact.ref.artifact_id == scene.REGION
++    )
++    region = require_definition(catalogue, region_ref, RegionDefinition)
++    releases = _manager(store, authority, region.scene_type)
++    original = await media.publish_original(
++        scope,
++        submission.media_ref,
++        content=frame,
++        mime_type="image/png",
++        dimensions=ImageDimensions(width=64, height=48),
++    )
++    contract_submission = TaskSubmission.model_validate(
++        {
++            **submission.model_dump(),
++            "request_id": "local.compose.contract",
++            "idempotency_key": "local.compose.contract",
++        }
++    )
++    accepted = releases.accept_task(contract_submission, principal=authority.principal)
++    caps = _capabilities()
++
++    async def capabilities(scope: IdempotencyScope) -> CapabilitySnapshot:
++        authority.verify_scope(scope)
++        return caps
++
++    endpoint = ChatEndpoint(
++        endpoint_id="synthetic.compose.endpoint",
++        endpoint_version=_VERSION,
++        provider_id=caps.model_deployments[0].identity.provider_id,
++        provider_kind="remote",
++        deployment_id=caps.model_deployments[0].identity.deployment_id,
++        model_id=MODEL_ID,
++        url=f"http://127.0.0.1:{PROVIDER_PORT}/v1/chat/completions",
++        allow_plaintext_loopback=True,
++        protocol="openai_chat_completions",
++        retain_complete_response=True,
++        limits=HttpLimits(
++            timeout_ms=5000,
++            io_timeout_ms=4500,
++            request_bytes=131072,
++            response_bytes=32768,
++            image_bytes=16384,
++            max_retry_after_seconds=1,
++        ),
++    )
++    ownership = DeploymentOwnership(
++        deployment=caps.model_deployments[0].identity,
++        owner_ref=TrustPin(
++            identity=endpoint.endpoint_id,
++            version=_VERSION,
++            sha256=endpoint.descriptor_pin.sha256,
++        ),
++        endpoint_descriptor_ref=endpoint.descriptor_pin,
++        model_id=MODEL_ID,
++        version_evidence=None,
++    )
++    routing = CurrentRoutingState(
++        capabilities=caps,
++        ownership=(
++            DeploymentOwnershipRegistration(
++                ownership=ownership,
++                valid_from=_VALID_FROM,
++                valid_until=_VALID_UNTIL,
++                revoked_at=None,
++            ),
++        ),
++    )
++
++    async def current_routing(scope: IdempotencyScope) -> CurrentRoutingState:
++        authority.verify_scope(scope)
++        return routing
++
++    async def model_pins(
++        request_scope: IdempotencyScope, actual: CapabilitySnapshot
++    ) -> tuple[DeploymentOwnership, ...]:
++        authority.verify_scope(request_scope)
++        if actual != caps:
++            raise ValueError("capability snapshot changed")
++        return (ownership,)
++
++    from jimu_runtime.workflow.pins import resolve_execution_pins
++
++    pins = resolve_execution_pins(
++        releases,
++        store,
++        accepted,
++        scope=scope,
++        host=caps,
++        validation_at=datetime.now(UTC),
++        limits=scene.LIMITS,
++    )
++    bound = VerifiedExecutionScope(
++        accepted,
++        "local.compose.contract",
++        pins.pins,
++        original,
++        bundle,
++        scene.LIMITS.max_file_bytes,
++        scene.LIMITS.max_json_depth,
++    )
++    profile = bound.resolve(
++        bound.catalogue.of_kind(ArtifactKind.PROFILE)[0].ref, ProfileDefinition
++    )
++    contracts = []
++    for item in bound.catalogue.of_kind(ArtifactKind.MODEL_BINDING):
++        binding = bound.resolve(item.ref, ModelBinding)
++        questions = (
++            profile.question_refs
++            if binding.capability is ModelCapability.OBJECT_OBSERVATION
++            else ()
++        )
++        contracts.append(
++            build_chat_contract(
++                bound,
++                ModelBindingContentRef.model_validate(item.ref.model_dump()),
++                questions,
++            )
++        )
++    definitions = tuple(
++        bound.resolve(item.ref, ToolDefinition)
++        for item in bound.catalogue.of_kind(ArtifactKind.TOOL)
++    )
++    proofs = {
++        tool.implementation_requirement.capability_id: TrustPin(
++            identity=tool.implementation_requirement.capability_id,
++            version=_VERSION,
++            sha256=sha256_digest(CPU_ARTIFACT.read_bytes()),
++        )
++        for tool in definitions
++    }
++
++    async def tool_pins(
++        request_scope: IdempotencyScope, actual: ResolvedExecutionPins
++    ) -> tuple[ToolOwnershipPin, ...]:
++        authority.verify_scope(request_scope)
++        return tuple(
++            ToolOwnershipPin(
++                tool_ref=pin.tool_ref,
++                implementation_version=pin.implementation_version,
++                implementation_proof_ref=proofs[
++                    bound.resolve(
++                        pin.tool_ref, ToolDefinition
++                    ).implementation_requirement.capability_id
++                ],
++            )
++            for pin in actual.pins.tool_pins
++        )
++
++    inventory = HostInventory(
++        "jimu.compose.local",
++        lease_ttl_ms=18000,
++        cpu_slots=1,
++        scopes=(
++            ResourceScope(
++                "model", "remote", 1, pool_or_quota_id="synthetic.loopback.quota"
++            ),
++            ResourceScope("cpu", "cpu", 1),
++        ),
++        remote_quotas=(
++            RemoteQuota("synthetic.loopback.quota", 1, RemoteCapacity.LOCAL_TRANSPORT),
++        ),
++    )
++    resource_path = _ROOT / "resources.sqlite"
++    resources = (
++        ResourceAdmission(resource_path, inventory)
++        if resource_path.exists()
++        else ResourceAdmission.provision(resource_path, inventory)
++    )
++    journal = DispatchJournal(engine)
++    gateway = CapabilityGateway(
++        engine,
++        journal,
++        resources,
++        HttpModelTransport((endpoint,), tuple(contracts), max_concurrency=1),
++        current_routing,
++        ModelCallLimits(8, 4, 8, ("transport", "timeout")),
++        response_writer=media,
++    )
++    registry = ToolWorkerRegistry(
++        synthetic_cpu_implementations(
++            resources,
++            "cpu",
++            "compose-tools",
++            definitions,
++            proofs,
++            synthetic_image_digests=frozenset({original.media_ref.sha256}),
++        )
++    )
++    tools = GeometryNodeAdapter(
++        media,
++        ToolExecutionAdapter(
++            ToolExecutor(registry),
++            StepAttemptStore(engine, actor=ACTOR),
++            journal,
++            capabilities,
++        ),
++    )
++    worker = inspection_worker(
++        engine,
++        releases,
++        store,
++        host=VerifiedMediaWorkerHost(media, capabilities, authority.references),
++        bundle_limits=scene.LIMITS,
++        media=media,
++        gateway=gateway,
++        execute_tools=tools.execute,
++        model_resource_scope_id="model",
++    )
++    # The fixture host deliberately uses the same current registry for Intake and the Worker.
++    intake = IntakeService(
++        engine,
++        releases,
++        store,
++        host=FixtureIntake(authority, caps),
++        bundle_limits=scene.LIMITS,
++        scheduling_limits=_scheduling(),
++        max_submission_bytes=65536,
++        historical_ownership=model_pins,
++        historical_tool_ownership=tool_pins,
++    )
++
++    def grant(
++        request_scope: IdempotencyScope, actor: ActorRef, task_id: str
++    ) -> EvidenceAccessGrant:
++        authority.verify_scope(request_scope)
++        return EvidenceAccessGrant(scope=request_scope, actor=actor, task_id=task_id)
++
++    def locator(coords: EvidenceCoordinates) -> EvidenceLocator:
++        return EvidenceLocator.model_validate(coords.model_dump())
++
++    evidence = LifecycleEvidence(
++        LocalEvidenceLifecycle(
++            media, HistoricalEvidencePolicies(releases, store, scene.LIMITS)
++        ),
++        grant,
++        locator,
++    )
++    app = mount_service(
++        create_app(engine, intake, authority=authority, evidence=evidence),
++        Service(engine, worker, (scope,), "compose-local", target.database_comment),
++    )
++    config = uvicorn.Config(
++        app,
++        host="0.0.0.0",
++        port=8080,
++        access_log=False,
++        proxy_headers=False,
++        server_header=False,
++        timeout_graceful_shutdown=20,
++    )
++    await uvicorn.Server(config).serve()
++    if not config.loaded:
++        raise ValueError("service failed to start")
++
++
++@dataclass(frozen=True, slots=True)
++class FixtureIntake:
++    authority: LocalAuthority
++    snapshot: CapabilitySnapshot
++
++    async def authorize_submission(
++        self, principal: object, submission: TaskSubmission
++    ) -> IntakeIdentity:
++        return await self.authority.authorize_submission(principal, submission)
++
++    async def restore_principal(
++        self, identity: IntakeIdentity, submission: TaskSubmission
++    ) -> object:
++        return await self.authority.restore_principal(identity, submission)
++
++    async def verified_original(
++        self, scope: IdempotencyScope, ref: MediaRef
++    ) -> MediaAsset:
++        return await self.authority.verified_original(scope, ref)
++
++    async def capabilities(self, scope: IdempotencyScope) -> CapabilitySnapshot:
++        self.authority.verify_scope(scope)
++        return self.snapshot
++
++
++def main() -> None:
++    cli = argparse.ArgumentParser()
++    cli.add_argument("action", choices=("serve", "submission"))
++    action: Literal["serve", "submission"] = cli.parse_args().action
++    if os.environ.get("JIMU_LOCAL_SYNTHETIC") != "1":
++        raise SystemExit("Fixture mode requires explicit local opt-in")
++    frame = _frame()
++    if action == "submission":
++        print(_submission(frame).model_dump_json())
++        return
++    try:
++        with synthetic_provider(frame):
++            asyncio.run(
++                serve(create_postgres_engine(app_url(database_target())), frame)
++            )
++    except Exception as error:
++        import logging
++
++        logging.getLogger(__name__).error(
++            "Local runtime startup failed (%s)", type(error).__name__
++        )
++        raise SystemExit(1) from None
++
++
++if __name__ == "__main__":
++    main()
+--- /dev/null
++++ b/ops/compose/synthetic_provider.py
+@@ -0,0 +1,85 @@
++"""Loopback-only fixture for the approved synthetic parking frame."""
++
++import base64
++import json
++import threading
++from collections.abc import Iterator
++from contextlib import contextmanager
++from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
++from typing import Any
++
++MODEL_ID = "synthetic-local-parking"
++PROVIDER_PORT = 18081
++
++
++@contextmanager
++def synthetic_provider(frame: bytes) -> Iterator[None]:
++    image = "data:image/png;base64," + base64.b64encode(frame).decode("ascii")
++    replies = {
++        ("profile_hits",): {"profile_hits": ["nonmotor_vehicle"]},
++        ("boxes",): {"boxes": [{"xyxy": [40, 23, 52, 33]}]},
++        ("parking_position", "parking_state", "vehicle_type"): {
++            "vehicle_type": "electric_bicycle",
++            "parking_state": "parked",
++            "parking_position": "outside_parking_area",
++        },
++        ("categories",): {"categories": []},
++    }
++
++    class Handler(BaseHTTPRequestHandler):
++        def log_message(self, format: str, *args: Any) -> None:
++            pass
++
++        def do_POST(self) -> None:
++            self.connection.settimeout(3)
++            try:
++                size = int(self.headers["Content-Length"])
++                if self.path != "/v1/chat/completions" or not 0 < size <= 131072:
++                    raise ValueError
++                body = json.loads(self.rfile.read(size))
++                contract = body["response_format"]["json_schema"]
++                slots = tuple(sorted(contract["schema"]["properties"]))
++                if (
++                    contract["strict"] is not True
++                    or body["model"] != MODEL_ID
++                    or body["messages"][0]["content"][1]["image_url"]["url"] != image
++                ):
++                    raise ValueError
++                answer = replies[slots]
++                request_id = "synthetic.compose." + slots[0]
++            except (KeyError, IndexError, TypeError, ValueError, OSError):
++                self.send_error(400)
++                return
++            response = json.dumps(
++                {
++                    "id": request_id,
++                    "model": MODEL_ID,
++                    "choices": [
++                        {
++                            "index": 0,
++                            "message": {
++                                "role": "assistant",
++                                "content": json.dumps(answer),
++                            },
++                            "finish_reason": "stop",
++                        }
++                    ],
++                }
++            ).encode()
++            self.send_response(200)
++            self.send_header("Content-Type", "application/json")
++            self.send_header("Content-Length", str(len(response)))
++            self.send_header("X-Request-ID", request_id)
++            self.send_header("X-Jimu-Deployment-Version", "1.0.0")
++            self.send_header("X-Jimu-Model-Version", "1.0.0")
++            self.end_headers()
++            self.wfile.write(response)
++
++    with ThreadingHTTPServer(("127.0.0.1", PROVIDER_PORT), Handler) as server:
++        thread = threading.Thread(target=server.serve_forever, daemon=True)
++        thread.start()
++        try:
++            yield
++        finally:
++            server.shutdown()
++            thread.join()
+--- /dev/null
++++ b/src/jimu_runtime/deployment/__init__.py
+@@ -0,0 +1 @@
++"""CPU service lifecycle and explicit host deployment wiring."""
+--- /dev/null
++++ b/src/jimu_runtime/deployment/database.py
+@@ -0,0 +1,124 @@
++"""Provision only the explicitly named local deployment database and roles."""
++
++import asyncio
++import os
++from pathlib import Path
++from uuid import UUID
++
++import psycopg
++from psycopg import sql
++from sqlalchemy import URL
++
++from jimu_runtime.workflow.postgres import (
++    WORKFLOW_APP_ROLE,
++    WORKFLOW_OWNER_ROLE,
++    MigrationTarget,
++    apply_migrations,
++    create_postgres_engine,
++)
++
++
++def read_secret(name: str) -> str:
++    with Path("/run/secrets", name).open("r", encoding="ascii") as stream:
++        value = stream.read(513).rstrip("\n")
++    if (
++        len(value) not in range(32, 513)
++        or not value.isascii()
++        or any(not char.isalnum() and char not in "_-" for char in value)
++    ):
++        raise ValueError("deployment secret is absent or malformed")
++    return value
++
++
++def database_target() -> MigrationTarget:
++    return MigrationTarget(
++        "jimu_local", WORKFLOW_OWNER_ROLE, UUID(os.environ["JIMU_DB_INSTANCE"])
++    )
++
++
++def app_url(target: MigrationTarget, *, owner: bool = False) -> URL:
++    return URL.create(
++        "postgresql+psycopg",
++        username=target.owner if owner else WORKFLOW_APP_ROLE,
++        password=read_secret("owner_password" if owner else "app_password"),
++        host="database",
++        port=5432,
++        database=target.database,
++        query={"sslmode": "disable"},
++    )
++
++
++def provision(target: MigrationTarget) -> None:
++    """Require superuser access only in the one-shot container."""
++    with psycopg.connect(
++        host="database",
++        user="postgres",
++        dbname="postgres",
++        password=read_secret("admin_password"),
++        sslmode="disable",
++        connect_timeout=5,
++        autocommit=True,
++    ) as conn:
++        current = conn.execute(
++            """SELECT pg_catalog.shobj_description(oid, 'pg_database'),
++                      pg_catalog.pg_get_userbyid(datdba)
++               FROM pg_catalog.pg_database WHERE datname = %s""",
++            (target.database,),
++        ).fetchone()
++        if current is not None:
++            if tuple(current) != (target.database_comment, target.owner):
++                raise ValueError("existing database is not the provisioned deployment")
++            return
++        for role, filename in (
++            (target.owner, "owner_password"),
++            (WORKFLOW_APP_ROLE, "app_password"),
++        ):
++            exists = conn.execute(
++                "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = %s", (role,)
++            ).fetchone()
++            if exists is not None:
++                raise ValueError("database provisioning has pre-existing roles")
++            conn.execute(
++                sql.SQL("CREATE ROLE {} LOGIN PASSWORD {}").format(
++                    sql.Identifier(role),
++                    sql.Literal(read_secret(filename)),
++                )
++            )
++        database = sql.Identifier(target.database)
++        conn.execute(
++            sql.SQL("CREATE DATABASE {} OWNER {}").format(
++                database, sql.Identifier(target.owner)
++            )
++        )
++        conn.execute(sql.SQL("REVOKE ALL ON DATABASE {} FROM PUBLIC").format(database))
++        conn.execute(
++            sql.SQL("GRANT CONNECT ON DATABASE {} TO {}").format(
++                database, sql.Identifier(WORKFLOW_APP_ROLE)
++            )
++        )
++        conn.execute(
++            sql.SQL("COMMENT ON DATABASE {} IS {}").format(
++                database, sql.Literal(target.database_comment)
++            )
++        )
++
++
++async def migrate() -> None:
++    target = database_target()
++    await asyncio.to_thread(provision, target)
++    engine = create_postgres_engine(app_url(target, owner=True))
++    try:
++        await apply_migrations(engine, target)
++    finally:
++        await engine.dispose()
++
++
++def main() -> None:
++    try:
++        asyncio.run(migrate())
++    except Exception:
++        raise SystemExit("Local database bootstrap or migration failed") from None
++
++
++if __name__ == "__main__":
++    main()
+--- /dev/null
++++ b/src/jimu_runtime/deployment/probe.py
+@@ -0,0 +1,21 @@
++"""Container probe for process, provisioned database and recent work polling."""
++
++from urllib.error import URLError
++from urllib.request import ProxyHandler, build_opener
++
++
++def main() -> None:
++    client = build_opener(ProxyHandler({}))
++    try:
++        for name in ("live", "ready", "worker"):
++            with client.open(
++                f"http://127.0.0.1:8080/health/{name}", timeout=1
++            ) as response:
++                if response.status != 200:
++                    raise SystemExit(1)
++    except (URLError, TimeoutError):
++        raise SystemExit(1) from None
++
++
++if __name__ == "__main__":
++    main()
+--- /dev/null
++++ b/src/jimu_runtime/deployment/service.py
+@@ -0,0 +1,142 @@
++"""Run the existing HTTP app and scoped workflow poller on one service lifecycle."""
++
++import asyncio
++import logging
++from collections.abc import AsyncIterator
++from contextlib import asynccontextmanager, suppress
++from dataclasses import dataclass, field
++from time import monotonic
++
++from fastapi import FastAPI
++from fastapi.responses import JSONResponse
++from sqlalchemy import text
++from sqlalchemy.ext.asyncio import AsyncEngine
++
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.workflow.postgres import WORKFLOW_APP_ROLE
++from jimu_runtime.workflow.worker import WorkflowWorker
++
++_LOG = logging.getLogger(__name__)
++
++
++async def database_ready(engine: AsyncEngine, instance_comment: str) -> bool:
++    try:
++        async with asyncio.timeout(2), engine.connect() as conn:
++            result = (
++                await conn.execute(
++                    text("""
++                        SELECT current_user, pg_catalog.shobj_description(d.oid, 'pg_database'),
++                               pg_catalog.to_regclass('jimu_workflow.jobs') IS NOT NULL
++                        FROM pg_catalog.pg_database d
++                        WHERE d.datname = pg_catalog.current_database()
++                    """)
++                )
++            ).one()
++    except Exception:
++        return False
++    return tuple(result) == (WORKFLOW_APP_ROLE, instance_comment, True)
++
++
++async def wait_for_database(engine: AsyncEngine, instance_comment: str) -> None:
++    """Cover PostgreSQL startup when Compose restarts both persistent services."""
++    try:
++        async with asyncio.timeout(20):
++            while not await database_ready(engine, instance_comment):
++                await asyncio.sleep(0.25)
++    except TimeoutError:
++        raise RuntimeError("provisioned database did not become ready") from None
++
++
++@dataclass(slots=True)
++class Health:
++    last_healthy_poll: float | None = None
++
++    def worker_ready(self, freshness: float) -> bool:
++        return (
++            self.last_healthy_poll is not None
++            and monotonic() - self.last_healthy_poll <= freshness
++        )
++
++
++@dataclass(frozen=True, slots=True)
++class Service:
++    """Trusted runtime dependencies and the exact work queues this process serves."""
++
++    engine: AsyncEngine = field(repr=False)
++    worker: WorkflowWorker
++    scopes: tuple[IdempotencyScope, ...]
++    owner: str
++    instance_comment: str
++    poll_seconds: float = 0.2
++    worker_freshness_seconds: float = 45.0
++
++    def __post_init__(self) -> None:
++        if not self.scopes or len(set(self.scopes)) != len(self.scopes):
++            raise ValueError("worker requires explicit distinct scopes")
++        if not 0.05 <= self.poll_seconds <= 5 or self.worker_freshness_seconds < 10:
++            raise ValueError("invalid workflow health budget or poll interval")
++
++    async def run_worker(self, health: Health) -> None:
++        cursors: dict[IdempotencyScope, str | None] = dict.fromkeys(self.scopes)
++        while True:
++            healthy = True
++            for scope in self.scopes:
++                try:
++                    progress = await self.worker.run_next(
++                        scope,
++                        owner=self.owner,
++                        lease_ms=20000,
++                        after_execution_id=cursors[scope],
++                    )
++                except Exception:
++                    _LOG.warning("scoped workflow poll failed")
++                    healthy = False
++                    continue
++                cursors[scope] = progress.after_execution_id
++                if progress.issues:
++                    _LOG.warning("scoped workflow poll reported source issues")
++                    healthy = False
++            if healthy:
++                health.last_healthy_poll = monotonic()
++            await asyncio.sleep(self.poll_seconds)
++
++
++def mount_service(app: FastAPI, service: Service) -> FastAPI:
++    """Add uncredentialed, payload-free probes and start a bounded scoped poller."""
++    health = Health()
++    existing_lifespan = app.router.lifespan_context
++
++    @asynccontextmanager
++    async def lifespan(application: FastAPI) -> AsyncIterator[None]:
++        try:
++            async with existing_lifespan(application):
++                task = asyncio.create_task(service.run_worker(health))
++                try:
++                    yield
++                finally:
++                    task.cancel()
++                    with suppress(asyncio.CancelledError):
++                        await task
++        finally:
++            await service.engine.dispose()
++
++    app.router.lifespan_context = lifespan
++
++    def status(ok: bool) -> JSONResponse:
++        return JSONResponse(
++            {"status": "ok" if ok else "unavailable"}, status_code=200 if ok else 503
++        )
++
++    @app.get("/health/live", include_in_schema=False)
++    async def live() -> JSONResponse:
++        return status(True)
++
++    @app.get("/health/ready", include_in_schema=False)
++    async def ready() -> JSONResponse:
++        return status(await database_ready(service.engine, service.instance_comment))
++
++    @app.get("/health/worker", include_in_schema=False)
++    async def worker() -> JSONResponse:
++        return status(health.worker_ready(service.worker_freshness_seconds))
++
++    return app
+--- /dev/null
++++ b/tests/contract/test_wp07_compose_local.py
+@@ -0,0 +1,285 @@
++"""The installed local deployment, using an exclusively owned Compose project."""
++
++import hashlib
++import json
++import os
++import socket
++import subprocess
++from pathlib import Path
++from secrets import token_urlsafe
++from time import monotonic, sleep
++from uuid import uuid4
++
++import httpx
++import pytest
++
++_ROOT = Path(__file__).resolve().parents[2]
++_COMPOSE = _ROOT / "ops/compose/compose.yaml"
++_CONNECT = socket.socket.connect
++_CREATE_CONNECTION = socket.create_connection
++_QUERY_RECEIPTS = """
++import asyncio, json, sys
++from sqlalchemy import text
++from jimu_runtime.deployment.database import app_url, database_target
++from jimu_runtime.workflow.postgres import create_postgres_engine
++
++async def report():
++    engine = create_postgres_engine(app_url(database_target()))
++    try:
++        async with engine.connect() as conn:
++            rows = await conn.execute(text('''
++                SELECT dispatch_id, receipts.record ->> 'kind' AS kind,
++                       receipts.record ->> 'response_digest' AS digest, intents.node_run_id
++                FROM jimu_workflow.dispatch_results receipts
++                JOIN jimu_workflow.dispatch_intents intents
++                    USING (project_id, client_id, execution_id, dispatch_id)
++                WHERE project_id = :project AND client_id = :client
++                  AND execution_id = :execution AND NOT late
++                  AND boundary = 'acknowledged'
++                ORDER BY dispatch_id
++            '''), dict(zip(('project', 'client', 'execution'), sys.argv[1:], strict=True)))
++            print(json.dumps([dict(row) for row in rows.mappings()]))
++    finally:
++        await engine.dispose()
++
++asyncio.run(report())
++"""
++
++
++def _command(args: list[str], *, env: dict[str, str] | None = None) -> str:
++    result = subprocess.run(
++        args,
++        cwd=_ROOT,
++        env=env,
++        check=False,
++        capture_output=True,
++        text=True,
++        timeout=120,
++    )
++    if result.returncode:
++        pytest.fail(
++            f"{args[0]} failed ({result.returncode})\n{result.stdout}{result.stderr}"
++        )
++    return result.stdout.strip()
++
++
++def _completed(client: httpx.Client, path: str, *, wait: int = 35) -> httpx.Response:
++    end = monotonic() + wait
++    while True:
++        try:
++            response = client.get(path)
++        except httpx.TransportError:
++            if monotonic() >= end:
++                raise
++        else:
++            if response.status_code not in (409, 503) or monotonic() >= end:
++                return response
++        sleep(0.25)
++
++
++@pytest.mark.skipif(
++    os.environ.get("JIMU_RUN_COMPOSE_TEST") != "1",
++    reason="requires preloaded pinned images, a locked cache, and an isolated Docker project",
++)
++def test_local_compose_workflow_retains_result_trace_and_evidence(
++    tmp_path: Path,
++    monkeypatch: pytest.MonkeyPatch,
++) -> None:
++    suffix = uuid4().hex[:12]
++    project = f"jimu-wp07-{suffix}"
++    image = f"jimu-wp07-local:{suffix}"
++    token = token_urlsafe(32)
++    credentials = {
++        "admin_password": token_urlsafe(32),
++        "owner_password": token_urlsafe(32),
++        "app_password": token_urlsafe(32),
++        "fixture_token": token,
++    }
++    tmp_path.chmod(0o700)
++    for name, value in credentials.items():
++        path = tmp_path / name
++        path.write_text(value, encoding="ascii")
++        path.chmod(0o444)
++    env = dict(os.environ)
++    env.update(
++        JIMU_APP_IMAGE=image,
++        JIMU_SECRET_DIR=str(tmp_path),
++        JIMU_DB_INSTANCE=str(uuid4()),
++        JIMU_API_PORT="0",
++    )
++    compose = ["docker", "compose", "-p", project, "-f", str(_COMPOSE)]
++    try:
++        print(
++            f"application image {_command([str(_COMPOSE.with_name('build.sh')), image]).splitlines()[-1]}"
++        )
++        _command([*compose, "up", "-d", "--wait", "--wait-timeout", "70"], env=env)
++        binding = _command([*compose, "port", "runtime", "8080"], env=env)
++        host, port = binding.split(":")
++        assert host == "127.0.0.1"
++
++        def connect(sock: socket.socket, address: tuple[str, int]) -> None:
++            if address != (host, int(port)):
++                raise AssertionError(
++                    "test connection outside its Compose loopback mapping"
++                )
++            _CONNECT(sock, address)
++
++        def create_connection(
++            address: tuple[str, int],
++            timeout: float | None,
++            source_address: tuple[str, int] | None = None,
++        ) -> socket.socket:
++            if address != (host, int(port)):
++                raise AssertionError(
++                    "test connection outside its Compose loopback mapping"
++                )
++            return _CREATE_CONNECTION(address, timeout, source_address)
++
++        monkeypatch.setattr(socket.socket, "connect", connect)
++        monkeypatch.setattr(socket, "create_connection", create_connection)
++        print(_command([*compose, "ps", "-a"], env=env))
++        submission = json.loads(
++            _command(
++                [
++                    *compose,
++                    "exec",
++                    "-T",
++                    "runtime",
++                    "python",
++                    "/opt/jimu/host/synthetic_host.py",
++                    "submission",
++                ],
++                env=env,
++            )
++        )
++        scope = submission["idempotency_scope"]
++        headers = {
++            "Authorization": f"Bearer {token}",
++            "X-Jimu-Project": scope["project_id"],
++            "X-Jimu-Client": scope["client_id"],
++        }
++        task_path = "/api/v1/inference/tasks"
++        with httpx.Client(
++            base_url=f"http://{binding}", headers=headers, trust_env=False
++        ) as client:
++            anonymous = client.build_request("POST", task_path, json=submission)
++            del anonymous.headers["authorization"]
++            assert client.send(anonymous).status_code == 401
++            assert client.post(
++                task_path, json=submission, headers={"X-Jimu-Client": "other.client"}
++            ).status_code in (403, 404)
++            accepted = client.post(task_path, json=submission)
++            assert accepted.status_code == 202, accepted.text
++            task_id = accepted.json()["task"]["task_id"]
++            execution_id = accepted.json()["execution"]["execution_id"]
++            result_path = f"{task_path}/{task_id}/result"
++            trace_path = f"/api/v1/executions/{execution_id}/trace?limit=100"
++            result = _completed(client, result_path)
++            assert result.status_code == 200, result.text
++            assert [decision["result"] for decision in result.json()["decisions"]] == [
++                "violation"
++            ], result.text
++            trace = client.get(trace_path)
++            assert trace.status_code == 200, trace.text
++            events = trace.json()["events"]
++            assert [event["event_number"] for event in events] == list(
++                range(1, len(events) + 1)
++            )
++            successful_runs = {
++                event["payload"]["node_run_ref"]["record_id"]
++                for event in events
++                if event["payload"]["event_kind"] == "node_transition"
++                and event["payload"]["next_status"] == "succeeded"
++            }
++            receipts = json.loads(
++                _command(
++                    [
++                        *compose,
++                        "exec",
++                        "-T",
++                        "runtime",
++                        "python",
++                        "-c",
++                        _QUERY_RECEIPTS,
++                        scope["project_id"],
++                        scope["client_id"],
++                        execution_id,
++                    ],
++                    env=env,
++                )
++            )
++            model_receipts = [
++                receipt for receipt in receipts if receipt["kind"] == "model"
++            ]
++            assert len(model_receipts) == 4, receipts
++            tool_runs = {
++                receipt["node_run_id"]
++                for receipt in receipts
++                if receipt["kind"] == "tool"
++            }
++            assert len(tool_runs) == 3 and tool_runs <= successful_runs, receipts
++            assert len(successful_runs - tool_runs) == 6, successful_runs
++            receipt = model_receipts[0]
++            evidence_path = f"/api/v1/evidence/{receipt['dispatch_id']}"
++            material = {
++                "execution_id": execution_id,
++                "digest": receipt["digest"],
++                "representation": "raw",
++            }
++            evidence = client.get(evidence_path, params=material)
++            assert evidence.status_code == 200, evidence.text
++            assert hashlib.sha256(evidence.content).hexdigest() == receipt["digest"]
++            assert client.get(
++                evidence_path,
++                params=material,
++                headers={"X-Jimu-Client": "other.client"},
++            ).status_code in (403, 404)
++
++            for component in ("live", "ready", "worker"):
++                assert client.get(f"/health/{component}").json() == {"status": "ok"}
++            print(
++                f"execution={execution_id} outcome=violation events={len(events)} "
++                f"model_receipts={len(model_receipts)} tool_receipts=3 raw_sha256={receipt['digest']}"
++            )
++            _command([*compose, "restart", "runtime", "database"], env=env)
++        rebound = _command([*compose, "port", "runtime", "8080"], env=env)
++        host, port = rebound.split(":")
++        assert host == "127.0.0.1"
++        with httpx.Client(
++            base_url=f"http://{rebound}", headers=headers, trust_env=False
++        ) as client:
++            for component in ("live", "ready", "worker"):
++                assert _completed(client, f"/health/{component}").json() == {
++                    "status": "ok"
++                }
++            assert client.get(result_path).json() == result.json()
++            assert client.get(trace_path).json() == trace.json()
++            assert (
++                client.get(evidence_path, params=material).content == evidence.content
++            )
++            replay = client.post(task_path, json=submission)
++            assert replay.status_code == 202 and replay.json() == accepted.json()
++            print(
++                "runtime and database restarted, identical task, result, trace, and raw evidence"
++            )
++    except Exception:
++        print(_command([*compose, "ps", "-a"], env=env))
++        print(_command([*compose, "logs", "migrate", "runtime"], env=env))
++        raise
++    finally:
++        _command([*compose, "down", "--volumes", "--remove-orphans"], env=env)
++        assert not _command(
++            [
++                "docker",
++                "volume",
++                "ls",
++                "-q",
++                "--filter",
++                f"label=com.docker.compose.project={project}",
++            ]
++        )
++        listed_image = _command(["docker", "image", "ls", "-q", image])
++        if listed_image:
++            _command(["docker", "image", "rm", image])
++        for name in credentials:
++            (tmp_path / name).unlink()

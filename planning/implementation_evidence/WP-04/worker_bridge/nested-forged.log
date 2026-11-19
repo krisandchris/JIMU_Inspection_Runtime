@@ -1,0 +1,9 @@
+Command env PYTHONPATH=. .venv/bin/python planning/implementation_evidence/WP-04/independent/probe_nested.py forged
+Start 2026-11-18T05:01:08.267119+00:00
+End 2026-11-18T05:01:17.844421+00:00
+Exit 0
+Python 3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]
+Platform Linux-6.8.0-149-generic-x86_64-with-glibc2.39
+Dependencies {'pytest': '8.4.2', 'ruff': '0.14.14', 'mypy': '1.18.2', 'pydantic': '2.12.5', 'httpx': '0.28.1', 'sqlalchemy': '2.0.52', 'psycopg': '3.3.5'}
+
+{"check": "nested_forger_rejected", "dispatches": [["tool", "operation.tool_step.aeac8d94022ffff573ecc050fc763b513c85c81b2872df8bc16935e3f9fc2245", "tool:0d7243e1a41583359aeec42bc34ffa608710131f97e47837667ae69809edd063", "ba3f547e88fe4473a46caadad3fbdac5", "independent-nested-first", "validation", "failed", "tool_result_invalid"], ["nested_model", "operation.model.436922300a78be88858e425fa845b722ab9cb04f0b273aab19ffbded553eef5d", "dispatch.e0c25a02c3c64a4188a88dd12bdf62e1", "ba3f547e88fe4473a46caadad3fbdac5", "independent-nested-first", null, null, null]], "errors": ["independent_tool_no_selected_output"], "node_steps": ["applied", "applied", "applied", "applied", "applied", "staged", "finalized"], "physical_posts": [1, 0], "step_completions": [["failed", "tool:0d7243e1a41583359aeec42bc34ffa608710131f97e47837667ae69809edd063", "ba3f547e88fe4473a46caadad3fbdac5"]]}

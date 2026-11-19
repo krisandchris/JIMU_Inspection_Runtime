@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "coverage",
+  "policy": {
+    "policy_kind": "coverage",
+    "no_hits": "uncertain",
+    "no_target": "uncertain",
+    "partial_without_match": "uncertain",
+    "partial_with_match": "violation",
+    "complete_negative": "all_mandatory_false_with_required_evidence",
+    "absence_strategy": "conservative"
+  }
+}

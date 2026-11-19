@@ -1,0 +1,19 @@
+
+==================================== ERRORS ====================================
+_________ ERROR collecting tests/unit/test_wp04_resource_inventory.py __________
+ImportError while importing test module '/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/unit/test_wp04_resource_inventory.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/test_wp04_resource_inventory.py:6: in <module>
+    from fixtures.wp04_resources.scenario import cpu, gpu, remote, worker_inventory
+tests/fixtures/wp04_resources/scenario.py:3: in <module>
+    from jimu_runtime.domain.enums import PolicyKind
+E   ImportError: cannot import name 'PolicyKind' from 'jimu_runtime.domain.enums' (/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/domain/enums.py)
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/primary/in_progress_routing_resources.xml -
+=========================== short test summary info ============================
+ERROR tests/unit/test_wp04_resource_inventory.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.81s

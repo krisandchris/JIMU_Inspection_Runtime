@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "prompt_template_id": "parking_position",
+  "purpose": "object_observation",
+  "template_text": "Describe the apparent parking position: inside_parking_area, outside_parking_area, or over_boundary.",
+  "variables": [],
+  "response_schema_ref": {
+    "$pin": [
+      "response_schema",
+      "parking_position-result",
+      "1.0.0"
+    ]
+  },
+  "rendering_policy": "literal_substitution"
+}

@@ -238,12 +238,36 @@ type GroundingBinding = Annotated[
 ]
 
 
+class ConnectedBoxesGrouping(ContractModel):
+    """Group boxes connected by Euclidean rectangle distance in source pixels."""
+
+    mode: Literal["connected_boxes"]
+    max_gap_pixels: Annotated[int, Field(strict=True, ge=0, le=8192)]
+
+
+class PerBoxGrouping(ContractModel):
+    """Mark every detection separately, including intersecting detections."""
+
+    mode: Literal["per_box"]
+
+
+type GroundingGrouping = Annotated[
+    ConnectedBoxesGrouping | PerBoxGrouping, Field(discriminator="mode")
+]
+
+
 class ProfileDefinition(DefinitionContract):
     profile_id: ArtifactId
     version: Version
     entity_ref: EntityContentRef
     discovery_binding_ref: ModelBindingContentRef
     grounding_binding: GroundingBinding
+    grounding_grouping: AbsentOptional[GroundingGrouping] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda value: value is None,
+        json_schema_extra=omit_default_from_schema,
+    )
     observation_binding_ref: ModelBindingContentRef
     facet_refs: FacetRefs
     question_refs: Annotated[
@@ -265,4 +289,8 @@ class ProfileDefinition(DefinitionContract):
         require_unique_references(self.facet_refs)
         require_unique_references(self.question_refs)
         require_unique_references(self.rule_set_refs)
+        if self.grounding_grouping is not None and not isinstance(
+            self.grounding_binding, ModelGroundingBinding
+        ):
+            raise ValueError("grouped grounding requires a Model grounding binding")
         return self

@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0.0",
+  "release_id": "release-demo",
+  "bundle_ref": {
+    "bundle_id": "city-inspection",
+    "bundle_version": "1.0.0",
+    "bundle_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "status": "approved",
+  "admission_receipt": {
+    "schema_version": "1.0.0",
+    "receipt_id": "admission-demo",
+    "bundle_id": "city-inspection",
+    "bundle_version": "1.0.0",
+    "bundle_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "runtime_version": "1.0.0",
+    "runtime_identity": {
+      "actor_kind": "service",
+      "actor_id": "runtime-demo",
+      "identity_registry_id": "fixture-identities"
+    },
+    "accepted": true,
+    "capability_report": {
+      "required": [
+        {
+          "status": "supported",
+          "requirement": {
+            "family": "tool_implementation",
+            "capability_id": "parking-geometry",
+            "contract_version": "1.0.0",
+            "allowed_implementation_versions": [
+              "1.1.0"
+            ],
+            "required_features": [
+              "geometry_output"
+            ]
+          },
+          "implementation_version": "1.1.0"
+        }
+      ],
+      "optional": [
+        {
+          "status": "unsupported",
+          "requirement": {
+            "family": "model_deployment",
+            "capability_id": "ocr-auxiliary",
+            "contract_version": "1.0.0",
+            "allowed_implementation_versions": [
+              "1.0.0"
+            ],
+            "required_features": [
+              "ocr_text"
+            ]
+          }
+        }
+      ]
+    },
+    "errors": [],
+    "warnings": [
+      {
+        "code": "optional-capability-unsupported",
+        "path": [
+          "capability_report",
+          "optional",
+          0
+        ],
+        "message": "Synthetic optional capability outcome",
+        "related_refs": []
+      }
+    ],
+    "timestamp": "2026-11-17T02:30:00Z"
+  },
+  "approval_receipt": {
+    "schema_version": "1.0.0",
+    "receipt_id": "approval-demo",
+    "release_ref": {
+      "record_kind": "release",
+      "record_id": "release-demo"
+    },
+    "bundle_ref": {
+      "bundle_id": "city-inspection",
+      "bundle_version": "1.0.0",
+      "bundle_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "admission_receipt_id": "admission-demo",
+    "approved_by": {
+      "actor_kind": "human",
+      "actor_id": "approver-demo",
+      "identity_registry_id": "fixture-identities"
+    },
+    "approved_at": "2026-11-17T02:31:00Z"
+  },
+  "recorded_at": "2026-11-17T02:32:00Z"
+}

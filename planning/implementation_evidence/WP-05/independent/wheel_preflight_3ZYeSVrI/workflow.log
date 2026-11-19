@@ -1,0 +1,36 @@
++ PYTHONPATH=/tmp/jimu-wp05-wheel-A85kjYDU/snapshot/product
++ WP05_PROBE_DIAGNOSTICS=1
++ /tmp/jimu-wp05-wheel-A85kjYDU/venv/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py --installed --trace-dir /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_3ZYeSVrI/exec --restart-at N05 known_violation
+{"check": "worker_process_ready", "pid": 3590199, "runtime_install": "/tmp/jimu-wp05-wheel-A85kjYDU/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3590199, "signal": "SIGKILL"}
+{"check": "worker_process_ready", "pid": 3592418, "runtime_install": "/tmp/jimu-wp05-wheel-A85kjYDU/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3592418, "signal": null}
+{"check": "worker_process_ready", "pid": 3593263, "runtime_install": "/tmp/jimu-wp05-wheel-A85kjYDU/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"adapter_error": "StepAttemptBudgetExhausted", "diagnostic": "tool step attempt budget is exhausted"}
+{"check": "durable_node_diagnostics", "child_steps": [["wheel_segmentation", "succeeded", null, "succeeded", []]], "dispatches": [["model", null, "acknowledged", null, null], ["model", null, "acknowledged", null, null], ["model", null, "acknowledged", null, null], ["tool", "wheel_segmentation", "acknowledged", null, null], ["model", null, "acknowledged", null, null]], "rows": [["N01", "succeeded", null, null], ["N02", "succeeded", null, null], ["N03", "succeeded", null, null], ["N04", "succeeded", null, null], ["N05", "succeeded", null, null], ["N05", "failed", null, null], ["N05", "failed", "worker_provider_invalid_output", "worker_provider_invalid_output"], ["N06", "succeeded", null, null]]}
+{"calls": [["discovery", null, null], ["grounding", null, null], ["observation", [40, 23, 52, 33], "perception.object.ac467accfd49d2a62e75b8ffaf63173cb7da58dafb8623434a14d78a3ab6f097"], ["candidate", [40, 23, 52, 33], "perception.object.ac467accfd49d2a62e75b8ffaf63173cb7da58dafb8623434a14d78a3ab6f097"]], "check": "provider_transcript_on_failure", "errors": []}
+{"check": "worker_process_closed", "pid": 3593263, "signal": null}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 456, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 442, in main
+    await run_case(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 369, in run_case
+    result = await audit(
+             ^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 262, in audit
+    require_equal("Task-level verdict", coverage.summary_result.value, gold["summary"])
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 45, in require_equal
+    raise AssertionError(f"{label} observed {observed!r}, expected {expected!r}")
+AssertionError: Task-level verdict observed 'uncertain', expected 'violation'
+2026-11-18T06:03:06Z
+exit=1

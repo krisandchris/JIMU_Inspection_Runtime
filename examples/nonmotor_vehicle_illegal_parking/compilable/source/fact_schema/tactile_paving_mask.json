@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "schema_id": "tactile_paving_mask",
+  "semantic_key": "tactile_paving_mask",
+  "scope": "object",
+  "type_definition": {
+    "kind": "record",
+    "fields": [
+      {
+        "name": "coordinate_system",
+        "required": true,
+        "type_definition": {
+          "kind": "record",
+          "fields": [
+            {
+              "name": "coordinate_system_id",
+              "required": true,
+              "type_definition": {
+                "kind": "string",
+                "min_length": 1,
+                "max_length": 128
+              }
+            },
+            {
+              "name": "dimensions",
+              "required": true,
+              "type_definition": {
+                "kind": "record",
+                "fields": [
+                  {
+                    "name": "height",
+                    "required": true,
+                    "type_definition": {
+                      "kind": "integer",
+                      "minimum": 1,
+                      "maximum": 8192
+                    }
+                  },
+                  {
+                    "name": "width",
+                    "required": true,
+                    "type_definition": {
+                      "kind": "integer",
+                      "minimum": 1,
+                      "maximum": 8192
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "frame",
+              "required": true,
+              "type_definition": {
+                "kind": "enum",
+                "members": [
+                  "original_image"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "evidence_id",
+        "required": true,
+        "type_definition": {
+          "kind": "string",
+          "min_length": 1,
+          "max_length": 128
+        }
+      },
+      {
+        "name": "sha256",
+        "required": true,
+        "type_definition": {
+          "kind": "string",
+          "min_length": 64,
+          "max_length": 64
+        }
+      },
+      {
+        "name": "source_media_sha256",
+        "required": true,
+        "type_definition": {
+          "kind": "string",
+          "min_length": 64,
+          "max_length": 64
+        }
+      }
+    ]
+  },
+  "payload_schema_ref": null,
+  "value_schema_generation": {
+    "projection_profile_version": "1.0.0",
+    "generator_id": "jimu.value-schema",
+    "generator_version": "1.0.0",
+    "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+    "canonicalization_id": "JCS",
+    "global_limits": {
+      "string_max_length": 4096,
+      "list_max_items": 256,
+      "record_max_fields": 64,
+      "max_depth": 8
+    }
+  },
+  "allowed_producer_kinds": [
+    "tool"
+  ],
+  "status_policy": {
+    "known_value": "required",
+    "non_known_value": "forbidden",
+    "non_known_reason": "required",
+    "error_diagnostics": "required",
+    "not_applicable_basis": "required",
+    "not_evaluated_reason": "required"
+  },
+  "units": {
+    "mode": "not_applicable"
+  },
+  "coordinate_system": {
+    "mode": "not_applicable"
+  },
+  "evidence_policy_ref": {
+    "$pin": [
+      "policy",
+      "mask-evidence",
+      "1.0.0"
+    ]
+  },
+  "confidence_metadata_policy": {
+    "mode": "forbidden"
+  }
+}

@@ -38,13 +38,17 @@ Use this loop for every work package:
 
 - First produce a bounded plan with scope, non-goals, affected files, contracts, tests, risks and rollback.
 - Challenge your own plan: identify hidden assumptions, failure modes and compatibility risks.
-- Do not begin implementation until the user explicitly approves that work package.
+- Before implementation, match the WP, actions and environment against explicit user authorization. The standing grant for WP-01C through WP-07 covers roadmap-scoped local implementation and isolated tests. The primary agent releases each ready package after independent plan review. Consult the [current authorization register](planning/active/PLATFORM_GOAL.md#当前授权记录) for external actions and business decisions. Record its terms once. Start each covered WP after its prerequisites and delegated review pass. Honor any more specific plan-approval condition the user retained.
 - Implement only the approved work package.
 - Run only authorized, relevant tests. Record exact commands and outcomes.
 - Report code evidence separately from runtime evidence.
-- Stop at the work-package gate. Do not silently continue into the next WP.
+- At each WP boundary publish the engineering result and check the next WP against the recorded grant. Ask once for an uncovered decision and identify which tasks depend on it. Continue authorized independent tasks. On an automatic continuation, reuse the pending request until the answer, scope, plan or external state changes.
 
 The first Codex session is **planning-only**: repository initialization review and WP-01 plan/contract review. Do not implement the entire platform or begin WP-02+.
+
+### Development subagent model
+
+For new JIMU development subagents (implementation, tests and fixes), call native `spawn_agent` with `model="gpt-6.2-sol"`, `reasoning_effort="medium"` and `fork_turns="none"`. Supply the worktree, scope and acceptance criteria in the task message. Start a new subagent when an existing thread uses an older model.
 
 ## 4. Architecture invariants
 

@@ -1,0 +1,1047 @@
+{
+  "$defs": {
+    "AttemptStatus": {
+      "enum": [
+        "created",
+        "running",
+        "succeeded",
+        "failed",
+        "timed_out",
+        "cancelled",
+        "superseded"
+      ],
+      "title": "AttemptStatus",
+      "type": "string"
+    },
+    "Availability": {
+      "enum": [
+        "ready",
+        "unavailable",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "Boundary": {
+      "enum": [
+        "not_dispatched",
+        "sent_unknown",
+        "acknowledged"
+      ],
+      "type": "string"
+    },
+    "CallErrorClass": {
+      "enum": [
+        "transport",
+        "timeout",
+        "rate_limit",
+        "unavailable",
+        "validation",
+        "association",
+        "resource_exhausted",
+        "cancelled",
+        "internal",
+        "other"
+      ],
+      "type": "string"
+    },
+    "CallKind": {
+      "enum": [
+        "model",
+        "tool",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "CallPage": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/CallSpan"
+          },
+          "maxItems": 100,
+          "title": "Items",
+          "type": "array"
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TimeCursor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "trace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "execution_id",
+        "trace_id",
+        "items",
+        "next_cursor"
+      ],
+      "title": "CallPage",
+      "type": "object"
+    },
+    "CallReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary": {
+          "$ref": "#/$defs/Boundary"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error_class": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CallErrorClass"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fence_qualified": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fence Qualified"
+        },
+        "invalid_slots": {
+          "maximum": 1024,
+          "minimum": 0,
+          "title": "Invalid Slots",
+          "type": "integer"
+        },
+        "late": {
+          "title": "Late",
+          "type": "boolean"
+        },
+        "missing_slots": {
+          "maximum": 1024,
+          "minimum": 0,
+          "title": "Missing Slots",
+          "type": "integer"
+        },
+        "producer_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Producer Id"
+        },
+        "recorded_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "response_evidence_failed": {
+          "title": "Response Evidence Failed",
+          "type": "boolean"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/CallStatus"
+        }
+      },
+      "required": [
+        "recorded_at",
+        "boundary",
+        "late",
+        "fence_qualified",
+        "status",
+        "error_class",
+        "producer_id",
+        "started_at",
+        "completed_at",
+        "response_evidence_failed",
+        "invalid_slots",
+        "missing_slots"
+      ],
+      "title": "CallReceipt",
+      "type": "object"
+    },
+    "CallSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "dispatch_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Dispatch Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/CallKind"
+        },
+        "node_id": {
+          "$ref": "#/$defs/NodeId"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "operation_node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Operation Node Run Id",
+          "type": "string"
+        },
+        "parent_attempt_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Parent Attempt Id"
+        },
+        "parent_node_run_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Parent Node Run Id"
+        },
+        "receipts": {
+          "items": {
+            "$ref": "#/$defs/CallReceipt"
+          },
+          "maxItems": 2,
+          "title": "Receipts",
+          "type": "array"
+        },
+        "recorded_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "send_admitted": {
+          "title": "Send Admitted",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dispatch_id",
+        "recorded_at",
+        "kind",
+        "node_id",
+        "node_run_id",
+        "operation_node_run_id",
+        "attempt_id",
+        "parent_node_run_id",
+        "parent_attempt_id",
+        "send_admitted",
+        "receipts"
+      ],
+      "title": "CallSpan",
+      "type": "object"
+    },
+    "CallStatus": {
+      "enum": [
+        "succeeded",
+        "partial",
+        "failed",
+        "not_dispatched",
+        "unqualified"
+      ],
+      "type": "string"
+    },
+    "EventCursor": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "default": 0,
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "After",
+          "type": "integer"
+        },
+        "through": {
+          "anyOf": [
+            {
+              "maximum": 9223372036854775807,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Through"
+        }
+      },
+      "title": "EventCursor",
+      "type": "object"
+    },
+    "EventKind": {
+      "enum": [
+        "task_transition",
+        "execution_transition",
+        "node_transition",
+        "attempt_transition",
+        "late_response",
+        "system_output"
+      ],
+      "type": "string"
+    },
+    "EventPage": {
+      "additionalProperties": false,
+      "properties": {
+        "execution": {
+          "$ref": "#/$defs/TraceExecution"
+        },
+        "execution_state_through": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Execution State Through",
+          "type": "integer"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/TraceEvent"
+          },
+          "maxItems": 100,
+          "title": "Items",
+          "type": "array"
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EventCursor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "through": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Through",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "execution",
+        "execution_state_through",
+        "through",
+        "items",
+        "next_cursor"
+      ],
+      "title": "EventPage",
+      "type": "object"
+    },
+    "ExecutionStatus": {
+      "enum": [
+        "initialized",
+        "running",
+        "completed",
+        "partial_failed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "ExecutionStatus",
+      "type": "string"
+    },
+    "NodeId": {
+      "enum": [
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "title": "NodeId",
+      "type": "string"
+    },
+    "Readiness": {
+      "additionalProperties": false,
+      "properties": {
+        "database": {
+          "$ref": "#/$defs/Availability"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "worker_claim": {
+          "$ref": "#/$defs/Availability"
+        },
+        "workflow_schema": {
+          "$ref": "#/$defs/Availability"
+        }
+      },
+      "required": [
+        "database",
+        "workflow_schema",
+        "worker_claim"
+      ],
+      "title": "Readiness",
+      "type": "object"
+    },
+    "TaskStatus": {
+      "enum": [
+        "created",
+        "accepted",
+        "queued",
+        "running",
+        "completed",
+        "partial_failed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    },
+    "TimeCursor": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "recorded_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "revision": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recorded_at",
+        "record_id",
+        "revision"
+      ],
+      "title": "TimeCursor",
+      "type": "object"
+    },
+    "ToolStepCursor": {
+      "additionalProperties": false,
+      "properties": {
+        "child_attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Child Attempt Id",
+          "type": "string"
+        },
+        "revision": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "child_attempt_id",
+        "revision"
+      ],
+      "title": "ToolStepCursor",
+      "type": "object"
+    },
+    "ToolStepPage": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ToolStepSpan"
+          },
+          "maxItems": 100,
+          "title": "Items",
+          "type": "array"
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolStepCursor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "trace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "execution_id",
+        "trace_id",
+        "items",
+        "next_cursor"
+      ],
+      "title": "ToolStepPage",
+      "type": "object"
+    },
+    "ToolStepSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AttemptStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "child_attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Child Attempt Id",
+          "type": "string"
+        },
+        "child_node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Child Node Run Id",
+          "type": "string"
+        },
+        "ended_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CallStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parent_attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Parent Attempt Id",
+          "type": "string"
+        },
+        "parent_node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Parent Node Run Id",
+          "type": "string"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "step_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Step Id",
+          "type": "string"
+        },
+        "tool_execution_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Tool Execution Id"
+        }
+      },
+      "required": [
+        "step_id",
+        "parent_node_run_id",
+        "parent_attempt_id",
+        "child_node_run_id",
+        "child_attempt_id",
+        "started_at",
+        "ended_at",
+        "tool_execution_id",
+        "outcome",
+        "attempt_status"
+      ],
+      "title": "ToolStepSpan",
+      "type": "object"
+    },
+    "TraceEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Attempt Id"
+        },
+        "attempt_number": {
+          "anyOf": [
+            {
+              "maximum": 1024,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Attempt Number"
+        },
+        "dispatch_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Dispatch Id"
+        },
+        "kind": {
+          "$ref": "#/$defs/EventKind"
+        },
+        "node_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NodeId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "node_run_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Node Run Id"
+        },
+        "number": {
+          "maximum": 9223372036854775807,
+          "minimum": 1,
+          "title": "Number",
+          "type": "integer"
+        },
+        "parent_span_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Parent Span Id"
+        },
+        "recorded_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "span_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Span Id"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "accepted",
+                "queued",
+                "initialized",
+                "pending",
+                "ready",
+                "running",
+                "created",
+                "completed",
+                "partial_failed",
+                "succeeded",
+                "failed",
+                "blocked",
+                "skipped",
+                "cancelled",
+                "timed_out",
+                "superseded"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Status"
+        }
+      },
+      "required": [
+        "number",
+        "recorded_at",
+        "kind",
+        "span_id",
+        "parent_span_id",
+        "node_run_id",
+        "node_id",
+        "attempt_id",
+        "attempt_number",
+        "dispatch_id",
+        "status"
+      ],
+      "title": "TraceEvent",
+      "type": "object"
+    },
+    "TraceExecution": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "ended_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "execution_status": {
+          "$ref": "#/$defs/ExecutionStatus"
+        },
+        "initialized_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "task_status": {
+          "$ref": "#/$defs/TaskStatus"
+        },
+        "trace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "execution_id",
+        "trace_id",
+        "task_status",
+        "execution_status",
+        "accepted_at",
+        "initialized_at",
+        "started_at",
+        "ended_at"
+      ],
+      "title": "TraceExecution",
+      "type": "object"
+    },
+    "UTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JIMU Observability v1",
+  "x-exports": {
+    "CallPage": {
+      "$ref": "#/$defs/CallPage"
+    },
+    "EventCursor": {
+      "$ref": "#/$defs/EventCursor"
+    },
+    "EventPage": {
+      "$ref": "#/$defs/EventPage"
+    },
+    "Readiness": {
+      "$ref": "#/$defs/Readiness"
+    },
+    "TimeCursor": {
+      "$ref": "#/$defs/TimeCursor"
+    },
+    "ToolStepCursor": {
+      "$ref": "#/$defs/ToolStepCursor"
+    },
+    "ToolStepPage": {
+      "$ref": "#/$defs/ToolStepPage"
+    }
+  }
+}

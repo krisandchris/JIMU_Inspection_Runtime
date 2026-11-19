@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "AttemptRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "attempt",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "AttemptRef",
+      "type": "object"
+    },
+    "InvocationNodeId": {
+      "enum": [
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "type": "string"
+    },
+    "NodeRunRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "node_run",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "NodeRunRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attempt_ref": {
+      "$ref": "#/$defs/AttemptRef"
+    },
+    "execution_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "model_invocation_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Model Invocation Id",
+      "type": "string"
+    },
+    "node_id": {
+      "$ref": "#/$defs/InvocationNodeId"
+    },
+    "node_run_ref": {
+      "$ref": "#/$defs/NodeRunRef"
+    }
+  },
+  "required": [
+    "model_invocation_id",
+    "execution_id",
+    "node_id",
+    "node_run_ref",
+    "attempt_ref"
+  ],
+  "title": "InvocationIdentity",
+  "type": "object"
+}

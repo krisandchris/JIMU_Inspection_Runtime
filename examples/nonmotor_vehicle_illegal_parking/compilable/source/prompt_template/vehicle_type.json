@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "prompt_template_id": "vehicle_type",
+  "purpose": "object_observation",
+  "template_text": "Identify the vehicle class: electric_bicycle, bicycle, tricycle, or other.",
+  "variables": [],
+  "response_schema_ref": {
+    "$pin": [
+      "response_schema",
+      "vehicle_type-result",
+      "1.0.0"
+    ]
+  },
+  "rendering_policy": "literal_substitution"
+}

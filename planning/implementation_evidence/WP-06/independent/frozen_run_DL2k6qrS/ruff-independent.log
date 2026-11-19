@@ -1,0 +1,157 @@
+2026-11-18T10:46:04Z
+/tmp/jimu-wp06-acceptance-c6pAUNkz/dev/bin/ruff check /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-06/independent 
+I001 [*] Import block is un-sorted or un-formatted
+  --> /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-06/independent/lifecycle_probe.py:3:1
+   |
+ 1 |   """Exercise managed signed evidence through a genuine unlink/commit process death."""
+ 2 |
+ 3 | / import asyncio
+ 4 | | import json
+ 5 | | import sys
+ 6 | | from datetime import datetime
+ 7 | | from hashlib import sha256
+ 8 | | from pathlib import Path
+ 9 | |
+10 | | from harness import ACTOR, Harness
+11 | | from jimu_runtime.inspection.media.retention import LocalEvidenceLifecycle
+12 | | from jimu_runtime.inspection.media.retention_models import (
+13 | |     EvidenceAccessGrant,
+14 | |     EvidenceLocator,
+15 | | )
+16 | | from jimu_runtime.inspection.media.retention_policy import HistoricalEvidencePolicies
+17 | | from sqlalchemy import text
+18 | | from sqlalchemy.engine import make_url
+19 | |
+20 | | from examples.nonmotor_vehicle_illegal_parking.compilable import scene
+21 | | from jimu_runtime.domain.runtime.evidence import EvidenceAsset
+22 | | from jimu_runtime.workflow.postgres import create_postgres_engine
+   | |_________________________________________________________________^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-06/independent/replay_probe.py:3:1
+   |
+ 1 |   """Verify replay behavior against independent PostgreSQL and physical observations."""
+ 2 |
+ 3 | / import asyncio
+ 4 | | import json
+ 5 | | import os
+ 6 | | import re
+ 7 | | import sys
+ 8 | | from dataclasses import asdict
+ 9 | | from hashlib import sha256
+10 | | from pathlib import Path
+11 | | from tempfile import TemporaryDirectory
+12 | | from time import monotonic
+13 | | from types import SimpleNamespace
+14 | |
+15 | | from audit import AuditScope, check_dispatches, check_tool_evidence
+16 | | from cases import CASES, OUTSIDE, read_frame
+17 | | from harness import AUTH, Harness
+18 | | from jimu_runtime.evaluation.history_projection import EvaluationHistoryError
+19 | | from jimu_runtime.replay.artifact import ArtifactReplayService
+20 | | from jimu_runtime.replay.artifact_records import ArtifactScoringEvidence
+21 | | from jimu_runtime.replay.artifact_source import ArtifactReplayError
+22 | | from jimu_runtime.replay.inference import InferenceReplayService
+23 | | from lifecycle_probe import assert_lifecycle
+24 | | from loopback import ParkingProvider
+25 | | from run_cases import launch
+26 | | from scoring_probe import assert_scoring
+27 | | from sqlalchemy import text
+28 | | from sqlalchemy.engine import make_url
+29 | |
+30 | | import jimu_runtime
+31 | | from examples.nonmotor_vehicle_illegal_parking.compilable import scene
+32 | | from jimu_runtime.domain.enums import RuntimeRecordKind
+33 | | from jimu_runtime.domain.runtime.intake import IdempotencyScope
+34 | | from jimu_runtime.domain.runtime.replay import (
+35 | |     ExecutionRef,
+36 | |     InferenceReplayRequest,
+37 | |     ReplayExecutionSource,
+38 | |     ReplayKind,
+39 | |     ReplayScoringEvidence,
+40 | | )
+41 | | from jimu_runtime.workflow import repository
+42 | | from jimu_runtime.workflow.engine import ExecutionFinalization
+43 | | from jimu_runtime.workflow.intake import IntakeAuthorizationError
+44 | | from jimu_runtime.workflow.postgres import apply_migrations, create_postgres_engine
+45 | | from tests.fixtures.wp03.postgres.support import isolated_postgres
+   | |__________________________________________________________________^
+46 |
+47 |   EXECUTION_TABLES = (
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-06/independent/scoring_probe.py:3:1
+   |
+ 1 |   """Build a prediction export from durable outputs and compare it with fixture truth."""
+ 2 |
+ 3 | / import json
+ 4 | | from datetime import UTC, datetime
+ 5 | | from hashlib import sha256
+ 6 | | from pathlib import Path
+ 7 | |
+ 8 | | from cases import CATEGORY
+ 9 | | from harness import ACTOR
+10 | | from jimu_runtime.evaluation.contracts import (
+11 | |     DatasetManifest,
+12 | |     DatasetSample,
+13 | |     FactBinding,
+14 | |     QuestionBinding,
+15 | |     SampleLabels,
+16 | |     ScoringProtocol,
+17 | |     canonical_digest,
+18 | | )
+19 | | from jimu_runtime.evaluation.history import (
+20 | |     HistoricalEvaluationExporter,
+21 | |     HistoricalTrialExport,
+22 | |     HistoryExportRequest,
+23 | |     HistorySelection,
+24 | | )
+25 | | from jimu_runtime.evaluation.scoring import EvaluationReport, score
+26 | | from jimu_runtime.evaluation.truth import (
+27 | |     Adjudication,
+28 | |     ReviewHistory,
+29 | |     ReviewVote,
+30 | |     TruthSnapshot,
+31 | | )
+32 | | from lifecycle_probe import lifecycle
+33 | | from sqlalchemy import text
+34 | |
+35 | | from examples.nonmotor_vehicle_illegal_parking.compilable import scene
+36 | | from jimu_runtime.domain.definition_support import ReviewReportRef
+37 | | from jimu_runtime.domain.definitions.capabilities import (
+38 | |     ProfileDefinition,
+39 | |     QuestionDefinition,
+40 | | )
+41 | | from jimu_runtime.domain.enums import ArtifactKind, RuntimeRecordKind
+42 | | from jimu_runtime.domain.fact_schemas.models import FactSchemaDefinition
+43 | | from jimu_runtime.domain.fact_selectors import FactSchemaContentRef
+44 | | from jimu_runtime.domain.rules.definitions import RuleSetDefinition
+45 | | from jimu_runtime.domain.runtime.authority import ActorRef
+46 | | from jimu_runtime.domain.runtime.decisions import EvaluatedRuleOutcome
+47 | | from jimu_runtime.domain.runtime.evidence import EvidenceAsset
+48 | | from jimu_runtime.domain.runtime.invocations import ModelInvocation
+49 | | from jimu_runtime.domain.runtime.replay import ExecutionRef, ReplayExecutionSource
+50 | | from jimu_runtime.workflow.engine import ExecutionFinalization
+51 | | from jimu_runtime.workflow.mock_support import VerifiedExecutionScope
+52 | | from jimu_runtime.workflow.pins import resolve_execution_pins
+53 | | from jimu_runtime.workflow.repository import get_execution, read_finalization
+54 | | from jimu_runtime.workflow.worker_records import (
+55 | |     NODE_MESSAGE,
+56 | |     GroundingMessage,
+57 | |     ObservationMessage,
+58 | |     ToolMessage,
+59 | | )
+   | |_^
+60 |
+61 |   VERSION = {"schema_version": "1.0.0", "version": "1.0.0"}
+   |
+help: Organize imports
+
+Found 3 errors.
+[*] 3 fixable with the `--fix` option.
+2026-11-18T10:46:04Z
+exit=1

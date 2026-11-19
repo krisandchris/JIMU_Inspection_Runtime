@@ -1,0 +1,5 @@
+2026-11-18T05:05:49Z
+env PYTHONPATH=. uv run --locked --offline python planning/implementation_evidence/WP-04/independent/probe_nested.py forged 
+{"check": "nested_forger_rejected", "dispatches": [["tool", "operation.tool_step.967e703bbcd88669c80c6ced6f0182398ef04e37d2e9c1b8a3b3d91de1b284ea", "tool:61070287d943f0e496d70423c86dc49b6f3b1517fd2bd462905ce6db91234aab", "60b80beff9c2488596ace3bc9fa7478d", "independent-nested-first", "validation", "failed", "tool_result_invalid"], ["nested_model", "operation.model.5fb09787439ff72eb9951609febb1d622efc82621760be0740c5aa4f8a79a971", "dispatch.4ae4caae5bc34ffeb04231d96279b5e8", "60b80beff9c2488596ace3bc9fa7478d", "independent-nested-first", null, null, null]], "errors": ["independent_tool_no_selected_output"], "node_steps": ["applied", "applied", "applied", "applied", "applied", "staged", "finalized"], "physical_posts": [1, 0], "step_completions": [["failed", "tool:61070287d943f0e496d70423c86dc49b6f3b1517fd2bd462905ce6db91234aab", "60b80beff9c2488596ace3bc9fa7478d"]]}
+2026-11-18T05:05:58Z
+exit=0

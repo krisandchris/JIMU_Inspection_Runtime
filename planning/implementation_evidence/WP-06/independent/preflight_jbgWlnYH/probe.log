@@ -1,0 +1,91 @@
+2026-11-18T09:52:13Z
++ mkdir /tmp/jimu-wp06-probe-6t9BscGa/current
++ cp -a /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_WP06_integration_g4v_t6d_/src /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_WP06_integration_g4v_t6d_/tests /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_WP06_integration_g4v_t6d_/scripts /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_WP06_integration_g4v_t6d_/schemas /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_WP06_integration_g4v_t6d_/examples /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_WP06_integration_g4v_t6d_/pyproject.toml /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_WP06_integration_g4v_t6d_/uv.lock /tmp/jimu-wp06-probe-6t9BscGa/current/
++ python3 -m zipfile -e /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/primary_freeze_124bfcc1984c/product.zip /tmp/jimu-wp06-probe-6t9BscGa/legacy
++ for env in current legacy
++ UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp06-probe-6t9BscGa/current-venv
++ uv sync --project /tmp/jimu-wp06-probe-6t9BscGa/current --python /usr/bin/python3.12 --locked --offline --no-dev --no-install-project
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment at: /tmp/jimu-wp06-probe-6t9BscGa/current-venv
+Resolved 36 packages in 0.46ms
+Installed 22 packages in 5ms
+ + annotated-types==0.8.0
+ + anyio==4.16.0
+ + attrs==26.1.0
+ + certifi==2026.10.23
+ + greenlet==3.5.6
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.20
+ + jsonschema==4.25.1
+ + jsonschema-specifications==2025.9.1
+ + pillow==12.3.0
+ + psycopg==3.3.5
+ + psycopg-binary==3.3.5
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + referencing==0.37.0
+ + rfc8785==0.1.4
+ + rpds-py==2026.9.1
+ + sqlalchemy==2.0.52
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
++ uv build --project /tmp/jimu-wp06-probe-6t9BscGa/current --offline --wheel --out-dir /tmp/jimu-wp06-probe-6t9BscGa/current-wheel
+Building wheel (uv build backend)...
+Successfully built /tmp/jimu-wp06-probe-6t9BscGa/current-wheel/jimu_runtime-0.1.0-py3-none-any.whl
++ sha256sum /tmp/jimu-wp06-probe-6t9BscGa/current-wheel/jimu_runtime-0.1.0-py3-none-any.whl
+836f53451ca65f61960f036865f6067e8d0154f0920a8bcf4f1d8f68e50ed96d  /tmp/jimu-wp06-probe-6t9BscGa/current-wheel/jimu_runtime-0.1.0-py3-none-any.whl
++ uv pip install --offline --no-deps --python /tmp/jimu-wp06-probe-6t9BscGa/current-venv/bin/python /tmp/jimu-wp06-probe-6t9BscGa/current-wheel/jimu_runtime-0.1.0-py3-none-any.whl
+Using Python 3.12.3 environment at: /tmp/jimu-wp06-probe-6t9BscGa/current-venv
+Resolved 1 package in 0.97ms
+Prepared 1 package in 4ms
+Installed 1 package in 2ms
+ + jimu-runtime==0.1.0 (from file:///tmp/jimu-wp06-probe-6t9BscGa/current-wheel/jimu_runtime-0.1.0-py3-none-any.whl)
++ for env in current legacy
++ UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp06-probe-6t9BscGa/legacy-venv
++ uv sync --project /tmp/jimu-wp06-probe-6t9BscGa/legacy --python /usr/bin/python3.12 --locked --offline --no-dev --no-install-project
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment at: /tmp/jimu-wp06-probe-6t9BscGa/legacy-venv
+Resolved 36 packages in 0.55ms
+Installed 22 packages in 11ms
+ + annotated-types==0.8.0
+ + anyio==4.16.0
+ + attrs==26.1.0
+ + certifi==2026.10.23
+ + greenlet==3.5.6
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.20
+ + jsonschema==4.25.1
+ + jsonschema-specifications==2025.9.1
+ + pillow==12.3.0
+ + psycopg==3.3.5
+ + psycopg-binary==3.3.5
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + referencing==0.37.0
+ + rfc8785==0.1.4
+ + rpds-py==2026.9.1
+ + sqlalchemy==2.0.52
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
++ uv build --project /tmp/jimu-wp06-probe-6t9BscGa/legacy --offline --wheel --out-dir /tmp/jimu-wp06-probe-6t9BscGa/legacy-wheel
+Building wheel (uv build backend)...
+Successfully built /tmp/jimu-wp06-probe-6t9BscGa/legacy-wheel/jimu_runtime-0.1.0-py3-none-any.whl
++ sha256sum /tmp/jimu-wp06-probe-6t9BscGa/legacy-wheel/jimu_runtime-0.1.0-py3-none-any.whl
+405da1f31fa2c9efeebd485ee5e6a77ceb0e93e6ffe820712c82a907d91dbb6e  /tmp/jimu-wp06-probe-6t9BscGa/legacy-wheel/jimu_runtime-0.1.0-py3-none-any.whl
++ uv pip install --offline --no-deps --python /tmp/jimu-wp06-probe-6t9BscGa/legacy-venv/bin/python /tmp/jimu-wp06-probe-6t9BscGa/legacy-wheel/jimu_runtime-0.1.0-py3-none-any.whl
+Using Python 3.12.3 environment at: /tmp/jimu-wp06-probe-6t9BscGa/legacy-venv
+Resolved 1 package in 0.95ms
+Prepared 1 package in 3ms
+Installed 1 package in 1ms
+ + jimu-runtime==0.1.0 (from file:///tmp/jimu-wp06-probe-6t9BscGa/legacy-wheel/jimu_runtime-0.1.0-py3-none-any.whl)
++ set +x
+{"bundle": "466f4f1196c77d1aa59ef1f4f74bc6e8b809de4f8e231590c0ceb552755c1694", "check": "legacy_wp05_source", "execution": "execution.79c13727946353c4eced266e84e8c2da44757ac41a1127e51c799aaf995bc469", "installed": "/tmp/jimu-wp06-probe-6t9BscGa/legacy-venv/lib/python3.12/site-packages/jimu_runtime/__init__.py", "migrations": [1, 2, 3, 4, 5, 6, 7, 8], "scope": {"client_id": "synthetic.edge", "project_id": "synthetic.nonmotor.parking"}, "steps": ["applied", "applied", "applied", "applied", "applied", "staged", "finalized"], "task": "task.0cd21df03bfc54a4c99e34deddbe6c4db20ad6acfcb1f6273904e328b846e12d"}
+{"applied": [9, 10, 11], "check": "database_upgrade", "historical_row_sets": 20}
+{"check": "artifact_replay", "concurrent_same_key": true, "historical_dispatches": 7, "physical_cpu": 0, "physical_http": 0, "runs": 2, "source_equal": true}
+{"check": "worker_process_ready", "pid": 88741, "runtime_install": "/tmp/jimu-wp06-probe-6t9BscGa/current-venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 88741, "signal": null}
+{"check": "inference_replay", "cpu": 3, "current_bundle": "0678d11ba393fff1d09c816be6d93e9233cb7141449de7778cb061f855614dfd", "http": {"candidate": 1, "discovery": 1, "grounding": 1, "observation": 1}, "pinned_bundle": "466f4f1196c77d1aa59ef1f4f74bc6e8b809de4f8e231590c0ceb552755c1694", "source_equal": true, "target_execution": "execution.replay.97e94d7b48d342ce80860101a2b18645"}

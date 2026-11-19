@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "entity_id": "nonmotor_vehicle",
+  "name": "Non-motor vehicle",
+  "entity_type": {
+    "vocabulary_ref": {
+      "$pin": [
+        "vocabulary",
+        "entity-type",
+        "1.0.0"
+      ]
+    },
+    "member": "physical_object"
+  },
+  "description": "Non-motor vehicle for a synthetic inspection scene.",
+  "attribute_schema_refs": [],
+  "lifecycle": {
+    "vocabulary_ref": {
+      "$pin": [
+        "vocabulary",
+        "lifecycle",
+        "1.0.0"
+      ]
+    },
+    "member": "enabled"
+  }
+}

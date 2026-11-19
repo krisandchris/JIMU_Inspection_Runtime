@@ -1,0 +1,779 @@
+{
+  "$defs": {
+    "AbsentOptional_ObjectRef_": {
+      "$ref": "#/$defs/ObjectRef"
+    },
+    "AncestorNotEvaluatedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "ancestor_obligation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Ancestor Obligation Id",
+          "type": "string"
+        },
+        "decisive_ancestor_ref": {
+          "$ref": "#/$defs/ApplicabilityAncestorRef"
+        },
+        "disposition": {
+          "const": "not_evaluated",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability",
+        "decisive_ancestor_ref",
+        "ancestor_obligation_id"
+      ],
+      "title": "AncestorNotEvaluatedObligation",
+      "type": "object"
+    },
+    "ApplicabilityAncestorRef": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProfileEligibilityEvaluationRef"
+        },
+        {
+          "$ref": "#/$defs/RuleSetApplicabilityEvaluationRef"
+        }
+      ]
+    },
+    "ApplicabilityEvaluationRef": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApplicabilityAncestorRef"
+        },
+        {
+          "$ref": "#/$defs/RuleApplicabilityEvaluationRef"
+        }
+      ]
+    },
+    "ApplicabilityTraceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "applicability_trace",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ApplicabilityTraceRef",
+      "type": "object"
+    },
+    "ApplicableNotEvaluatedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "blocker_node_run_ref": {
+          "$ref": "#/$defs/NodeRunRef"
+        },
+        "disposition": {
+          "const": "applicable_not_evaluated",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability",
+        "blocker_node_run_ref"
+      ],
+      "title": "ApplicableNotEvaluatedObligation",
+      "type": "object"
+    },
+    "CoverageReason": {
+      "enum": [
+        "context_build_blocked",
+        "no_eligible_profiles",
+        "empty_configured_scope",
+        "profile_not_discovered",
+        "discovery_no_hits",
+        "discovery_failed",
+        "discovery_partial",
+        "discovery_not_evaluated",
+        "grounding_no_target",
+        "grounding_failed",
+        "grounding_partial",
+        "grounding_not_evaluated",
+        "decision_not_evaluated",
+        "required_evidence_blocked",
+        "predicate_unknown",
+        "applicability_unresolved"
+      ],
+      "title": "CoverageReason",
+      "type": "string"
+    },
+    "DecisionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "decision",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "DecisionRef",
+      "type": "object"
+    },
+    "DependencyNotEvaluatedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "blocker_node_run_ref": {
+          "$ref": "#/$defs/NodeRunRef"
+        },
+        "disposition": {
+          "const": "dependency_not_evaluated",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/CoverageReason"
+        }
+      },
+      "required": [
+        "disposition",
+        "reason",
+        "blocker_node_run_ref"
+      ],
+      "title": "DependencyNotEvaluatedObligation",
+      "type": "object"
+    },
+    "EvaluatedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_ref": {
+          "$ref": "#/$defs/DecisionRef"
+        },
+        "disposition": {
+          "const": "evaluated",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability",
+        "decision_ref"
+      ],
+      "title": "EvaluatedObligation",
+      "type": "object"
+    },
+    "ExcludedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "excluded",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability"
+      ],
+      "title": "ExcludedObligation",
+      "type": "object"
+    },
+    "GuardBlockedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_ref": {
+          "$ref": "#/$defs/DecisionRef"
+        },
+        "disposition": {
+          "const": "blocked",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability",
+        "decision_ref"
+      ],
+      "title": "GuardBlockedObligation",
+      "type": "object"
+    },
+    "IncludedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "included",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability"
+      ],
+      "title": "IncludedObligation",
+      "type": "object"
+    },
+    "MandatoryRuleObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "obligation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Obligation Id",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/ObligationDisposition"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "target": {
+          "$ref": "#/$defs/ObligationTarget"
+        }
+      },
+      "required": [
+        "obligation_id",
+        "profile_ref",
+        "target",
+        "outcome"
+      ],
+      "title": "MandatoryRuleObligation",
+      "type": "object"
+    },
+    "NodeRunRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "node_run",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "NodeRunRef",
+      "type": "object"
+    },
+    "ObjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "object",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ObjectRef",
+      "type": "object"
+    },
+    "ObligationDisposition": {
+      "discriminator": {
+        "mapping": {
+          "applicable_not_evaluated": "#/$defs/ApplicableNotEvaluatedObligation",
+          "blocked": "#/$defs/GuardBlockedObligation",
+          "dependency_not_evaluated": "#/$defs/DependencyNotEvaluatedObligation",
+          "evaluated": "#/$defs/EvaluatedObligation",
+          "excluded": "#/$defs/ExcludedObligation",
+          "included": "#/$defs/IncludedObligation",
+          "not_evaluated": "#/$defs/AncestorNotEvaluatedObligation",
+          "unresolved": "#/$defs/UnresolvedMandatoryObligation"
+        },
+        "propertyName": "disposition"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/IncludedObligation"
+        },
+        {
+          "$ref": "#/$defs/ExcludedObligation"
+        },
+        {
+          "$ref": "#/$defs/UnresolvedMandatoryObligation"
+        },
+        {
+          "$ref": "#/$defs/EvaluatedObligation"
+        },
+        {
+          "$ref": "#/$defs/GuardBlockedObligation"
+        },
+        {
+          "$ref": "#/$defs/AncestorNotEvaluatedObligation"
+        },
+        {
+          "$ref": "#/$defs/ApplicableNotEvaluatedObligation"
+        },
+        {
+          "$ref": "#/$defs/DependencyNotEvaluatedObligation"
+        }
+      ]
+    },
+    "ObligationTarget": {
+      "discriminator": {
+        "mapping": {
+          "profile": "#/$defs/ProfileObligationTarget",
+          "rule": "#/$defs/RuleObligationTarget",
+          "rule_set": "#/$defs/RuleSetObligationTarget"
+        },
+        "propertyName": "scope"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ProfileObligationTarget"
+        },
+        {
+          "$ref": "#/$defs/RuleSetObligationTarget"
+        },
+        {
+          "$ref": "#/$defs/RuleObligationTarget"
+        }
+      ]
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "ProfileEligibilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "profile_eligibility_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ProfileEligibilityEvaluationRef",
+      "type": "object"
+    },
+    "ProfileObligationTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "const": "profile",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope"
+      ],
+      "title": "ProfileObligationTarget",
+      "type": "object"
+    },
+    "RecordList_MandatoryRuleObligation_": {
+      "items": {
+        "$ref": "#/$defs/MandatoryRuleObligation"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RuleApplicabilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "rule_applicability_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "RuleApplicabilityEvaluationRef",
+      "type": "object"
+    },
+    "RuleContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "rule",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RuleContentRef",
+      "type": "object"
+    },
+    "RuleObligationTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "object_ref": {
+          "$ref": "#/$defs/AbsentOptional_ObjectRef_"
+        },
+        "rule_ref": {
+          "$ref": "#/$defs/RuleContentRef"
+        },
+        "rule_set_ref": {
+          "$ref": "#/$defs/RuleSetContentRef"
+        },
+        "scope": {
+          "const": "rule",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_set_ref",
+        "scope",
+        "rule_ref"
+      ],
+      "title": "RuleObligationTarget",
+      "type": "object"
+    },
+    "RuleSetApplicabilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "rule_set_applicability_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "RuleSetApplicabilityEvaluationRef",
+      "type": "object"
+    },
+    "RuleSetContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "rule_set",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RuleSetContentRef",
+      "type": "object"
+    },
+    "RuleSetObligationTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "object_ref": {
+          "$ref": "#/$defs/AbsentOptional_ObjectRef_"
+        },
+        "rule_set_ref": {
+          "$ref": "#/$defs/RuleSetContentRef"
+        },
+        "scope": {
+          "const": "rule_set",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_set_ref",
+        "scope"
+      ],
+      "title": "RuleSetObligationTarget",
+      "type": "object"
+    },
+    "SelectedApplicability": {
+      "additionalProperties": false,
+      "properties": {
+        "evaluation_ref": {
+          "$ref": "#/$defs/ApplicabilityEvaluationRef"
+        },
+        "trace_ref": {
+          "$ref": "#/$defs/ApplicabilityTraceRef"
+        }
+      },
+      "required": [
+        "evaluation_ref",
+        "trace_ref"
+      ],
+      "title": "SelectedApplicability",
+      "type": "object"
+    },
+    "UnresolvedMandatoryObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "unresolved",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        },
+        "unresolved_obligation_ref": {
+          "$ref": "#/$defs/UnresolvedObligationRef"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability",
+        "unresolved_obligation_ref"
+      ],
+      "title": "UnresolvedMandatoryObligation",
+      "type": "object"
+    },
+    "UnresolvedObligationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "unresolved_obligation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "UnresolvedObligationRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "obligations": {
+      "$ref": "#/$defs/RecordList_MandatoryRuleObligation_"
+    },
+    "scan": {
+      "const": "all_mandatory",
+      "title": "Scan",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scan",
+    "obligations"
+  ],
+  "title": "MandatoryRuleCoverage",
+  "type": "object"
+}

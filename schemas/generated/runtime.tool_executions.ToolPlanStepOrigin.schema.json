@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "ToolPlanContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool_plan",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ToolPlanContentRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "const": "tool_plan_step",
+      "title": "Kind",
+      "type": "string"
+    },
+    "node_id": {
+      "const": "N05",
+      "title": "Node Id",
+      "type": "string"
+    },
+    "producer_declaration_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "not": {
+          "pattern": "\\s"
+        },
+        "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Producer Declaration Ids",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "step_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Step Id",
+      "type": "string"
+    },
+    "tool_plan_ref": {
+      "$ref": "#/$defs/ToolPlanContentRef"
+    }
+  },
+  "required": [
+    "kind",
+    "node_id",
+    "tool_plan_ref",
+    "step_id",
+    "producer_declaration_ids"
+  ],
+  "title": "ToolPlanStepOrigin",
+  "type": "object"
+}

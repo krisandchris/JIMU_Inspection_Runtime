@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "tool_id": "wheel_boundary_geometry",
+  "tool_type": "geometry",
+  "provider_kind": "builtin",
+  "input_schema_ref": {
+    "$pin": [
+      "tool_input_schema",
+      "wheel_boundary_geometry-input",
+      "1.0.0"
+    ],
+    "schema_ref": true
+  },
+  "output_schema_ref": {
+    "$pin": [
+      "tool_output_schema",
+      "wheel_boundary_geometry-result",
+      "1.0.0"
+    ],
+    "schema_ref": true
+  },
+  "resource_requirements_ref": {
+    "$pin": [
+      "policy",
+      "resources",
+      "1.0.0"
+    ]
+  },
+  "execution_policy_ref": {
+    "$pin": [
+      "policy",
+      "tool-execution",
+      "1.0.0"
+    ]
+  },
+  "evidence_policy_ref": {
+    "$pin": [
+      "policy",
+      "geometry-evidence",
+      "1.0.0"
+    ]
+  },
+  "implementation_requirement": {
+    "family": "tool_implementation",
+    "capability_id": "synthetic.cpu.wheel_boundary_geometry",
+    "contract_version": "1.0.0",
+    "allowed_implementation_versions": [
+      "1.0.0"
+    ],
+    "required_features": [
+      "rgb_image",
+      "structured_output",
+      "original_xyxy",
+      "geometry_output"
+    ]
+  },
+  "capability_tags": [
+    "geometry"
+  ],
+  "fact_outputs": [
+    {
+      "output_name": "wheel_boundary_relation",
+      "fact_key": "wheel_boundary_relation",
+      "fact_schema_ref": {
+        "$pin": [
+          "fact_schema",
+          "wheel_boundary_relation",
+          "1.0.0"
+        ]
+      },
+      "scope": "object",
+      "required": true,
+      "value_path": [
+        "wheel_boundary_relation"
+      ],
+      "evidence_paths": [
+        [
+          "wheel_mask"
+        ],
+        [
+          "tactile_paving_mask"
+        ],
+        [
+          "geometry"
+        ]
+      ]
+    }
+  ]
+}

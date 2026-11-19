@@ -1,0 +1,28 @@
+2026-11-18T05:48:18Z
+{"check": "worker_process_ready", "pid": 3501955, "runtime_install": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/__init__.py"}
+{"check": "durable_node_diagnostics", "child_steps": [], "dispatches": [], "rows": [["N01", "succeeded", null, null], ["N02", "failed", "worker_provider_invalid_output", "worker_provider_invalid_output"], ["N03", "blocked", null, null], ["N04", "blocked", null, null], ["N05", "blocked", null, null], ["N06", "blocked", null, null]]}
+{"calls": [], "check": "provider_transcript_on_failure", "errors": []}
+{"check": "worker_process_closed", "pid": 3501955, "signal": null}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 320, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 306, in main
+    await run_case(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 240, in run_case
+    result = await audit(
+             ^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 255, in audit
+    require_equal("actual POST count by role", wire, gold["post"])
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 44, in require_equal
+    raise AssertionError(f"{label} observed {observed!r}, expected {expected!r}")
+AssertionError: actual POST count by role observed {}, expected {'discovery': 1, 'grounding': 1, 'observation': 1, 'candidate': 1}
+exit=1

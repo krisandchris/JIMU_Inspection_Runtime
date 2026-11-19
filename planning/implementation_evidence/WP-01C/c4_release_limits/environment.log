@@ -1,0 +1,10 @@
+start=2026-11-18T02:07:10Z
+uv --version && uv run --locked --no-sync python -c 'import importlib.metadata, platform; print(platform.platform()); print(platform.python_version()); print({name: importlib.metadata.version(name) for name in ("pydantic", "pydantic-core", "pytest", "jsonschema", "ruff", "mypy", "rfc8785")})' && sha256sum uv.lock && git rev-parse HEAD
+uv 0.9.15
+Linux-6.8.0-149-generic-x86_64-with-glibc2.39
+3.12.3
+{'pydantic': '2.12.5', 'pydantic-core': '2.41.5', 'pytest': '8.4.2', 'jsonschema': '4.25.1', 'ruff': '0.14.14', 'mypy': '1.18.2', 'rfc8785': '0.1.4'}
+10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb  uv.lock
+2552affeb69fbc2594fe70724f895b0db0967d47
+exit_code=0
+end=2026-11-18T02:07:11Z

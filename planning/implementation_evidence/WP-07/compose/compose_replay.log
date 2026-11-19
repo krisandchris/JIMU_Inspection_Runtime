@@ -1,0 +1,13 @@
+.application image sha256:809ee17a5728a2aafa481942bcc702b8d0730b6eb4b43fb98e95e814e3f1a0c3
+database bootstrap survived separate interruptions after roles and CREATE DATABASE
+NAME                                IMAGE                                                                              COMMAND                  SERVICE    CREATED          STATUS                      PORTS
+jimu-wp07-3d43830e5d0c-database-1   postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae   "docker-entrypoint.s…"   database   24 seconds ago   Up 24 seconds (healthy)     5432/tcp
+jimu-wp07-3d43830e5d0c-migrate-1    jimu-wp07-local:3d43830e5d0c                                                       "python -m jimu_runt…"   migrate    18 seconds ago   Exited (0) 16 seconds ago   
+jimu-wp07-3d43830e5d0c-runtime-1    jimu-wp07-local:3d43830e5d0c                                                       "python /opt/jimu/ho…"   runtime    18 seconds ago   Up 16 seconds (healthy)     127.0.0.1:34943->8080/tcp
+execution=execution.55fe5dabc6f5cd978f925dafbff7149615c59c5858e7a7d8d84b49fcb8af1ca5 outcome=violation events=51 model_receipts=4 tool_receipts=3 raw_sha256=46fcdacf3294ed5511f741a45c3054597bb7a95456a302dd4b118e560650f59e
+artifact replay read verified scoring evidence; no additional model or tool dispatches
+inference replay execution.replay.f37647e358094cd2b5ef4481d7c64fcc has a persisted Attempt before runtime interruption
+inference replay resumed on the same new execution; 7 acknowledged dispatches
+runtime and database restarted, identical task, result, trace, and raw evidence
+.
+2 passed in 104.94s (0:01:44)

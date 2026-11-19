@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "selection",
+  "policy": {
+    "policy_kind": "question_selection",
+    "mode": "all_declared",
+    "mandatory_question_refs": [
+      {
+        "$pin": [
+          "question",
+          "vehicle_type",
+          "1.0.0"
+        ]
+      },
+      {
+        "$pin": [
+          "question",
+          "parking_state",
+          "1.0.0"
+        ]
+      },
+      {
+        "$pin": [
+          "question",
+          "parking_position",
+          "1.0.0"
+        ]
+      }
+    ],
+    "optional_question_refs": [],
+    "optional_source": "all",
+    "fallback": "include_all_optional",
+    "ordering": "profile_order"
+  }
+}

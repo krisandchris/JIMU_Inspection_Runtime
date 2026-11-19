@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "model_binding_id": "profile_discovery",
+  "capability": "profile_discovery",
+  "logical_model_id": "synthetic.nonmotor.parking",
+  "provider_policy_ref": {
+    "$pin": [
+      "policy",
+      "provider",
+      "1.0.0"
+    ]
+  },
+  "fallback_policy_ref": {
+    "$pin": [
+      "policy",
+      "fallback",
+      "1.0.0"
+    ]
+  },
+  "resource_requirements_ref": {
+    "$pin": [
+      "policy",
+      "remote-resources",
+      "1.0.0"
+    ]
+  },
+  "input_schema_ref": {
+    "$pin": [
+      "response_schema",
+      "model-input",
+      "1.0.0"
+    ],
+    "schema_ref": true
+  },
+  "output_schema_ref": {
+    "$pin": [
+      "response_schema",
+      "profile_discovery-result",
+      "1.0.0"
+    ],
+    "schema_ref": true
+  },
+  "prompt_template_ref": {
+    "$pin": [
+      "prompt_template",
+      "profile_discovery",
+      "1.0.0"
+    ]
+  }
+}

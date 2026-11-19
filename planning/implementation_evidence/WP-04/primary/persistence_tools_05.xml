@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="22" time="52.756" timestamp="2026-11-18T12:22:15.805022+08:00" hostname="hy-System-Product-Name"><testcase classname="tests.unit.test_wp03_worker_postgres" name="test_worker_publishes_only_after_durable_staging" time="4.868" /><testcase classname="tests.unit.test_wp03_worker_postgres" name="test_concurrent_scope_workers_share_coverage_for_multiple_objects" time="11.570" /><testcase classname="tests.unit.test_wp03_worker_postgres" name="test_worker_persists_attempt_free_terminal_branches[excluded-attempted0-CoverageStatus.NOT_APPLICABLE]" time="3.023" /><testcase classname="tests.unit.test_wp03_worker_postgres" name="test_worker_persists_attempt_free_terminal_branches[no_hits-attempted1-CoverageStatus.NONE]" time="3.203" /><testcase classname="tests.unit.test_wp03_worker_postgres" name="test_worker_persists_attempt_free_terminal_branches[no_target-attempted2-CoverageStatus.NONE]" time="3.545" /><testcase classname="tests.unit.test_wp03_worker_postgres" name="test_worker_persists_attempt_free_terminal_branches[blocked_context-attempted3-CoverageStatus.NONE]" time="2.868" /><testcase classname="tests.contract.test_wp03_repository_roundtrip" name="test_original_wire_values_and_two_concurrent_finalizers_round_trip" time="1.093" /><testcase classname="tests.contract.test_wp03_repository_roundtrip" name="test_authoritative_publication_and_successors_share_commit_boundary" time="1.132" /><testcase classname="tests.negative.test_wp03_repository_rejections" name="test_each_scoped_request_key_and_original_principal_are_independent" time="1.181" /><testcase classname="tests.negative.test_wp03_repository_rejections" name="test_application_cannot_rewrite_history_or_cross_execution" time="1.124" /><testcase classname="tests.contract.test_wp04_dispatch_journal" name="test_crash_after_intent_before_send_keeps_the_boundary_unresolved" time="3.697" /><testcase classname="tests.contract.test_wp04_dispatch_journal" name="test_loopback_two_physical_sends_cannot_overwrite_original_or_authoritative_attempt" time="1.263" /><testcase classname="tests.contract.test_wp04_dispatch_journal" name="test_rejection_is_atomic_and_journal_rows_are_append_only" time="1.159" /><testcase classname="tests.contract.test_wp04_dispatch_journal" name="test_003_is_additive_after_the_original_migration_prefix" time="1.063" /><testcase classname="tests.contract.test_wp04_dispatch_journal" name="test_concurrent_distinct_operations_recheck_node_and_deployment_send_budgets" time="1.216" /><testcase classname="tests.contract.test_wp04_tool_executor" name="test_isolated_cpu_same_tool_and_same_round_siblings" time="1.379"><failure message="TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'">tool_fixture = AcceptedScenario(store=&lt;jimu_runtime.bundle.store.LocalBundleStore object at 0x752025e3ce60&gt;, manager=&lt;jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_isolated_cpu_same_tool_an0')
+
+    def test_isolated_cpu_same_tool_and_same_round_siblings(tool_fixture, tmp_path):
+        n05 = _run_objects(tool_fixture, NodeId.N05)
+        resolved, _, node, attempt, call, media = n05
+&gt;       executor, proof = _worker(tmp_path, resolved)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:547: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_isolated_cpu_same_tool_an0')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+&gt;           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError</failure></testcase><testcase classname="tests.contract.test_wp04_tool_executor" name="test_bounded_output_failures_preserve_audit[invalid-failed-tool_result_invalid]" time="1.324"><failure message="TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'">tool_fixture = AcceptedScenario(store=&lt;jimu_runtime.bundle.store.LocalBundleStore object at 0x752026fd65a0&gt;, manager=&lt;jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p0')
+case = 'invalid', status = 'failed', error_code = 'tool_result_invalid'
+
+    @pytest.mark.parametrize(
+        ("case", "status", "error_code"),
+        [
+            ("invalid", "failed", "tool_result_invalid"),
+            ("missing", "partial", None),
+            ("too-long" * 300, "not_dispatched", "tool_input_invalid"),
+        ],
+    )
+    def test_bounded_output_failures_preserve_audit(
+        tool_fixture, tmp_path, case, status, error_code
+    ):
+        args = _run_objects(tool_fixture, NodeId.N05)
+&gt;       executor, proof = _worker(tmp_path, args[0])
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:645: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p0')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+&gt;           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError</failure></testcase><testcase classname="tests.contract.test_wp04_tool_executor" name="test_bounded_output_failures_preserve_audit[missing-partial-None]" time="1.327"><failure message="TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'">tool_fixture = AcceptedScenario(store=&lt;jimu_runtime.bundle.store.LocalBundleStore object at 0x752026b714c0&gt;, manager=&lt;jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p1')
+case = 'missing', status = 'partial', error_code = None
+
+    @pytest.mark.parametrize(
+        ("case", "status", "error_code"),
+        [
+            ("invalid", "failed", "tool_result_invalid"),
+            ("missing", "partial", None),
+            ("too-long" * 300, "not_dispatched", "tool_input_invalid"),
+        ],
+    )
+    def test_bounded_output_failures_preserve_audit(
+        tool_fixture, tmp_path, case, status, error_code
+    ):
+        args = _run_objects(tool_fixture, NodeId.N05)
+&gt;       executor, proof = _worker(tmp_path, args[0])
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:645: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p1')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+&gt;           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError</failure></testcase><testcase classname="tests.contract.test_wp04_tool_executor" name="test_bounded_output_failures_preserve_audit[too-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-long-not_dispatched-tool_input_invalid]" time="1.385"><failure message="TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'">tool_fixture = AcceptedScenario(store=&lt;jimu_runtime.bundle.store.LocalBundleStore object at 0x752026fe6ba0&gt;, manager=&lt;jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p2')
+case = 'too-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-l...o-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-long'
+status = 'not_dispatched', error_code = 'tool_input_invalid'
+
+    @pytest.mark.parametrize(
+        ("case", "status", "error_code"),
+        [
+            ("invalid", "failed", "tool_result_invalid"),
+            ("missing", "partial", None),
+            ("too-long" * 300, "not_dispatched", "tool_input_invalid"),
+        ],
+    )
+    def test_bounded_output_failures_preserve_audit(
+        tool_fixture, tmp_path, case, status, error_code
+    ):
+        args = _run_objects(tool_fixture, NodeId.N05)
+&gt;       executor, proof = _worker(tmp_path, args[0])
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:645: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p2')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+&gt;           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError</failure></testcase><testcase classname="tests.contract.test_wp04_tool_executor" name="test_unavailable_capacity_never_calls_start_hook" time="1.369"><failure message="TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'">tool_fixture = AcceptedScenario(store=&lt;jimu_runtime.bundle.store.LocalBundleStore object at 0x752025e29b20&gt;, manager=&lt;jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_unavailable_capacity_neve0')
+
+    def test_unavailable_capacity_never_calls_start_hook(tool_fixture, tmp_path):
+        args = _run_objects(tool_fixture, NodeId.N05)
+&gt;       executor, proof = _worker(tmp_path, args[0], expected_capacity=False)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:659: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_unavailable_capacity_neve0')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+&gt;           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError</failure></testcase><testcase classname="tests.contract.test_wp04_tool_executor" name="test_implementation_pin_mismatch_rejects_dispatch" time="1.354"><failure message="TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'">tool_fixture = AcceptedScenario(store=&lt;jimu_runtime.bundle.store.LocalBundleStore object at 0x75202c15c590&gt;, manager=&lt;jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_implementation_pin_mismat0')
+
+    def test_implementation_pin_mismatch_rejects_dispatch(tool_fixture, tmp_path):
+        args = _run_objects(tool_fixture, NodeId.N05)
+&gt;       executor, proof = _worker(tmp_path, args[0])
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:671: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_implementation_pin_mismat0')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+&gt;           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError</failure></testcase><testcase classname="tests.contract.test_wp04_workflow_upgrade" name="test_migrations_preserve_existing_execution_and_pending_business_job" time="1.072" /></testsuite></testsuites>

@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "workflow",
+  "policy": {
+    "policy_kind": "execution",
+    "workflow_version": "1.0.0",
+    "node_order": [
+      "N01",
+      "N02",
+      "N03",
+      "N04",
+      "N05",
+      "N06"
+    ],
+    "coverage_policy_ref": {
+      "$pin": [
+        "policy",
+        "coverage",
+        "1.0.0"
+      ]
+    },
+    "context_provenance_policy_ref": {
+      "$pin": [
+        "policy",
+        "context-provenance",
+        "1.0.0"
+      ]
+    },
+    "resource_requirements_ref": {
+      "$pin": [
+        "policy",
+        "resources",
+        "1.0.0"
+      ]
+    },
+    "artifact_schema_refs": []
+  }
+}

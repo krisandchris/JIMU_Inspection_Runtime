@@ -1,0 +1,1 @@
+"""Isolated resource accounting fixtures."""

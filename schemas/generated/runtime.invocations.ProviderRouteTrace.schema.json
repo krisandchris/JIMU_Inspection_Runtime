@@ -1,0 +1,350 @@
+{
+  "$defs": {
+    "AbsentOptional_LocalPrimaryExceptionIdentity_": {
+      "$ref": "#/$defs/LocalPrimaryExceptionIdentity"
+    },
+    "FallbackProviderRoute": {
+      "additionalProperties": false,
+      "else": {
+        "properties": {
+          "local_primary_exception": false
+        }
+      },
+      "if": {
+        "properties": {
+          "routing_mode": {
+            "const": "local_primary_exception"
+          }
+        },
+        "required": [
+          "routing_mode"
+        ]
+      },
+      "properties": {
+        "evaluation_refs": {
+          "items": {
+            "$ref": "#/$defs/ReviewReportRef"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Evaluation Refs",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "fallback_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "from_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "From Deployment Id",
+          "type": "string"
+        },
+        "local_primary_exception": {
+          "$ref": "#/$defs/AbsentOptional_LocalPrimaryExceptionIdentity_"
+        },
+        "route_kind": {
+          "const": "fallback",
+          "title": "Route Kind",
+          "type": "string"
+        },
+        "routing_mode": {
+          "$ref": "#/$defs/ProviderRoutingMode"
+        },
+        "selected_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Selected Deployment Id",
+          "type": "string"
+        },
+        "to_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "To Deployment Id",
+          "type": "string"
+        },
+        "trigger_error": {
+          "$ref": "#/$defs/TriggerError"
+        },
+        "trigger_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        }
+      },
+      "required": [
+        "routing_mode",
+        "selected_deployment_id",
+        "fallback_policy_ref",
+        "route_kind",
+        "from_deployment_id",
+        "to_deployment_id",
+        "trigger_error",
+        "trigger_invocation_ref",
+        "evaluation_refs"
+      ],
+      "then": {
+        "required": [
+          "local_primary_exception"
+        ]
+      },
+      "title": "FallbackProviderRoute",
+      "type": "object"
+    },
+    "LocalPrimaryExceptionIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_ref": {
+          "$ref": "#/$defs/ReviewReportRef"
+        },
+        "exception_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Exception Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "exception_id",
+        "version",
+        "approval_ref"
+      ],
+      "title": "LocalPrimaryExceptionIdentity",
+      "type": "object"
+    },
+    "ModelInvocationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "model_invocation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ModelInvocationRef",
+      "type": "object"
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "PrimaryProviderRoute": {
+      "additionalProperties": false,
+      "else": {
+        "properties": {
+          "local_primary_exception": false
+        }
+      },
+      "if": {
+        "properties": {
+          "routing_mode": {
+            "const": "local_primary_exception"
+          }
+        },
+        "required": [
+          "routing_mode"
+        ]
+      },
+      "properties": {
+        "fallback_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "local_primary_exception": {
+          "$ref": "#/$defs/AbsentOptional_LocalPrimaryExceptionIdentity_"
+        },
+        "route_kind": {
+          "const": "primary",
+          "title": "Route Kind",
+          "type": "string"
+        },
+        "routing_mode": {
+          "$ref": "#/$defs/ProviderRoutingMode"
+        },
+        "selected_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Selected Deployment Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "routing_mode",
+        "selected_deployment_id",
+        "fallback_policy_ref",
+        "route_kind"
+      ],
+      "then": {
+        "required": [
+          "local_primary_exception"
+        ]
+      },
+      "title": "PrimaryProviderRoute",
+      "type": "object"
+    },
+    "ProviderRoutingMode": {
+      "enum": [
+        "remote_primary",
+        "local_primary_exception"
+      ],
+      "type": "string"
+    },
+    "ReviewReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "review_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Review Registry Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "version",
+        "sha256",
+        "review_registry_id"
+      ],
+      "title": "ReviewReportRef",
+      "type": "object"
+    },
+    "TriggerError": {
+      "enum": [
+        "transport",
+        "timeout",
+        "rate_limit",
+        "unavailable"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "fallback": "#/$defs/FallbackProviderRoute",
+      "primary": "#/$defs/PrimaryProviderRoute"
+    },
+    "propertyName": "route_kind"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/PrimaryProviderRoute"
+    },
+    {
+      "$ref": "#/$defs/FallbackProviderRoute"
+    }
+  ]
+}

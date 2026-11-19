@@ -1,0 +1,32 @@
++ PYTHONPATH=/tmp/jimu-wp05-wheel-Xh5LkM9M/snapshot/product
++ WP05_PROBE_DIAGNOSTICS=1
++ /tmp/jimu-wp05-wheel-Xh5LkM9M/venv/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py --installed --trace-dir /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_AJYNMY36/exec known_violation
+{"check": "worker_process_ready", "pid": 3560570, "runtime_install": "/tmp/jimu-wp05-wheel-Xh5LkM9M/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"adapter_error": "TypeError", "diagnostic": "verify_observation_result() got an unexpected keyword argument 'failure_code'"}
+{"check": "durable_node_diagnostics", "child_steps": [["tactile_paving_segmentation", "succeeded", null, "succeeded", []], ["wheel_boundary_geometry", "succeeded", null, "succeeded", []], ["wheel_segmentation", "succeeded", null, "succeeded", []]], "dispatches": [["model", null, "acknowledged", null, null], ["model", null, "acknowledged", null, null], ["model", null, "acknowledged", null, null], ["tool", "wheel_segmentation", "acknowledged", null, null], ["tool", "tactile_paving_segmentation", "acknowledged", null, null], ["tool", "wheel_boundary_geometry", "acknowledged", null, null], ["model", null, "acknowledged", null, null]], "rows": [["N01", "succeeded", null, null], ["N02", "succeeded", null, null], ["N03", "succeeded", null, null], ["N04", "failed", "worker_provider_internal", "worker_provider_internal"], ["N05", "succeeded", null, null], ["N05", "succeeded", null, null], ["N05", "succeeded", null, null], ["N05", "succeeded", null, null], ["N06", "succeeded", null, null]]}
+{"calls": [["discovery", null, null], ["grounding", null, null], ["observation", [40, 23, 52, 33], "perception.object.56827db99bd79a19f3b2ad5e8295f870d574f9f2fdd4de647a13c1a37c9d754c"], ["candidate", [40, 23, 52, 33], "perception.object.56827db99bd79a19f3b2ad5e8295f870d574f9f2fdd4de647a13c1a37c9d754c"]], "check": "provider_transcript_on_failure", "errors": []}
+{"check": "worker_process_closed", "pid": 3560570, "signal": null}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 432, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 418, in main
+    await run_case(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 345, in run_case
+    result = await audit(
+             ^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 262, in audit
+    require_equal("Task-level verdict", coverage.summary_result.value, gold["summary"])
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 45, in require_equal
+    raise AssertionError(f"{label} observed {observed!r}, expected {expected!r}")
+AssertionError: Task-level verdict observed 'uncertain', expected 'violation'
+2026-11-18T05:58:47Z
+exit=1

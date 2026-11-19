@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "rule_id": "nonmotor_vehicle_illegal_parking",
+  "violation_category": "nonmotor_vehicle_illegal_parking",
+  "applicability_policy_ref": {
+    "$pin": [
+      "policy",
+      "applicability",
+      "1.0.0"
+    ]
+  },
+  "required_fact_selectors": [
+    {
+      "scope": "object",
+      "fact_key": "parking_state",
+      "fact_schema_ref": {
+        "$pin": [
+          "fact_schema",
+          "parking_state",
+          "1.0.0"
+        ]
+      },
+      "field_path": [],
+      "producer_selector": {
+        "producer_kind": "vlm_question",
+        "question_ref": {
+          "$pin": [
+            "question",
+            "parking_state",
+            "1.0.0"
+          ]
+        },
+        "output_name": "primary"
+      }
+    },
+    {
+      "scope": "object",
+      "fact_key": "wheel_boundary_relation",
+      "fact_schema_ref": {
+        "$pin": [
+          "fact_schema",
+          "wheel_boundary_relation",
+          "1.0.0"
+        ]
+      },
+      "field_path": [],
+      "producer_selector": {
+        "producer_kind": "tool",
+        "tool_plan_ref": {
+          "$pin": [
+            "tool_plan",
+            "nonmotor_vehicle_geometry",
+            "1.0.0"
+          ]
+        },
+        "step_id": "wheel_boundary_geometry",
+        "tool_ref": {
+          "$pin": [
+            "tool",
+            "wheel_boundary_geometry",
+            "1.0.0"
+          ]
+        },
+        "output_name": "wheel_boundary_relation"
+      }
+    }
+  ],
+  "optional_fact_selectors": [],
+  "condition_ast": {
+    "kind": "all",
+    "arguments": [
+      {
+        "kind": "comparison",
+        "operator": "eq",
+        "left": {
+          "kind": "fact_ref",
+          "selector": {
+            "scope": "object",
+            "fact_key": "parking_state",
+            "fact_schema_ref": {
+              "$pin": [
+                "fact_schema",
+                "parking_state",
+                "1.0.0"
+              ]
+            },
+            "field_path": [],
+            "producer_selector": {
+              "producer_kind": "vlm_question",
+              "question_ref": {
+                "$pin": [
+                  "question",
+                  "parking_state",
+                  "1.0.0"
+                ]
+              },
+              "output_name": "primary"
+            }
+          }
+        },
+        "right": {
+          "kind": "literal",
+          "constant": {
+            "type_definition": {
+              "kind": "enum",
+              "members": [
+                "parked",
+                "unparked"
+              ]
+            },
+            "value": {
+              "kind": "enum",
+              "value": "parked"
+            }
+          }
+        }
+      },
+      {
+        "kind": "in",
+        "item": {
+          "kind": "fact_ref",
+          "selector": {
+            "scope": "object",
+            "fact_key": "wheel_boundary_relation",
+            "fact_schema_ref": {
+              "$pin": [
+                "fact_schema",
+                "wheel_boundary_relation",
+                "1.0.0"
+              ]
+            },
+            "field_path": [],
+            "producer_selector": {
+              "producer_kind": "tool",
+              "tool_plan_ref": {
+                "$pin": [
+                  "tool_plan",
+                  "nonmotor_vehicle_geometry",
+                  "1.0.0"
+                ]
+              },
+              "step_id": "wheel_boundary_geometry",
+              "tool_ref": {
+                "$pin": [
+                  "tool",
+                  "wheel_boundary_geometry",
+                  "1.0.0"
+                ]
+              },
+              "output_name": "wheel_boundary_relation"
+            }
+          }
+        },
+        "collection": {
+          "kind": "literal",
+          "constant": {
+            "type_definition": {
+              "kind": "list",
+              "item_type": {
+                "kind": "enum",
+                "members": [
+                  "inside_parking_area",
+                  "outside_parking_area",
+                  "over_boundary",
+                  "blocking_tactile_paving"
+                ]
+              },
+              "min_items": 2,
+              "max_items": 2
+            },
+            "value": {
+              "kind": "list",
+              "value": [
+                {
+                  "kind": "enum",
+                  "value": "outside_parking_area"
+                },
+                {
+                  "kind": "enum",
+                  "value": "blocking_tactile_paving"
+                }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  },
+  "rule_policy_ref": {
+    "$pin": [
+      "policy",
+      "rule",
+      "1.0.0"
+    ]
+  },
+  "evidence_policy_ref": {
+    "$pin": [
+      "policy",
+      "geometry-evidence",
+      "1.0.0"
+    ]
+  }
+}

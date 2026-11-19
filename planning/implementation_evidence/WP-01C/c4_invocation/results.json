@@ -1,0 +1,254 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "head": "2552affeb69fbc2594fe70724f895b0db0967d47",
+  "branch": "detached HEAD",
+  "runs": [
+    {
+      "name": "uv_version",
+      "argv": [
+        "uv",
+        "--version"
+      ],
+      "begin_utc": "2026-11-18T02:08:51.778593+00:00",
+      "before": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      },
+      "exit_code": 0,
+      "end_utc": "2026-11-18T02:08:51.782544+00:00",
+      "after": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      }
+    },
+    {
+      "name": "environment",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-c",
+        "import platform, sys, importlib.metadata as m; print(platform.platform()); print(sys.version); print({p:m.version(p) for p in ('pydantic','pydantic-core','pytest','jsonschema','ruff','mypy','rfc8785')})"
+      ],
+      "begin_utc": "2026-11-18T02:08:51.782824+00:00",
+      "before": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      },
+      "exit_code": 0,
+      "end_utc": "2026-11-18T02:08:51.873824+00:00",
+      "after": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      }
+    },
+    {
+      "name": "pytest",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-m",
+        "pytest",
+        "tests/contract/test_c_invocation_schema.py",
+        "tests/negative/test_c_invocation_invalid.py",
+        "tests/unit/test_c_invocation_relations.py",
+        "-q",
+        "-o",
+        "cache_dir=/tmp/jimu-c4-invocation-wov15pjx/pytest_cache",
+        "--basetemp=/tmp/jimu-c4-invocation-wov15pjx/pytest_tmp",
+        "--junitxml=planning/implementation_evidence/WP-01C/c4_invocation/pytest.xml"
+      ],
+      "begin_utc": "2026-11-18T02:08:51.874144+00:00",
+      "before": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      },
+      "exit_code": 0,
+      "end_utc": "2026-11-18T02:08:53.302088+00:00",
+      "after": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      }
+    },
+    {
+      "name": "ruff_check",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "check",
+        "src/jimu_runtime/domain/runtime/invocations.py",
+        "src/jimu_runtime/domain/runtime/selection.py",
+        "src/jimu_runtime/domain/runtime/tool_executions.py",
+        "src/jimu_runtime/domain/validation/invocations.py",
+        "tests/contract/test_c_invocation_schema.py",
+        "tests/negative/test_c_invocation_invalid.py",
+        "tests/unit/test_c_invocation_relations.py"
+      ],
+      "begin_utc": "2026-11-18T02:08:53.302376+00:00",
+      "before": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      },
+      "exit_code": 0,
+      "end_utc": "2026-11-18T02:08:53.318682+00:00",
+      "after": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      }
+    },
+    {
+      "name": "ruff_format",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "format",
+        "--check",
+        "src/jimu_runtime/domain/runtime/invocations.py",
+        "src/jimu_runtime/domain/runtime/selection.py",
+        "src/jimu_runtime/domain/runtime/tool_executions.py",
+        "src/jimu_runtime/domain/validation/invocations.py",
+        "tests/contract/test_c_invocation_schema.py",
+        "tests/negative/test_c_invocation_invalid.py",
+        "tests/unit/test_c_invocation_relations.py"
+      ],
+      "begin_utc": "2026-11-18T02:08:53.318993+00:00",
+      "before": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      },
+      "exit_code": 0,
+      "end_utc": "2026-11-18T02:08:53.336027+00:00",
+      "after": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      }
+    },
+    {
+      "name": "mypy",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "mypy",
+        "src/jimu_runtime/domain/runtime/invocations.py",
+        "src/jimu_runtime/domain/runtime/selection.py",
+        "src/jimu_runtime/domain/runtime/tool_executions.py",
+        "src/jimu_runtime/domain/validation/invocations.py"
+      ],
+      "begin_utc": "2026-11-18T02:08:53.336309+00:00",
+      "before": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      },
+      "exit_code": 0,
+      "end_utc": "2026-11-18T02:08:55.980538+00:00",
+      "after": {
+        "src/jimu_runtime/domain/runtime/invocations.py": "df1f2c65c4ee6f2178cce767e88e34528b5fb8b4b387f4efc8092433ec476b52",
+        "src/jimu_runtime/domain/runtime/selection.py": "28ec63245665b465ec6a466714bf9fd179fa1eddba4b934ce125200f31115f73",
+        "src/jimu_runtime/domain/runtime/tool_executions.py": "7fe53dd3de40105f4041e4edba169a51309dd13a54899b35c67882e284145276",
+        "src/jimu_runtime/domain/validation/invocations.py": "1a50f350ada9cb5bbd62129f6672805704d55b1fed846666f2cc7a514211f2af",
+        "tests/contract/test_c_invocation_schema.py": "3a6a7280538017bb0472200efe826a0ea77336ac6d7ac6cf34df2966e1d17cb8",
+        "tests/negative/test_c_invocation_invalid.py": "c0e3f78dcf6b57f5d67371e0a404d5bdc8a09facf8c954bfc51d9dc716b9a0b6",
+        "tests/unit/test_c_invocation_relations.py": "97ab07e0559d3e05c340589faeb64fa4dbadfbc0a7952406b1f35da4ea5f3df4",
+        "tests/fixtures/wp01c/invocations/contracts.json": "0d1902f5e3b4649f5f573eefc860456a9f8c5a810721863cd00f068bdb9f8d43",
+        "uv.lock": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+      }
+    }
+  ],
+  "environment_overrides": {
+    "UV_CACHE_DIR": "/tmp/jimu-c4-invocation-wov15pjx/uv",
+    "RUFF_CACHE_DIR": "/tmp/jimu-c4-invocation-wov15pjx/ruff",
+    "MYPY_CACHE_DIR": "/tmp/jimu-c4-invocation-wov15pjx/mypy",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "UV_OFFLINE": "1"
+  }
+}

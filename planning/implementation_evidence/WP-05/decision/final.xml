@@ -1,0 +1,929 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="135" time="60.177" timestamp="2026-11-18T13:56:10.226836+08:00" hostname="hy-System-Product-Name"><testcase classname="tests.unit.test_wp05_decision" name="test_advisory_omission_and_failure_still_scan_every_required_rule[empty]" time="1.798" /><testcase classname="tests.unit.test_wp05_decision" name="test_advisory_omission_and_failure_still_scan_every_required_rule[failed]" time="0.230" /><testcase classname="tests.unit.test_wp05_decision" name="test_advisory_omission_and_failure_still_scan_every_required_rule[not_dispatched]" time="0.276" /><testcase classname="tests.unit.test_wp05_decision" name="test_advisory_omission_and_failure_still_scan_every_required_rule[absent]" time="0.222" /><testcase classname="tests.unit.test_wp05_decision" name="test_source_evidence_failure_preserves_predicate_and_blocks_definitive_result" time="0.228" /><testcase classname="tests.unit.test_wp05_decision" name="test_gate_checks_exact_n01_snapshot" time="0.022" /><testcase classname="tests.unit.test_wp05_decision" name="test_negative_requires_guard_even_when_predicate_is_false[False]" time="1.631" /><testcase classname="tests.unit.test_wp05_decision" name="test_negative_requires_guard_even_when_predicate_is_false[True]" time="0.127" /><testcase classname="tests.unit.test_wp05_decision" name="test_collect_all_retains_every_matching_path_and_deduplicates_category" time="1.782" /><testcase classname="tests.unit.test_wp05_decision" name="test_decisive_ruleset_never_runs_its_child_policy[false-False-DecisionResult.NOT_APPLICABLE]" time="2.247" /><testcase classname="tests.unit.test_wp05_decision" name="test_decisive_ruleset_never_runs_its_child_policy[false-True-DecisionResult.NO_VIOLATION]" time="2.445" /><testcase classname="tests.unit.test_wp05_decision" name="test_decisive_ruleset_never_runs_its_child_policy[unknown-True-DecisionResult.UNCERTAIN]" time="2.679" /><testcase classname="tests.contract.test_wp05_decision_gate" name="test_signed_scene_uses_metadata_truth_gate[eq-False-RuleTruth.TRUE-ApplicabilityReason.INCLUDED_BY_POLICY]" time="9.272"><failure message="TypeError: verify_parking_area() missing 1 required keyword-only argument: 'catalogue'">tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-405/test_signed_scene_uses_metadat0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7df3d394f500&gt;
+operator = 'eq', absent = False, expected = &lt;RuleTruth.TRUE: 'true'&gt;
+reason = &lt;ApplicabilityReason.INCLUDED_BY_POLICY: 'included_by_policy'&gt;
+
+    @pytest.mark.parametrize(
+        ("operator", "absent", "expected", "reason"),
+        (
+            ("eq", False, RuleTruth.TRUE, ApplicabilityReason.INCLUDED_BY_POLICY),
+            ("ne", False, RuleTruth.FALSE, ApplicabilityReason.EXCLUDED_BY_POLICY),
+            ("ne", True, RuleTruth.UNKNOWN, ApplicabilityReason.METADATA_UNKNOWN),
+        ),
+    )
+    def test_signed_scene_uses_metadata_truth_gate(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        operator: str,
+        absent: bool,
+        expected: RuleTruth,
+        reason: ApplicabilityReason,
+    ) -&gt; None:
+        source = load_source()
+        policy = next(
+            item for item in source.artifacts if item.artifact_id == "applicability"
+        )
+        content = json.loads(policy.content)
+        selector = {
+            "source": "context_snapshot",
+            "schema_ref": None,
+            "field_path": ["fixture_enabled"],
+        }
+        content["policy"].update(
+            context_allowlist=[selector],
+            condition_ast={
+                "kind": "comparison",
+                "operator": operator,
+                "left": {"kind": "context_ref", "selector": selector},
+                "right": {
+                    "kind": "literal",
+                    "constant": {
+                        "type_definition": {"kind": "bool"},
+                        "value": {"kind": "bool", "value": True},
+                    },
+                },
+            },
+        )
+        target = (ArtifactKind.CONTEXT_SCHEMA, "parking-context", VERSION)
+        revised = replace(
+            policy,
+            content=canonical_bytes(content),
+            reference_slots=(
+                ReferenceSlot(
+                    location=("policy", "context_allowlist", 0, "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+                ReferenceSlot(
+                    location=("policy", "condition_ast", "left", "selector", "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+            ),
+        )
+        context_schema = next(
+            row for row in source.artifacts if row.kind is ArtifactKind.CONTEXT_SCHEMA
+        )
+        schema_doc = json.loads(context_schema.content)
+        schema_doc["properties"]["fixture_enabled"] = {"type": "boolean"}
+        provenance = next(
+            row for row in source.artifacts if row.artifact_id == "context-provenance"
+        )
+        provenance_doc = json.loads(provenance.content)
+        provenance_doc["policy"]["fields"].append(
+            {
+                "field_path": ["fixture_enabled"],
+                "schema_ref": None,
+                "required": False,
+                "time_sensitive": False,
+                "allowed_sources": ["trusted_task_metadata"],
+            }
+        )
+        replacements = {
+            policy.identity: revised,
+            context_schema.identity: replace(
+                context_schema, content=canonical_bytes(schema_doc)
+            ),
+            provenance.identity: replace(
+                provenance,
+                content=canonical_bytes(provenance_doc),
+                reference_slots=(
+                    *provenance.reference_slots,
+                    ReferenceSlot(
+                        location=("policy", "fields", 1, "schema_ref"),
+                        target=target,
+                        schema_ref=True,
+                    ),
+                ),
+            ),
+        }
+        modified = with_source_provenance(
+            replace(
+                source,
+                artifacts=tuple(
+                    replacements.get(row.identity, row) for row in source.artifacts
+                ),
+            )
+        )
+        monkeypatch.setattr(lifecycle, "load_source", lambda: modified)
+        if not absent:
+            submit = lifecycle.local_submission
+    
+            def declare_fixture_flag(media):
+                from jimu_runtime.domain.values import BooleanValue, RecordValue
+    
+                original = submit(media)
+                metadata = RecordValue(
+                    kind="record",
+                    value={"fixture_enabled": BooleanValue(kind="bool", value=True)},
+                )
+                return original.model_copy(
+                    update={
+                        "context": original.context.model_copy(
+                            update={"metadata": metadata}
+                        )
+                    }
+                )
+    
+            monkeypatch.setattr(lifecycle, "local_submission", declare_fixture_flag)
+        scene = lifecycle.exercise_lifecycle(tmp_path)
+        scope = release_scope(scene)
+        (region_item,) = scope.catalogue.of_kind(ArtifactKind.REGION)
+        region_ref = RegionContentRef.model_validate(region_item.ref.model_dump())
+        region = scope.resolve(region_ref, RegionDefinition)
+        assert region.region_id == REGION
+        source_rows = TrustedWorkerSource(
+            scope.media,
+            RegistryRecordRef(
+                record_id=scope.task.context.device_id,
+                version=VERSION,
+                digest=sha256_digest(b"device"),
+            ),
+            RegistryRecordRef(
+                record_id=scope.task.context.camera_id,
+                version=VERSION,
+                digest=sha256_digest(b"camera"),
+            ),
+        )
+        (profile,) = scope.catalogue.of_kind(ArtifactKind.PROFILE)
+        opened = OpenExecution(
+            scope,
+            scene.execution,
+            scene.release,
+            source_rows,
+            region_ref,
+            region,
+            (
+                _profile_plan(
+                    scope, ProfileContentRef.model_validate(profile.ref.model_dump())
+                ),
+            ),
+        )
+        execution = ExecutionRecord(
+            schema_version=VERSION,
+            execution_id=scope.execution_id,
+            task_id=scope.task.task_id,
+            pins=scope.pins,
+            trace=scope.task.trace,
+            status=ExecutionStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            model_invocation_refs=(),
+        )
+        node_ref = NodeRunRef(record_kind=K.NODE_RUN, record_id="local.n01")
+        attempt = Attempt(
+            schema_version=VERSION,
+            attempt_id="local.attempt",
+            execution_id=scope.execution_id,
+            owner=NodeAttemptOwner(owner_kind="node", node_run_ref=node_ref),
+            attempt_number=1,
+            status=AttemptStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+        )
+        node = NodeRun(
+            schema_version=VERSION,
+            node_run_id=node_ref.record_id,
+            execution_id=scope.execution_id,
+            node_id=NodeId.N01,
+            trace=scope.task.trace,
+            config_ref=scene.execution.policy_ref,
+            upstream_inputs=(artifact(K.TASK, scope.task.task_id, scope.task).pin,),
+            input_digest=scope.pins.bundle_digest,
+            status=NodeRunStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            attempt_history=(
+                AttemptLink(
+                    attempt_ref=AttemptRef(
+                        record_kind=K.ATTEMPT, record_id=attempt.attempt_id
+                    ),
+                    attempt_number=1,
+                ),
+            ),
+            output_refs=(),
+        )
+        branch = BranchKey(NodeId.N01)
+        claimed = ClaimedNode(
+            JobClaim(
+                scope.task.idempotency_scope,
+                scope.execution_id,
+                node.node_run_id,
+                "local.job",
+                1,
+                "local",
+                AT,
+            ),
+            attempt,
+            node,
+            branch,
+            opened,
+            BranchInputs(),
+            execution,
+            AT,
+        )
+&gt;       context = build_context(
+            claimed, invocation_envelope(opened, branch, node, attempt)
+        ).message
+
+tests/contract/test_wp05_decision_gate.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/jimu_runtime/inspection/perception/context.py:242: in build_context
+    fields = _fields(claimed, inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+src/jimu_runtime/inspection/perception/context.py:124: in _fields
+    region_data = _region_inputs(claimed)
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+claimed = ClaimedNode(claim=JobClaim(scope=IdempotencyScope(project_id='synthetic.nonmotor.parking', client_id='synthetic.edge')...tion_refs=()), deadline=datetime.datetime(2026, 1, 2, 0, 0, tzinfo=datetime.timezone.utc), authority=None, evidence=())
+
+    def _region_inputs(claimed: ClaimedNode) -&gt; dict[str, object]:
+        opened = claimed.opened
+        scope = opened.scope
+        region = scope.resolve(opened.region_ref, RegionDefinition)
+        if region != opened.region or region.geometry_ref is None:
+            raise ValueError("verified Region geometry is unavailable")
+        geometry = scope.resolve(region.geometry_ref, GeometryResourceDefinition)
+        source = scope.catalogue.resolve(geometry.provenance.source_asset_ref)
+        if (
+            not isinstance(source.value, StaticAssetDescriptor)
+            or source.asset_bytes is None
+        ):
+            raise ValueError("verified Region geometry asset is unavailable")
+&gt;       area = verify_parking_area(
+            region_ref=opened.region_ref,
+            region=region,
+            geometry_ref=region.geometry_ref,
+            geometry=geometry,
+            source=source.value,
+            source_bytes=source.asset_bytes,
+            coordinates=original_frame(scope),
+        )
+E       TypeError: verify_parking_area() missing 1 required keyword-only argument: 'catalogue'
+
+src/jimu_runtime/inspection/perception/context.py:67: TypeError</failure></testcase><testcase classname="tests.contract.test_wp05_decision_gate" name="test_signed_scene_uses_metadata_truth_gate[ne-False-RuleTruth.FALSE-ApplicabilityReason.EXCLUDED_BY_POLICY]" time="9.190"><failure message="TypeError: verify_parking_area() missing 1 required keyword-only argument: 'catalogue'">tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-405/test_signed_scene_uses_metadat1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7df3d39ad490&gt;
+operator = 'ne', absent = False, expected = &lt;RuleTruth.FALSE: 'false'&gt;
+reason = &lt;ApplicabilityReason.EXCLUDED_BY_POLICY: 'excluded_by_policy'&gt;
+
+    @pytest.mark.parametrize(
+        ("operator", "absent", "expected", "reason"),
+        (
+            ("eq", False, RuleTruth.TRUE, ApplicabilityReason.INCLUDED_BY_POLICY),
+            ("ne", False, RuleTruth.FALSE, ApplicabilityReason.EXCLUDED_BY_POLICY),
+            ("ne", True, RuleTruth.UNKNOWN, ApplicabilityReason.METADATA_UNKNOWN),
+        ),
+    )
+    def test_signed_scene_uses_metadata_truth_gate(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        operator: str,
+        absent: bool,
+        expected: RuleTruth,
+        reason: ApplicabilityReason,
+    ) -&gt; None:
+        source = load_source()
+        policy = next(
+            item for item in source.artifacts if item.artifact_id == "applicability"
+        )
+        content = json.loads(policy.content)
+        selector = {
+            "source": "context_snapshot",
+            "schema_ref": None,
+            "field_path": ["fixture_enabled"],
+        }
+        content["policy"].update(
+            context_allowlist=[selector],
+            condition_ast={
+                "kind": "comparison",
+                "operator": operator,
+                "left": {"kind": "context_ref", "selector": selector},
+                "right": {
+                    "kind": "literal",
+                    "constant": {
+                        "type_definition": {"kind": "bool"},
+                        "value": {"kind": "bool", "value": True},
+                    },
+                },
+            },
+        )
+        target = (ArtifactKind.CONTEXT_SCHEMA, "parking-context", VERSION)
+        revised = replace(
+            policy,
+            content=canonical_bytes(content),
+            reference_slots=(
+                ReferenceSlot(
+                    location=("policy", "context_allowlist", 0, "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+                ReferenceSlot(
+                    location=("policy", "condition_ast", "left", "selector", "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+            ),
+        )
+        context_schema = next(
+            row for row in source.artifacts if row.kind is ArtifactKind.CONTEXT_SCHEMA
+        )
+        schema_doc = json.loads(context_schema.content)
+        schema_doc["properties"]["fixture_enabled"] = {"type": "boolean"}
+        provenance = next(
+            row for row in source.artifacts if row.artifact_id == "context-provenance"
+        )
+        provenance_doc = json.loads(provenance.content)
+        provenance_doc["policy"]["fields"].append(
+            {
+                "field_path": ["fixture_enabled"],
+                "schema_ref": None,
+                "required": False,
+                "time_sensitive": False,
+                "allowed_sources": ["trusted_task_metadata"],
+            }
+        )
+        replacements = {
+            policy.identity: revised,
+            context_schema.identity: replace(
+                context_schema, content=canonical_bytes(schema_doc)
+            ),
+            provenance.identity: replace(
+                provenance,
+                content=canonical_bytes(provenance_doc),
+                reference_slots=(
+                    *provenance.reference_slots,
+                    ReferenceSlot(
+                        location=("policy", "fields", 1, "schema_ref"),
+                        target=target,
+                        schema_ref=True,
+                    ),
+                ),
+            ),
+        }
+        modified = with_source_provenance(
+            replace(
+                source,
+                artifacts=tuple(
+                    replacements.get(row.identity, row) for row in source.artifacts
+                ),
+            )
+        )
+        monkeypatch.setattr(lifecycle, "load_source", lambda: modified)
+        if not absent:
+            submit = lifecycle.local_submission
+    
+            def declare_fixture_flag(media):
+                from jimu_runtime.domain.values import BooleanValue, RecordValue
+    
+                original = submit(media)
+                metadata = RecordValue(
+                    kind="record",
+                    value={"fixture_enabled": BooleanValue(kind="bool", value=True)},
+                )
+                return original.model_copy(
+                    update={
+                        "context": original.context.model_copy(
+                            update={"metadata": metadata}
+                        )
+                    }
+                )
+    
+            monkeypatch.setattr(lifecycle, "local_submission", declare_fixture_flag)
+        scene = lifecycle.exercise_lifecycle(tmp_path)
+        scope = release_scope(scene)
+        (region_item,) = scope.catalogue.of_kind(ArtifactKind.REGION)
+        region_ref = RegionContentRef.model_validate(region_item.ref.model_dump())
+        region = scope.resolve(region_ref, RegionDefinition)
+        assert region.region_id == REGION
+        source_rows = TrustedWorkerSource(
+            scope.media,
+            RegistryRecordRef(
+                record_id=scope.task.context.device_id,
+                version=VERSION,
+                digest=sha256_digest(b"device"),
+            ),
+            RegistryRecordRef(
+                record_id=scope.task.context.camera_id,
+                version=VERSION,
+                digest=sha256_digest(b"camera"),
+            ),
+        )
+        (profile,) = scope.catalogue.of_kind(ArtifactKind.PROFILE)
+        opened = OpenExecution(
+            scope,
+            scene.execution,
+            scene.release,
+            source_rows,
+            region_ref,
+            region,
+            (
+                _profile_plan(
+                    scope, ProfileContentRef.model_validate(profile.ref.model_dump())
+                ),
+            ),
+        )
+        execution = ExecutionRecord(
+            schema_version=VERSION,
+            execution_id=scope.execution_id,
+            task_id=scope.task.task_id,
+            pins=scope.pins,
+            trace=scope.task.trace,
+            status=ExecutionStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            model_invocation_refs=(),
+        )
+        node_ref = NodeRunRef(record_kind=K.NODE_RUN, record_id="local.n01")
+        attempt = Attempt(
+            schema_version=VERSION,
+            attempt_id="local.attempt",
+            execution_id=scope.execution_id,
+            owner=NodeAttemptOwner(owner_kind="node", node_run_ref=node_ref),
+            attempt_number=1,
+            status=AttemptStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+        )
+        node = NodeRun(
+            schema_version=VERSION,
+            node_run_id=node_ref.record_id,
+            execution_id=scope.execution_id,
+            node_id=NodeId.N01,
+            trace=scope.task.trace,
+            config_ref=scene.execution.policy_ref,
+            upstream_inputs=(artifact(K.TASK, scope.task.task_id, scope.task).pin,),
+            input_digest=scope.pins.bundle_digest,
+            status=NodeRunStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            attempt_history=(
+                AttemptLink(
+                    attempt_ref=AttemptRef(
+                        record_kind=K.ATTEMPT, record_id=attempt.attempt_id
+                    ),
+                    attempt_number=1,
+                ),
+            ),
+            output_refs=(),
+        )
+        branch = BranchKey(NodeId.N01)
+        claimed = ClaimedNode(
+            JobClaim(
+                scope.task.idempotency_scope,
+                scope.execution_id,
+                node.node_run_id,
+                "local.job",
+                1,
+                "local",
+                AT,
+            ),
+            attempt,
+            node,
+            branch,
+            opened,
+            BranchInputs(),
+            execution,
+            AT,
+        )
+&gt;       context = build_context(
+            claimed, invocation_envelope(opened, branch, node, attempt)
+        ).message
+
+tests/contract/test_wp05_decision_gate.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/jimu_runtime/inspection/perception/context.py:242: in build_context
+    fields = _fields(claimed, inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+src/jimu_runtime/inspection/perception/context.py:124: in _fields
+    region_data = _region_inputs(claimed)
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+claimed = ClaimedNode(claim=JobClaim(scope=IdempotencyScope(project_id='synthetic.nonmotor.parking', client_id='synthetic.edge')...tion_refs=()), deadline=datetime.datetime(2026, 1, 2, 0, 0, tzinfo=datetime.timezone.utc), authority=None, evidence=())
+
+    def _region_inputs(claimed: ClaimedNode) -&gt; dict[str, object]:
+        opened = claimed.opened
+        scope = opened.scope
+        region = scope.resolve(opened.region_ref, RegionDefinition)
+        if region != opened.region or region.geometry_ref is None:
+            raise ValueError("verified Region geometry is unavailable")
+        geometry = scope.resolve(region.geometry_ref, GeometryResourceDefinition)
+        source = scope.catalogue.resolve(geometry.provenance.source_asset_ref)
+        if (
+            not isinstance(source.value, StaticAssetDescriptor)
+            or source.asset_bytes is None
+        ):
+            raise ValueError("verified Region geometry asset is unavailable")
+&gt;       area = verify_parking_area(
+            region_ref=opened.region_ref,
+            region=region,
+            geometry_ref=region.geometry_ref,
+            geometry=geometry,
+            source=source.value,
+            source_bytes=source.asset_bytes,
+            coordinates=original_frame(scope),
+        )
+E       TypeError: verify_parking_area() missing 1 required keyword-only argument: 'catalogue'
+
+src/jimu_runtime/inspection/perception/context.py:67: TypeError</failure></testcase><testcase classname="tests.contract.test_wp05_decision_gate" name="test_signed_scene_uses_metadata_truth_gate[ne-True-RuleTruth.UNKNOWN-ApplicabilityReason.METADATA_UNKNOWN]" time="9.470"><failure message="TypeError: verify_parking_area() missing 1 required keyword-only argument: 'catalogue'">tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-405/test_signed_scene_uses_metadat2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7df3d3584980&gt;
+operator = 'ne', absent = True, expected = &lt;RuleTruth.UNKNOWN: 'unknown'&gt;
+reason = &lt;ApplicabilityReason.METADATA_UNKNOWN: 'metadata_unknown'&gt;
+
+    @pytest.mark.parametrize(
+        ("operator", "absent", "expected", "reason"),
+        (
+            ("eq", False, RuleTruth.TRUE, ApplicabilityReason.INCLUDED_BY_POLICY),
+            ("ne", False, RuleTruth.FALSE, ApplicabilityReason.EXCLUDED_BY_POLICY),
+            ("ne", True, RuleTruth.UNKNOWN, ApplicabilityReason.METADATA_UNKNOWN),
+        ),
+    )
+    def test_signed_scene_uses_metadata_truth_gate(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        operator: str,
+        absent: bool,
+        expected: RuleTruth,
+        reason: ApplicabilityReason,
+    ) -&gt; None:
+        source = load_source()
+        policy = next(
+            item for item in source.artifacts if item.artifact_id == "applicability"
+        )
+        content = json.loads(policy.content)
+        selector = {
+            "source": "context_snapshot",
+            "schema_ref": None,
+            "field_path": ["fixture_enabled"],
+        }
+        content["policy"].update(
+            context_allowlist=[selector],
+            condition_ast={
+                "kind": "comparison",
+                "operator": operator,
+                "left": {"kind": "context_ref", "selector": selector},
+                "right": {
+                    "kind": "literal",
+                    "constant": {
+                        "type_definition": {"kind": "bool"},
+                        "value": {"kind": "bool", "value": True},
+                    },
+                },
+            },
+        )
+        target = (ArtifactKind.CONTEXT_SCHEMA, "parking-context", VERSION)
+        revised = replace(
+            policy,
+            content=canonical_bytes(content),
+            reference_slots=(
+                ReferenceSlot(
+                    location=("policy", "context_allowlist", 0, "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+                ReferenceSlot(
+                    location=("policy", "condition_ast", "left", "selector", "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+            ),
+        )
+        context_schema = next(
+            row for row in source.artifacts if row.kind is ArtifactKind.CONTEXT_SCHEMA
+        )
+        schema_doc = json.loads(context_schema.content)
+        schema_doc["properties"]["fixture_enabled"] = {"type": "boolean"}
+        provenance = next(
+            row for row in source.artifacts if row.artifact_id == "context-provenance"
+        )
+        provenance_doc = json.loads(provenance.content)
+        provenance_doc["policy"]["fields"].append(
+            {
+                "field_path": ["fixture_enabled"],
+                "schema_ref": None,
+                "required": False,
+                "time_sensitive": False,
+                "allowed_sources": ["trusted_task_metadata"],
+            }
+        )
+        replacements = {
+            policy.identity: revised,
+            context_schema.identity: replace(
+                context_schema, content=canonical_bytes(schema_doc)
+            ),
+            provenance.identity: replace(
+                provenance,
+                content=canonical_bytes(provenance_doc),
+                reference_slots=(
+                    *provenance.reference_slots,
+                    ReferenceSlot(
+                        location=("policy", "fields", 1, "schema_ref"),
+                        target=target,
+                        schema_ref=True,
+                    ),
+                ),
+            ),
+        }
+        modified = with_source_provenance(
+            replace(
+                source,
+                artifacts=tuple(
+                    replacements.get(row.identity, row) for row in source.artifacts
+                ),
+            )
+        )
+        monkeypatch.setattr(lifecycle, "load_source", lambda: modified)
+        if not absent:
+            submit = lifecycle.local_submission
+    
+            def declare_fixture_flag(media):
+                from jimu_runtime.domain.values import BooleanValue, RecordValue
+    
+                original = submit(media)
+                metadata = RecordValue(
+                    kind="record",
+                    value={"fixture_enabled": BooleanValue(kind="bool", value=True)},
+                )
+                return original.model_copy(
+                    update={
+                        "context": original.context.model_copy(
+                            update={"metadata": metadata}
+                        )
+                    }
+                )
+    
+            monkeypatch.setattr(lifecycle, "local_submission", declare_fixture_flag)
+        scene = lifecycle.exercise_lifecycle(tmp_path)
+        scope = release_scope(scene)
+        (region_item,) = scope.catalogue.of_kind(ArtifactKind.REGION)
+        region_ref = RegionContentRef.model_validate(region_item.ref.model_dump())
+        region = scope.resolve(region_ref, RegionDefinition)
+        assert region.region_id == REGION
+        source_rows = TrustedWorkerSource(
+            scope.media,
+            RegistryRecordRef(
+                record_id=scope.task.context.device_id,
+                version=VERSION,
+                digest=sha256_digest(b"device"),
+            ),
+            RegistryRecordRef(
+                record_id=scope.task.context.camera_id,
+                version=VERSION,
+                digest=sha256_digest(b"camera"),
+            ),
+        )
+        (profile,) = scope.catalogue.of_kind(ArtifactKind.PROFILE)
+        opened = OpenExecution(
+            scope,
+            scene.execution,
+            scene.release,
+            source_rows,
+            region_ref,
+            region,
+            (
+                _profile_plan(
+                    scope, ProfileContentRef.model_validate(profile.ref.model_dump())
+                ),
+            ),
+        )
+        execution = ExecutionRecord(
+            schema_version=VERSION,
+            execution_id=scope.execution_id,
+            task_id=scope.task.task_id,
+            pins=scope.pins,
+            trace=scope.task.trace,
+            status=ExecutionStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            model_invocation_refs=(),
+        )
+        node_ref = NodeRunRef(record_kind=K.NODE_RUN, record_id="local.n01")
+        attempt = Attempt(
+            schema_version=VERSION,
+            attempt_id="local.attempt",
+            execution_id=scope.execution_id,
+            owner=NodeAttemptOwner(owner_kind="node", node_run_ref=node_ref),
+            attempt_number=1,
+            status=AttemptStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+        )
+        node = NodeRun(
+            schema_version=VERSION,
+            node_run_id=node_ref.record_id,
+            execution_id=scope.execution_id,
+            node_id=NodeId.N01,
+            trace=scope.task.trace,
+            config_ref=scene.execution.policy_ref,
+            upstream_inputs=(artifact(K.TASK, scope.task.task_id, scope.task).pin,),
+            input_digest=scope.pins.bundle_digest,
+            status=NodeRunStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            attempt_history=(
+                AttemptLink(
+                    attempt_ref=AttemptRef(
+                        record_kind=K.ATTEMPT, record_id=attempt.attempt_id
+                    ),
+                    attempt_number=1,
+                ),
+            ),
+            output_refs=(),
+        )
+        branch = BranchKey(NodeId.N01)
+        claimed = ClaimedNode(
+            JobClaim(
+                scope.task.idempotency_scope,
+                scope.execution_id,
+                node.node_run_id,
+                "local.job",
+                1,
+                "local",
+                AT,
+            ),
+            attempt,
+            node,
+            branch,
+            opened,
+            BranchInputs(),
+            execution,
+            AT,
+        )
+&gt;       context = build_context(
+            claimed, invocation_envelope(opened, branch, node, attempt)
+        ).message
+
+tests/contract/test_wp05_decision_gate.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/jimu_runtime/inspection/perception/context.py:242: in build_context
+    fields = _fields(claimed, inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+src/jimu_runtime/inspection/perception/context.py:124: in _fields
+    region_data = _region_inputs(claimed)
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+claimed = ClaimedNode(claim=JobClaim(scope=IdempotencyScope(project_id='synthetic.nonmotor.parking', client_id='synthetic.edge')...tion_refs=()), deadline=datetime.datetime(2026, 1, 2, 0, 0, tzinfo=datetime.timezone.utc), authority=None, evidence=())
+
+    def _region_inputs(claimed: ClaimedNode) -&gt; dict[str, object]:
+        opened = claimed.opened
+        scope = opened.scope
+        region = scope.resolve(opened.region_ref, RegionDefinition)
+        if region != opened.region or region.geometry_ref is None:
+            raise ValueError("verified Region geometry is unavailable")
+        geometry = scope.resolve(region.geometry_ref, GeometryResourceDefinition)
+        source = scope.catalogue.resolve(geometry.provenance.source_asset_ref)
+        if (
+            not isinstance(source.value, StaticAssetDescriptor)
+            or source.asset_bytes is None
+        ):
+            raise ValueError("verified Region geometry asset is unavailable")
+&gt;       area = verify_parking_area(
+            region_ref=opened.region_ref,
+            region=region,
+            geometry_ref=region.geometry_ref,
+            geometry=geometry,
+            source=source.value,
+            source_bytes=source.asset_bytes,
+            coordinates=original_frame(scope),
+        )
+E       TypeError: verify_parking_area() missing 1 required keyword-only argument: 'catalogue'
+
+src/jimu_runtime/inspection/perception/context.py:67: TypeError</failure></testcase><testcase classname="tests.unit.test_wp05_guard" name="test_complete_guard_is_accepted_by_runtime_authority_and_coverage" time="1.836" /><testcase classname="tests.unit.test_wp05_guard" name="test_unavailable_required_inputs_produce_precise_reasons[staged-RequiredEvidenceReason.EVIDENCE_UNAVAILABLE]" time="0.066" /><testcase classname="tests.unit.test_wp05_guard" name="test_unavailable_required_inputs_produce_precise_reasons[unreadable-RequiredEvidenceReason.EVIDENCE_UNAVAILABLE]" time="0.065" /><testcase classname="tests.unit.test_wp05_guard" name="test_unavailable_required_inputs_produce_precise_reasons[bad_bytes-RequiredEvidenceReason.EVIDENCE_UNAVAILABLE]" time="0.064" /><testcase classname="tests.unit.test_wp05_guard" name="test_unavailable_required_inputs_produce_precise_reasons[no_row-RequiredEvidenceReason.EVIDENCE_UNAVAILABLE]" time="0.129" /><testcase classname="tests.unit.test_wp05_guard" name="test_unavailable_required_inputs_produce_precise_reasons[fact_unpinned-RequiredEvidenceReason.REQUIRED_FACT_UNAVAILABLE]" time="0.072" /><testcase classname="tests.unit.test_wp05_guard" name="test_unavailable_required_inputs_produce_precise_reasons[authority_unpinned-RequiredEvidenceReason.PRODUCER_AUTHORITY_UNRESOLVED]" time="0.066" /><testcase classname="tests.unit.test_wp05_guard" name="test_wrong_scope_and_unpinned_evidence_are_rejected" time="0.130" /><testcase classname="tests.unit.test_wp05_guard" name="test_rule_path_requires_exact_digest" time="0.067" /><testcase classname="tests.unit.test_wp05_guard" name="test_optional_nonknown_operand_does_not_block_guard" time="1.539" /><testcase classname="tests.unit.test_wp05_guard" name="test_forged_fact_with_actual_id_is_rejected" time="0.028" /><testcase classname="tests.unit.test_wp05_guard" name="test_only_selected_tool_output_evidence_satisfies_guard" time="1.746" /><testcase classname="tests.unit.test_wp05_guard" name="test_evidence_outside_read_budget_remains_unavailable" time="0.065" /><testcase classname="tests.unit.test_wp05_guard" name="test_original_requires_an_exact_n06_metadata_pin" time="0.121" /><testcase classname="tests.unit.test_wp05_guard" name="test_failed_read_cache_does_not_charge_later_rules" time="0.061" /><testcase classname="tests.unit.test_wp05_guard" name="test_geometry_masks_keep_selected_child_and_named_input_role" time="8.517"><failure message="TypeError: synthetic_cpu_implementations() got an unexpected keyword argument 'synthetic_image_digests'">runtime = Scenario(scope=SyntheticExecution(task=AcceptedTask(schema_version='1.0.0', task_id='task.031c033f570ab8256b43c754b664...ON: 'tool_execution'&gt;, record_id='synthetic.tool.e62c0b4ec36707c86d5464dffb262a3445b59ba4e697672a7418dc3290a82fcb')))))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-405/test_geometry_masks_keep_selec0')
+
+    def test_geometry_masks_keep_selected_child_and_named_input_role(runtime, tmp_path):
+        from jimu_runtime.bundle.semantic_inputs import require_definition
+        from jimu_runtime.domain.definition_enums import EvidenceType
+        from jimu_runtime.domain.policies import EvidencePolicyArtifact
+        from jimu_runtime.domain.runtime.tool_executions import ReturnedToolAttempt
+        from jimu_runtime.inspection.rules._guard_sources import EvidenceSources
+        from tests.fixtures.wp05.geometry import STEPS, GeometryFixture
+    
+&gt;       fixture = GeometryFixture(tmp_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/unit/test_wp05_guard.py:487: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;tests.fixtures.wp05.geometry.GeometryFixture object at 0x7df3d35cbb60&gt;
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-405/test_geometry_masks_keep_selec0')
+
+    def __init__(self, tmp_path):
+        scene = exercise_lifecycle(tmp_path)
+        self.resolved = scene.execution
+        self.task = scene.task
+        self.payload = (DIRECTORY / "assets" / "synthetic-frame.png").read_bytes()
+        self.coordinates = CoordinateSystem(
+            coordinate_system_id="geometry-fixture.original",
+            frame="original_image",
+            dimensions=ImageDimensions(width=64, height=48),
+        )
+        self.bbox = BBoxXYXY(xyxy=(40.0, 23.0, 52.0, 33.0))
+        at = datetime.now(UTC)
+        self.execution = ExecutionRecord(
+            schema_version=VERSION,
+            execution_id="geometry-fixture",
+            task_id=self.task.task_id,
+            pins=self.resolved.pins,
+            trace=self.task.trace,
+            status=ExecutionStatus.RUNNING,
+            created_at=at,
+            started_at=at,
+            model_invocation_refs=(),
+        )
+        self.media = MediaAsset(
+            schema_version=VERSION,
+            media_ref=self.task.media_ref,
+            storage=StorageReference(store_id="fixture", object_key="test/image.png"),
+            stage=self.finalized(at, self.task.media_ref.sha256),
+            color_space="RGB",
+            mime_type="image/png",
+            byte_size=len(self.payload),
+            dimensions=self.coordinates.dimensions,
+        )
+        catalog = self.resolved.catalogue
+        (profile_entry,) = catalog.of_kind(ArtifactKind.PROFILE)
+        self.profile = require_definition(catalog, profile_entry.ref, ProfileDefinition)
+        self.profile_ref = ProfileContentRef.model_validate(
+            profile_entry.ref.model_dump()
+        )
+        self.object = ObjectRecord(
+            schema_version=VERSION,
+            object_id="geometry-object",
+            execution_id=self.execution.execution_id,
+            profile_ref=self.profile_ref,
+            question_selection_ref=QuestionSelectionRef(
+                record_kind=K.QUESTION_SELECTION_RECORD, record_id="geometry-questions"
+            ),
+            effective_question_refs=self.profile.question_refs,
+            entity_ref=self.profile.entity_ref,
+            grounding_record_ref=GroundingRecordRef(
+                record_kind=K.GROUNDING_RECORD, record_id="geometry-grounding"
+            ),
+            source_media_ref=self.media.media_ref,
+            coordinate_system=self.coordinates,
+            bbox=self.bbox,
+            grounding_producer=ModelGroundingProvenance(
+                kind="model",
+                model_binding_ref=self.profile.grounding_binding.model_binding_ref,
+                model_invocation_ref=ModelInvocationRef(
+                    record_kind=K.MODEL_INVOCATION, record_id="geometry-grounding-model"
+                ),
+            ),
+            visibility="visible",
+            localization_status="localized",
+            evidence_refs=(),
+        )
+        (region_entry,) = catalog.of_kind(ArtifactKind.REGION)
+        self.region_ref = RegionContentRef.model_validate(region_entry.ref.model_dump())
+        self.region = region = require_definition(
+            catalog, self.region_ref, RegionDefinition
+        )
+        self.region_geometry = geometry = require_definition(
+            catalog, region.geometry_ref, GeometryResourceDefinition
+        )
+        self.region_source = source = require_definition(
+            catalog, geometry.provenance.source_asset_ref, StaticAssetDescriptor
+        )
+        self.region_bytes = self.resolved.files.payloads[source.data_path]
+        self.parking_area = self.verify_region(self.region_bytes)
+        self.tools = {
+            pin.tool_ref.artifact_id: require_definition(
+                catalog, pin.tool_ref, ToolDefinition
+            )
+            for pin in self.resolved.pins.tool_pins
+        }
+        self.proofs = {
+            tool.implementation_requirement.capability_id: TrustPin(
+                identity=tool.implementation_requirement.capability_id,
+                version=VERSION,
+                sha256=sha256(CPU_ARTIFACT.read_bytes()).hexdigest(),
+            )
+            for tool in self.tools.values()
+        }
+        resources = ResourceAdmission.provision(
+            tmp_path / "geometry-resources.sqlite3",
+            HostInventory(
+                "wp05-geometry",
+                lease_ttl_ms=8000,
+                cpu_slots=1,
+                scopes=(ResourceScope("wp05-synthetic", "cpu", 1),),
+            ),
+        )
+        self.executor = ToolExecutor(
+            ToolWorkerRegistry(
+&gt;               synthetic_cpu_implementations(
+                    resources,
+                    "wp05-synthetic",
+                    "wp05-geometry",
+                    tuple(self.tools.values()),
+                    self.proofs,
+                    synthetic_image_digests=frozenset({self.media.media_ref.sha256}),
+                )
+            )
+        )
+E       TypeError: synthetic_cpu_implementations() got an unexpected keyword argument 'synthetic_image_digests'
+
+tests/fixtures/wp05/geometry.py:195: TypeError</failure></testcase><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[eq-0-0-True]" time="0.014" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[eq-0-1-False]" time="0.014" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[ne-1-0-True]" time="0.014" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[ne-0-0-False]" time="0.014" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[lt-0-1-True]" time="0.013" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[lt-0-0-False]" time="0.016" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[le-0-0-True]" time="0.014" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[le-1-0-False]" time="0.014" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[gt-1-0-True]" time="0.013" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[gt-0-0-False]" time="0.013" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[ge-0-0-True]" time="0.014" /><testcase classname="tests.unit.test_wp05_predicates" name="test_all_comparison_operators[ge-0-1-False]" time="0.014" /><testcase classname="tests.unit.test_wp05_predicates" name="test_strong_kleene_and_or_keep_all_diagnostics[arguments0-RuleTruth.TRUE-RuleTruth.TRUE]" time="0.033" /><testcase classname="tests.unit.test_wp05_predicates" name="test_strong_kleene_and_or_keep_all_diagnostics[arguments1-RuleTruth.FALSE-RuleTruth.TRUE]" time="0.032" /><testcase classname="tests.unit.test_wp05_predicates" name="test_strong_kleene_and_or_keep_all_diagnostics[arguments2-RuleTruth.UNKNOWN-RuleTruth.TRUE]" time="0.040" /><testcase classname="tests.unit.test_wp05_predicates" name="test_strong_kleene_and_or_keep_all_diagnostics[arguments3-RuleTruth.FALSE-RuleTruth.TRUE]" time="0.035" /><testcase classname="tests.unit.test_wp05_predicates" name="test_strong_kleene_and_or_keep_all_diagnostics[arguments4-RuleTruth.FALSE-RuleTruth.FALSE]" time="0.034" /><testcase classname="tests.unit.test_wp05_predicates" name="test_strong_kleene_and_or_keep_all_diagnostics[arguments5-RuleTruth.FALSE-RuleTruth.UNKNOWN]" time="0.089" /><testcase classname="tests.unit.test_wp05_predicates" name="test_strong_kleene_and_or_keep_all_diagnostics[arguments6-RuleTruth.UNKNOWN-RuleTruth.TRUE]" time="0.036" /><testcase classname="tests.unit.test_wp05_predicates" name="test_strong_kleene_and_or_keep_all_diagnostics[arguments7-RuleTruth.FALSE-RuleTruth.UNKNOWN]" time="0.036" /><testcase classname="tests.unit.test_wp05_predicates" name="test_strong_kleene_and_or_keep_all_diagnostics[arguments8-RuleTruth.UNKNOWN-RuleTruth.UNKNOWN]" time="0.039" /><testcase classname="tests.unit.test_wp05_predicates" name="test_not[RuleTruth.TRUE-RuleTruth.FALSE]" time="0.014" /><testcase classname="tests.unit.test_wp05_predicates" name="test_not[RuleTruth.FALSE-RuleTruth.TRUE]" time="0.013" /><testcase classname="tests.unit.test_wp05_predicates" name="test_not[RuleTruth.UNKNOWN-RuleTruth.UNKNOWN]" time="0.019" /><testcase classname="tests.unit.test_wp05_predicates" name="test_non_known_fact_preserves_status_and_reason_even_if_truth_is_decisive[unknown]" time="0.024" /><testcase classname="tests.unit.test_wp05_predicates" name="test_non_known_fact_preserves_status_and_reason_even_if_truth_is_decisive[error]" time="0.024" /><testcase classname="tests.unit.test_wp05_predicates" name="test_non_known_fact_preserves_status_and_reason_even_if_truth_is_decisive[not_applicable]" time="0.025" /><testcase classname="tests.unit.test_wp05_predicates" name="test_non_known_fact_preserves_status_and_reason_even_if_truth_is_decisive[not_evaluated]" time="0.025" /><testcase classname="tests.unit.test_wp05_predicates" name="test_optional_nested_record_field_and_zero_unit_preserve_meaning" time="0.031" /><testcase classname="tests.unit.test_wp05_predicates" name="test_enum_membership_with_pinned_schema_and_prepared_reuse_across_objects" time="0.029" /><testcase classname="tests.unit.test_wp05_predicates" name="test_applicability_context_bound_to_exact_selector_and_value_type" time="0.035" /><testcase classname="tests.unit.test_wp05_predicates" name="test_tool_condition_reads_pinned_local_ancestor[tool_step_guard]" time="0.026" /><testcase classname="tests.unit.test_wp05_predicates" name="test_tool_condition_reads_pinned_local_ancestor[producer_activation]" time="0.029" /><testcase classname="tests.unit.test_wp05_predicates" name="test_tool_guard_bare_true_is_explicit" time="0.009" /><testcase classname="tests.unit.test_wp05_predicates" name="test_execution_system_fact_is_used_without_an_object" time="0.022" /><testcase classname="tests.unit.test_c_node_relations" name="test_context_resolves_the_verifiable_n01_pins" time="0.002" /><testcase classname="tests.unit.test_c_node_relations" name="test_eligible_discovery_selection_passthrough_and_tool_grounding" time="0.005" /><testcase classname="tests.unit.test_c_node_relations" name="test_empty_eligibility_and_actual_no_hits_are_distinct" time="0.002" /><testcase classname="tests.unit.test_c_node_relations" name="test_grounding_distinguishes_no_target_failed_and_partial" time="0.002" /><testcase classname="tests.unit.test_c_node_relations" name="test_joint_observation_accepts_independent_sibling_error_and_projects_authority_input" time="0.003" /><testcase classname="tests.unit.test_c_node_relations" name="test_n05_checks_the_pinned_plan_without_any_n06_record" time="0.002" /><testcase classname="tests.unit.test_c_node_relations" name="test_n06_failed_advisory_call_does_not_remove_a_mandatory_evaluation" time="0.003" /><testcase classname="tests.unit.test_c_node_relations" name="test_n04_whole_batch_retry_preserves_questions_and_uses_new_identifiers" time="0.002" /><testcase classname="tests.unit.test_c_node_relations" name="test_n05_resolves_actual_tool_plan_step_audit" time="0.002" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options0-complete-violation]" time="0.018" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options1-complete-no_violation]" time="0.018" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options2-complete-no_violation]" time="0.019" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options3-partial-uncertain]" time="0.018" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options4-partial-uncertain]" time="0.018" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options5-none-uncertain]" time="0.016" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options6-not_applicable-not_applicable]" time="0.016" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options7-partial-uncertain]" time="0.018" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options8-partial-uncertain]" time="0.017" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options9-complete-not_applicable]" time="0.018" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options10-complete-not_applicable]" time="0.018" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options11-none-uncertain]" time="0.016" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options12-none-uncertain]" time="0.016" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options13-none-uncertain]" time="0.017" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options14-none-uncertain]" time="0.017" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options15-partial-violation]" time="0.018" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_supplied_records_agree[options16-partial-violation]" time="0.018" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_upstream_context_failure_has_no_gate_or_n06" time="0.005" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_collect_all_keeps_two_rules_with_one_shared_category" time="0.026" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_match_survives_remaining_mandatory_blocker" time="0.027" /><testcase classname="tests.unit.test_c_decision_coverage" name="test_consumed_optional_fact_uses_explicit_selected_operand_proof" time="0.019" /><testcase classname="tests.negative.test_c_node_invalid" name="test_pre_invocation_skip_prohibits_a_fabricated_attempt_and_empty_no_hits" time="0.003" /><testcase classname="tests.negative.test_c_node_invalid" name="test_no_hits_and_hits_only_cover_eligible_profiles" time="0.002" /><testcase classname="tests.negative.test_c_node_invalid" name="test_profile_hits_cannot_carry_grounding_decision_or_gate_data[extra0]" time="0.001" /><testcase classname="tests.negative.test_c_node_invalid" name="test_profile_hits_cannot_carry_grounding_decision_or_gate_data[extra1]" time="0.001" /><testcase classname="tests.negative.test_c_node_invalid" name="test_profile_hits_cannot_carry_grounding_decision_or_gate_data[extra2]" time="0.001" /><testcase classname="tests.negative.test_c_node_invalid" name="test_profile_hits_cannot_carry_grounding_decision_or_gate_data[extra3]" time="0.001" /><testcase classname="tests.negative.test_c_node_invalid" name="test_n01_failure_cannot_invent_snapshot_and_duration_must_match_timing" time="0.005" /><testcase classname="tests.negative.test_c_node_invalid" name="test_grounding_cannot_reselect_questions_or_move_object_to_derived_frame" time="0.002" /><testcase classname="tests.negative.test_c_node_invalid" name="test_grounding_never_equates_failure_with_no_target" time="0.002" /><testcase classname="tests.negative.test_c_node_invalid" name="test_batch_rejects_duplicate_missing_and_parse_failure_fact_results" time="0.002" /><testcase classname="tests.negative.test_c_node_invalid" name="test_joint_attempt_rejects_an_additional_call_or_facts_from_another_attempt" time="0.003" /><testcase classname="tests.negative.test_c_node_invalid" name="test_n05_prohibits_candidate_and_n06_requires_configured_mandatory_paths" time="0.002" /><testcase classname="tests.negative.test_c_node_invalid" name="test_n06_rejects_a_selected_rule_evaluation_from_a_different_object" time="0.003" /><testcase classname="tests.negative.test_c_node_invalid" name="test_generic_envelopes_cannot_bypass_node_boundaries" time="0.005" /><testcase classname="tests.negative.test_c_node_invalid" name="test_n05_rejects_n03_grounding_tool_audit_even_for_the_same_tool_reference" time="0.002" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_unknown_cannot_become_complete_false_decision" time="0.020" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_blocked_guard_cannot_establish_false" time="0.019" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_stale_authoritative_revision_cannot_be_selected_by_attempt_order" time="0.019" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_crossprofile_fact_cannot_support_a_rule" time="0.019" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_unselected_rule_applicability_revision_is_rejected" time="0.018" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_collect_all_must_keep_every_valid_match" time="0.011" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_candidate_categories_do_not_remove_mandatory_scope" time="0.019" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_empty_object_cannot_establish_complete_negative[options0]" time="0.002" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_empty_object_cannot_establish_complete_negative[options1]" time="0.001" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_empty_object_cannot_establish_complete_negative[options2]" time="0.001" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_descendant_must_cite_its_decisive_ancestor_obligation" time="0.017" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_coverage_cannot_drop_valid_subset_match" time="0.018" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_optional_fact_must_match_declared_selector_and_authority[no_proof-Fact refs must exactly match]" time="0.012" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_optional_fact_must_match_declared_selector_and_authority[undeclared-not a declared optional selector]" time="0.020" /><testcase classname="tests.negative.test_c_decision_coverage_invalid" name="test_optional_fact_must_match_declared_selector_and_authority[unselected-unselected authoritative selection revision]" time="0.019" /><testcase classname="tests.contract.test_dependency_boundaries" name="test_runtime_layers_have_a_pure_domain_and_an_acyclic_import_graph" time="0.680" /><testcase classname="tests.contract.test_dependency_boundaries" name="test_only_approved_runtime_dependencies_declared" time="0.006" /><testcase classname="tests.contract.test_wp03_engine_records" name="test_persisted_draft_round_trips_before_shared_coverage_binding" time="0.006" /><testcase classname="tests.contract.test_wp03_engine_records" name="test_invalid_or_unpinned_draft_rejected[scope]" time="0.002" /><testcase classname="tests.contract.test_wp03_engine_records" name="test_invalid_or_unpinned_draft_rejected[extra]" time="0.002" /><testcase classname="tests.contract.test_wp03_engine_records" name="test_invalid_or_unpinned_draft_rejected[output]" time="0.002" /><testcase classname="tests.contract.test_wp03_engine_records" name="test_invalid_or_unpinned_draft_rejected[schema]" time="0.003" /><testcase classname="tests.contract.test_wp03_engine_records" name="test_invalid_or_unpinned_draft_rejected[candidate]" time="0.002" /><testcase classname="tests.contract.test_wp03_engine_records" name="test_finalization_round_trips_selected_ancestor_projections" time="0.054" /></testsuite></testsuites>

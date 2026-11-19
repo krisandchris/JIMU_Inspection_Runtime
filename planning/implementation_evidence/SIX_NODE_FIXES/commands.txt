@@ -1,0 +1,12 @@
+uv sync --frozen --offline
+# Worktree and test snapshot use the same locked source; use a separate locked interpreter for the CLI read-only suite.
+python -m pytest -p no:cacheprovider --collect-only -q tests examples/nonmotor_vehicle_illegal_parking/compilable
+# For each of six disjoint module lists in final-suites/shard-{0..5}.txt:
+mapfile -t modules < "$module_list"
+PYTHONDONTWRITEBYTECODE=1 python -m pytest -p no:cacheprovider -q --tb=short --junitxml="$xml" "${modules[@]}"
+PYTHONDONTWRITEBYTECODE=1 python -m pytest -p no:cacheprovider -q tests/unit/test_b_schema_export.py
+JIMU_RUN_COMPOSE_TEST=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest -p no:cacheprovider -q tests/contract/test_wp07_compose_local.py
+ruff check --no-cache src tests scripts examples ops
+ruff format --check --no-cache src tests scripts examples ops
+MYPYPATH=src:ops/compose mypy --explicit-package-bases --strict src/jimu_runtime scripts/generate_schemas.py ops/compose/*.py ops/recovery
+python scripts/generate_schemas.py --check

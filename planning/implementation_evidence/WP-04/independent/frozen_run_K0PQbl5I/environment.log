@@ -1,0 +1,7 @@
+2026-11-18T05:04:39Z
+uv run --locked --offline python -c import\ importlib.metadata\ as\ m\,\ platform\,\ sys\;\ print\(platform.platform\(\)\)\;\ print\(sys.version\)\;\ print\(\{name:m.version\(name\)\ for\ name\ in\ \(\"pydantic\"\,\"rfc8785\"\,\"jsonschema\"\,\"sqlalchemy\"\,\"psycopg\"\,\"psycopg-binary\"\,\"httpx\"\,\"httpcore\"\,\"pytest\"\,\"ruff\"\,\"mypy\"\)\}\) 
+Linux-6.8.0-149-generic-x86_64-with-glibc2.39
+3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]
+{'pydantic': '2.12.5', 'rfc8785': '0.1.4', 'jsonschema': '4.25.1', 'sqlalchemy': '2.0.52', 'psycopg': '3.3.5', 'psycopg-binary': '3.3.5', 'httpx': '0.28.1', 'httpcore': '1.0.9', 'pytest': '8.4.2', 'ruff': '0.14.14', 'mypy': '1.18.2'}
+2026-11-18T05:04:39Z
+exit=0

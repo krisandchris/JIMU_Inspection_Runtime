@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "region_id": "synthetic_nonmotor_parking",
+  "name": "Synthetic rectangular parking area",
+  "region_type": {
+    "vocabulary_ref": {
+      "$pin": [
+        "vocabulary",
+        "region-type",
+        "1.0.0"
+      ]
+    },
+    "member": "parking_area"
+  },
+  "scene_type": {
+    "vocabulary_ref": {
+      "$pin": [
+        "vocabulary",
+        "scene-type",
+        "1.0.0"
+      ]
+    },
+    "member": "synthetic_parking"
+  },
+  "asset_refs": [
+    {
+      "$pin": [
+        "static_asset",
+        "synthetic-parking-area-source",
+        "1.0.0"
+      ]
+    }
+  ],
+  "context_schema_ref": {
+    "$pin": [
+      "context_schema",
+      "parking-context",
+      "1.0.0"
+    ]
+  },
+  "geometry_ref": {
+    "$pin": [
+      "geometry_resource",
+      "synthetic-parking-area",
+      "1.0.0"
+    ]
+  }
+}

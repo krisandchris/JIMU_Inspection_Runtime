@@ -1,0 +1,19 @@
+{"actual_posts": 1, "attempts": {"1": ["acknowledged", null]}, "check": "revocation", "journal_rows": [["dispatch.622df7973e8b48a98cef5d1795f58e37", "operation.model.dd8ee25ad1311dc39d2fea70370ffaf1dc61d48688e47f8a7b82cddd8938d533", "acknowledged"]], "registry_calls": 4}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/independent/probe_bridge.py", line 287, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/independent/probe_bridge.py", line 280, in main
+    await exercise(app, Path(root), label)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/independent/probe_bridge.py", line 263, in exercise
+    assert observations[2][0] in {"rejected", "not_dispatched"}
+           ~~~~~~~~~~~~^^^
+KeyError: 2

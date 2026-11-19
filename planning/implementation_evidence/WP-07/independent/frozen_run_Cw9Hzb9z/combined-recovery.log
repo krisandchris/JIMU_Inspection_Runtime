@@ -1,0 +1,33 @@
+2026-11-18T11:17:53Z
+env PYTHONPATH=/tmp/jimu-wp07-acceptance-6p8ow1sk/product:/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent:/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-06/independent /tmp/jimu-wp07-acceptance-6p8ow1sk/wheel-env/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/../recovery/combined_recovery_probe.py /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/frozen_run_Cw9Hzb9z/combined 
+{"check": "worker_process_ready", "pid": 465002, "runtime_install": "/tmp/jimu-wp07-acceptance-6p8ow1sk/wheel-env/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 465002, "signal": null}
+{"check": "artifact_replay", "concurrent_same_key": true, "elapsed_ms": 532, "historical_dispatches": 7, "physical_cpu": 0, "physical_http": 0, "runs": 2, "source_equal": true}
+{"check": "worker_process_ready", "pid": 467139, "runtime_install": "/tmp/jimu-wp07-acceptance-6p8ow1sk/wheel-env/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 467139, "signal": null}
+{"check": "inference_replay", "cpu": 3, "current_bundle": "0678d11ba393fff1d09c816be6d93e9233cb7141449de7778cb061f855614dfd", "elapsed_ms": 13908, "http": {"candidate": 1, "discovery": 1, "grounding": 1, "observation": 1}, "pinned_bundle": "b1f82d065512717eee16eabb3a4368221d1ef140a036e55b9bc99209b8de0cf5", "source_equal": true, "target_execution": "execution.replay.8356890692104e3abfb29a32022c2248"}
+{"check": "worker_process_ready", "pid": 468605, "runtime_install": "/tmp/jimu-wp07-acceptance-6p8ow1sk/wheel-env/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 468605, "signal": "SIGKILL"}
+{"acknowledged": 0, "attempt": "1ab8f45409eb42039b16f3c8f634a5b4", "check": "process_death_at_unacknowledged_dispatch", "dispatch": "dispatch.8bc9b231fc734c0baffa06b8572a364e", "execution": "execution.replay.8cc600c4e1564285bdd5629d03d5f886", "fence": 1, "observed_http": 1, "owner": "wp07.interrupted", "request_sha256": "1d6dbadb05460e7f0426cf17a356f42ee776da0f2be8c930e31b2d6a68e9bcc4"}
+{"check": "physical_transport_reaped", "dispatch": "dispatch.8bc9b231fc734c0baffa06b8572a364e", "lease": "135a813144ff41af9916ccef42d3b654"}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/../recovery/combined_recovery_probe.py", line 744, in <module>
+    asyncio.run(main(Path(sys.argv[1]).resolve()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/../recovery/combined_recovery_probe.py", line 740, in main
+    await drill(source, fresh, Path(path), output, provider, frame)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/../recovery/combined_recovery_probe.py", line 529, in drill
+    assert_forgery_rejections(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/../recovery/combined_recovery_probe.py", line 327, in assert_forgery_rejections
+    verify_media(connection, names, evidence)
+TypeError: verify_media() missing 1 required positional argument: 'bundle_db'
+2026-11-18T11:18:49Z
+exit=1

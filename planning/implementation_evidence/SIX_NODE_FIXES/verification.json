@@ -1,0 +1,101 @@
+{
+  "baseline_commit": "2552affeb69fbc2594fe70724f895b0db0967d47",
+  "baseline_wp07_zip_sha256": "a458149665893542f29b71e48e9d4d4fbf6c9025f231a86c557a4bc59c14d1c9",
+  "product_manifest_sha256": "bf40cea2d52a07559cb7756953309ab870c8b637f2ae4e5f1dc05d3dcb22441f",
+  "changed_product_paths": 72,
+  "environment": {
+    "python": "3.12.3",
+    "uv": "0.9.15",
+    "dependencies": {
+      "pydantic": "2.12.5",
+      "jsonschema": "4.25.1",
+      "SQLAlchemy": "2.0.52",
+      "psycopg": "3.3.5",
+      "pytest": "8.4.2",
+      "ruff": "0.14.14",
+      "mypy": "1.18.2",
+      "Pillow": "12.3.0",
+      "fastapi": "0.141.1"
+    },
+    "uv_lock_sha256": "9891b88578fb59e8f45070523df7c037fe18bcc7cc23fb03e884900d5537e908",
+    "database": "disposable PostgreSQL 16",
+    "inference": "synthetic provider over loopback HTTP",
+    "geometry": "local CPU"
+  },
+  "test_acceptance": "TEST_PASSED",
+  "unique_tests_collected": 4026,
+  "unique_tests_passed": 4026,
+  "skips": 0,
+  "suites": {
+    "compose": {
+      "counts": {
+        "passed": 2
+      },
+      "exit_code": 0,
+      "seconds": 173.506
+    },
+    "schema-cli": {
+      "counts": {
+        "passed": 28
+      },
+      "exit_code": 0,
+      "seconds": 237.823
+    },
+    "shard-0": {
+      "counts": {
+        "passed": 636
+      },
+      "exit_code": 0,
+      "seconds": 175.892
+    },
+    "shard-1": {
+      "counts": {
+        "passed": 522
+      },
+      "exit_code": 0,
+      "seconds": 390.21
+    },
+    "shard-2": {
+      "counts": {
+        "passed": 463
+      },
+      "exit_code": 0,
+      "seconds": 378.57
+    },
+    "shard-3": {
+      "counts": {
+        "passed": 1091
+      },
+      "exit_code": 0,
+      "seconds": 287.006
+    },
+    "shard-4": {
+      "counts": {
+        "passed": 627
+      },
+      "exit_code": 0,
+      "seconds": 485.362
+    },
+    "shard-5": {
+      "counts": {
+        "passed": 657
+      },
+      "exit_code": 0,
+      "seconds": 289.013
+    }
+  },
+  "product_ruff": "All checks passed!",
+  "product_format": "506 files already formatted",
+  "strict_mypy": "Success: no issues found in 229 source files",
+  "schema_export": "Schema export matches",
+  "historical_schema_files_verified": 347,
+  "active_index_entries_verified": 362,
+  "runtime_acceptance": {
+    "signed_bundle_postgresql_cpu_worker": "RUNTIME_VERIFIED",
+    "isolated_compose": "RUNTIME_VERIFIED",
+    "real_provider_gpu": "RUNTIME_NOT_RUN",
+    "production_migration": "RUNTIME_NOT_RUN"
+  },
+  "patch_sha256": "7cd649f9ea94c4869c3d27bc8208e5d08f447c03e06ad3c70ab974d0d61ac479",
+  "merge_rehearsal_product_tree": "a16b0ec21365158fa08ddb60e5f5b86aa0d43d90"
+}

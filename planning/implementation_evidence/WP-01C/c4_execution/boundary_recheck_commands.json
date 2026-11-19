@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/contract/test_dependency_boundaries.py",
+    "-q",
+    "-o",
+    "cache_dir=/tmp/jimu-c4-boundary-0jz0k0m8/cache",
+    "--basetemp=/tmp/jimu-c4-boundary-0jz0k0m8/pytest",
+    "--junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_execution/boundary_recheck_pytest.xml"
+  ],
+  "shell_display": "uv run --locked --no-sync python -m pytest tests/contract/test_dependency_boundaries.py -q -o cache_dir=/tmp/jimu-c4-boundary-0jz0k0m8/cache --basetemp=/tmp/jimu-c4-boundary-0jz0k0m8/pytest --junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_execution/boundary_recheck_pytest.xml",
+  "environment": {
+    "UV_CACHE_DIR": "/tmp/jimu-c4-boundary-0jz0k0m8/uv",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "started_at_utc": "2026-11-18T01:59:42.716389+00:00",
+  "ended_at_utc": "2026-11-18T01:59:43.151154+00:00",
+  "exit_code": 0,
+  "stdout": "..                                                                       [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_execution/boundary_recheck_pytest.xml -\n2 passed in 0.26s\n",
+  "stderr": ""
+}

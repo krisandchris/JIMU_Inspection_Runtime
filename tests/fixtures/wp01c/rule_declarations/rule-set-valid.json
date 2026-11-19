@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "rule_set_id": "synthetic-parking-rules",
+  "version": "1.0.0",
+  "rule_refs": [
+    {
+      "artifact_kind": "rule",
+      "artifact_id": "synthetic-parking-rule",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "applicability_policy_ref": {
+    "artifact_kind": "policy",
+    "artifact_id": "synthetic-applicability",
+    "version": "1.0.0",
+    "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "conflict_policy_ref": {
+    "artifact_kind": "policy",
+    "artifact_id": "synthetic-collect-all",
+    "version": "1.0.0",
+    "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "candidate_binding_ref": {
+    "artifact_kind": "model_binding",
+    "artifact_id": "synthetic-candidate-binding",
+    "version": "1.0.0",
+    "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+}

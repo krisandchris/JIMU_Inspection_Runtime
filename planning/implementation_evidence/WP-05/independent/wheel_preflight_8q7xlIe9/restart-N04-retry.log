@@ -1,0 +1,14 @@
+2026-11-18T06:02:10Z
++ PYTHONPATH=/tmp/jimu-wp05-wheel-O7NQXKLP/snapshot/product
++ WP05_PROBE_DIAGNOSTICS=1
++ /tmp/jimu-wp05-wheel-O7NQXKLP/venv/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py --installed --trace-dir /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_8q7xlIe9/restart-N04-retry-exec --restart-at N04_RETRY whole_batch_retry
+usage: run_cases.py [-h] [--installed] [--trace-dir TRACE_DIR]
+                    [--restart-at {N01,N04,N05}]
+                    [cases ...]
+run_cases.py: error: argument --restart-at: invalid choice: 'N04_RETRY' (choose from 'N01', 'N04', 'N05')
++ result=2
++ date -u +%FT%TZ
+2026-11-18T06:02:12Z
++ printf 'exit=%s\n' 2
+exit=2
++ exit 2

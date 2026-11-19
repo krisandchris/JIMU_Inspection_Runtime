@@ -1,0 +1,5 @@
+{"check": "cpu_supervisor_kill_reconcile_and_reopen", "supervisor_signal": -9, "old_worker_pid": 3253500, "old_detached_descendant_pid": 3253501, "capacity_reused_after_both_exit": true, "old_token_release": false, "new_worker_response": "drained"}
+{"check": "cpu_deadline_and_reclaim", "recovered": true}
+{"check": "guardian_stop_then_verified_reap", "guardian_pid": 3253510, "detached_worker_pid": 3253512, "admission_during_unverified_tree": "denied", "admission_after_observed_exit": "restored_with_receipt"}
+{"check": "guardian_kill_fails_closed", "guardian_pid": 3253530, "detached_worker_pid": 3253532, "admission_during_unverified_tree": "denied", "admission_after_observed_exit": "denied_without_receipt"}
+{"check": "expired_before_executor_start", "worker_started": false, "reservation_removed_before_executor_resumed": true}

@@ -1,0 +1,1283 @@
+{
+  "$defs": {
+    "AbsentOptional_Description_": {
+      "$ref": "#/$defs/Description"
+    },
+    "AbsentOptional_SelectionCallPolicy_": {
+      "$ref": "#/$defs/SelectionCallPolicy"
+    },
+    "AdditionalSelectionCallPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "additional_resource_requirements_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "max_additional_invocations_per_execution": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "mode": {
+          "const": "explicit_additional",
+          "title": "Mode",
+          "type": "string"
+        },
+        "proposal_binding_ref": {
+          "$ref": "#/$defs/ModelBindingContentRef"
+        }
+      },
+      "required": [
+        "mode",
+        "proposal_binding_ref",
+        "additional_resource_requirements_ref",
+        "max_additional_invocations_per_execution"
+      ],
+      "title": "AdditionalSelectionCallPolicy",
+      "type": "object"
+    },
+    "AllDeclaredSelectionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "configured_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs",
+          "minLength": 1
+        },
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "discovery_model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "excluded_question_reasons": {
+          "items": {
+            "$ref": "#/$defs/ExcludedQuestionReason"
+          },
+          "maxItems": 1024,
+          "title": "Excluded Question Reasons",
+          "type": "array"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "fallback_applied": {
+          "const": false,
+          "title": "Fallback Applied",
+          "type": "boolean"
+        },
+        "mandatory_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "method": {
+          "const": "all_declared",
+          "title": "Method",
+          "type": "string"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "proposed_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selected_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "selection_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "validation_issues": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Validation Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "selection_id",
+        "execution_id",
+        "profile_ref",
+        "policy_ref",
+        "configured_question_refs",
+        "mandatory_question_refs",
+        "proposed_optional_question_refs",
+        "selected_optional_question_refs",
+        "effective_question_refs",
+        "excluded_question_reasons",
+        "context_snapshot_ref",
+        "context_snapshot_digest",
+        "node_run_id",
+        "attempt_id",
+        "discovery_model_invocation_ref",
+        "validation_issues",
+        "created_at",
+        "method",
+        "fallback_applied"
+      ],
+      "title": "AllDeclaredSelectionRecord",
+      "type": "object"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "entity",
+        "region",
+        "profile",
+        "facet",
+        "question",
+        "tool",
+        "tool_plan",
+        "rule",
+        "rule_set",
+        "model_binding",
+        "fact_schema",
+        "prompt_template",
+        "response_schema",
+        "attribute_schema",
+        "context_schema",
+        "tool_input_schema",
+        "tool_output_schema",
+        "object_schema",
+        "decision_schema",
+        "value_schema",
+        "policy",
+        "vocabulary",
+        "geometry_resource",
+        "static_asset",
+        "fact_producer_catalog"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "AttemptRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "attempt",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "AttemptRef",
+      "type": "object"
+    },
+    "ContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ContentRef",
+      "type": "object"
+    },
+    "ContextRuleSelectionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "configured_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs",
+          "minLength": 1
+        },
+        "context_selection_rules": {
+          "items": {
+            "$ref": "#/$defs/ContextSelectionRule"
+          },
+          "maxItems": 1024,
+          "title": "Context Selection Rules",
+          "type": "array"
+        },
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "discovery_model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "excluded_question_reasons": {
+          "items": {
+            "$ref": "#/$defs/ExcludedQuestionReason"
+          },
+          "maxItems": 1024,
+          "title": "Excluded Question Reasons",
+          "type": "array"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "fallback_applied": {
+          "const": false,
+          "title": "Fallback Applied",
+          "type": "boolean"
+        },
+        "mandatory_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "method": {
+          "const": "context_rules",
+          "title": "Method",
+          "type": "string"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "proposed_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selected_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "selection_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "validation_issues": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Validation Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "selection_id",
+        "execution_id",
+        "profile_ref",
+        "policy_ref",
+        "configured_question_refs",
+        "mandatory_question_refs",
+        "proposed_optional_question_refs",
+        "selected_optional_question_refs",
+        "effective_question_refs",
+        "excluded_question_reasons",
+        "context_snapshot_ref",
+        "context_snapshot_digest",
+        "node_run_id",
+        "attempt_id",
+        "discovery_model_invocation_ref",
+        "validation_issues",
+        "created_at",
+        "method",
+        "fallback_applied",
+        "context_selection_rules"
+      ],
+      "title": "ContextRuleSelectionRecord",
+      "type": "object"
+    },
+    "ContextSelectionRule": {
+      "additionalProperties": false,
+      "properties": {
+        "applicability_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "question_ref": {
+          "$ref": "#/$defs/QuestionContentRef"
+        }
+      },
+      "required": [
+        "question_ref",
+        "applicability_policy_ref"
+      ],
+      "title": "ContextSelectionRule",
+      "type": "object"
+    },
+    "ContextSnapshotRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "context_snapshot",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ContextSnapshotRef",
+      "type": "object"
+    },
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "DispatchedSelectionFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs",
+          "minLength": 1
+        },
+        "dispatched": {
+          "const": true,
+          "title": "Dispatched",
+          "type": "boolean"
+        },
+        "fallback_reason": {
+          "enum": [
+            "invalid_proposal",
+            "selection_transport_failure"
+          ],
+          "title": "Fallback Reason",
+          "type": "string"
+        },
+        "trigger_attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        },
+        "trigger_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "triggered_method": {
+          "const": "model_advisory",
+          "title": "Triggered Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "triggered_method",
+        "trigger_attempt_ref",
+        "fallback_reason",
+        "diagnostic_refs",
+        "dispatched",
+        "trigger_invocation_ref"
+      ],
+      "title": "DispatchedSelectionFailure",
+      "type": "object"
+    },
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "evidence",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "EvidenceRefs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "ExcludedQuestionReason": {
+      "additionalProperties": false,
+      "properties": {
+        "question_ref": {
+          "$ref": "#/$defs/QuestionContentRef"
+        },
+        "reason_code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "reported_reason": {
+          "$ref": "#/$defs/AbsentOptional_Description_"
+        }
+      },
+      "required": [
+        "question_ref",
+        "reason_code"
+      ],
+      "title": "ExcludedQuestionReason",
+      "type": "object"
+    },
+    "FallbackSelectionEvidence": {
+      "discriminator": {
+        "mapping": {
+          "False": "#/$defs/UndispatchedSelectionFailure",
+          "True": "#/$defs/DispatchedSelectionFailure"
+        },
+        "propertyName": "dispatched"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UndispatchedSelectionFailure"
+        },
+        {
+          "$ref": "#/$defs/DispatchedSelectionFailure"
+        }
+      ]
+    },
+    "FallbackSelectionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "configured_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs",
+          "minLength": 1
+        },
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "discovery_model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "excluded_question_reasons": {
+          "items": {
+            "$ref": "#/$defs/ExcludedQuestionReason"
+          },
+          "maxItems": 1024,
+          "title": "Excluded Question Reasons",
+          "type": "array"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "fallback_action": {
+          "enum": [
+            "include_all_optional",
+            "block_profile"
+          ],
+          "title": "Fallback Action",
+          "type": "string"
+        },
+        "fallback_applied": {
+          "const": true,
+          "title": "Fallback Applied",
+          "type": "boolean"
+        },
+        "fallback_evidence": {
+          "$ref": "#/$defs/FallbackSelectionEvidence"
+        },
+        "mandatory_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "method": {
+          "const": "fallback",
+          "title": "Method",
+          "type": "string"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "proposed_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selected_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "selection_call_policy": {
+          "$ref": "#/$defs/AbsentOptional_SelectionCallPolicy_"
+        },
+        "selection_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "validation_issues": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Validation Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "selection_id",
+        "execution_id",
+        "profile_ref",
+        "policy_ref",
+        "configured_question_refs",
+        "mandatory_question_refs",
+        "proposed_optional_question_refs",
+        "selected_optional_question_refs",
+        "effective_question_refs",
+        "excluded_question_reasons",
+        "context_snapshot_ref",
+        "context_snapshot_digest",
+        "node_run_id",
+        "attempt_id",
+        "discovery_model_invocation_ref",
+        "validation_issues",
+        "created_at",
+        "method",
+        "fallback_applied",
+        "fallback_action",
+        "fallback_evidence"
+      ],
+      "title": "FallbackSelectionRecord",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "IssueIndex": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "IssuePath": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/FieldName"
+          },
+          {
+            "$ref": "#/$defs/IssueIndex"
+          }
+        ]
+      },
+      "maxItems": 32,
+      "type": "array"
+    },
+    "ModelAdvisorySelectionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "configured_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs",
+          "minLength": 1
+        },
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "discovery_model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "excluded_question_reasons": {
+          "items": {
+            "$ref": "#/$defs/ExcludedQuestionReason"
+          },
+          "maxItems": 1024,
+          "title": "Excluded Question Reasons",
+          "type": "array"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "fallback_applied": {
+          "const": false,
+          "title": "Fallback Applied",
+          "type": "boolean"
+        },
+        "mandatory_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "method": {
+          "const": "model_advisory",
+          "title": "Method",
+          "type": "string"
+        },
+        "model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "proposed_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selected_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "selection_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "selection_invocation_mode": {
+          "$ref": "#/$defs/SelectionInvocationMode"
+        },
+        "validation_issues": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Validation Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "selection_id",
+        "execution_id",
+        "profile_ref",
+        "policy_ref",
+        "configured_question_refs",
+        "mandatory_question_refs",
+        "proposed_optional_question_refs",
+        "selected_optional_question_refs",
+        "effective_question_refs",
+        "excluded_question_reasons",
+        "context_snapshot_ref",
+        "context_snapshot_digest",
+        "node_run_id",
+        "attempt_id",
+        "discovery_model_invocation_ref",
+        "validation_issues",
+        "created_at",
+        "method",
+        "fallback_applied",
+        "selection_invocation_mode",
+        "model_invocation_ref"
+      ],
+      "title": "ModelAdvisorySelectionRecord",
+      "type": "object"
+    },
+    "ModelBindingContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "model_binding",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ModelBindingContentRef",
+      "type": "object"
+    },
+    "ModelInvocationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "model_invocation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ModelInvocationRef",
+      "type": "object"
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "PositiveBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "QuestionContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "question",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "QuestionContentRef",
+      "type": "object"
+    },
+    "QuestionSelectionRefs": {
+      "items": {
+        "$ref": "#/$defs/QuestionContentRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "SelectionCallPolicy": {
+      "discriminator": {
+        "mapping": {
+          "explicit_additional": "#/$defs/AdditionalSelectionCallPolicy",
+          "shared_n02": "#/$defs/SharedN02SelectionCallPolicy"
+        },
+        "propertyName": "mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SharedN02SelectionCallPolicy"
+        },
+        {
+          "$ref": "#/$defs/AdditionalSelectionCallPolicy"
+        }
+      ]
+    },
+    "SelectionInvocationMode": {
+      "enum": [
+        "shared_n02",
+        "explicit_additional"
+      ],
+      "type": "string"
+    },
+    "SharedN02SelectionCallPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "shared_n02",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "SharedN02SelectionCallPolicy",
+      "type": "object"
+    },
+    "UTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    },
+    "UndispatchedSelectionFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs",
+          "minLength": 1
+        },
+        "dispatched": {
+          "const": false,
+          "title": "Dispatched",
+          "type": "boolean"
+        },
+        "fallback_reason": {
+          "enum": [
+            "context_unknown",
+            "selection_review_unavailable",
+            "additional_budget_unavailable",
+            "selection_transport_failure"
+          ],
+          "title": "Fallback Reason",
+          "type": "string"
+        },
+        "trigger_attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        },
+        "triggered_method": {
+          "enum": [
+            "context_rules",
+            "model_advisory"
+          ],
+          "title": "Triggered Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "triggered_method",
+        "trigger_attempt_ref",
+        "fallback_reason",
+        "diagnostic_refs",
+        "dispatched"
+      ],
+      "title": "UndispatchedSelectionFailure",
+      "type": "object"
+    },
+    "ValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "path": {
+          "$ref": "#/$defs/IssuePath"
+        },
+        "related_refs": {
+          "items": {
+            "$ref": "#/$defs/ContentRef"
+          },
+          "maxItems": 16,
+          "title": "Related Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "path",
+        "message",
+        "related_refs"
+      ],
+      "title": "ValidationIssue",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "all_declared": "#/$defs/AllDeclaredSelectionRecord",
+      "context_rules": "#/$defs/ContextRuleSelectionRecord",
+      "fallback": "#/$defs/FallbackSelectionRecord",
+      "model_advisory": "#/$defs/ModelAdvisorySelectionRecord"
+    },
+    "propertyName": "method"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/AllDeclaredSelectionRecord"
+    },
+    {
+      "$ref": "#/$defs/ContextRuleSelectionRecord"
+    },
+    {
+      "$ref": "#/$defs/ModelAdvisorySelectionRecord"
+    },
+    {
+      "$ref": "#/$defs/FallbackSelectionRecord"
+    }
+  ]
+}

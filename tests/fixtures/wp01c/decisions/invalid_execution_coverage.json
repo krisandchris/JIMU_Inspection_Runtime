@@ -1,0 +1,248 @@
+{
+  "schema_version": "2.0.0",
+  "execution_id": "exec-1",
+  "release_id": "release-1",
+  "bundle_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "coverage_id": "coverage-1",
+  "applicability_scope": {
+    "scope_status": "evaluated",
+    "profile_eligibility_evaluation_ref": {
+      "record_kind": "profile_eligibility_evaluation",
+      "record_id": "profile-gate"
+    },
+    "context_snapshot_ref": {
+      "record_kind": "context_snapshot",
+      "record_id": "snapshot-1"
+    },
+    "configured_profile_refs": [
+      {
+        "artifact_kind": "profile",
+        "artifact_id": "fixture-profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  },
+  "discovery_outcome": "hits",
+  "hit_profile_refs": [
+    {
+      "artifact_kind": "profile",
+      "artifact_id": "fixture-profile",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "profiles": [
+    {
+      "schema_version": "1.0.0",
+      "execution_id": "exec-1",
+      "release_id": "release-1",
+      "bundle_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "fixture-profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "grounding_outcome": "objects",
+      "object_refs": [
+        {
+          "record_kind": "object",
+          "record_id": "object-a"
+        }
+      ],
+      "object_count": 1,
+      "obligation_ids": [
+        "obligation-0",
+        "obligation-1",
+        "obligation-2"
+      ],
+      "coverage_status": "complete",
+      "reasons": [],
+      "missing_evidence_refs": []
+    }
+  ],
+  "mandatory_rule_coverage": {
+    "scan": "all_mandatory",
+    "obligations": [
+      {
+        "obligation_id": "obligation-0",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture-profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "target": {
+          "scope": "profile"
+        },
+        "outcome": {
+          "selected_applicability": {
+            "evaluation_ref": {
+              "record_kind": "profile_eligibility_evaluation",
+              "record_id": "profile-gate"
+            },
+            "trace_ref": {
+              "record_kind": "applicability_trace",
+              "record_id": "profile-trace"
+            }
+          },
+          "disposition": "included"
+        }
+      },
+      {
+        "obligation_id": "obligation-1",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture-profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "target": {
+          "scope": "rule_set",
+          "rule_set_ref": {
+            "artifact_kind": "rule_set",
+            "artifact_id": "fixture-rule_set",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "object_ref": {
+            "record_kind": "object",
+            "record_id": "object-a"
+          }
+        },
+        "outcome": {
+          "selected_applicability": {
+            "evaluation_ref": {
+              "record_kind": "rule_set_applicability_evaluation",
+              "record_id": "rule-set-rev1"
+            },
+            "trace_ref": {
+              "record_kind": "applicability_trace",
+              "record_id": "rule_set-trace"
+            }
+          },
+          "disposition": "included"
+        }
+      },
+      {
+        "obligation_id": "obligation-2",
+        "profile_ref": {
+          "artifact_kind": "profile",
+          "artifact_id": "fixture-profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "target": {
+          "scope": "rule",
+          "rule_set_ref": {
+            "artifact_kind": "rule_set",
+            "artifact_id": "fixture-rule_set",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "object_ref": {
+            "record_kind": "object",
+            "record_id": "object-a"
+          },
+          "rule_ref": {
+            "artifact_kind": "rule",
+            "artifact_id": "fixture-rule",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "outcome": {
+          "selected_applicability": {
+            "evaluation_ref": {
+              "record_kind": "rule_applicability_evaluation",
+              "record_id": "rule-rev1"
+            },
+            "trace_ref": {
+              "record_kind": "applicability_trace",
+              "record_id": "rule-trace"
+            }
+          },
+          "disposition": "evaluated",
+          "decision_ref": {
+            "record_kind": "decision",
+            "record_id": "decision-a"
+          }
+        }
+      }
+    ]
+  },
+  "selected_applicability_evaluation_refs": [
+    {
+      "record_kind": "profile_eligibility_evaluation",
+      "record_id": "profile-gate"
+    },
+    {
+      "record_kind": "rule_set_applicability_evaluation",
+      "record_id": "rule-set-rev1"
+    },
+    {
+      "record_kind": "rule_applicability_evaluation",
+      "record_id": "rule-rev1"
+    }
+  ],
+  "applicability_trace_refs": [
+    {
+      "record_kind": "applicability_trace",
+      "record_id": "profile-trace"
+    },
+    {
+      "record_kind": "applicability_trace",
+      "record_id": "rule_set-trace"
+    },
+    {
+      "record_kind": "applicability_trace",
+      "record_id": "rule-trace"
+    }
+  ],
+  "unresolved_obligation_refs": [],
+  "object_count": 1,
+  "coverage_status": "complete",
+  "summary_result": "violation",
+  "reasons": [],
+  "matches": [
+    {
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "object-a"
+      },
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "fixture-profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "decision_ref": {
+        "record_kind": "decision",
+        "record_id": "decision-a"
+      },
+      "rule": {
+        "rule_set_ref": {
+          "artifact_kind": "rule_set",
+          "artifact_id": "fixture-rule_set",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "rule_ref": {
+          "artifact_kind": "rule",
+          "artifact_id": "fixture-rule",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    }
+  ],
+  "missing_evidence_refs": [],
+  "created_at": "2026-11-18T01:00:00Z",
+  "discovery_model_invocation_refs": [
+    {
+      "record_kind": "model_invocation",
+      "record_id": "n02-invocation"
+    }
+  ]
+}

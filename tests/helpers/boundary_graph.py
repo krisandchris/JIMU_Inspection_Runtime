@@ -69,12 +69,80 @@ def import_graph(source_root: Path, package="jimu_runtime"):
                     "pydantic_core",
                     package,
                     "rfc8785",
+                    "jsonschema",
+                    "sqlalchemy",
+                    "httpx",
+                    "PIL",
+                    "fastapi",
+                    "starlette",
+                    "psycopg",
                 }, f"forbidden dependency: {imported}"
                 if top == "rfc8785":
                     assert module in {
                         f"{package}.domain.fact_schemas.canonicalization",
                         f"{package}.domain.fact_schemas.projection",
-                    }, f"rfc8785 import outside F1: {module}"
+                        f"{package}.bundle.integrity",
+                    }, f"rfc8785 import outside canonicalization modules: {module}"
+                if top == "jsonschema":
+                    assert module in {
+                        f"{package}.bundle.artifacts",
+                        f"{package}.bundle.schema_validation",
+                    }, f"jsonschema import outside Bundle schema validation: {module}"
+                if top == "httpx":
+                    assert module == f"{package}.gateway.http", (
+                        f"httpx import outside the trusted HTTP adapter: {module}"
+                    )
+                if top in {"fastapi", "starlette"}:
+                    assert module.startswith(f"{package}.api.") or module == (
+                        f"{package}.deployment.service"
+                    ), f"ASGI framework import outside HTTP composition: {module}"
+                if top == "psycopg":
+                    assert module == f"{package}.deployment.database", (
+                        f"native PostgreSQL import outside database bootstrap: {module}"
+                    )
+                if top == "PIL":
+                    assert module in {
+                        f"{package}.inspection.media.decoder",
+                        f"{package}.inspection.geometry._cpu",
+                    }, (
+                        f"Pillow import outside the image decoder or isolated CPU tool: {module}"
+                    )
+                if top == "sqlalchemy":
+                    assert module in {
+                        f"{package}.workflow.postgres",
+                        f"{package}.workflow.intake",
+                        f"{package}.workflow.repository",
+                        f"{package}.workflow.jobs",
+                        f"{package}.workflow.worker",
+                        f"{package}.workflow.worker_state",
+                        f"{package}.workflow.worker_schedule",
+                        f"{package}.workflow.worker_completion",
+                        f"{package}.workflow.worker_poll",
+                        f"{package}.gateway.journal",
+                        f"{package}.gateway.bridge",
+                        f"{package}.gateway.bridge_tools",
+                        f"{package}.workflow.worker_capabilities",
+                        f"{package}.workflow.worker_inspection",
+                        f"{package}.workflow.worker_request_evidence",
+                        f"{package}.tools.step_attempts",
+                        f"{package}.inspection.media.persistence",
+                        f"{package}.inspection.media.retention",
+                        f"{package}.replay.artifact",
+                        f"{package}.replay.artifact_journal",
+                        f"{package}.replay.artifact_source",
+                        f"{package}.replay.inference",
+                        f"{package}.replay.inference_repository",
+                        f"{package}.evaluation.history",
+                        f"{package}.api.app",
+                        f"{package}.api.records",
+                        f"{package}.api.boundary",
+                        f"{package}.observability.serve",
+                        f"{package}.observability.postgres",
+                        f"{package}.deployment.database",
+                        f"{package}.deployment.service",
+                    }, (
+                        f"sqlalchemy import outside approved PostgreSQL modules: {module}"
+                    )
                 if top != package:
                     continue
                 assert imported in trees, f"unresolved local import: {imported}"
@@ -93,7 +161,45 @@ def import_graph(source_root: Path, package="jimu_runtime"):
                                 f"unresolved local symbol: {child}"
                             )
                             add_local(module, imported)
+    _assert_domain_independence(graph, package)
+    _assert_no_dependency_on_layer(graph, package, "bundle", "workflow")
     return graph
+
+
+def _assert_domain_independence(graph, package):
+    for target_layer in (
+        "bundle",
+        "workflow",
+        "gateway",
+        "tools",
+        "workers",
+        "inspection",
+        "replay",
+        "evaluation",
+        "api",
+        "deployment",
+        "observability",
+    ):
+        _assert_no_dependency_on_layer(graph, package, "domain", target_layer)
+
+
+def _assert_no_dependency_on_layer(graph, package, source_layer, target_layer):
+    source = f"{package}.{source_layer}"
+    target = f"{package}.{target_layer}"
+    pending = [
+        name for name in graph if name == source or name.startswith(f"{source}.")
+    ]
+    seen = set(pending)
+    while pending:
+        owner = pending.pop()
+        for dependency in graph[owner]:
+            assert dependency != target and not dependency.startswith(f"{target}."), (
+                f"{source_layer.title()} import into {target_layer.title()}: "
+                f"{owner} -> {dependency}"
+            )
+            if dependency not in seen:
+                seen.add(dependency)
+                pending.append(dependency)
 
 
 def assert_acyclic(graph):

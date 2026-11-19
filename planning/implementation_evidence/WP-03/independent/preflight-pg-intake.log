@@ -1,0 +1,53 @@
+2026-11-18T03:32:03Z
+uv run --locked pytest -q tests/contract/test_wp03_postgres_migrations.py tests/negative/test_wp03_postgres_migration_rejections.py tests/contract/test_wp03_intake_recovery.py tests/negative/test_wp03_intake_conflicts.py
+
+==================================== ERRORS ====================================
+_______ ERROR collecting tests/contract/test_wp03_postgres_migrations.py _______
+ImportError while importing test module '/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/contract/test_wp03_postgres_migrations.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/contract/test_wp03_postgres_migrations.py:16: in <module>
+    from tests.fixtures.wp03.postgres.support import (
+E   ModuleNotFoundError: No module named 'tests'
+__ ERROR collecting tests/negative/test_wp03_postgres_migration_rejections.py __
+ImportError while importing test module '/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/negative/test_wp03_postgres_migration_rejections.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/negative/test_wp03_postgres_migration_rejections.py:17: in <module>
+    from tests.fixtures.wp03.postgres.support import (
+E   ModuleNotFoundError: No module named 'tests'
+_________ ERROR collecting tests/contract/test_wp03_intake_recovery.py _________
+ImportError while importing test module '/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/contract/test_wp03_intake_recovery.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/contract/test_wp03_intake_recovery.py:16: in <module>
+    from tests.fixtures.wp02.releases.support import FixtureHost
+E   ModuleNotFoundError: No module named 'tests'
+________ ERROR collecting tests/negative/test_wp03_intake_conflicts.py _________
+ImportError while importing test module '/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/negative/test_wp03_intake_conflicts.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/negative/test_wp03_intake_conflicts.py:16: in <module>
+    from tests.fixtures.wp02.releases.support import FixtureHost
+E   ModuleNotFoundError: No module named 'tests'
+=========================== short test summary info ============================
+ERROR tests/contract/test_wp03_postgres_migrations.py
+ERROR tests/negative/test_wp03_postgres_migration_rejections.py
+ERROR tests/contract/test_wp03_intake_recovery.py
+ERROR tests/negative/test_wp03_intake_conflicts.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!
+4 errors in 0.87s
+2026-11-18T03:32:04Z
+exit=2

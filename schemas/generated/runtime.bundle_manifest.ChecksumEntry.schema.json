@@ -1,0 +1,38 @@
+{
+  "$defs": {
+    "BundlePayloadPath": {
+      "maxLength": 512,
+      "pattern": "^(?!(?:manifest|checksums)\\.json$(?![\\s\\S]))(?!.*(?:^|/)[.]{1,2}(?:/|$))[^\\\\\\x00-\\x1f\\x7f-\\x9f:?#/]+(?:/[^\\\\\\x00-\\x1f\\x7f-\\x9f:?#/]+)*$(?![\\s\\S])",
+      "type": "string"
+    },
+    "NonNegativeBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "path": {
+      "$ref": "#/$defs/BundlePayloadPath"
+    },
+    "sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "size": {
+      "$ref": "#/$defs/NonNegativeBudget"
+    }
+  },
+  "required": [
+    "path",
+    "size",
+    "sha256"
+  ],
+  "title": "ChecksumEntry",
+  "type": "object"
+}

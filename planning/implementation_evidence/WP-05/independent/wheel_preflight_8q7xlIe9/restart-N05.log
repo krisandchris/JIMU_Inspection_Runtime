@@ -1,0 +1,32 @@
+2026-11-18T06:00:21Z
++ PYTHONPATH=/tmp/jimu-wp05-wheel-O7NQXKLP/snapshot/product
++ WP05_PROBE_DIAGNOSTICS=1
++ /tmp/jimu-wp05-wheel-O7NQXKLP/venv/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py --installed --trace-dir /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_8q7xlIe9/restart-N05-exec --restart-at N05 known_violation
+{"check": "worker_process_ready", "pid": 3578388, "runtime_install": "/tmp/jimu-wp05-wheel-O7NQXKLP/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "durable_node_diagnostics", "child_steps": [["tactile_paving_segmentation", "failed", "tool_cpu_exchange_unavailable", null, null], ["wheel_segmentation", "succeeded", null, "succeeded", []]], "dispatches": [["model", null, "acknowledged", null, null], ["model", null, "acknowledged", null, null], ["model", null, "acknowledged", null, null], ["tool", "wheel_segmentation", "acknowledged", null, null], ["tool", "tactile_paving_segmentation", "not_dispatched", "tool_cpu_exchange_unavailable", null], ["model", null, "acknowledged", null, null]], "rows": [["N01", "succeeded", null, null], ["N02", "succeeded", null, null], ["N03", "succeeded", null, null], ["N04", "succeeded", null, null], ["N05", "succeeded", null, null], ["N05", "succeeded", null, null], ["N05", "failed", null, null], ["N06", "succeeded", null, null]]}
+{"calls": [["discovery", null, null], ["grounding", null, null], ["observation", [40, 23, 52, 33], "perception.object.87002e873b1564dc4039ff0332951b80c4cd29b4bf9004ceb54575c2571a9531"], ["candidate", [40, 23, 52, 33], "perception.object.87002e873b1564dc4039ff0332951b80c4cd29b4bf9004ceb54575c2571a9531"]], "check": "provider_transcript_on_failure", "errors": []}
+{"check": "worker_process_closed", "pid": 3578388, "signal": null}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 432, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 418, in main
+    await run_case(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 337, in run_case
+    assert not restart
+           ^^^^^^^^^^^
+AssertionError
++ result=1
++ date -u +%FT%TZ
+2026-11-18T06:01:00Z
++ printf 'exit=%s\n' 1
+exit=1
++ exit 1

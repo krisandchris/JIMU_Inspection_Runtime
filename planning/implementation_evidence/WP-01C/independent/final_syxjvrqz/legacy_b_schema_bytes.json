@@ -1,0 +1,33 @@
+{
+  "argv": [
+    "python3",
+    "-c",
+    "\nfrom hashlib import sha256\nfrom pathlib import Path\nimport json\nimport subprocess\nimport sys\n\nbaseline, first, second = sys.argv[1:]\ndirs = [Path('schemas/generated'), Path(first), Path(second)]\nsub = lambda args: subprocess.check_output(['git', *args])\npaths = sub(['ls-tree', '-r', '--name-only', baseline, '--', 'schemas/generated']).decode().splitlines()\nschemas = sorted(path for path in paths if path.endswith('.schema.json'))\nreport = {'baseline': baseline, 'count': len(schemas), 'schemas': {}}\nfor path in schemas:\n    name = Path(path).name\n    old = sha256(sub(['show', baseline + ':' + path])).hexdigest()\n    actual = {label: sha256((directory/name).read_bytes()).hexdigest() if (directory/name).is_file() else None\n        for label, directory in zip(('worktree', 'first', 'second'), dirs, strict=True)}\n    report['schemas'][name] = {'baseline': old, **actual, 'unchanged': all(value == old for value in actual.values())}\nold_index = sub(['show', baseline + ':schemas/generated/index.json'])\nreport['baseline_index_sha256'] = sha256(old_index).hexdigest()\nreport['current_index_sha256'] = sha256((dirs[0] / 'index.json').read_bytes()).hexdigest()\nreport['mismatches'] = [name for name, item in report['schemas'].items() if not item['unchanged']]\nreport['all_162_preserved'] = len(schemas) == 162 and not report['mismatches']\nprint(json.dumps(report, indent=2, sort_keys=True))\nsys.exit(0 if report['all_162_preserved'] else 1)\n",
+    "2552affeb69fbc2594fe70724f895b0db0967d47",
+    "/tmp/jimu-c-accept-inc8mpyl/first",
+    "/tmp/jimu-c-accept-inc8mpyl/second"
+  ],
+  "duration_seconds": 0.270395,
+  "end_utc": "2026-11-18T02:22:05.306454+00:00",
+  "exit_code": 0,
+  "label": "legacy_b_schema_bytes",
+  "product_after": {
+    "added": [],
+    "changed": [],
+    "count": 608,
+    "deleted": [],
+    "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+    "matches_frozen": true
+  },
+  "product_before": {
+    "added": [],
+    "changed": [],
+    "count": 608,
+    "deleted": [],
+    "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+    "matches_frozen": true
+  },
+  "start_utc": "2026-11-18T02:22:05.036059+00:00",
+  "stderr": "legacy_b_schema_bytes.stderr",
+  "stdout": "legacy_b_schema_bytes.stdout"
+}

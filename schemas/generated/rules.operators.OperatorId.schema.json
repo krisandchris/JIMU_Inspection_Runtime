@@ -1,0 +1,31 @@
+{
+  "$defs": {
+    "ComparisonOperator": {
+      "enum": [
+        "eq",
+        "ne",
+        "lt",
+        "le",
+        "gt",
+        "ge"
+      ],
+      "title": "ComparisonOperator",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "$ref": "#/$defs/ComparisonOperator"
+    },
+    {
+      "enum": [
+        "in",
+        "all",
+        "any",
+        "not"
+      ],
+      "type": "string"
+    }
+  ]
+}

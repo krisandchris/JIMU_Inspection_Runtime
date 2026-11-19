@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "artifact",
+  "source": {
+    "execution_ref": {
+      "record_kind": "execution",
+      "record_id": "exec-1"
+    },
+    "task_id": "task-1",
+    "pins": {
+      "release_id": "release-1",
+      "bundle_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "runtime_version": "1.0.0",
+      "workflow_version": "1.0.0",
+      "model_pins": [
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "discovery",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "remote-vision",
+            "version": "1.0.0",
+            "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "primary_deployment_id": "remote-primary",
+          "deployments": [
+            {
+              "provider_id": "synthetic-provider",
+              "deployment_id": "remote-primary",
+              "logical_model_id": "synthetic-model",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.2.3"
+                ],
+                "allowed_model_versions": [
+                  "2.1.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image"
+              ]
+            }
+          ],
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback-vision",
+            "version": "1.0.0",
+            "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          }
+        }
+      ],
+      "tool_pins": [
+        {
+          "tool_ref": {
+            "artifact_kind": "tool",
+            "artifact_id": "geometry",
+            "version": "1.0.0",
+            "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "implementation_version": "1.0.1"
+        }
+      ],
+      "input_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  },
+  "scoring_protocol": {
+    "protocol_id": "synthetic-scoring",
+    "version": "1.0.0",
+    "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "source_artifacts": [
+    {
+      "ref": {
+        "record_kind": "evidence",
+        "record_id": "source-evidence-001"
+      },
+      "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "ref": {
+        "record_kind": "decision",
+        "record_id": "source-decision-001"
+      },
+      "digest": "1111111111111111111111111111111111111111111111111111111111111111"
+    }
+  ]
+}

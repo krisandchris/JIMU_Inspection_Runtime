@@ -1,0 +1,11 @@
+Unhandled exception in client_connected_cb
+transport: <_SelectorSocketTransport closed fd=11>
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/independent/probe_model.py", line 172, in handle
+    await writer.drain()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 392, in drain
+    await self._protocol._drain_helper()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+{"check": "current_exact_fallback_after_timeout", "dispatches": [["dispatch.de9eb61b4e5c49e89ac32a212aeb6b51", "operation.model.50464e6b0d00c043cd88c04eab8495293ec7a8bb33014fcc76a6b6e04130777a", "5fd913968c7c4ecd8c443488d1ef3dd7", 1, "independent-primary", "timeout"], ["dispatch.2c48fa981eeb465cb7a9431d3982da96", "operation.model.50464e6b0d00c043cd88c04eab8495293ec7a8bb33014fcc76a6b6e04130777a", "22649b71bdfc43f09264940408678ca4", 2, "independent-fallback", null]], "fallback": "fixture.remote.fallback", "primary": "fixture.remote.parking", "review": "wp03-fallback-review"}

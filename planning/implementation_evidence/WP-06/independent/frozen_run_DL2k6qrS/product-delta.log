@@ -1,0 +1,53 @@
+2026-11-18T10:46:52Z
+python3 /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/verify_snapshot.py --diff /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/primary_freeze_124bfcc1984c/product_sha256.json /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-06/primary_freeze_bfaf2ccec140/product_sha256.json 
+{
+  "added": [
+    "src/jimu_runtime/evaluation/README.md",
+    "src/jimu_runtime/evaluation/__init__.py",
+    "src/jimu_runtime/evaluation/contracts.py",
+    "src/jimu_runtime/evaluation/history.py",
+    "src/jimu_runtime/evaluation/history_projection.py",
+    "src/jimu_runtime/evaluation/review.py",
+    "src/jimu_runtime/evaluation/scoring.py",
+    "src/jimu_runtime/evaluation/truth.py",
+    "src/jimu_runtime/inspection/media/retention.py",
+    "src/jimu_runtime/inspection/media/retention_models.py",
+    "src/jimu_runtime/inspection/media/retention_policy.py",
+    "src/jimu_runtime/replay/__init__.py",
+    "src/jimu_runtime/replay/artifact.py",
+    "src/jimu_runtime/replay/artifact_journal.py",
+    "src/jimu_runtime/replay/artifact_records.py",
+    "src/jimu_runtime/replay/artifact_source.py",
+    "src/jimu_runtime/replay/inference.py",
+    "src/jimu_runtime/replay/inference_repository.py",
+    "src/jimu_runtime/workflow/migrations/009_artifact_replay.sql",
+    "src/jimu_runtime/workflow/migrations/010_inference_replay.sql",
+    "src/jimu_runtime/workflow/migrations/011_evidence_lifecycle.sql",
+    "tests/contract/test_wp06_artifact_replay.py",
+    "tests/contract/test_wp06_eval_contracts.py",
+    "tests/contract/test_wp06_eval_history.py",
+    "tests/contract/test_wp06_inference_replay.py",
+    "tests/contract/test_wp06_retention_postgres.py",
+    "tests/contract/test_wp06_retention_read_limits.py",
+    "tests/contract/test_wp06_retention_review.py",
+    "tests/fixtures/wp06/evaluation_sample.py",
+    "tests/negative/test_wp06_eval_rejections.py",
+    "tests/unit/test_wp06_eval_scoring.py"
+  ],
+  "changed": [
+    "src/jimu_runtime/gateway/journal.py",
+    "src/jimu_runtime/inspection/media/files.py",
+    "src/jimu_runtime/inspection/media/persistence.py",
+    "src/jimu_runtime/workflow/intake.py",
+    "src/jimu_runtime/workflow/jobs.py",
+    "src/jimu_runtime/workflow/repository.py",
+    "src/jimu_runtime/workflow/worker.py",
+    "src/jimu_runtime/workflow/worker_completion.py",
+    "src/jimu_runtime/workflow/worker_source.py",
+    "src/jimu_runtime/workflow/worker_state.py",
+    "tests/helpers/boundary_graph.py"
+  ],
+  "removed": []
+}
+2026-11-18T10:46:53Z
+exit=0

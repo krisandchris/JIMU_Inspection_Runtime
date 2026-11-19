@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "maximum_runtime_version_exclusive": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Maximum Runtime Version Exclusive",
+      "type": "string"
+    },
+    "minimum_runtime_version_inclusive": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Minimum Runtime Version Inclusive",
+      "type": "string"
+    }
+  },
+  "required": [
+    "minimum_runtime_version_inclusive",
+    "maximum_runtime_version_exclusive"
+  ],
+  "title": "CompatibilityRequirement",
+  "type": "object"
+}

@@ -1,0 +1,6 @@
+2026-11-18T11:25:49Z
+docker --host unix:///var/run/docker.sock image inspect --format \{\{.Id\}\}\ \{\{.Architecture\}\}\ \{\{json\ .RepoDigests\}\} postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae python@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea 
+sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae amd64 ["postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae"]
+sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea amd64 ["python@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea"]
+2026-11-18T11:25:49Z
+exit=0

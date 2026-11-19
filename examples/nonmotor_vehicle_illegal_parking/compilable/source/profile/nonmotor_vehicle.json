@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "profile_id": "nonmotor_vehicle",
+  "entity_ref": {
+    "$pin": [
+      "entity",
+      "nonmotor_vehicle",
+      "1.0.0"
+    ]
+  },
+  "discovery_binding_ref": {
+    "$pin": [
+      "model_binding",
+      "profile_discovery",
+      "1.0.0"
+    ]
+  },
+  "grounding_binding": {
+    "kind": "model",
+    "model_binding_ref": {
+      "$pin": [
+        "model_binding",
+        "object_grounding",
+        "1.0.0"
+      ]
+    },
+    "input_bindings": [
+      {
+        "source": {
+          "source_kind": "image",
+          "selector": {
+            "schema_ref": {
+              "$pin": [
+                "attribute_schema",
+                "source-image",
+                "1.0.0"
+              ],
+              "schema_ref": true
+            },
+            "field_path": []
+          }
+        },
+        "target": {
+          "schema_ref": {
+            "$pin": [
+              "response_schema",
+              "model-input",
+              "1.0.0"
+            ],
+            "schema_ref": true
+          },
+          "field_path": [
+            "image"
+          ]
+        },
+        "required": true,
+        "on_missing": "block"
+      }
+    ]
+  },
+  "observation_binding_ref": {
+    "$pin": [
+      "model_binding",
+      "object_observation",
+      "1.0.0"
+    ]
+  },
+  "facet_refs": [
+    {
+      "$pin": [
+        "facet",
+        "parking-observations",
+        "1.0.0"
+      ]
+    }
+  ],
+  "question_refs": [
+    {
+      "$pin": [
+        "question",
+        "vehicle_type",
+        "1.0.0"
+      ]
+    },
+    {
+      "$pin": [
+        "question",
+        "parking_state",
+        "1.0.0"
+      ]
+    },
+    {
+      "$pin": [
+        "question",
+        "parking_position",
+        "1.0.0"
+      ]
+    }
+  ],
+  "question_selection_policy_ref": {
+    "$pin": [
+      "policy",
+      "selection",
+      "1.0.0"
+    ]
+  },
+  "rule_set_refs": [
+    {
+      "$pin": [
+        "rule_set",
+        "parking-rules",
+        "1.0.0"
+      ]
+    }
+  ],
+  "tool_plan_ref": {
+    "$pin": [
+      "tool_plan",
+      "nonmotor_vehicle_geometry",
+      "1.0.0"
+    ]
+  },
+  "applicability_policy_ref": {
+    "$pin": [
+      "policy",
+      "applicability",
+      "1.0.0"
+    ]
+  }
+}

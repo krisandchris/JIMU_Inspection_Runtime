@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:jimu:synthetic:parking:source-bbox:1.0.0",
+  "type": "object",
+  "properties": {
+    "bbox": {
+      "type": "object",
+      "properties": {
+        "xyxy": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 8192
+          },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "xyxy"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "bbox"
+  ],
+  "additionalProperties": false
+}

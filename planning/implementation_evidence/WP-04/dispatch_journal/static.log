@@ -1,0 +1,20 @@
+
+$ .venv/bin/mypy src/jimu_runtime/gateway/journal.py src/jimu_runtime/gateway/journal_records.py src/jimu_runtime/tools/audit.py
+Success: no issues found in 3 source files
+Exit 0
+
+$ .venv/bin/ruff check src/jimu_runtime/gateway/journal.py src/jimu_runtime/gateway/journal_records.py src/jimu_runtime/tools/audit.py tests/unit/test_wp04_dispatch_records.py tests/contract/test_wp04_dispatch_journal.py tests/fixtures/wp03/intake/support.py tests/fixtures/wp03/jobs/support.py tests/fixtures/wp03/repository/support.py
+All checks passed!
+Exit 0
+
+$ .venv/bin/ruff format --check src/jimu_runtime/gateway/journal.py src/jimu_runtime/gateway/journal_records.py src/jimu_runtime/tools/audit.py tests/unit/test_wp04_dispatch_records.py tests/contract/test_wp04_dispatch_journal.py
+5 files already formatted
+Exit 0
+
+$ env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/contract/test_dependency_boundaries.py -k pure_domain
+.                                                                        [100%]
+1 passed, 1 deselected in 0.52s
+Exit 0
+
+$ git diff --check
+Exit 0

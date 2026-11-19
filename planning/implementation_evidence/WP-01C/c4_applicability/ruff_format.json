@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--offline",
+    "--no-sync",
+    "ruff",
+    "format",
+    "--check",
+    "src/jimu_runtime/domain/runtime/applicability.py",
+    "src/jimu_runtime/domain/validation/applicability.py",
+    "tests/unit/test_c_applicability_records.py",
+    "tests/contract/test_c_applicability_schemas.py",
+    "tests/negative/test_c_applicability_invalid.py",
+    "tests/fixtures/wp01c/applicability/cases.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "started_at": "2026-11-18T02:01:25.753144+00:00",
+  "ended_at": "2026-11-18T02:01:25.765127+00:00",
+  "exit_code": 0
+}

@@ -994,3 +994,7 @@ Existing exact FactSelector and IdentitySelector contracts are unchanged. Future
 operator TypeChecker/Bundle work must handle this approved node and its use-site scope;
 WP-01B does not implement those later services. No historical audit or immutable
 published artifact is rewritten. Approval evidence: WP-01B execution_03/AUTHORIZATION.md.
+
+## WP-01C 开发子智能体
+
+WP-01 剩余实施、测试及修复任务使用 `gpt-6.2-sol`，思考档位为 `medium`。分工见 [WP-01C 实施计划](active/WP-01C/PLAN.md)。

@@ -7,19 +7,31 @@ name = "jimu-runtime"
 version = "0.1.0"
 description = "JIMU Inspection Runtime foundation contracts (WP-01A)"
 requires-python = ">=3.12,<3.13"
-dependencies = ["pydantic>=2.12.5,<2.13", "rfc8785>=0.1.4,<0.1.5"]
+dependencies = [
+  "pydantic>=2.12.5,<2.13",
+  "rfc8785>=0.1.4,<0.1.5",
+  "jsonschema>=4.25.1,<4.26",
+  "sqlalchemy[asyncio]>=2.0.52,<2.0.53",
+  "psycopg[binary]>=3.3.5,<3.3.6",
+  "httpx>=0.28.1,<0.29",
+  "pillow>=12.3.0,<12.4",
+  "fastapi>=0.141.1,<0.142",
+  "starlette>=1.6.0,<1.7",
+  "uvicorn>=0.52.4,<0.53",
+]
 
 [dependency-groups]
 dev = [
   "pytest>=8.4.2,<8.5",
-  "jsonschema>=4.25.1,<4.26",
   "ruff>=0.14.5,<0.15",
   "mypy>=1.18.2,<1.19",
+  "types-jsonschema>=4.25.1.20251009,<4.26",
   "uv_build==0.9.15",
 ]
 
 [tool.uv]
 required-version = ">=0.9.15,<0.10"
+constraint-dependencies = ["click>=8.5.0,<8.5.1", "annotated-doc>=0.0.4,<0.0.5"]
 
 [[tool.uv.index]]
 name = "jimu-pypi"
@@ -30,6 +42,7 @@ default = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "--strict-config --strict-markers"
 
 [tool.ruff]

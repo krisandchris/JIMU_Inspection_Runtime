@@ -328,7 +328,13 @@ def validate_producer_catalogue(
     context: ProducerValidationContext,
     *,
     fact_schemas: FactSchemaRegistry,
+    require_all_system_versions: bool = True,
 ) -> ValidationReport:
+    """Check finite bindings and host versions.
+
+    The default checks a complete host directory. Set require_all_system_versions
+    to False for a deployment projection of currently selected implementations.
+    """
     checks = _Checks()
     try:
         registration = ProducerCatalogueRegistration.model_validate(registration)
@@ -612,17 +618,23 @@ def validate_producer_catalogue(
                     "producer.missing_host",
                     "System capability requirement has no matching supplied registration.",
                 )
-            elif not set(producer.requirement.allowed_implementation_versions) <= set(
-                matching_host.available_implementation_versions
-            ) or not set(producer.requirement.required_features) <= set(
-                matching_host.supported_features
-            ):
-                checks.add(
-                    "producer.bindings",
-                    "invalid",
-                    "producer.host_requirement",
-                    "System versions/features are unsupported by injected host registration.",
+            else:
+                allowed = set(producer.requirement.allowed_implementation_versions)
+                available = set(matching_host.available_implementation_versions)
+                versions_match = (
+                    allowed <= available
+                    if require_all_system_versions
+                    else bool(allowed & available)
                 )
+                if not versions_match or not set(
+                    producer.requirement.required_features
+                ) <= set(matching_host.supported_features):
+                    checks.add(
+                        "producer.bindings",
+                        "invalid",
+                        "producer.host_requirement",
+                        "System versions/features are unsupported by injected host registration.",
+                    )
         uses = [
             use
             for use in context.condition_contexts

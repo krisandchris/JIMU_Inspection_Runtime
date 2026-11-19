@@ -1,0 +1,1452 @@
+--- /dev/null
++++ b/src/jimu_runtime/replay/inference.py
+@@ -0,0 +1,258 @@
++"""Authorize and atomically enqueue a new Execution from immutable source pins."""
++
++from asyncio import to_thread
++from typing import Protocol
++from uuid import uuid4
++
++from pydantic import TypeAdapter
++from sqlalchemy import text
++from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
++
++from jimu_runtime.bundle.archive import BundleLimits
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.bundle.releases import ReleaseManager
++from jimu_runtime.bundle.store import LocalBundleStore
++from jimu_runtime.domain.definition_support import ShortText
++from jimu_runtime.domain.enums import ExecutionStatus, RuntimeRecordKind
++from jimu_runtime.domain.runtime.intake import AcceptedTask, IdempotencyScope
++from jimu_runtime.domain.runtime.media import MediaAsset, MediaRef
++from jimu_runtime.domain.runtime.replay import (
++    ExecutionRef,
++    InferenceReplayRequest,
++    InferenceReplayRun,
++    ReplayKind,
++)
++from jimu_runtime.replay.inference_repository import (
++    StoredInferenceReplay,
++    insert_inference_replay,
++    read_inference_replay_by_key,
++    read_inference_replay_for_target,
++)
++from jimu_runtime.workflow import repository
++from jimu_runtime.workflow.intake import IntakeIdentity, _database_now, initial_records
++from jimu_runtime.workflow.mock_support import record_digest
++from jimu_runtime.workflow.pins import resolve_execution_pins
++from jimu_runtime.workflow.worker_capabilities import read_historical_capabilities
++from jimu_runtime.workflow.worker_state import (
++    read_context_snapshot,
++    read_replay_capture_snapshot,
++)
++
++_KEY = TypeAdapter[str](ShortText)
++_ACTIVE = frozenset((ExecutionStatus.INITIALIZED, ExecutionStatus.RUNNING))
++
++
++class InferenceReplayError(RuntimeError):
++    def __init__(self, code: str) -> None:
++        self.code = code
++        super().__init__(code)
++
++
++class InferenceReplayHost(Protocol):
++    async def authorize_inference_replay(
++        self,
++        principal: object,
++        scope: IdempotencyScope,
++        request: InferenceReplayRequest,
++        source_task: AcceptedTask,
++    ) -> IntakeIdentity:
++        """Authorize this operation and exact source in the host's current registry."""
++
++    async def verified_original(
++        self, scope: IdempotencyScope, media_ref: MediaRef
++    ) -> MediaAsset:
++        """Authorize the source scope's original media and verify its bytes."""
++
++
++async def _find_accepted(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    key: bytes,
++    request: InferenceReplayRequest,
++    request_digest: str,
++    identity: IntakeIdentity,
++) -> InferenceReplayRun | None:
++    saved = await read_inference_replay_by_key(connection, scope, key)
++    if saved is None:
++        return None
++    if (
++        saved.identity != identity
++        or saved.request_digest != request_digest
++        or saved.run.request != request
++    ):
++        raise InferenceReplayError("inference_replay_key_conflict")
++    target = await repository.get_execution(
++        connection, scope, saved.run.target_execution_ref.record_id
++    )
++    if target is None or not target.is_inference_replay:
++        raise InferenceReplayError("inference_replay_target_missing")
++    saved.run.validate_target_execution(target.execution)
++    return saved.run
++
++
++class InferenceReplayService:
++    def __init__(
++        self,
++        engine: AsyncEngine,
++        release_manager: ReleaseManager,
++        bundle_store: LocalBundleStore,
++        *,
++        host: InferenceReplayHost,
++        bundle_limits: BundleLimits,
++    ) -> None:
++        self._engine = engine
++        self._releases = release_manager
++        self._store = bundle_store
++        self._host = host
++        self._limits = bundle_limits
++
++    async def submit(
++        self,
++        scope: IdempotencyScope,
++        request: InferenceReplayRequest,
++        *,
++        idempotency_key: str,
++        principal: object,
++    ) -> InferenceReplayRun:
++        scope = IdempotencyScope.model_validate(scope)
++        request = InferenceReplayRequest.model_validate(request)
++        key = _KEY.validate_python(idempotency_key)
++        try:
++            encoded_key = key.encode("utf-8")
++        except UnicodeEncodeError:
++            raise InferenceReplayError("inference_replay_key_invalid") from None
++        request_digest = sha256_digest(request.stable_json().encode("utf-8"))
++        source_id = request.source.execution_ref.record_id
++        async with self._engine.connect() as connection:
++            source = await repository.get_execution(connection, scope, source_id)
++        if source is None:
++            raise InferenceReplayError("inference_replay_source_missing")
++        identity = IntakeIdentity.model_validate(
++            await self._host.authorize_inference_replay(
++                principal, scope, request, source.task
++            )
++        )
++        try:
++            request.source.validate_execution(source.execution)
++        except ValueError:
++            raise InferenceReplayError("inference_replay_source_pin_mismatch") from None
++        if request.target_pins != source.execution.pins:
++            raise InferenceReplayError("inference_replay_target_pins_unsupported")
++
++        async with self._engine.connect() as connection:
++            existing = await _find_accepted(
++                connection, scope, encoded_key, request, request_digest, identity
++            )
++            if existing is not None:
++                return existing
++            snapshot = await read_context_snapshot(connection, scope, source)
++            capture_execution_id = source_id if snapshot is not None else None
++            if source.is_inference_replay:
++                replay = await read_inference_replay_for_target(
++                    connection, scope, source_id
++                )
++                if replay is None:
++                    raise InferenceReplayError(
++                        "inference_replay_source_lineage_missing"
++                    )
++                replay.run.validate_target_execution(source.execution)
++                if snapshot is None:
++                    snapshot = await read_replay_capture_snapshot(
++                        connection, scope, source, replay
++                    )
++                    capture_execution_id = replay.capture_execution_id
++            historical = await read_historical_capabilities(
++                connection, scope, source.execution
++            )
++        if snapshot is None and source.execution.status in _ACTIVE:
++            raise InferenceReplayError("inference_replay_source_context_pending")
++        if historical is None:
++            raise InferenceReplayError(
++                "inference_replay_historical_capabilities_missing"
++            )
++        source.task.validate_media(
++            await self._host.verified_original(scope, source.task.media_ref)
++        )
++        resolved = await to_thread(
++            resolve_execution_pins,
++            self._releases,
++            self._store,
++            source.task,
++            scope=scope,
++            host=historical.snapshot,
++            validation_at=historical.validation_at,
++            limits=self._limits,
++        )
++        if (resolved.pins, resolved.policy_ref) != (
++            source.execution.pins,
++            source.execution_policy_ref,
++        ):
++            raise InferenceReplayError("inference_replay_reopened_pin_mismatch")
++
++        async with self._engine.begin() as connection:
++            # Serialize writers for this exact request key. A 64-bit hash collision
++            # can only delay unrelated keys, which are matched by their full bytes.
++            lock_digest = sha256_digest(
++                scope.stable_json().encode("utf-8") + b"\x00" + encoded_key
++            )
++            lock_key = int.from_bytes(
++                bytes.fromhex(lock_digest[:16]), "big", signed=True
++            )
++            await connection.execute(
++                text("SELECT pg_catalog.pg_advisory_xact_lock(CAST(:key AS bigint))"),
++                {"key": lock_key},
++            )
++            existing = await _find_accepted(
++                connection, scope, encoded_key, request, request_digest, identity
++            )
++            if existing is not None:
++                return existing
++            now = await _database_now(connection)
++            suffix = f"replay.{uuid4().hex}"
++            target, root = initial_records(
++                source.task, resolved, now, execution_suffix=suffix
++            )
++            run = InferenceReplayRun(
++                schema_version="1.0.0",
++                kind=ReplayKind.INFERENCE,
++                replay_run_id=suffix,
++                request=request,
++                target_execution_ref=ExecutionRef(
++                    record_kind=RuntimeRecordKind.EXECUTION,
++                    record_id=target.execution_id,
++                ),
++                recorded_at=now,
++            )
++            run.validate_target_execution(target)
++            await repository.insert_initial_execution(
++                connection,
++                scope,
++                target,
++                resolved.policy_ref,
++                source.scheduling_limits,
++                root,
++                historical_capabilities=historical,
++            )
++            await insert_inference_replay(
++                connection,
++                scope,
++                encoded_key,
++                StoredInferenceReplay(
++                    run,
++                    request_digest,
++                    identity,
++                    capture_execution_id,
++                    record_digest(snapshot) if snapshot is not None else None,
++                ),
++            )
++            await repository.ready_root_job(
++                connection,
++                scope,
++                root,
++                repository.NewJob(
++                    job_id=f"job.{root.node_run_id}",
++                    ready_at=now,
++                    budget=source.scheduling_limits.for_node(root.node_id),
++                ),
++            )
++            return run
+--- /dev/null
++++ b/src/jimu_runtime/replay/inference_repository.py
+@@ -0,0 +1,119 @@
++"""Scoped, append-only Inference Replay lineage."""
++
++from dataclasses import dataclass
++
++from sqlalchemy import text
++from sqlalchemy.engine import RowMapping
++from sqlalchemy.ext.asyncio import AsyncConnection
++
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.replay import InferenceReplayRun
++from jimu_runtime.workflow.intake import IntakeIdentity
++
++_RUN_COLUMNS = """
++    request_digest, issuer, subject, replay_run_id, source_execution_id,
++    target_execution_id, capture_execution_id, capture_snapshot_digest, task_id, record_digest, record::text AS record
++"""
++
++
++@dataclass(frozen=True, slots=True)
++class StoredInferenceReplay:
++    run: InferenceReplayRun
++    request_digest: str
++    identity: IntakeIdentity
++    capture_execution_id: str | None
++    capture_snapshot_digest: str | None
++
++
++def _decode(row: RowMapping) -> StoredInferenceReplay:
++    body: str = row["record"]
++    if sha256_digest(body.encode("utf-8")) != row["record_digest"]:
++        raise ValueError("Inference Replay run digest mismatch")
++    run = InferenceReplayRun.model_validate_json(body)
++    if (
++        run.stable_json() != body
++        or sha256_digest(run.request.stable_json().encode("utf-8"))
++        != row["request_digest"]
++        or run.replay_run_id != row["replay_run_id"]
++        or run.request.source.task_id != row["task_id"]
++        or run.request.source.execution_ref.record_id != row["source_execution_id"]
++        or run.target_execution_ref.record_id != row["target_execution_id"]
++        or run.request.source.pins != run.request.target_pins
++    ):
++        raise ValueError("Inference Replay run index mismatch")
++    return StoredInferenceReplay(
++        run,
++        row["request_digest"],
++        IntakeIdentity(issuer=row["issuer"], subject=row["subject"]),
++        row["capture_execution_id"],
++        row["capture_snapshot_digest"],
++    )
++
++
++async def read_inference_replay_by_key(
++    connection: AsyncConnection, scope: IdempotencyScope, key: bytes
++) -> StoredInferenceReplay | None:
++    rows = await connection.execute(
++        text(f"""
++            SELECT {_RUN_COLUMNS}
++            FROM jimu_workflow.inference_replay_runs
++            WHERE project_id = :project_id AND client_id = :client_id
++                AND idempotency_key = :key
++        """),
++        {**scope.model_dump(), "key": key},
++    )
++    row = rows.mappings().one_or_none()
++    return _decode(row) if row is not None else None
++
++
++async def read_inference_replay_for_target(
++    connection: AsyncConnection, scope: IdempotencyScope, execution_id: str
++) -> StoredInferenceReplay | None:
++    rows = await connection.execute(
++        text(f"""
++            SELECT {_RUN_COLUMNS}
++            FROM jimu_workflow.inference_replay_runs
++            WHERE project_id = :project_id AND client_id = :client_id
++                AND target_execution_id = :execution_id
++        """),
++        {**scope.model_dump(), "execution_id": execution_id},
++    )
++    row = rows.mappings().one_or_none()
++    return _decode(row) if row is not None else None
++
++
++async def insert_inference_replay(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    key: bytes,
++    replay: StoredInferenceReplay,
++) -> None:
++    run = replay.run
++    body = run.stable_json()
++    await connection.execute(
++        text("""
++            INSERT INTO jimu_workflow.inference_replay_runs
++                (project_id, client_id, idempotency_key, request_digest, issuer, subject,
++                    replay_run_id, source_execution_id, target_execution_id, capture_execution_id,
++                    capture_snapshot_digest, task_id,
++                    record_digest, record)
++            VALUES (:project_id, :client_id, :key, :request_digest, :issuer, :subject,
++                :replay_run_id, :source, :target, :capture, :capture_digest, :task_id, :digest, CAST(:record AS json))
++        """),
++        {
++            **scope.model_dump(),
++            "key": key,
++            "request_digest": replay.request_digest,
++            "issuer": replay.identity.issuer,
++            "subject": replay.identity.subject,
++            "replay_run_id": run.replay_run_id,
++            "source": run.request.source.execution_ref.record_id,
++            "target": run.target_execution_ref.record_id,
++            "capture": replay.capture_execution_id,
++            "capture_digest": replay.capture_snapshot_digest,
++            "task_id": run.request.source.task_id,
++            "digest": sha256_digest(body.encode("utf-8")),
++            "record": body,
++        },
++    )
+--- a/src/jimu_runtime/workflow/intake.py
++++ b/src/jimu_runtime/workflow/intake.py
+@@ -161,10 +161,14 @@
+         raise IntakeError("intake_task_pin_mismatch")
+ 
+ 
+-def _initial_records(
+-    task: AcceptedTask, resolved: ResolvedExecutionPins, created_at: datetime
++def initial_records(
++    task: AcceptedTask,
++    resolved: ResolvedExecutionPins,
++    created_at: datetime,
++    *,
++    execution_suffix: str | None = None,
+ ) -> tuple[ExecutionRecord, NodeRun]:
+-    task_suffix = sha256_digest(task.task_id.encode("utf-8"))
++    task_suffix = execution_suffix or sha256_digest(task.task_id.encode("utf-8"))
+     execution = ExecutionRecord(
+         schema_version="1.0.0",
+         execution_id=f"execution.{task_suffix}",
+@@ -462,7 +466,7 @@
+             # The Release ledger supplies accepted_at. PostgreSQL establishes
+             # the Execution clock and when its first job becomes claimable.
+             created_at = await _database_now(connection)
+-            execution, root = _initial_records(task, resolved, created_at)
++            execution, root = initial_records(task, resolved, created_at)
+             job = repository.NewJob(
+                 job_id=f"job.{root.node_run_id}",
+                 ready_at=created_at,
+--- a/src/jimu_runtime/workflow/jobs.py
++++ b/src/jimu_runtime/workflow/jobs.py
+@@ -330,21 +330,28 @@
+ ) -> LockedExecution:
+     record = locked.execution
+     if record.status is ExecutionStatus.INITIALIZED:
+-        await repo.transition_task(
+-            connection,
+-            scope,
+-            record.execution_id,
+-            record.task_id,
+-            locked.task_status,
+-            TaskStatus.RUNNING,
+-            now=now,
+-            trace=record.trace,
+-        )
++        if not locked.is_inference_replay:
++            await repo.transition_task(
++                connection,
++                scope,
++                record.execution_id,
++                record.task_id,
++                locked.task_status,
++                TaskStatus.RUNNING,
++                now=now,
++                trace=record.trace,
++            )
+         running = record.model_copy(
+             update={"status": ExecutionStatus.RUNNING, "started_at": now}
+         )
+         await repo.transition_execution(connection, scope, record, running, now=now)
+-        return replace(locked, task_status=TaskStatus.RUNNING, execution=running)
++        return replace(
++            locked,
++            task_status=locked.task_status
++            if locked.is_inference_replay
++            else TaskStatus.RUNNING,
++            execution=running,
++        )
+     return locked
+ 
+ 
+@@ -955,16 +962,17 @@
+             update={"status": ExecutionStatus.CANCELLED, "ended_at": now}
+         )
+         await repo.transition_execution(connection, scope, record, following, now=now)
+-        await repo.transition_task(
+-            connection,
+-            scope,
+-            record.execution_id,
+-            record.task_id,
+-            running.task_status,
+-            TaskStatus.CANCELLED,
+-            now=now,
+-            trace=record.trace,
+-        )
++        if not running.is_inference_replay:
++            await repo.transition_task(
++                connection,
++                scope,
++                record.execution_id,
++                record.task_id,
++                running.task_status,
++                TaskStatus.CANCELLED,
++                now=now,
++                trace=record.trace,
++            )
+ 
+     async def reconcile(self, scope: IdempotencyScope, execution_id: str) -> bool:
+         """Recover expired claims or apply a persisted cancellation intent."""
+--- /dev/null
++++ b/src/jimu_runtime/workflow/migrations/010_inference_replay.sql
+@@ -0,0 +1,36 @@
++CREATE TABLE jimu_workflow.inference_replay_runs (
++    project_id text NOT NULL,
++    client_id text NOT NULL,
++    idempotency_key bytea NOT NULL CHECK (octet_length(idempotency_key) BETWEEN 1 AND 512),
++    request_digest jimu_workflow.digest NOT NULL,
++    issuer text NOT NULL CHECK (issuer <> ''),
++    subject text NOT NULL CHECK (subject <> ''),
++    replay_run_id text NOT NULL,
++    source_execution_id text NOT NULL,
++    target_execution_id text NOT NULL,
++    capture_execution_id text,
++    capture_snapshot_digest jimu_workflow.digest,
++    task_id text NOT NULL,
++    record_digest jimu_workflow.digest NOT NULL,
++    record json NOT NULL,
++    PRIMARY KEY (project_id, client_id, idempotency_key),
++    UNIQUE (project_id, client_id, replay_run_id),
++    UNIQUE (project_id, client_id, target_execution_id),
++    CHECK (source_execution_id <> target_execution_id),
++    CHECK (capture_execution_id IS DISTINCT FROM target_execution_id),
++    CHECK ((capture_execution_id IS NULL) = (capture_snapshot_digest IS NULL)),
++    CHECK ((record ->> 'schema_version') IS NOT DISTINCT FROM '1.0.0'),
++    CHECK ((record ->> 'kind') IS NOT DISTINCT FROM 'inference'),
++    CHECK ((record ->> 'replay_run_id') IS NOT DISTINCT FROM replay_run_id),
++    CHECK ((record #>> '{request,source,execution_ref,record_id}') IS NOT DISTINCT FROM source_execution_id),
++    CHECK ((record #>> '{request,source,task_id}') IS NOT DISTINCT FROM task_id),
++    CHECK ((record #>> '{target_execution_ref,record_id}') IS NOT DISTINCT FROM target_execution_id),
++    FOREIGN KEY (project_id, client_id, source_execution_id, task_id)
++        REFERENCES jimu_workflow.executions (project_id, client_id, execution_id, task_id),
++    FOREIGN KEY (project_id, client_id, capture_execution_id, task_id)
++        REFERENCES jimu_workflow.executions (project_id, client_id, execution_id, task_id),
++    FOREIGN KEY (project_id, client_id, target_execution_id, task_id)
++        REFERENCES jimu_workflow.executions (project_id, client_id, execution_id, task_id)
++);
++
++GRANT SELECT, INSERT ON jimu_workflow.inference_replay_runs TO jimu_workflow_app;
+--- a/src/jimu_runtime/workflow/repository.py
++++ b/src/jimu_runtime/workflow/repository.py
+@@ -100,6 +100,7 @@
+     cancel_requested_at: datetime | None
+     scheduling_limits: SchedulingLimits
+     scheduling_limits_digest: str
++    is_inference_replay: bool = False
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+@@ -398,6 +399,7 @@
+         row["cancel_requested_at"],
+         limits,
+         row["scheduling_limits_digest"],
++        row["is_inference_replay"],
+     )
+ 
+ 
+@@ -407,7 +409,13 @@
+     execution_id: str,
+     *,
+     lock: str = "",
++    replay_only: bool = False,
+ ) -> LockedExecution | None:
++    replay_filter = (
++        "AND i.execution_id IS NOT NULL AND i.execution_id <> e.execution_id"
++        if replay_only
++        else ""
++    )
+     row = (
+         (
+             await connection.execute(
+@@ -417,11 +425,17 @@
+             e.cancel_requested_at, e.scheduling_limits::text AS scheduling_limits,
+             e.scheduling_limits_version, e.scheduling_limits_digest,
+             t.record::text AS task_record, t.status AS task_status, t.task_id, t.request_id,
+-            t.release_id AS task_release_id, t.bundle_digest AS task_bundle_digest
++            t.release_id AS task_release_id, t.bundle_digest AS task_bundle_digest,
++            (i.execution_id IS NOT NULL AND i.execution_id <> e.execution_id)
++                AS is_inference_replay
+         FROM jimu_workflow.executions AS e
+         JOIN jimu_workflow.tasks AS t USING (project_id, client_id, task_id)
++        JOIN jimu_workflow.intake_intents AS i
++            ON (i.project_id, i.client_id, i.request_id) =
++               (t.project_id, t.client_id, t.request_id)
+         WHERE e.project_id = :project_id AND e.client_id = :client_id
+             AND e.execution_id = :execution_id
++            {replay_filter}
+         {lock}
+     """),
+                 _execution(scope, execution_id),
+@@ -447,23 +461,34 @@
+     skip_locked: bool = False,
+ ) -> LockedExecution | None:
+     lock_suffix = "SKIP LOCKED" if skip_locked else ""
++    # Task state writers contend with one another without blocking the
++    # foreign-key key-share checks of the Task's independent replay rows.
+     task_id = (
+         await connection.execute(
+             text(f"""
+         SELECT t.task_id
+         FROM jimu_workflow.tasks AS t
+         JOIN jimu_workflow.executions AS e USING (project_id, client_id, task_id)
+-        WHERE e.project_id = :project_id AND e.client_id = :client_id
++        JOIN jimu_workflow.intake_intents AS i
++            ON (i.project_id, i.client_id, i.request_id) =
++               (t.project_id, t.client_id, t.request_id)
++        WHERE (i.execution_id IS NULL OR i.execution_id = e.execution_id)
++            AND e.project_id = :project_id AND e.client_id = :client_id
+             AND e.execution_id = :execution_id
+-        FOR UPDATE OF t {lock_suffix}
++        FOR NO KEY UPDATE OF t {lock_suffix}
+     """),
+             _execution(scope, execution_id),
+         )
+     ).scalar_one_or_none()
+-    if task_id is None:
+-        return None
++    # A replay updates its own Execution only. When the intake Task was
++    # skipped because another transaction holds it, preserve the original
++    # Task-before-Execution lock order by excluding its primary Execution.
+     return await _read_execution(
+-        connection, scope, execution_id, lock=f"FOR UPDATE OF e {lock_suffix}"
++        connection,
++        scope,
++        execution_id,
++        lock=f"FOR UPDATE OF e {lock_suffix}",
++        replay_only=task_id is None,
+     )
+ 
+ 
+@@ -552,9 +577,6 @@
+             raise IntentConflict("intake_result_mismatch")
+         return saved
+     task_body = _checked_json(task)
+-    execution_body = _checked_json(execution)
+-    policy_body = _checked_json(execution_policy_ref)
+-    scheduling_body = _checked_json(scheduling_limits)
+     _check_acceptance(
+         current, task, execution, execution_policy_ref, scheduling_limits, root, job
+     )
+@@ -565,12 +587,6 @@
+         "release_id": task.release_id,
+         "bundle_digest": task.bundle_digest,
+         "task": task_body,
+-        "execution": execution_body,
+-        "state": _state(execution, _EXECUTION_STATE),
+-        "policy_ref": policy_body,
+-        "scheduling_limits": scheduling_body,
+-        "scheduling_limits_version": scheduling_limits.version,
+-        "scheduling_limits_digest": _digest(scheduling_body),
+     }
+     await connection.execute(
+         text("""
+@@ -581,24 +597,14 @@
+     """),
+         params,
+     )
+-    await connection.execute(
+-        text("""
+-        INSERT INTO jimu_workflow.executions
+-            (project_id, client_id, execution_id, task_id, release_id, bundle_digest,
+-            execution_policy_ref, scheduling_limits, scheduling_limits_version,
+-            scheduling_limits_digest, record, state, status)
+-        VALUES (:project_id, :client_id, :execution_id, :task_id, :release_id, :bundle_digest,
+-            CAST(:policy_ref AS json), CAST(:scheduling_limits AS json), :scheduling_limits_version,
+-            :scheduling_limits_digest, CAST(:execution AS json), CAST(:state AS json), 'initialized')
+-    """),
+-        params,
+-    )
+-    if historical_capabilities is not None:
+-        await record_historical_capabilities(
+-            connection, scope, execution, historical_capabilities
+-        )
+-    await insert_node(
+-        connection, scope, execution.execution_id, root, branch_key="global"
++    scheduling_digest = await insert_initial_execution(
++        connection,
++        scope,
++        execution,
++        execution_policy_ref,
++        scheduling_limits,
++        root,
++        historical_capabilities=historical_capabilities,
+     )
+     now = root.created_at
+     await append_event(
+@@ -624,17 +630,7 @@
+         now=now,
+         trace=execution.trace,
+     )
+-    ready = root.model_copy(update={"status": NodeRunStatus.READY})
+-    await transition_node(
+-        connection,
+-        scope,
+-        execution.execution_id,
+-        root,
+-        ready,
+-        now=now,
+-        guard=NodeTransitionGuard.PREREQUISITES_AVAILABLE,
+-    )
+-    await insert_job(connection, scope, execution.execution_id, root.node_run_id, job)
++    await ready_root_job(connection, scope, root, job)
+     await connection.execute(
+         text("""
+         UPDATE jimu_workflow.intake_intents
+@@ -650,8 +646,72 @@
+         execution_policy_ref,
+         None,
+         scheduling_limits,
+-        _digest(scheduling_body),
+-    )
++        scheduling_digest,
++    )
++
++
++async def insert_initial_execution(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    execution: ExecutionRecord,
++    execution_policy_ref: PolicyContentRef,
++    scheduling_limits: SchedulingLimits,
++    root: NodeRun,
++    *,
++    historical_capabilities: HistoricalCapabilities | None,
++) -> str:
++    """Create an Execution and its pending N01 for an existing scoped Task."""
++    scheduling_body = _checked_json(scheduling_limits)
++    scheduling_digest = _digest(scheduling_body)
++    params = {
++        **_execution(scope, execution.execution_id),
++        "task_id": execution.task_id,
++        "release_id": execution.pins.release_id,
++        "bundle_digest": execution.pins.bundle_digest,
++        "execution": _checked_json(execution),
++        "state": _state(execution, _EXECUTION_STATE),
++        "policy_ref": _checked_json(execution_policy_ref),
++        "scheduling_limits": scheduling_body,
++        "scheduling_limits_version": scheduling_limits.version,
++        "scheduling_limits_digest": scheduling_digest,
++    }
++    await connection.execute(
++        text("""
++        INSERT INTO jimu_workflow.executions
++            (project_id, client_id, execution_id, task_id, release_id, bundle_digest,
++            execution_policy_ref, scheduling_limits, scheduling_limits_version,
++            scheduling_limits_digest, record, state, status)
++        VALUES (:project_id, :client_id, :execution_id, :task_id, :release_id, :bundle_digest,
++            CAST(:policy_ref AS json), CAST(:scheduling_limits AS json), :scheduling_limits_version,
++            :scheduling_limits_digest, CAST(:execution AS json), CAST(:state AS json), 'initialized')
++    """),
++        params,
++    )
++    if historical_capabilities is not None:
++        await record_historical_capabilities(
++            connection, scope, execution, historical_capabilities
++        )
++    await insert_node(
++        connection, scope, execution.execution_id, root, branch_key="global"
++    )
++    return scheduling_digest
++
++
++async def ready_root_job(
++    connection: AsyncConnection, scope: IdempotencyScope, root: NodeRun, job: NewJob
++) -> None:
++    """Transition the already stored N01 and queue its durable job."""
++    ready = root.model_copy(update={"status": NodeRunStatus.READY})
++    await transition_node(
++        connection,
++        scope,
++        root.execution_id,
++        root,
++        ready,
++        now=root.created_at,
++        guard=NodeTransitionGuard.PREREQUISITES_AVAILABLE,
++    )
++    await insert_job(connection, scope, root.execution_id, root.node_run_id, job)
+ 
+ 
+ _NODE_COLUMNS = """
+@@ -1060,8 +1120,11 @@
+         await connection.execute(
+             text("""
+         UPDATE jimu_workflow.tasks AS t SET status = :following
+-        FROM jimu_workflow.executions AS e
+-        WHERE t.project_id = :project_id AND t.client_id = :client_id AND t.task_id = :task_id
++        FROM jimu_workflow.executions AS e, jimu_workflow.intake_intents AS i
++        WHERE (i.project_id, i.client_id, i.request_id) =
++              (t.project_id, t.client_id, t.request_id)
++            AND (i.execution_id IS NULL OR i.execution_id = e.execution_id)
++            AND t.project_id = :project_id AND t.client_id = :client_id AND t.task_id = :task_id
+             AND t.status = :previous AND e.project_id = t.project_id AND e.client_id = t.client_id
+             AND e.task_id = t.task_id AND e.execution_id = :execution_id
+         RETURNING t.task_id
+--- a/src/jimu_runtime/workflow/worker.py
++++ b/src/jimu_runtime/workflow/worker.py
+@@ -32,6 +32,7 @@
+ from jimu_runtime.domain.runtime.intake import IdempotencyScope
+ from jimu_runtime.domain.runtime.invocations import ModelInvocation
+ from jimu_runtime.domain.validation.coverage_sources import CoverageAuthorityInput
++from jimu_runtime.replay.inference_repository import read_inference_replay_for_target
+ from jimu_runtime.tools.step_attempts import load_parent_step_history
+ from jimu_runtime.workflow import repository as repo
+ from jimu_runtime.workflow.engine import BranchKey, ExecutionFinalization
+@@ -82,6 +83,7 @@
+     load_records,
+     read_context_message,
+     read_observation_retry,
++    read_replay_capture_message,
+ )
+ from jimu_runtime.workflow.worker_validation import check_result
+ 
+@@ -433,21 +435,39 @@
+         try:
+             historical = None
+             historical_context = None
++            capture_execution_id = None
++            require_historical = (
++                self._invoke_claimed_node is not None or locked.is_inference_replay
++            )
+             async with self._engine.connect() as connection:
+-                if locked.execution.context_snapshot is not None:
+-                    context = await read_context_message(connection, scope, locked)
+-                    if context is not None:
+-                        if (
+-                            self._adapters is None
+-                            and context.worker_format == "configured-v1"
+-                        ):
+-                            raise WorkerSourceError(
+-                                "worker_message_requires_configured_reader",
+-                                retryable=False,
+-                            )
+-                        if self._adapters is not None:
+-                            historical_context = context.snapshot
+-                if self._invoke_claimed_node is not None:
++                context = await read_context_message(connection, scope, locked)
++                if locked.is_inference_replay:
++                    replay = await read_inference_replay_for_target(
++                        connection, scope, execution_id
++                    )
++                    if replay is None:
++                        raise WorkerSourceError(
++                            "worker_inference_replay_lineage_missing",
++                            retryable=False,
++                        )
++                    replay.run.validate_target_execution(locked.execution)
++                    if context is None:
++                        context = await read_replay_capture_message(
++                            connection, scope, locked, replay
++                        )
++                        capture_execution_id = replay.capture_execution_id
++                if context is not None:
++                    if (
++                        self._adapters is None
++                        and context.worker_format == "configured-v1"
++                    ):
++                        raise WorkerSourceError(
++                            "worker_message_requires_configured_reader",
++                            retryable=False,
++                        )
++                    if self._adapters is not None or locked.is_inference_replay:
++                        historical_context = context.snapshot
++                if require_historical:
+                     historical = await read_historical_capabilities(
+                         connection, scope, locked.execution
+                     )
+@@ -465,8 +485,9 @@
+                 self._limits,
+                 at,
+                 historical=historical,
+-                require_historical=self._invoke_claimed_node is not None,
++                require_historical=require_historical,
+                 historical_context=historical_context,
++                capture_execution_id=capture_execution_id,
+             )
+         except WorkerSourceError:
+             raise
+--- a/src/jimu_runtime/workflow/worker_completion.py
++++ b/src/jimu_runtime/workflow/worker_completion.py
+@@ -377,14 +377,15 @@
+         execution.model_copy(update={"status": status, "ended_at": now}),
+         now=now,
+     )
+-    await repo.transition_task(
+-        connection,
+-        scope,
+-        eid,
+-        execution.task_id,
+-        locked.task_status,
+-        task_status,
+-        now=now,
+-        trace=execution.trace,
+-    )
++    if not locked.is_inference_replay:
++        await repo.transition_task(
++            connection,
++            scope,
++            eid,
++            execution.task_id,
++            locked.task_status,
++            task_status,
++            now=now,
++            trace=execution.trace,
++        )
+     return True
+--- a/src/jimu_runtime/workflow/worker_source.py
++++ b/src/jimu_runtime/workflow/worker_source.py
+@@ -156,6 +156,7 @@
+     historical: HistoricalCapabilities | None = None,
+     require_historical: bool = False,
+     historical_context: ContextSnapshot | None = None,
++    capture_execution_id: str | None = None,
+ ) -> OpenExecution:
+     task, execution = locked.task, locked.execution
+     if historical is None and require_historical:
+@@ -204,7 +205,8 @@
+         )
+     if historical_context is not None and (
+         historical_context.task_id != task.task_id
+-        or historical_context.execution_id != execution.execution_id
++        or historical_context.execution_id
++        != (capture_execution_id or execution.execution_id)
+         or historical_context.release_id != task.release_id
+         or historical_context.bundle_digest != task.bundle_digest
+         or historical_context.media_ref != source.media.media_ref
+--- a/src/jimu_runtime/workflow/worker_state.py
++++ b/src/jimu_runtime/workflow/worker_state.py
+@@ -11,11 +11,12 @@
+ from jimu_runtime.domain.nodes.envelopes import FailedNodeOutput, NodeOutputEnvelope
+ from jimu_runtime.domain.runtime.executions import Attempt, NodeId, NodeRun
+ from jimu_runtime.domain.runtime.facts import NodeRunRef, ObjectRef
+-from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.intake import ContextSnapshot, IdempotencyScope
+ from jimu_runtime.domain.validation.coverage_sources import (
+     CoverageSources,
+     ObjectDecisionBlocker,
+ )
++from jimu_runtime.replay.inference_repository import StoredInferenceReplay
+ from jimu_runtime.tools.step_attempts import load_child_nodes
+ from jimu_runtime.workflow import repository as repo
+ from jimu_runtime.workflow.engine import BranchKey, BranchRun, PlannerState
+@@ -249,6 +250,52 @@
+     raise ValueError("execution snapshot requires its selected durable N01 output")
+ 
+ 
++async def read_context_snapshot(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    locked: repo.LockedExecution,
++) -> ContextSnapshot | None:
++    message = await read_context_message(connection, scope, locked)
++    return message.snapshot if message is not None else None
++
++
++async def read_replay_capture_message(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    locked: repo.LockedExecution,
++    replay: StoredInferenceReplay,
++) -> ContextMessage | None:
++    """Follow the capture pin recorded when this replay was accepted."""
++    replay.run.validate_target_execution(locked.execution)
++    if replay.capture_execution_id is None:
++        return None
++    capture = await repo.get_execution(connection, scope, replay.capture_execution_id)
++    if (
++        capture is None
++        or capture.task != locked.task
++        or capture.execution.pins != locked.execution.pins
++    ):
++        raise ValueError("inference replay capture execution pin mismatch")
++    message = await read_context_message(connection, scope, capture)
++    if (
++        message is None
++        or message.snapshot is None
++        or record_digest(message.snapshot) != replay.capture_snapshot_digest
++    ):
++        raise ValueError("inference replay capture snapshot pin mismatch")
++    return message
++
++
++async def read_replay_capture_snapshot(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    locked: repo.LockedExecution,
++    replay: StoredInferenceReplay,
++) -> ContextSnapshot | None:
++    message = await read_replay_capture_message(connection, scope, locked, replay)
++    return message.snapshot if message is not None else None
++
++
+ async def read_observation_retry(
+     connection: AsyncConnection,
+     scope: IdempotencyScope,
+--- /dev/null
++++ b/tests/contract/test_wp06_inference_replay.py
+@@ -0,0 +1,473 @@
++"""Run same-pin replay through the normal Worker against isolated PostgreSQL."""
++
++import asyncio
++import json
++from collections import Counter
++from dataclasses import dataclass
++from datetime import UTC, datetime
++from pathlib import Path
++
++import pytest
++from sqlalchemy import text
++
++from examples.nonmotor_vehicle_illegal_parking.compilable.lifecycle import ACTOR, SCOPE
++from examples.nonmotor_vehicle_illegal_parking.compilable.scene import LIMITS
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.domain.definitions.tools import ToolDefinition
++from jimu_runtime.domain.enums import ArtifactKind, ExecutionStatus, TaskStatus
++from jimu_runtime.domain.runtime.replay import (
++    ExecutionRef,
++    InferenceReplayRequest,
++    ReplayExecutionSource,
++)
++from jimu_runtime.gateway.bridge_tools import ToolExecutionAdapter
++from jimu_runtime.inspection.geometry import synthetic_cpu_implementations
++from jimu_runtime.inspection.geometry.node import GeometryNodeAdapter
++from jimu_runtime.replay.inference import InferenceReplayError, InferenceReplayService
++from jimu_runtime.tools.executor import ToolExecutor
++from jimu_runtime.tools.registry import ToolWorkerRegistry
++from jimu_runtime.tools.step_attempts import StepAttemptStore
++from jimu_runtime.workflow import repository
++from jimu_runtime.workflow.intake import IntakeAuthorizationError, IntakeIdentity
++from jimu_runtime.workflow.worker import WorkerStep
++from jimu_runtime.workflow.worker_capabilities import read_historical_capabilities
++from jimu_runtime.workflow.worker_inspection import (
++    VerifiedMediaWorkerHost,
++    inspection_worker,
++)
++from jimu_runtime.workflow.worker_state import load_records, read_context_snapshot
++from tests.fixtures.wp04 import http_support
++from tests.fixtures.wp05.perception import perception_fixture
++
++loopback_only = http_support.loopback_only
++_REPLIES = {
++    "profile_discovery-result": {"profile_hits": ["nonmotor_vehicle"]},
++    "object_grounding-result": {"boxes": [{"xyxy": [40, 23, 52, 33]}]},
++    "object_observation-result": {
++        "vehicle_type": "electric_bicycle",
++        "parking_state": "parked",
++        "parking_position": "over_boundary",
++    },
++    "candidate_prediction-result": {"categories": []},
++}
++
++
++@dataclass
++class ReplayHost:
++    worker_host: VerifiedMediaWorkerHost
++    allowed_principal: object
++    authorization_count: int = 0
++    media_count: int = 0
++    subject: str = "tester"
++
++    async def authorize_inference_replay(self, principal, scope, request, task):
++        self.authorization_count += 1
++        if principal is not self.allowed_principal or task.idempotency_scope != scope:
++            raise IntakeAuthorizationError()
++        return IntakeIdentity(
++            issuer="https://fixture.invalid/replay", subject=self.subject
++        )
++
++    async def verified_original(self, scope, media_ref):
++        self.media_count += 1
++        return await self.worker_host.verified_original(scope, media_ref)
++
++
++def test_replay_enqueues_and_executes_fresh_attempts_under_the_original_release(
++    tmp_path: Path, loopback_only: set[int], monkeypatch: pytest.MonkeyPatch
++) -> None:
++    async def run() -> None:
++        calls: Counter[str] = Counter()
++
++        async def peer(
++            reader: asyncio.StreamReader, writer: asyncio.StreamWriter
++        ) -> None:
++            request = await http_support.read_request(reader)
++            body = json.loads(request.body)
++            schema = body["response_format"]["json_schema"]["schema"]
++            name = schema["$id"].split(":")[-2]
++            calls[name] += 1
++            raw = http_support.chat_body(
++                model=body["model"], content=json.dumps(_REPLIES[name])
++            )
++            writer.write(
++                http_support.response(
++                    raw,
++                    headers=(
++                        (b"X-Request-ID", f"replay-fixture-{calls.total()}".encode()),
++                        (b"X-Jimu-Deployment-Version", b"1.0.0"),
++                        (b"X-Jimu-Model-Version", b"1.0.0"),
++                    ),
++                )
++            )
++            await writer.drain()
++
++        async with http_support.http_peer(loopback_only, peer) as url:
++            async with perception_fixture(tmp_path, url, with_media=True) as fixture:
++                media = fixture.media_store
++                assert media is not None
++                task, source = fixture.accepted.task, fixture.accepted.execution
++                scope, source_id = task.idempotency_scope, source.execution_id
++                app = fixture.application
++                catalogue = fixture.scene.execution.catalogue
++                definition_tools = tuple(
++                    require_definition(catalogue, item.ref, ToolDefinition)
++                    for item in catalogue.of_kind(ArtifactKind.TOOL)
++                )
++                tools = GeometryNodeAdapter(
++                    media,
++                    ToolExecutionAdapter(
++                        ToolExecutor(
++                            ToolWorkerRegistry(
++                                synthetic_cpu_implementations(
++                                    fixture.resources,
++                                    "cpu",
++                                    "inspection-tools",
++                                    definition_tools,
++                                    fixture.tool_proofs,
++                                    synthetic_image_digests=frozenset(
++                                        {task.media_ref.sha256}
++                                    ),
++                                )
++                            )
++                        ),
++                        StepAttemptStore(app, actor=ACTOR),
++                        fixture.journal,
++                        fixture.host.capabilities,
++                    ),
++                )
++                capture_reads = 0
++
++                async def capture_registry(scope, task):
++                    nonlocal capture_reads
++                    capture_reads += 1
++                    assert capture_reads == 1
++                    verified = await fixture.host.worker_source(scope, task)
++                    return verified.device, verified.camera
++
++                host = VerifiedMediaWorkerHost(
++                    media, fixture.host.capabilities, capture_registry
++                )
++
++                def open_worker():
++                    return inspection_worker(
++                        app,
++                        fixture.releases,
++                        fixture.store,
++                        host=host,
++                        bundle_limits=LIMITS,
++                        media=media,
++                        gateway=fixture.gateway,
++                        execute_tools=tools.execute,
++                        model_resource_scope_id="model",
++                    )
++
++                async def finish(eid):
++                    steps = []
++                    for index in range(20):
++                        step = await open_worker().run_once(
++                            scope, eid, owner=f"fixture-worker-{index}", lease_ms=10000
++                        )
++                        steps.append(step)
++                        if step is WorkerStep.FINALIZED:
++                            return await open_worker().read_finalization(scope, eid)
++                    raise AssertionError(steps)
++
++                async def history(eid):
++                    async with app.connect() as connection:
++                        locked = await repository.get_execution(connection, scope, eid)
++                        assert locked is not None
++                        events = await repository.list_events(connection, scope, eid)
++                        historical = await read_historical_capabilities(
++                            connection, scope, locked.execution
++                        )
++                        snapshot = await read_context_snapshot(
++                            connection, scope, locked
++                        )
++                        ids = {}
++                        for table, id_column in (
++                            ("attempts", "attempt_id"),
++                            ("jobs", "job_id"),
++                            ("dispatch_intents", "dispatch_id"),
++                            ("tool_step_attempts", "child_attempt_id"),
++                        ):
++                            rows = await connection.execute(
++                                text(
++                                    f"SELECT {id_column} FROM jimu_workflow.{table} "
++                                    "WHERE project_id = :project_id AND client_id = :client_id "
++                                    "AND execution_id = :eid"
++                                ),
++                                {**scope.model_dump(), "eid": eid},
++                            )
++                            ids[table] = frozenset(rows.scalars())
++                    final = await open_worker().read_finalization(scope, eid)
++                    return locked, events, historical, snapshot, ids, final
++
++                principal = object()
++                replay_host = ReplayHost(host, principal)
++
++                def open_replay():
++                    return InferenceReplayService(
++                        app,
++                        fixture.releases,
++                        fixture.store,
++                        host=replay_host,
++                        bundle_limits=LIMITS,
++                    )
++
++                request = InferenceReplayRequest(
++                    schema_version="1.0.0",
++                    kind="inference",
++                    source=ReplayExecutionSource(
++                        execution_ref=ExecutionRef(
++                            record_kind="execution", record_id=source_id
++                        ),
++                        task_id=task.task_id,
++                        pins=source.pins,
++                    ),
++                    target_pins=source.pins,
++                )
++
++                async def submit(
++                    key="fixture-replay", accepted_request=request, **kwargs
++                ):
++                    return await open_replay().submit(
++                        kwargs.pop("scope", scope),
++                        accepted_request,
++                        idempotency_key=key,
++                        principal=kwargs.pop("principal", principal),
++                    )
++
++                with pytest.raises(
++                    InferenceReplayError, match="source_context_pending"
++                ):
++                    await submit()
++                assert replay_host.media_count == 0
++                assert (
++                    await open_worker().run_once(
++                        scope, source_id, owner="source-context", lease_ms=10000
++                    )
++                    is WorkerStep.APPLIED
++                )
++                in_progress = await history(source_id)
++                assert in_progress[0].execution.status is ExecutionStatus.RUNNING
++                assert in_progress[3] is not None
++                active_replay = await submit("active-source")
++                active_id = active_replay.target_execution_ref.record_id
++                async with app.begin() as connection:
++                    assert await repository.lock_execution(connection, scope, source_id)
++                    assert await asyncio.wait_for(
++                        open_worker().request_cancel(scope, active_id), 10
++                    )
++                    assert (
++                        await asyncio.wait_for(
++                            open_worker().run_once(
++                                scope, active_id, owner="cancel-active", lease_ms=10000
++                            ),
++                            10,
++                        )
++                        is WorkerStep.CANCELLED
++                    )
++                assert await history(source_id) == in_progress
++
++                final_source = await finish(source_id)
++                assert final_source is not None
++                assert {row.result.value for row in final_source.decisions} == {
++                    "violation"
++                }
++                original_history = await history(source_id)
++                assert original_history[0].task_status is TaskStatus.COMPLETED
++                before = calls.copy()
++                assert before == dict.fromkeys(_REPLIES, 1)
++                active = fixture.releases.active_activation(SCOPE)
++                assert active is not None
++                assert active.release_ref.record_id != source.pins.release_id
++
++                async def enqueue_interrupted(*args, **kwargs):
++                    raise RuntimeError("fixture aborts the replay acceptance")
++
++                with monkeypatch.context() as fault:
++                    fault.setattr(repository, "ready_root_job", enqueue_interrupted)
++                    with pytest.raises(
++                        RuntimeError, match="aborts the replay acceptance"
++                    ):
++                        await submit()
++                async with app.connect() as connection:
++                    assert (
++                        await connection.scalar(
++                            text("SELECT count(*) FROM jimu_workflow.executions")
++                        )
++                        == 2
++                    )
++                    assert (
++                        await connection.scalar(
++                            text(
++                                "SELECT count(*) FROM jimu_workflow.inference_replay_runs"
++                            )
++                        )
++                        == 1
++                    )
++                run_one, run_two = await asyncio.gather(submit(), submit())
++                assert run_one == run_two
++                eid = run_one.target_execution_ref.record_id
++                assert eid != source_id
++                assert calls == before
++                with pytest.raises(IntakeAuthorizationError):
++                    await submit(principal=object())
++                with pytest.raises(InferenceReplayError, match="source_missing"):
++                    await submit(scope=scope.model_copy(update={"client_id": "other"}))
++                with pytest.raises(InferenceReplayError, match="source_pin_mismatch"):
++                    await submit(
++                        "bad-source",
++                        request.model_copy(
++                            update={
++                                "source": request.source.model_copy(
++                                    update={
++                                        "pins": source.pins.model_copy(
++                                            update={"runtime_version": "9.9.9"}
++                                        )
++                                    }
++                                )
++                            }
++                        ),
++                    )
++                with pytest.raises(
++                    InferenceReplayError, match="target_pins_unsupported"
++                ):
++                    await submit(
++                        "bad-pins",
++                        request.model_copy(
++                            update={
++                                "target_pins": source.pins.model_copy(
++                                    update={"runtime_version": "9.9.9"}
++                                )
++                            }
++                        ),
++                    )
++                assert await submit() == run_one
++                assert replay_host.authorization_count == 9
++                replay_host.subject = "other-authorized-principal"
++                with pytest.raises(InferenceReplayError, match="key_conflict"):
++                    await submit()
++                replay_host.subject = "tester"
++                queued, _, _, _, queued_ids, _ = await history(eid)
++                assert queued.is_inference_replay
++                assert queued.task == task
++                assert queued.task_status is TaskStatus.COMPLETED
++                assert queued.execution.status is ExecutionStatus.INITIALIZED
++                assert queued_ids["attempts"] == frozenset()
++                assert len(queued_ids["jobs"]) == 1
++
++                final_target = await finish(eid)
++                assert final_target is not None
++                assert {row.result.value for row in final_target.decisions} == {
++                    "violation"
++                }
++                assert calls == dict.fromkeys(_REPLIES, 2)
++                assert await history(source_id) == original_history
++                replayed, events, capabilities, snapshot, ids, _ = await history(eid)
++                assert replayed.execution.status is ExecutionStatus.COMPLETED
++                assert replayed.task_status is TaskStatus.COMPLETED
++                assert replayed.execution.pins == source.pins
++                assert capabilities == original_history[2]
++                assert snapshot is not None
++                assert original_history[3] is not None
++                assert snapshot.execution_id == eid
++                assert snapshot.device_ref == original_history[3].device_ref
++                assert snapshot.camera_ref == original_history[3].camera_ref
++                assert capture_reads == 1
++                for table, source_ids in original_history[4].items():
++                    assert source_ids and len(ids[table]) == len(source_ids)
++                    assert ids[table].isdisjoint(source_ids)
++                assert len(ids["tool_step_attempts"]) == 3
++                assert events
++                assert all(
++                    row.payload.event_kind != "task_transition" for row in events
++                )
++                replay_as_source = request.model_copy(
++                    update={
++                        "source": request.source.model_copy(
++                            update={"execution_ref": run_one.target_execution_ref}
++                        )
++                    }
++                )
++                with pytest.raises(InferenceReplayError, match="key_conflict"):
++                    await submit(accepted_request=replay_as_source)
++
++                cancel_run = await submit("cancel-target")
++                cancelled_id = cancel_run.target_execution_ref.record_id
++                assert await open_worker().request_cancel(scope, cancelled_id)
++                assert (
++                    await open_worker().run_once(
++                        scope, cancelled_id, owner="cancel-fixture", lease_ms=10000
++                    )
++                    is WorkerStep.CANCELLED
++                )
++                cancelled, _, _, _, cancelled_ids, final = await history(cancelled_id)
++                assert cancelled.execution.status is ExecutionStatus.CANCELLED
++                assert cancelled.task_status is TaskStatus.COMPLETED
++                assert cancelled_ids["attempts"] == frozenset()
++                assert final is None
++                assert calls == dict.fromkeys(_REPLIES, 2)
++                assert await history(source_id) == original_history
++                assert (await history(eid))[0] == replayed
++
++                # The cancelled replay never reached N01. Its own replay still
++                # inherits the immutable registry revisions selected upstream.
++                cancelled_as_source = request.model_copy(
++                    update={
++                        "source": request.source.model_copy(
++                            update={"execution_ref": cancel_run.target_execution_ref}
++                        )
++                    }
++                )
++                chained = await submit("chained-target", cancelled_as_source)
++                chained_id = chained.target_execution_ref.record_id
++                assert (
++                    await open_worker().run_once(
++                        scope, chained_id, owner="chained-context", lease_ms=10000
++                    )
++                    is WorkerStep.APPLIED
++                )
++                chained_snapshot = (await history(chained_id))[3]
++                assert chained_snapshot is not None
++                assert chained_snapshot.execution_id == chained_id
++                assert chained_snapshot.device_ref == snapshot.device_ref
++                assert chained_snapshot.camera_ref == snapshot.camera_ref
++                assert capture_reads == 1
++                assert calls == dict.fromkeys(_REPLIES, 2)
++                current_routing = fixture.gateway._current
++
++                async def revoked(scope):
++                    current = await current_routing(scope)
++                    return current.model_copy(
++                        update={
++                            "ownership": tuple(
++                                row.model_copy(update={"revoked_at": datetime.now(UTC)})
++                                for row in current.ownership
++                            )
++                        }
++                    )
++
++                with monkeypatch.context() as revoked_host:
++                    revoked_host.setattr(fixture.gateway, "_current", revoked)
++                    await finish(chained_id)
++                async with app.connect() as connection:
++                    locked = await repository.get_execution(
++                        connection, scope, chained_id
++                    )
++                    assert locked is not None
++                    state = await load_records(connection, scope, locked)
++                    discovery = next(
++                        value
++                        for key, value in state.messages.items()
++                        if key.node_id.value == "N02"
++                    )
++                    assert any(
++                        failure.error.code == "model.ownership_unavailable"
++                        for failure in discovery.group_failures
++                    )
++                assert calls == dict.fromkeys(_REPLIES, 2)
++                assert await history(source_id) == original_history
++
++    asyncio.run(run())

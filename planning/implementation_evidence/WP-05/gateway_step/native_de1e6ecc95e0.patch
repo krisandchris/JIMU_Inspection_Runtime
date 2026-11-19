@@ -1,0 +1,1710 @@
+--- a/src/jimu_runtime/gateway/bridge.py
++++ b/src/jimu_runtime/gateway/bridge.py
+@@ -36,6 +36,7 @@
+     InvocationError,
+     InvocationNodeId,
+     InvocationPurpose,
++    ModelInvocation,
+     PrimaryProviderRoute,
+     UndispatchedInvocation,
+ )
+@@ -104,6 +105,7 @@
+     RetryableNodeFailure,
+ )
+ from jimu_runtime.workflow.worker_nodes import NodeResult
++from jimu_runtime.workflow.worker_state import read_observation_retry
+ 
+ 
+ class PreparedModelTransport(ModelTransport, Protocol):
+@@ -117,6 +119,16 @@
+     async def prepare_async(
+         self, route: PlannedRoute, prompt: str, media: VerifiedImage | None = None
+     ) -> bytes: ...
++
++
++class ModelResponseWriter(Protocol):
++    async def stage_model_response(
++        self,
++        scope: IdempotencyScope,
++        execution_id: str,
++        dispatch_id: str,
++        receipt: TransportResult,
++    ) -> object: ...
+ 
+ 
+ class CurrentModelRegistry(Protocol):
+@@ -172,6 +184,7 @@
+     receipts: tuple[StoredDispatch, ...]
+     invocations: tuple[RecordedInvocation, ...]
+     unresolved_after_witness: bool
++    consumer_retry: bool = False
+ 
+ 
+ def _operation_history(
+@@ -296,6 +309,8 @@
+     request: DispatchRequest,
+     lease: ResourceLease | None,
+     nested_owner: NestedModelStepOwner | None,
++    *,
++    retain_complete_response: bool | None = None,
+ ) -> DispatchIntent:
+     route, selected = request.route, request.route.selected
+     operation = route.operation
+@@ -331,6 +346,7 @@
+         input_digest=operation.input_digest,
+         response_contract_digest=operation.response_contract_digest,
+         resource_lease=_dispatch_lease(lease),
++        retain_complete_response=retain_complete_response,
+         target=target,
+     )
+ 
+@@ -365,6 +381,12 @@
+         observed_response_bytes=transport.observed_response_bytes or 0,
+         response_status=transport.response_status,
+         response_bytes_omission_reason=transport.response_bytes_omission_reason,
++        normalized_response_digest=(
++            transport.normalized_response_digest if outcome.error is None else None
++        ),
++        normalized_response_bytes=(
++            transport.normalized_response_bytes if outcome.error is None else None
++        ),
+         acknowledgement=(
+             "http_headers"
+             if transport.response_status is not None
+@@ -398,6 +420,8 @@
+         transport: PreparedModelTransport,
+         current: CurrentModelRegistry,
+         limits: ModelCallLimits,
++        *,
++        response_writer: ModelResponseWriter | None = None,
+     ) -> None:
+         self._engine = engine
+         self._journal = journal
+@@ -405,6 +429,11 @@
+         self._transport = transport
+         self._current = current
+         self._limits = limits
++        self._response_writer = response_writer
++
++    @property
++    def retains_response_evidence(self) -> bool:
++        return self._response_writer is not None
+ 
+     def worker_adapter(
+         self,
+@@ -416,6 +445,32 @@
+             return await execute(claimed, self)
+ 
+         return invoke
++
++    async def verify_invocation(
++        self, claimed: ClaimedNode, invocation: ModelInvocation
++    ) -> None:
++        """Accept only the exact journaled invocation of the current business Attempt."""
++        claim = claimed.claim
++        receipt = await self._journal.get_dispatch(
++            claim.scope, claim.execution_id, invocation.model_invocation_id
++        )
++        if (
++            receipt is None
++            or (receipt.node_run_id, receipt.attempt_id, receipt.job_id, receipt.fence)
++            != (
++                claim.node_run_id,
++                claimed.attempt.attempt_id,
++                claim.job_id,
++                claim.fence,
++            )
++            or not any(
++                not item.late
++                and isinstance(item.result, ModelDispatchResult)
++                and item.result.invocation == invocation
++                for item in receipt.results
++            )
++        ):
++            raise ModelCallFailure("model.invocation_receipt_unqualified")
+ 
+     async def _now(self) -> datetime:
+         async with self._engine.connect() as connection:
+@@ -514,8 +569,31 @@
+         if any(item.attempt_id == claimed.attempt.attempt_id for item in records):
+             raise ModelCallFailure("model.duplicate_attempt_operation")
+         history = []
++        consumer_witness = None
+         ranks: dict[str, int] = {}
+         async with self._engine.connect() as connection:
++            if (
++                claimed.node.node_id is NodeId.N04
++                and claimed.previous.observation_retry is not None
++            ):
++                stored_node = await repository.get_node(
++                    connection, claim.scope, claim.execution_id, claim.node_run_id
++                )
++                stored_attempt = await repository.get_attempt(
++                    connection,
++                    claim.scope,
++                    claim.execution_id,
++                    claim.node_run_id,
++                    claimed.attempt.attempt_id,
++                )
++                if stored_node is not None and stored_attempt is not None:
++                    consumer_witness = await read_observation_retry(
++                        connection, claim.scope, stored_node, stored_attempt
++                    )
++                if consumer_witness != claimed.previous.observation_retry:
++                    raise ModelCallFailure(
++                        "model.observation_retry_without_committed_batch"
++                    )
+             for item in records:
+                 intent = item.intent
+                 target = intent.target
+@@ -580,6 +658,40 @@
+                                 invoice.invocation,
+                             )
+                         )
++        if consumer_witness is not None:
++            prior = consumer_witness.message
++            consumer_retry = prior.batch.outcome in {"parse_error", "association_error"}
++            matches = tuple(
++                item
++                for item in records
++                if item.attempt_id == consumer_witness.attempt.attempt_id
++                and item.intent.dispatch_id == prior.invocation.model_invocation_id
++                and isinstance(item.intent.target, ModelDispatchTarget)
++                and any(
++                    not row.late
++                    and isinstance(row.result, ModelDispatchResult)
++                    and row.result.invocation == prior.invocation
++                    for row in item.results
++                )
++            )
++            if (
++                len(matches) != 1
++                or operation.contract_snapshot != prior.inputs.contract_snapshot
++                or operation.object_ref != prior.batch.object_ref
++            ):
++                raise ModelCallFailure("model.observation_retry_invocation_unqualified")
++            if consumer_retry:
++                if (
++                    not isinstance(prior.invocation.route_trace, PrimaryProviderRoute)
++                    or not matches[0].send_admitted
++                    or any(
++                        ranks[item.intent.dispatch_id]
++                        > consumer_witness.attempt.attempt_number
++                        for item in records
++                    )
++                ):
++                    raise ModelCallFailure("model.observation_retry_route_unqualified")
++                return _OperationHistory(records, (), False, consumer_retry=True)
+         return _operation_history(
+             records,
+             tuple(sorted(history, key=lambda row: row.attempt.attempt_number)),
+@@ -737,6 +849,8 @@
+         records, history = ledger.receipts, ledger.invocations
+         descriptor = _attempt_descriptor(claimed.attempt)
+         args = policy, operation, descriptor, current, budget, at
++        if ledger.consumer_retry:
++            return plan_primary(*args, nested_step_owner=nested_owner)
+         if history:
+             failure = history[-1].invocation
+             assert isinstance(
+@@ -989,7 +1103,16 @@
+         admitted = False
+         reply_managed = False
+         started_at = route.approved_at
+-        intent = _model_intent(request, lease, owner)
++        intent = _model_intent(
++            request,
++            lease,
++            owner,
++            retain_complete_response=(
++                self._transport.raw_response_retention(route)
++                if isinstance(self._transport, HttpModelTransport)
++                else None
++            ),
++        )
+         resource_deadline = get_running_loop().time() + lease.timeout_ms / 1000
+ 
+         async def resource_phase(*, activate: bool) -> None:
+@@ -1315,12 +1438,28 @@
+             completed_at=await self._now(),
+             evidence_refs=evidence_refs,
+         )
+-        await self._journal.append_result(
+-            claimed.claim,
+-            claimed.attempt.attempt_id,
+-            request.dispatch_id,
+-            _model_record(outcome),
+-        )
++        try:
++            if self._response_writer is not None and result.dispatched:
++                await self._response_writer.stage_model_response(
++                    claimed.claim.scope,
++                    claimed.claim.execution_id,
++                    request.dispatch_id,
++                    outcome.transport_result
++                    if outcome.error is None
++                    else replace(
++                        outcome.transport_result,
++                        parsed_content=None,
++                        normalized_response_digest=None,
++                        normalized_response_bytes=None,
++                    ),
++                )
++        finally:
++            await self._journal.append_result(
++                claimed.claim,
++                claimed.attempt.attempt_id,
++                request.dispatch_id,
++                _model_record(outcome),
++            )
+         return outcome
+ 
+ 
+--- a/src/jimu_runtime/gateway/bridge_tools.py
++++ b/src/jimu_runtime/gateway/bridge_tools.py
+@@ -38,6 +38,7 @@
+     ToolImplementationObservation,
+ )
+ from jimu_runtime.tools.executor import (
++    AncestorToolEvidence,
+     GroundingCall,
+     PlanStepCall,
+     RecordResponse,
+@@ -46,6 +47,7 @@
+     ToolExecutor,
+ )
+ from jimu_runtime.tools.registry import (
++    CPUWorkerExchange,
+     NestedModelRequest,
+     NestedModelResponse,
+     ToolDispatch,
+@@ -184,6 +186,8 @@
+         input_fields: Mapping[str, object],
+         *,
+         peers: tuple[ToolExecution, ...] = (),
++        ancestor_evidence: tuple[AncestorToolEvidence, ...] = (),
++        cpu_exchange: CPUWorkerExchange | None = None,
+     ) -> StepCompletion:
+         """Return the whole durable output group, reusing it only with exact input."""
+         scope = claimed.opened.scope
+@@ -210,6 +214,7 @@
+             input_digest,
+             timeout_ms=policy.timeout_ms,
+             max_attempts=policy.max_attempts,
++            ancestor_evidence=ancestor_evidence,
+         )
+         if handle is None:
+             raise AdapterRejected("tool_step_fence_lost")
+@@ -224,6 +229,8 @@
+             input_digest,
+             handle=handle,
+             peers=peers,
++            ancestor_evidence=ancestor_evidence,
++            cpu_exchange=cpu_exchange,
+         )
+         if result.execution.status != "not_dispatched" and not await self._available(
+             claimed, definition, pin
+@@ -294,6 +301,8 @@
+         *,
+         peers: tuple[ToolExecution, ...],
+         handle: StepAttempt | None = None,
++        ancestor_evidence: tuple[AncestorToolEvidence, ...] = (),
++        cpu_exchange: CPUWorkerExchange | None = None,
+     ) -> ToolCallResult:
+         claim = claimed.claim if handle is None else handle.claim
+         node = claimed.node if handle is None else handle.node
+@@ -449,8 +458,8 @@
+             if not await self._available(claimed, definition, pin):
+                 clearance_failure = "tool_live_registration_revoked"
+                 return False
+-            wire_digest = sha256_digest(dispatch.request)
+-            if handle is not None and wire_digest != input_digest:
++            logical_digest = sha256_digest(dispatch.request)
++            if handle is not None and logical_digest != input_digest:
+                 raise AdapterRejected("tool_prepared_input_digest_changed")
+             candidate = intent_for(
+                 dispatch.tool_execution_id,
+@@ -473,7 +482,7 @@
+                     if handle is None
+                     else handle.parent_attempt_id,
+                 ),
+-                wire_digest,
++                sha256_digest(dispatch.physical_request or dispatch.request),
+                 DispatchLease(
+                     lease_id=lease.lease_id,
+                     owner_id=lease.owner_id,
+@@ -584,6 +593,8 @@
+                 peers=peers,
+                 record_response=self._record_response,
+                 invoke_nested_model=invoke_nested if model_ref is not None else None,
++                ancestor_evidence=ancestor_evidence,
++                cpu_exchange=cpu_exchange,
+             )
+         except ToolCancelled as exc:
+             await retain(qualify_tool_candidate(exc.result))
+--- a/src/jimu_runtime/gateway/http.py
++++ b/src/jimu_runtime/gateway/http.py
+@@ -223,6 +223,7 @@
+ 
+ @dataclass(slots=True)
+ class _Receipt:
++    dispatch_id: RecordId
+     dispatched: bool = False
+     status: int | None = None
+     observed_bytes: int | None = None
+@@ -234,6 +235,8 @@
+     model_version: Version | None = None
+     retry_after_seconds: float | None = None
+     validated_digest: Digest | None = None
++    normalized_digest: Digest | None = None
++    normalized_bytes: int | None = None
+     invalid_question_slots: tuple[ArtifactId, ...] = ()
+     missing_question_slots: tuple[ArtifactId, ...] = ()
+ 
+@@ -269,12 +272,19 @@
+                 omission = "unvalidated"
+         return TransportResult(
+             dispatched=self.dispatched,
++            response_dispatch_id=self.dispatch_id,
+             error=error,
+             observation=observation,
+             response_digest=self.digest,
+             response_bytes=raw,
+             response_bytes_omission_reason=omission,
+             parsed_content=parsed_content,
++            normalized_response_digest=self.normalized_digest
++            if parsed_content is not None
++            else None,
++            normalized_response_bytes=self.normalized_bytes
++            if parsed_content is not None
++            else None,
+             retry_after_seconds=self.retry_after_seconds,
+             response_status=self.status,
+             observed_response_bytes=self.observed_bytes,
+@@ -483,6 +493,11 @@
+                 raise WireError("http_question_slots_pin_mismatch")
+         return endpoint, contract
+ 
++    def raw_response_retention(self, route: PlannedRoute) -> bool:
++        """Resolve the exact pinned endpoint's response byte retention permission."""
++        endpoint, _ = self._resolve(route)
++        return endpoint.retain_complete_response
++
+     def prepare(
+         self, route: PlannedRoute, prompt: str, media: VerifiedImage | None = None
+     ) -> bytes:
+@@ -527,7 +542,7 @@
+ 
+     async def dispatch(self, request: DispatchRequest) -> TransportResult:
+         """Return safe receipt data; propagate cooperative task cancellation."""
+-        receipt = _Receipt()
++        receipt = _Receipt(request.dispatch_id)
+         try:
+             endpoint, contract = self._resolve(request.route)
+         except WireError as exc:
+@@ -727,6 +742,9 @@
+         receipt.model_id = parsed.model_id
+         if parsed.error is not None:
+             raise WireError(parsed.error)
++        if parsed.content is not None:
++            receipt.normalized_digest = sha256(parsed.content).hexdigest()
++            receipt.normalized_bytes = len(parsed.content)
+         receipt.validated_digest = contract.response_schema_digest
+         receipt.invalid_question_slots = parsed.invalid_slots
+         receipt.missing_question_slots = parsed.missing_slots
+--- a/src/jimu_runtime/gateway/invocation.py
++++ b/src/jimu_runtime/gateway/invocation.py
+@@ -109,6 +109,9 @@
+     validated_response_contract_digest: Digest | None = None
+     invalid_question_slots: tuple[ArtifactId, ...] = ()
+     missing_question_slots: tuple[ArtifactId, ...] = ()
++    normalized_response_digest: Digest | None = None
++    normalized_response_bytes: int | None = None
++    response_dispatch_id: RecordId | None = None
+ 
+     def __post_init__(self) -> None:
+         if type(self.dispatched) is not bool:
+@@ -141,6 +144,33 @@
+             raise ValueError("question slot diagnostics must be immutable and bounded")
+         if self.validated_response_contract_digest is not None:
+             _DIGEST.validate_python(self.validated_response_contract_digest)
++        if self.response_dispatch_id is not None:
++            _RECORD_ID.validate_python(self.response_dispatch_id)
++        if (self.normalized_response_digest is None) != (
++            self.normalized_response_bytes is None
++        ):
++            raise ValueError(
++                "normalized response identity requires both digest and byte size"
++            )
++        if self.normalized_response_digest is not None:
++            _DIGEST.validate_python(self.normalized_response_digest)
++            size = _BYTE_COUNT.validate_python(self.normalized_response_bytes)
++            if (
++                size <= 0
++                or self.response_digest is None
++                or self.response_status is None
++                or not 200 <= self.response_status <= 299
++                or self.error is not None
++                or self.parsed_content is not None
++                and (
++                    size != len(self.parsed_content)
++                    or self.normalized_response_digest
++                    != sha256_digest(self.parsed_content)
++                )
++            ):
++                raise ValueError(
++                    "normalized response identity differs from the trusted parser output"
++                )
+         if self.parsed_content is not None and self.response_bytes_omission_reason in {
+             "credential_echo",
+             "incomplete",
+@@ -215,6 +245,8 @@
+                     self.response_digest,
+                     self.response_bytes_omission_reason,
+                     self.validated_response_contract_digest,
++                    self.normalized_response_digest,
++                    self.normalized_response_bytes,
+                 )
+             )
+         ):
+--- a/src/jimu_runtime/gateway/journal_records.py
++++ b/src/jimu_runtime/gateway/journal_records.py
+@@ -190,10 +190,17 @@
+     input_digest: Digest
+     response_contract_digest: Digest
+     resource_lease: DispatchLease | None = None
++    retain_complete_response: bool | None = Field(
++        default=None, exclude_if=lambda value: value is None
++    )
+     target: DispatchTarget
+ 
+     @model_validator(mode="after")
+     def verify_tool_contract(self) -> Self:
++        if self.retain_complete_response is not None and not isinstance(
++            self.target, (ModelDispatchTarget, NestedModelDispatchTarget)
++        ):
++            raise ValueError("response retention requires a selected model target")
+         if isinstance(self.target, ToolDispatchTarget):
+             schema = self.target.output_schema_ref
+             if schema is not None and schema.digest != self.response_contract_digest:
+@@ -248,6 +255,12 @@
+     provider_request_id: RecordId | None = None
+     provider_observation: ProviderDispatchObservation | None = None
+     invocation: ModelInvocation | None = None
++    normalized_response_digest: Digest | None = Field(
++        default=None, exclude_if=lambda value: value is None
++    )
++    normalized_response_bytes: Annotated[int, Field(gt=0, le=2**63 - 1)] | None = Field(
++        default=None, exclude_if=lambda value: value is None
++    )
+     response_bytes_omission_reason: (
+         Literal["incomplete", "policy_disabled", "credential_echo", "unvalidated"]
+         | None
+@@ -255,6 +268,22 @@
+ 
+     @model_validator(mode="after")
+     def verify_model_result(self) -> Self:
++        if (self.normalized_response_digest is None) != (
++            self.normalized_response_bytes is None
++        ):
++            raise ValueError("normalized response proof requires digest and byte count")
++        if self.normalized_response_digest is not None and (
++            self.acknowledgement != "http_headers"
++            or self.response_status is None
++            or not 200 <= self.response_status <= 299
++            or self.response_digest is None
++            or self.observed_response_bytes <= 0
++            or self.error is not None
++            or self.response_bytes_omission_reason not in {None, "policy_disabled"}
++        ):
++            raise ValueError(
++                "normalized response proof requires a validated whole HTTP response"
++            )
+         if (
+             self.response_bytes_omission_reason == "incomplete"
+             and self.response_digest is not None
+--- /dev/null
++++ b/src/jimu_runtime/inspection/geometry/node.py
+@@ -0,0 +1,809 @@
++"""Configured N05 over verified images and fence-selected ToolPlan children."""
++
++from dataclasses import dataclass, field
++from datetime import timedelta
++from hashlib import sha256
++from typing import Literal
++
++from pydantic import TypeAdapter
++
++from jimu_runtime.domain.definition_enums import ContextSource, EvidenceType
++from jimu_runtime.domain.definitions.capabilities import ProfileDefinition
++from jimu_runtime.domain.definitions.geometry import GeometryResourceDefinition
++from jimu_runtime.domain.definitions.ontology import RegionDefinition
++from jimu_runtime.domain.definitions.resources import StaticAssetDescriptor
++from jimu_runtime.domain.definitions.tools import (
++    ToolDefinition,
++    ToolPlanDefinition,
++    ToolStep,
++)
++from jimu_runtime.domain.enums import NodeRunStatus
++from jimu_runtime.domain.enums import RuntimeRecordKind as K
++from jimu_runtime.domain.fact_selectors import QuestionProducerSelector
++from jimu_runtime.domain.nodes.envelopes import (
++    FailedNodeOutput,
++    NodeError,
++    NodeInputEnvelope,
++    NodeOutputEnvelope,
++    SucceededNodeOutput,
++)
++from jimu_runtime.domain.nodes.observation import ObjectImageView
++from jimu_runtime.domain.nodes.tool_execution import (
++    InvokedToolStep,
++    ToolNodeInput,
++    ToolNodeOutput,
++    ToolPlanRunSummary,
++    ToolPlanStepResult,
++    UninvokedToolStep,
++)
++from jimu_runtime.domain.policies import (
++    EvidencePolicy,
++    EvidencePolicyArtifact,
++    ToolFailurePolicy,
++    ToolFailurePolicyArtifact,
++    ToolSkipPolicyArtifact,
++)
++from jimu_runtime.domain.runtime.evidence import (
++    EvidenceAsset,
++    ExecutionEvidenceScope,
++    OriginalImageEvidence,
++    ProjectEvidenceAccess,
++    RetentionPolicyRef,
++    TaskEvidenceAccess,
++)
++from jimu_runtime.domain.runtime.executions import NodeId
++from jimu_runtime.domain.runtime.facts import (
++    AuthoritySelectionRef,
++    EvidenceRef,
++    FactRecord,
++    FactRef,
++    KnownFact,
++    ModelInvocationRef,
++    ObjectRef,
++    PolicyContentRef,
++    QuestionFactSource,
++    ToolExecutionRef,
++)
++from jimu_runtime.domain.runtime.intake import (
++    IdempotencyScope,
++    RegionDefinitionProvenance,
++)
++from jimu_runtime.domain.runtime.tool_executions import (
++    FailedToolResult,
++    KnownToolOutputState,
++    ReturnedToolAttempt,
++)
++from jimu_runtime.domain.tool_mappings import (
++    ContextInput,
++    FactInput,
++    ImageInput,
++    ObjectInput,
++    StepOutputInput,
++)
++from jimu_runtime.domain.validation.issues import ValidationIssue
++from jimu_runtime.domain.values import ListValue, RecordValue, Value
++from jimu_runtime.gateway.bridge_tools import ToolExecutionAdapter
++from jimu_runtime.inspection.geometry import (
++    GEOMETRY_SLOT,
++    TACTILE_MASK,
++    VERSION,
++    WHEEL_MASK,
++    EvidenceBytes,
++    GeometryInput,
++    GeometrySidecar,
++    MaskInput,
++    ParkingArea,
++    verify_parking_area,
++)
++from jimu_runtime.inspection.media import (
++    LocalMediaStore,
++    MaskSidecarRecord,
++    MediaError,
++    ToolSidecarSlot,
++    ToolSidecarSpec,
++    VerifiedEvidence,
++    VerifiedOriginal,
++)
++from jimu_runtime.tools.executor import AncestorToolEvidence
++from jimu_runtime.tools.registry import ToolDispatch
++from jimu_runtime.tools.step_attempts import StepCompletion
++from jimu_runtime.workflow.mock_context import snapshot_artifact, snapshot_ref
++from jimu_runtime.workflow.mock_support import SyntheticArtifact, artifact
++from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
++from jimu_runtime.workflow.worker_nodes import NodeResult, invocation_envelope
++from jimu_runtime.workflow.worker_records import ToolMessage
++
++_SLOT = TypeAdapter[ToolSidecarSlot](ToolSidecarSlot)
++_OUTPUT_SLOTS: dict[str, ToolSidecarSlot] = {
++    "wheel_segmentation": WHEEL_MASK,
++    "tactile_paving_segmentation": TACTILE_MASK,
++    "wheel_boundary_geometry": GEOMETRY_SLOT,
++}
++
++
++def _issue(step: str, code: str, message: str) -> ValidationIssue:
++    return ValidationIssue(code=code, message=message, path=(step,), related_refs=())
++
++
++def _record_value(value: Value | None, path: tuple[str, ...]) -> Value | None:
++    for part in path:
++        if not isinstance(value, RecordValue):
++            return None
++        value = value.value.get(part)
++    return value
++
++
++def _plain(value: Value) -> object:
++    if isinstance(value, RecordValue):
++        return {key: _plain(item) for key, item in value.value.items()}
++    if isinstance(value, ListValue):
++        return [_plain(item) for item in value.value]
++    return value.value
++
++
++def _fact_input(fact: FactRecord, source: FactInput) -> bool:
++    selection = source.selector
++    producer = selection.producer_selector
++    return (
++        isinstance(producer, QuestionProducerSelector)
++        and isinstance(fact.source, QuestionFactSource)
++        and (selection.fact_key, selection.fact_schema_ref, producer.question_ref)
++        == (fact.fact_key, fact.fact_schema_ref, fact.source.question_ref)
++    )
++
++
++def _inputs(
++    claimed: ClaimedNode,
++    envelope: NodeInputEnvelope,
++    plan: ToolPlanDefinition,
++    profile: ProfileDefinition,
++) -> tuple[ToolNodeInput, tuple[FactRecord, ...]]:
++    previous = claimed.previous
++    snapshot = previous.snapshot()
++    obj = previous.object_record(claimed.branch)
++    scope = claimed.opened.scope
++    scope.check_snapshot(snapshot, snapshot_ref(snapshot))
++    if profile.tool_plan_ref is None or obj.source_media_ref != scope.media.media_ref:
++        raise AdapterRejected("geometry.object_plan_or_media_unavailable")
++    observation = previous.observation
++    sources = tuple(
++        source
++        for step in plan.steps
++        for binding in step.input_bindings
++        if isinstance(source := binding.source, FactInput)
++    )
++    facts = (
++        ()
++        if observation is None or observation.authority is None
++        else tuple(
++            fact
++            for fact in observation.facts
++            if any(_fact_input(fact, source) for source in sources)
++        )
++    )
++    authority = None if observation is None or not facts else observation.authority
++    values: dict[str, object] = {
++        "schema_version": VERSION,
++        "envelope": envelope,
++        "object_record": obj,
++        "image_view": ObjectImageView(roi=obj.bbox, transforms=()),
++        "context_snapshot_ref": snapshot_ref(snapshot),
++        "tool_plan_ref": profile.tool_plan_ref,
++        "validated_observation_fact_refs": tuple(
++            FactRef(record_kind=K.FACT, record_id=fact.fact_id) for fact in facts
++        ),
++    }
++    pins = {
++        artifact(K.OBJECT, obj.object_id, obj).pin,
++        snapshot_artifact(snapshot).pin,
++        *(artifact(K.FACT, fact.fact_id, fact).pin for fact in facts),
++    }
++    if authority is not None:
++        values["observation_authority_ref"] = AuthoritySelectionRef(
++            record_kind=K.AUTHORITATIVE_RESULT_SELECTION,
++            record_id=authority.selection_id,
++        )
++        pins.add(
++            artifact(
++                K.AUTHORITATIVE_RESULT_SELECTION, authority.selection_id, authority
++            ).pin
++        )
++    if not {pin.stable_json() for pin in pins} <= {
++        pin.stable_json() for pin in envelope.upstream_artifacts
++    }:
++        raise AdapterRejected("geometry.input_projection_unpinned")
++    inputs = ToolNodeInput.model_validate(values)
++    inputs.check_plan(profile, plan)
++    inputs.check_observation_facts(plan, facts, authority)
++    return inputs, facts
++
++
++def _parking_area(
++    claimed: ClaimedNode, original: VerifiedOriginal
++) -> ParkingArea | None:
++    opened, snapshot = claimed.opened, claimed.previous.snapshot()
++    region = opened.scope.resolve(snapshot.region_ref, RegionDefinition)
++    if (
++        snapshot.region_ref != opened.region_ref
++        or region != opened.region
++        or region.geometry_ref is None
++    ):
++        return None
++    geometry = opened.scope.resolve(region.geometry_ref, GeometryResourceDefinition)
++    entry = opened.scope.catalogue.resolve(geometry.provenance.source_asset_ref)
++    if not isinstance(entry.value, StaticAssetDescriptor) or entry.asset_bytes is None:
++        return None
++    try:
++        return verify_parking_area(
++            catalogue=opened.scope.catalogue,
++            region_ref=snapshot.region_ref,
++            region=region,
++            geometry_ref=region.geometry_ref,
++            geometry=geometry,
++            source=entry.value,
++            source_bytes=entry.asset_bytes,
++            coordinates=original.coordinate_system,
++        )
++    except ValueError:
++        return None
++
++
++def _original_evidence(
++    claimed: ClaimedNode,
++    original: VerifiedOriginal,
++    policy_ref: PolicyContentRef,
++    policy: EvidencePolicy,
++) -> EvidenceBytes:
++    media = original.asset
++    scope, task = claimed.claim.scope, claimed.opened.scope.task
++    material = (
++        f"{claimed.execution.execution_id}:{media.media_ref.sha256}:{policy_ref.digest}"
++    )
++    evidence_id = f"input.original.{sha256(material.encode()).hexdigest()}"
++    access = (
++        TaskEvidenceAccess(
++            scope="task", project_id=scope.project_id, task_id=task.task_id
++        )
++        if policy.access_scope == "task"
++        else ProjectEvidenceAccess(scope="project", project_id=scope.project_id)
++    )
++    return EvidenceBytes(
++        EvidenceAsset(
++            schema_version=VERSION,
++            evidence_id=evidence_id,
++            evidence_type=EvidenceType.ORIGINAL_IMAGE,
++            scope=ExecutionEvidenceScope(
++                scope="execution", execution_id=claimed.execution.execution_id
++            ),
++            storage=media.storage,
++            sha256=media.media_ref.sha256,
++            mime_type=media.mime_type,
++            byte_size=media.byte_size,
++            stage=media.stage,
++            spatial=OriginalImageEvidence(
++                kind="original_image",
++                original_media_ref=media.media_ref,
++                coordinate_system=original.coordinate_system,
++            ),
++            producer_id="jimu.media.intake",
++            producer_version=VERSION,
++            access_scope=access,
++            retention=RetentionPolicyRef(
++                evidence_policy_ref=policy_ref, retention_class=policy.retention_class
++            ),
++            created_at=media.stage.staged_at,
++        ),
++        original.content,
++    )
++
++
++async def _stage(
++    media: LocalMediaStore,
++    scope: IdempotencyScope,
++    dispatch: ToolDispatch,
++    sidecar: GeometrySidecar,
++    retention: RetentionPolicyRef,
++    policy: EvidencePolicy,
++) -> EvidenceAsset:
++    slot = _SLOT.validate_python(sidecar.slot)
++    evidence_id = f"{dispatch.tool_execution_id}.{slot}"
++    mask = None
++    if slot != GEOMETRY_SLOT:
++        mask = MaskSidecarRecord(
++            coordinate_system=sidecar.spatial.transforms[0].source,
++            evidence_id=evidence_id,
++            sha256=sidecar.sha256,
++            source_media_sha256=sidecar.spatial.original_media_ref.sha256,
++        )
++    return await media.stage_tool_sidecar(
++        scope,
++        dispatch.execution_id,
++        dispatch.tool_execution_id,
++        slot,
++        ToolSidecarSpec(
++            evidence_id=evidence_id,
++            spatial=sidecar.spatial,
++            retention=retention,
++            access=policy.access_scope,
++            mask_record=mask,
++            geometry_digest=sidecar.sha256 if slot == GEOMETRY_SLOT else None,
++        ),
++        sidecar.content,
++    )
++
++
++def _named_asset(completion: StepCompletion, slot: str) -> EvidenceAsset | None:
++    returned = completion.result.execution.attempt_result
++    if not isinstance(returned, ReturnedToolAttempt) or isinstance(
++        returned.result, FailedToolResult
++    ):
++        return None
++    refs = next(
++        (item.evidence_refs for item in returned.result.evidence if item.name == slot),
++        (),
++    )
++    if len(refs) != 1:
++        return None
++    return next(
++        (
++            item
++            for item in completion.result.evidence
++            if item.evidence_id == refs[0].record_id
++        ),
++        None,
++    )
++
++
++@dataclass(slots=True)
++class _Round:
++    completions: dict[str, StepCompletion] = field(default_factory=dict)
++    sidecars: dict[str, VerifiedEvidence] = field(default_factory=dict)
++    outcomes: dict[str, ToolPlanStepResult] = field(default_factory=dict)
++    issues: list[ValidationIssue] = field(default_factory=list)
++
++    def block(self, step: ToolStep, code: str, message: str) -> None:
++        issue = _issue(step.step_id, code, message)
++        self.issues.append(issue)
++        self.outcomes[step.step_id] = UninvokedToolStep(
++            disposition="blocked",
++            step_id=step.step_id,
++            reason_code=code,
++            validation_issues=(issue,),
++        )
++
++
++def _source_field(
++    source: ContextInput | FactInput | ImageInput | ObjectInput | StepOutputInput,
++    inputs: ToolNodeInput,
++    claimed: ClaimedNode,
++    facts: tuple[FactRecord, ...],
++    original: VerifiedOriginal,
++    region: ParkingArea | None,
++    state: _Round,
++    target: tuple[str, ...],
++) -> tuple[object | None, MaskInput | None]:
++    if isinstance(source, ImageInput):
++        if source.selector.field_path == ():
++            return original.asset.media_ref.model_dump(mode="json"), None
++        return None, None
++    if isinstance(source, ObjectInput):
++        if source.selector.field_path == ("bbox",):
++            return inputs.object_record.bbox.model_dump(mode="json"), None
++        return None, None
++    if isinstance(source, FactInput):
++        fact = next((item for item in facts if _fact_input(item, source)), None)
++        return (
++            None
++            if not isinstance(fact, KnownFact)
++            else fact.value.model_dump(mode="json")
++        ), None
++    if isinstance(source, ContextInput):
++        selector, snapshot = source.selector, claimed.previous.snapshot()
++        if (
++            selector.source is not ContextSource.CONTEXT_SNAPSHOT
++            or selector.schema_ref != snapshot.context_schema_ref
++        ):
++            return None, None
++        value = next(
++            (
++                item
++                for item in snapshot.values
++                if item.field_path == selector.field_path
++            ),
++            None,
++        )
++        if value is None:
++            return None, None
++        raw = _plain(value.value)
++        if selector.field_path == ("parking_area",):
++            if (
++                region is None
++                or not isinstance(value.provenance, RegionDefinitionProvenance)
++                or value.provenance.region_ref != snapshot.region_ref
++                or raw != region.model_dump(mode="json")
++            ):
++                return None, None
++        return raw, None
++
++    selected = state.completions.get(source.step_id)
++    verified = state.sidecars.get(source.step_id)
++    if selected is None or selected.selection is None or verified is None:
++        return None, None
++    execution = selected.result.execution
++    definition = claimed.opened.scope.resolve(execution.tool_ref, ToolDefinition)
++    if source.selector.schema_ref != definition.output_schema_ref:
++        return None, None
++    name = next(
++        (
++            entry.output_name
++            for entry in definition.fact_outputs
++            if entry.value_path == source.selector.field_path
++        ),
++        None,
++    )
++    attempt = execution.attempt_result
++    if name not in (WHEEL_MASK, TACTILE_MASK) or not isinstance(
++        attempt, ReturnedToolAttempt
++    ):
++        return None, None
++    result = attempt.result
++    if isinstance(result, FailedToolResult) or not any(
++        isinstance(item, KnownToolOutputState) and item.output_name == name
++        for item in result.output_states
++    ):
++        return None, None
++    typed = _record_value(result.payload, source.selector.field_path)
++    if typed is None or _named_asset(selected, name) != verified.asset:
++        return None, None
++    return typed.model_dump(mode="json"), MaskInput(
++        AncestorToolEvidence(target, selected, verified.asset), verified.content
++    )
++
++
++def _completion_output(
++    claimed: ClaimedNode,
++    inputs: ToolNodeInput,
++    plan: ToolPlanDefinition,
++    state: _Round,
++) -> NodeResult:
++    contents = tuple(
++        state.completions[step.step_id]
++        for step in plan.steps
++        if step.step_id in state.completions
++    )
++    executions = tuple(item.result.execution for item in contents)
++    facts = tuple(fact for item in contents for fact in item.result.facts)
++    authority = tuple(item.selection for item in contents if item.selection is not None)
++    evidence: dict[str, EvidenceAsset] = {}
++    for item in contents:
++        for asset in item.result.evidence:
++            if evidence.setdefault(asset.evidence_id, asset) != asset:
++                raise AdapterRejected("geometry.conflicting_evidence_identity")
++    invocations = tuple(
++        invocation for item in contents for invocation in item.result.invocations
++    )
++    artifacts = (
++        *(
++            artifact(K.TOOL_EXECUTION, item.tool_execution_id, item)
++            for item in executions
++        ),
++        *(artifact(K.FACT, item.fact_id, item) for item in facts),
++        *(
++            artifact(K.AUTHORITATIVE_RESULT_SELECTION, item.selection_id, item)
++            for item in authority
++        ),
++        *(artifact(K.EVIDENCE, item.evidence_id, item) for item in evidence.values()),
++        *(
++            artifact(K.MODEL_INVOCATION, item.model_invocation_id, item)
++            for item in invocations
++        ),
++    )
++    summary: Literal["succeeded", "partial", "failed"] = (
++        ("partial" if authority else "failed") if state.issues else "succeeded"
++    )
++    output = ToolNodeOutput(
++        schema_version=VERSION,
++        envelope=_output_envelope(
++            claimed, artifacts, contents, summary, tuple(state.issues)
++        ),
++        summary=ToolPlanRunSummary(
++            tool_plan_ref=inputs.tool_plan_ref,
++            object_ref=ObjectRef(
++                record_kind=K.OBJECT, record_id=inputs.object_record.object_id
++            ),
++            status=summary,
++            steps=tuple(state.outcomes[step.step_id] for step in plan.steps),
++            validation_issues=tuple(state.issues),
++        ),
++        tool_fact_refs=tuple(
++            FactRef(record_kind=K.FACT, record_id=item.fact_id) for item in facts
++        ),
++        evidence_refs=tuple(
++            EvidenceRef(record_kind=K.EVIDENCE, record_id=item.evidence_id)
++            for item in evidence.values()
++        ),
++    )
++    return NodeResult(
++        ToolMessage(
++            schema_version=VERSION,
++            inputs=inputs,
++            output=output,
++            executions=executions,
++            facts=facts,
++            authorities=authority,
++            evidence=tuple(evidence.values()),
++            nested_invocations=invocations,
++        ),
++        artifacts,
++        tuple(
++            ModelInvocationRef(
++                record_kind=K.MODEL_INVOCATION, record_id=item.model_invocation_id
++            )
++            for item in invocations
++        ),
++    )
++
++
++def _output_envelope(
++    claimed: ClaimedNode,
++    artifacts: tuple[SyntheticArtifact, ...],
++    completions: tuple[StepCompletion, ...],
++    summary: Literal["succeeded", "partial", "failed"],
++    issues: tuple[ValidationIssue, ...],
++) -> NodeOutputEnvelope:
++    at = claimed.attempt.started_at
++    if at is None:
++        raise AdapterRejected("geometry.parent_attempt_not_started")
++    finished = max((at, *(item.result.execution.completed_at for item in completions)))
++    common = {
++        "schema_version": VERSION,
++        "node_id": NodeId.N05,
++        "node_run_id": claimed.node.node_run_id,
++        "attempt_id": claimed.attempt.attempt_id,
++        "trace": claimed.node.trace,
++        "output_artifacts": tuple(item.pin for item in artifacts),
++        "started_at": at,
++        "finished_at": finished,
++        "duration_ms": (finished - at) // timedelta(milliseconds=1),
++    }
++    if summary == "failed":
++        return FailedNodeOutput.model_validate(
++            {
++                **common,
++                "status": NodeRunStatus.FAILED,
++                "error": NodeError(
++                    code="geometry.tool_plan_incomplete",
++                    error_class="dependency",
++                    retryable=False,
++                    message="The ToolPlan could not complete.",
++                    validation_issues=issues,
++                ),
++            }
++        )
++    return SucceededNodeOutput.model_validate(
++        {**common, "status": NodeRunStatus.SUCCEEDED}
++    )
++
++
++@dataclass(frozen=True, slots=True)
++class GeometryNodeAdapter:
++    media: LocalMediaStore
++    tools: ToolExecutionAdapter
++
++    async def execute(self, claimed: ClaimedNode) -> NodeResult:
++        opened, scope = claimed.opened, claimed.opened.scope
++        env = invocation_envelope(opened, claimed.branch, claimed.node, claimed.attempt)
++        if env.node_id is not NodeId.N05:
++            raise AdapterRejected("geometry.unsupported_node")
++        obj = claimed.previous.object_record(claimed.branch)
++        profile = scope.resolve(obj.profile_ref, ProfileDefinition)
++        plan_ref = profile.tool_plan_ref
++        if plan_ref is None:
++            raise AdapterRejected("geometry.tool_plan_not_bound")
++        plan = scope.resolve(plan_ref, ToolPlanDefinition)
++        inputs, facts = _inputs(claimed, env, plan, profile)
++        state = _Round()
++        try:
++            original = await self.media.verified_task_original(
++                claimed.claim.scope, scope.task
++            )
++        except MediaError:
++            for step in plan.steps:
++                state.block(
++                    step,
++                    "geometry.original_unavailable",
++                    "The exact original image could not be verified.",
++                )
++            return _completion_output(claimed, inputs, plan, state)
++        if (
++            original.asset != opened.source.media
++            or original.coordinate_system != obj.coordinate_system
++        ):
++            raise AdapterRejected("geometry.original_media_mismatch")
++        region = _parking_area(claimed, original)
++        steps = {
++            step.step_id: (step, scope.resolve(step.tool_ref, ToolDefinition))
++            for step in plan.steps
++        }
++        failures = {
++            step.step_id: scope.resolve(
++                step.failure_policy_ref, ToolFailurePolicyArtifact
++            ).policy
++            for step in plan.steps
++        }
++        while len(state.outcomes) < len(steps):
++            ready = next(
++                (
++                    step_id
++                    for step_id, (step, _) in steps.items()
++                    if step_id not in state.outcomes
++                    and set(step.depends_on) <= state.outcomes.keys()
++                ),
++                None,
++            )
++            if ready is None:
++                raise AdapterRejected("geometry.tool_plan_dependency_cycle")
++            step, definition = steps[ready]
++            await self._step(
++                claimed,
++                inputs,
++                facts,
++                original,
++                region,
++                state,
++                step,
++                definition,
++                failures,
++            )
++        return _completion_output(claimed, inputs, plan, state)
++
++    async def _step(
++        self,
++        claimed: ClaimedNode,
++        inputs: ToolNodeInput,
++        facts: tuple[FactRecord, ...],
++        original: VerifiedOriginal,
++        region: ParkingArea | None,
++        state: _Round,
++        step: ToolStep,
++        definition: ToolDefinition,
++        failures: dict[str, ToolFailurePolicy],
++    ) -> None:
++        scope = claimed.opened.scope
++        slot = _OUTPUT_SLOTS.get(definition.tool_id)
++        if slot is None:
++            state.block(
++                step,
++                "geometry.tool_unavailable",
++                "No approved local CPU adapter is registered for this Tool.",
++            )
++            return
++        skip = scope.resolve(step.skip_policy_ref, ToolSkipPolicyArtifact).policy
++        if (
++            skip.condition_ast is not True
++            or failures[step.step_id].requirement != step.requirement
++        ):
++            state.block(
++                step,
++                "geometry.step_policy_unresolved",
++                "The configured step policy could not be evaluated.",
++            )
++            return
++        for parent in step.depends_on:
++            result = state.completions.get(parent)
++            if result is None or result.selection is None:
++                if (
++                    step.requirement == "required"
++                    or failures[parent].optional_continuation == "block"
++                ):
++                    state.block(
++                        step,
++                        "geometry.dependency_unavailable",
++                        "A configured ancestor has no authoritative result.",
++                    )
++                    return
++        fields: dict[str, object] = {}
++        proofs: list[MaskInput] = []
++        for binding in step.input_bindings:
++            target = binding.target.field_path
++            if (
++                len(target) != 1
++                or binding.target.schema_ref.stable_json()
++                != definition.input_schema_ref.stable_json()
++            ):
++                state.block(
++                    step,
++                    "geometry.input_binding_unsupported",
++                    "The exact tool input binding is unsupported.",
++                )
++                return
++            value, proof = _source_field(
++                binding.source,
++                inputs,
++                claimed,
++                facts,
++                original,
++                region,
++                state,
++                target,
++            )
++            if value is None:
++                if binding.required or binding.on_missing == "block":
++                    state.block(
++                        step,
++                        "geometry.step_input_unavailable",
++                        "A required configured input is unavailable.",
++                    )
++                    return
++                continue
++            fields[target[0]] = value
++            if proof is not None:
++                proofs.append(proof)
++        policy_ref = PolicyContentRef.model_validate(
++            definition.evidence_policy_ref.model_dump()
++        )
++        policy = scope.resolve(policy_ref, EvidencePolicyArtifact).policy
++        retention = RetentionPolicyRef(
++            evidence_policy_ref=policy_ref, retention_class=policy.retention_class
++        )
++
++        async def stage(
++            dispatch: ToolDispatch, sidecar: GeometrySidecar
++        ) -> EvidenceAsset:
++            return await _stage(
++                self.media, claimed.claim.scope, dispatch, sidecar, retention, policy
++            )
++
++        prepared = GeometryInput(
++            original.asset,
++            _original_evidence(claimed, original, policy_ref, policy),
++            stage,
++            object_bbox=inputs.object_record.bbox,
++            parking_area=region,
++            masks=tuple(proofs),
++        )
++        finished = await self.tools.execute_step(
++            claimed,
++            inputs,
++            step.step_id,
++            fields,
++            ancestor_evidence=prepared.ancestor_evidence,
++            cpu_exchange=prepared.exchange(),
++        )
++        state.completions[step.step_id] = finished
++        execution = finished.result.execution
++        state.outcomes[step.step_id] = InvokedToolStep(
++            disposition="invoked",
++            step_id=step.step_id,
++            tool_execution_ref=ToolExecutionRef(
++                record_kind=K.TOOL_EXECUTION, record_id=execution.tool_execution_id
++            ),
++        )
++        if finished.selection is None:
++            state.issues.append(
++                _issue(
++                    step.step_id,
++                    "geometry.step_not_selected",
++                    "The child Attempt did not select an authoritative result.",
++                )
++            )
++            return
++        asset = _named_asset(finished, slot)
++        try:
++            if asset is None:
++                raise MediaError("tool_sidecar_output_unavailable")
++            state.sidecars[step.step_id] = await self.media.read_tool_sidecar(
++                claimed.claim.scope,
++                execution.execution_id,
++                execution.tool_execution_id,
++                slot,
++                expected_asset=asset,
++            )
++        except MediaError:
++            state.issues.append(
++                _issue(
++                    step.step_id,
++                    "geometry.sidecar_unavailable",
++                    "The selected child sidecar could not be verified.",
++                )
++            )
+--- a/src/jimu_runtime/tools/step_attempts.py
++++ b/src/jimu_runtime/tools/step_attempts.py
+@@ -5,14 +5,14 @@
+ from typing import Literal, Self
+ from uuid import uuid4
+ 
+-from pydantic import TypeAdapter, model_validator
++from pydantic import Field, TypeAdapter, model_validator
+ from sqlalchemy import RowMapping, text
+ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+ 
+ from jimu_runtime.bundle.integrity import sha256_digest
+ from jimu_runtime.domain.base import ContractModel
+-from jimu_runtime.domain.definition_enums import FactScope
+-from jimu_runtime.domain.definition_support import reference_identity
++from jimu_runtime.domain.definition_enums import EvidenceType, FactScope
++from jimu_runtime.domain.definition_support import FieldPath, reference_identity
+ from jimu_runtime.domain.definitions.tools import ToolStep
+ from jimu_runtime.domain.enums import (
+     AttemptStatus,
+@@ -27,7 +27,7 @@
+     ToolStepHistory,
+     ToolStepHistoryEntry,
+ )
+-from jimu_runtime.domain.primitives import Digest
++from jimu_runtime.domain.primitives import ArtifactId, Digest
+ from jimu_runtime.domain.references import RuntimeRecordRef
+ from jimu_runtime.domain.runtime.authority import ActorRef, ToolStepSelection
+ from jimu_runtime.domain.runtime.decisions import RecordList
+@@ -44,7 +44,10 @@
+     NodeRun,
+ )
+ from jimu_runtime.domain.runtime.facts import (
++    AuthoritySelectionRef,
+     FactRecord,
++    FactRef,
++    KnownFact,
+     NodeRunRef,
+     ObjectRef,
+     ProfileContentRef,
+@@ -57,6 +60,7 @@
+ from jimu_runtime.domain.runtime.tool_executions import (
+     FailedToolAttempt,
+     FailedToolResult,
++    KnownToolOutputState,
+     ReturnedToolAttempt,
+     ToolArtifactRecordRef,
+     ToolArtifactRef,
+@@ -64,11 +68,13 @@
+     ToolPlanStepOrigin,
+     UndispatchedToolAttempt,
+ )
++from jimu_runtime.domain.tool_mappings import StepOutputInput
+ from jimu_runtime.domain.validation.authority_inputs import NodeAttemptOwner
+ from jimu_runtime.domain.validation.transitions import (
+     AttemptTransitionGuard,
+     NodeTransitionGuard,
+ )
++from jimu_runtime.domain.values import RecordValue
+ from jimu_runtime.workflow import repository as repo
+ from jimu_runtime.workflow.jobs import (
+     JobClaim,
+@@ -92,11 +98,41 @@
+ _SCOPE = "project_id = :project_id AND client_id = :client_id AND execution_id = :execution_id"
+ 
+ 
++class _AncestorInput(ContractModel):
++    input_path: FieldPath
++    step_id: ArtifactId
++    result_ref: ToolExecutionRef
++    selection_ref: AuthoritySelectionRef
++    fact_ref: FactRef
++    evidence: ToolArtifactRef
++
++
+ class _StepInput(ContractModel):
+     schema_version: Literal["1.0.0"] = "1.0.0"
+     inputs: ToolNodeInput
+     step: ToolStep
+     invocation_input_digest: Digest
++    ancestor_inputs: RecordList[_AncestorInput] = Field(
++        default=(), max_length=64, exclude_if=lambda value: not value
++    )
++
++    @model_validator(mode="after")
++    def exact_ancestor_inputs(self) -> Self:
++        paths = {pin.input_path for pin in self.ancestor_inputs}
++        required = {
++            item.target.field_path
++            for item in self.step.input_bindings
++            if isinstance(item.source, StepOutputInput) and item.required
++        }
++        if (
++            len(paths) != len(self.ancestor_inputs)
++            or len({pin.evidence.artifact_ref for pin in self.ancestor_inputs})
++            != len(paths)
++            or self.step.tool_ref.artifact_id == "wheel_boundary_geometry"
++            and not required <= paths
++        ):
++            raise ValueError("exact ToolPlan ancestor evidence is required")
++        return self
+ 
+     def bound_digest(self) -> str:
+         # Only the changing parent Attempt identity is excluded from reuse.
+@@ -222,6 +258,148 @@
+ 
+ 
+ @dataclass(frozen=True, slots=True)
++class AncestorToolEvidence:
++    """A host's read-back of one authoritative child step and named input asset."""
++
++    input_path: tuple[str, ...]
++    completion: StepCompletion
++    asset: EvidenceAsset
++    result_evidence_slot: str | None = None
++
++
++def _ancestor_pin(
++    step: ToolStep,
++    path: tuple[str, ...],
++    completion: StepCompletion,
++    asset: EvidenceAsset,
++) -> _AncestorInput:
++    edge = next(
++        (item for item in step.input_bindings if item.target.field_path == path),
++        None,
++    )
++    source = None if edge is None else edge.source
++    previous = completion.result.execution
++    selection = completion.selection
++    attempt = previous.attempt_result
++    if (
++        not isinstance(source, StepOutputInput)
++        or source.step_id not in step.depends_on
++        or selection is None
++        or selection.step_id != source.step_id
++        or not isinstance(attempt, ReturnedToolAttempt)
++        or isinstance(attempt.result, FailedToolResult)
++        or asset.evidence_type is not EvidenceType.MASK
++        or asset not in completion.result.evidence
++        or not isinstance(asset.scope, ObjectEvidenceScope)
++        or (asset.scope.execution_id, asset.scope.profile_ref, asset.scope.object_ref)
++        != (previous.execution_id, previous.profile_ref, previous.object_ref)
++    ):
++        raise ValueError("ancestor evidence must resolve an exact selected mask input")
++    result = attempt.result
++    value = result.payload
++    for part in source.selector.field_path:
++        value = value.value.get(part) if isinstance(value, RecordValue) else None
++    evidence = ToolArtifactRef(
++        artifact_ref=ToolArtifactRecordRef(
++            record_kind=RuntimeRecordKind.EVIDENCE, record_id=asset.evidence_id
++        ),
++        digest=asset.sha256,
++    )
++    if value is None or not any(item == evidence for item in previous.output_refs):
++        raise ValueError(
++            "ancestor evidence digest does not match the exact selected output"
++        )
++    matches = tuple(
++        item
++        for item in completion.result.facts
++        if isinstance(item, KnownFact)
++        and isinstance(item.source, ToolFactSource)
++        and item.source.tool_execution_ref == selection.selected_result_ref
++        and source.selector.field_path
++        and item.source.output_name == source.selector.field_path[-1]
++        and item.value == value
++    )
++    # The admitted mask schema uses one typed payload, Fact output, and named evidence slot.
++    for fact in matches:
++        assert isinstance(fact.source, ToolFactSource)
++        fact_ref = FactRef(record_kind=RuntimeRecordKind.FACT, record_id=fact.fact_id)
++        if (
++            fact_ref in selection.selected_fact_refs
++            and any(ref.record_id == asset.evidence_id for ref in fact.evidence_refs)
++            and any(
++                isinstance(state, KnownToolOutputState)
++                and state.output_name == fact.source.output_name
++                for state in result.output_states
++            )
++            and any(
++                slot.name == fact.source.output_name
++                and tuple(ref.record_id for ref in slot.evidence_refs)
++                == (asset.evidence_id,)
++                for slot in result.evidence
++            )
++        ):
++            return _AncestorInput(
++                input_path=path,
++                step_id=source.step_id,
++                result_ref=selection.selected_result_ref,
++                selection_ref=AuthoritySelectionRef(
++                    record_kind=RuntimeRecordKind.AUTHORITATIVE_RESULT_SELECTION,
++                    record_id=selection.selection_id,
++                ),
++                fact_ref=fact_ref,
++                evidence=evidence,
++            )
++    raise ValueError(
++        "ancestor evidence is missing the exact selected named Fact and slot"
++    )
++
++
++def _check_ancestor_history(
++    bound: _StepInput, entries: tuple[ToolStepHistoryEntry, ...]
++) -> None:
++    selected = {
++        entry.selection.selection_id: entry
++        for entry in entries
++        if entry.selection is not None
++    }
++    for pin in bound.ancestor_inputs:
++        entry = selected.get(pin.selection_ref.record_id)
++        if (
++            entry is None
++            or entry.selection is None
++            or entry.selection.tool_plan_ref != bound.inputs.tool_plan_ref
++            or entry.selection.object_id != bound.inputs.object_record.object_id
++            or entry.child_attempt.status is not AttemptStatus.SUCCEEDED
++        ):
++            raise ValueError(
++                "ancestor evidence requires an explicitly selected durable child"
++            )
++        asset = next(
++            (
++                item
++                for item in entry.evidence
++                if item.evidence_id == pin.evidence.artifact_ref.record_id
++            ),
++            None,
++        )
++        completion = StepCompletion(
++            result=StepResult(
++                execution=entry.execution,
++                facts=entry.facts,
++                evidence=entry.evidence,
++                invocations=entry.invocations,
++            ),
++            attempt_status="succeeded",
++            selection=entry.selection,
++        )
++        if (
++            asset is None
++            or _ancestor_pin(bound.step, pin.input_path, completion, asset) != pin
++        ):
++            raise ValueError("the bound ancestor result or evidence digest changed")
++
++
++@dataclass(frozen=True, slots=True)
+ class StepAttempt:
+     parent_claim: JobClaim
+     parent_attempt_id: str
+@@ -450,6 +628,7 @@
+         *,
+         timeout_ms: int,
+         max_attempts: int | None = None,
++        ancestor_evidence: tuple[AncestorToolEvidence, ...] = (),
+     ) -> StepAttempt | StepCompletion | None:
+         """Reuse the bound result or persist a new child identity before invocation."""
+         timeout_ms = validated_milliseconds(timeout_ms)
+@@ -461,6 +640,10 @@
+             inputs=inputs,
+             step=step,
+             invocation_input_digest=_DIGEST.validate_python(input_digest),
++            ancestor_inputs=tuple(
++                _ancestor_pin(step, proof.input_path, proof.completion, proof.asset)
++                for proof in ancestor_evidence
++            ),
+         )
+         env = inputs.envelope
+         parameters = {
+@@ -506,6 +689,34 @@
+                 raise ValueError(
+                     "step must be bound to the pinned N05 parent inputs and Tool implementation"
+                 )
++            if bound.ancestor_inputs:
++                history = await load_parent_step_history(
++                    connection, parent_claim.scope, inputs
++                )
++                _check_ancestor_history(
++                    bound, () if history is None else history.entries
++                )
++                for proof in ancestor_evidence:
++                    if history is None or not any(
++                        (
++                            entry.execution,
++                            entry.selection,
++                            entry.facts,
++                            entry.evidence,
++                            entry.invocations,
++                        )
++                        == (
++                            proof.completion.result.execution,
++                            proof.completion.selection,
++                            proof.completion.result.facts,
++                            proof.completion.result.evidence,
++                            proof.completion.result.invocations,
++                        )
++                        for entry in history.entries
++                    ):
++                        raise ValueError(
++                            "supplied Tool evidence differs from the durable selection"
++                        )
+             existing = (
+                 (
+                     await connection.execute(
+@@ -1015,6 +1226,13 @@
+             if checked is None:
+                 return None
+             _, bound, now = checked
++            if bound.ancestor_inputs:
++                history = await load_parent_step_history(
++                    connection, claim.scope, bound.inputs
++                )
++                _check_ancestor_history(
++                    bound, () if history is None else history.entries
++                )
+             result = StepResult.model_validate_json(result.stable_json())
+             tool = result.execution
+             observation = tool.authority_observation
+@@ -1314,14 +1532,15 @@
+     tool, origin = result.execution, result.execution.invocation_origin
+     inputs = bound.inputs
+     env, obj = inputs.envelope, inputs.object_record
+-    expected_inputs = tuple(
+-        ToolArtifactRef(
+-            artifact_ref=ToolArtifactRecordRef.model_validate(pin.ref.model_dump()),
+-            digest=pin.digest,
+-        )
++    expected_inputs = {
++        ToolArtifactRecordRef.model_validate(pin.ref.model_dump()): pin.digest
+         for pin in env.upstream_artifacts
+         if pin.ref.record_kind in _TOOL_INPUT_KINDS
+-    )
++    }
++    for pin in bound.ancestor_inputs:
++        key, digest = pin.evidence.artifact_ref, pin.evidence.digest
++        if expected_inputs.setdefault(key, digest) != digest:
++            raise ValueError("ancestor evidence conflicts with the parent input pin")
+     if (
+         not isinstance(origin, ToolPlanStepOrigin)
+         or (origin.tool_plan_ref, origin.step_id, tool.tool_ref)
+@@ -1344,7 +1563,11 @@
+         )
+         or attempt.started_at is None
+         or tool.started_at < attempt.started_at
+-        or tool.input_refs != expected_inputs
++        or tool.input_refs
++        != tuple(
++            ToolArtifactRef(artifact_ref=key, digest=digest)
++            for key, digest in expected_inputs.items()
++        )
+         or any(
+             item.access_scope.project_id != scope.project_id
+             or isinstance(item.access_scope, TaskEvidenceAccess)
+@@ -1499,6 +1722,7 @@
+         for pin in locked.execution.pins.tool_pins
+     }
+     entries = []
++    bounds = []
+     for row in rows:
+         bound, completion = _read_input(row), _read_completion(row)
+         if (
+@@ -1544,4 +1768,8 @@
+                 completion.result.invocations,
+             )
+         )
++        bounds.append(bound)
++    for bound in bounds:
++        if bound.ancestor_inputs:
++            _check_ancestor_history(bound, tuple(entries))
+     return ToolStepHistory(inputs, parent, current, tuple(entries))

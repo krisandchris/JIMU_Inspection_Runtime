@@ -1,0 +1,1520 @@
+Wed Nov 18 06:22:52 UTC 2026
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment at: /tmp/jimu-wp05-prereg-Gwtwz6L5/venv
+Resolved 36 packages in 0.47ms
+   Building jimu-runtime @ file:///tmp/jimu-wp05-prereg-Gwtwz6L5/product
+      Built jimu-runtime @ file:///tmp/jimu-wp05-prereg-Gwtwz6L5/product
+Prepared 1 package in 2ms
+Installed 34 packages in 17ms
+ + annotated-types==0.8.0
+ + anyio==4.16.0
+ + attrs==26.1.0
+ + certifi==2026.10.23
+ + greenlet==3.5.6
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.20
+ + iniconfig==2.3.1
+ + jimu-runtime==0.1.0 (from file:///tmp/jimu-wp05-prereg-Gwtwz6L5/product)
+ + jsonschema==4.25.1
+ + jsonschema-specifications==2025.9.1
+ + mypy==1.18.2
+ + mypy-extensions==1.2.0
+ + packaging==26.3
+ + pathspec==1.1.1
+ + pillow==12.3.0
+ + pluggy==1.7.0
+ + psycopg==3.3.5
+ + psycopg-binary==3.3.5
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + pygments==2.21.0
+ + pytest==8.4.2
+ + referencing==0.37.0
+ + rfc8785==0.1.4
+ + rpds-py==2026.9.1
+ + ruff==0.14.14
+ + sqlalchemy==2.0.52
+ + types-jsonschema==4.25.1.20251009
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
+ + uv-build==0.9.15
+........................................................................ [  1%]
+........................................................................ [  3%]
+........................................................................ [  5%]
+............F........................................................... [  7%]
+..............................................F......................... [  9%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+............................................................FFF......... [ 16%]
+...............................F........................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+........................................................................ [ 40%]
+........................................................................ [ 42%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 48%]
+........................................................................ [ 50%]
+........................................................................ [ 52%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 59%]
+........................................................................ [ 61%]
+..F..................................................................... [ 63%]
+........................................................................ [ 65%]
+........................................................................ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 87%]
+........................................................................ [ 89%]
+........................................................................ [ 91%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 96%]
+........................................................................ [ 98%]
+.........................................................                [100%]
+=================================== FAILURES ===================================
+_______ test_independent_ast_coverage_for_public_roots_and_named_unions ________
+
+    def test_independent_ast_coverage_for_public_roots_and_named_unions() -> None:
+        roots, unions = declared_contracts(ROOT / "src/jimu_runtime/domain")
+        sources = {entry.source_symbol for entry in exporter.INVENTORY}
+>       assert roots <= sources, roots - sources
+E       AssertionError: {'jimu_runtime.domain.nodes.discovery.DiscoveryGroupFailure', 'jimu_runtime.domain.nodes.grounding.UndispatchedGrounding'}
+E       assert {'jimu_runtim...inition', ...} <= {'jimu_runtim...inality', ...}
+E         
+E         Extra items in the left set:
+E         'jimu_runtime.domain.nodes.grounding.UndispatchedGrounding'
+E         'jimu_runtime.domain.nodes.discovery.DiscoveryGroupFailure'
+
+tests/contract/test_b_schema_inventory.py:90: AssertionError
+____________ test_published_b_schemas_keep_their_sealed_file_hashes ____________
+
+rendered = {'conditions.ConditionExpr.schema.json': b'{\n  "$defs": {\n    "AbsentOptional_ReviewReportRef_": {\n      "$ref": "#...ne",\n    "lt",\n    "le",\n    "gt",\n    "ge"\n  ],\n  "title": "ComparisonOperator",\n  "type": "string"\n}\n', ...}
+
+    def test_published_b_schemas_keep_their_sealed_file_hashes(
+        rendered: dict[str, bytes],
+    ) -> None:
+>       sealed = json.loads(_BASELINE.read_text())["files"]
+                            ^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_c_schema_inventory.py:153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/pathlib.py:1029: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/tmp/jimu-wp05-prereg-Gwtwz6L5/product/planning/implementation_evidence/WP-01B/execution_03/after_sha256.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/jimu-wp05-prereg-Gwtwz6L5/product/planning/implementation_evidence/WP-01B/execution_03/after_sha256.json'
+
+/usr/lib/python3.12/pathlib.py:1015: FileNotFoundError
+_ test_n05_preserves_audit_without_publishing_unverified_results[original_lost] _
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-454/test_n05_preserves_audit_witho0')
+loopback_only = set(), failure = 'original_lost'
+
+    @pytest.mark.parametrize("failure", ["original_lost", "geometry_lost", "legacy"])
+    def test_n05_preserves_audit_without_publishing_unverified_results(
+        tmp_path, loopback_only, failure
+    ):
+        async def run():
+            async def peer(reader, writer):
+                incoming = await http_support.read_request(reader)
+                body = json.loads(incoming.body)
+                role = body["response_format"]["json_schema"]["schema"]["$id"].split(":")[
+                    -2
+                ]
+                reply = {
+                    "profile_discovery-result": {"profile_hits": ["nonmotor_vehicle"]},
+                    "object_grounding-result": {"boxes": [{"xyxy": [40, 23, 52, 33]}]},
+                    "object_observation-result": {
+                        "vehicle_type": "electric_bicycle",
+                        "parking_state": "parked",
+                        "parking_position": "outside_parking_area",
+                    },
+                    "candidate_prediction-result": {"categories": []},
+                }[role]
+                writer.write(
+                    http_support.response(
+                        http_support.chat_body(
+                            model=body["model"], content=json.dumps(reply)
+                        ),
+                        headers=(
+                            (b"X-Request-ID", b"wp05-audit"),
+                            (b"X-Jimu-Deployment-Version", b"1.0.0"),
+                            (b"X-Jimu-Model-Version", b"1.0.0"),
+                        ),
+                    )
+                )
+                await writer.drain()
+    
+            async with http_support.http_peer(loopback_only, peer) as url:
+                async with perception_fixture(tmp_path, url, with_media=True) as fixture:
+                    media = fixture.media_store
+                    assert media is not None
+                    accepted = fixture.accepted
+                    scope, eid = (
+                        accepted.task.idempotency_scope,
+                        accepted.execution.execution_id,
+                    )
+                    catalogue = fixture.scene.execution.catalogue
+                    definitions = tuple(
+                        require_definition(catalogue, item.ref, ToolDefinition)
+                        for item in catalogue.of_kind(ArtifactKind.TOOL)
+                    )
+                    store = StepAttemptStore(fixture.application, actor=ACTOR)
+                    registry = ToolWorkerRegistry(
+                        synthetic_cpu_implementations(
+                            fixture.resources,
+                            "cpu",
+                            "geometry-audit",
+                            definitions,
+                            fixture.tool_proofs,
+                            synthetic_image_digests=frozenset(
+                                {accepted.task.media_ref.sha256}
+                            ),
+                        )
+                    )
+                    bridge = ToolExecutionAdapter(
+                        ToolExecutor(registry),
+                        store,
+                        fixture.journal,
+                        fixture.host.capabilities,
+                    )
+                    geometry = GeometryNodeAdapter(media, bridge)
+                    base_step = GeometryNodeAdapter._step
+                    base_read = LocalMediaStore.read_tool_sidecar
+                    initial_begin, initial_complete = store.begin, store.complete
+                    cut = False
+                    lost_asset = None
+    
+                    async def old_begin(claim, inputs, step, digest, **kwargs):
+                        if (
+                            failure == "legacy"
+                            and not cut
+                            and step.step_id == "wheel_boundary_geometry"
+                        ):
+                            # Reproduce the old writer while retaining real DB-owned steps and receipts.
+                            kwargs.pop("ancestor_evidence")
+                            kwargs.pop("ancestor_tools")
+                            with patch.object(
+                                _StepInput,
+                                "has_required_ancestor_inputs",
+                                return_value=True,
+                            ):
+                                return await initial_begin(
+                                    claim, inputs, step, digest, **kwargs
+                                )
+                        return await initial_begin(claim, inputs, step, digest, **kwargs)
+    
+                    async def old_complete(handle, result):
+                        tool = result.execution
+                        if (
+                            failure == "legacy"
+                            and not cut
+                            and tool.tool_ref.artifact_id == "wheel_boundary_geometry"
+                        ):
+                            tool = tool.model_copy(
+                                update={
+                                    "input_refs": _tool_input_refs(handle.inputs.envelope)
+                                }
+                            )
+                            result = result.model_copy(update={"execution": tool})
+                        return await initial_complete(handle, result)
+    
+                    async def step_hook(
+                        adapter,
+                        claimed,
+                        inputs,
+                        facts,
+                        original,
+                        region,
+                        state,
+                        step,
+                        definition,
+                        failures,
+                    ):
+                        nonlocal cut
+                        await base_step(
+                            adapter,
+                            claimed,
+                            inputs,
+                            facts,
+                            original,
+                            region,
+                            state,
+                            step,
+                            definition,
+                            failures,
+                        )
+                        cut_step = {
+                            "original_lost": "wheel_segmentation",
+                            "legacy": "wheel_boundary_geometry",
+                        }.get(failure)
+                        if not cut and step.step_id == cut_step:
+                            assert state.completions[step.step_id].selection is not None
+                            cut = True
+                            if failure == "original_lost":
+                                (
+                                    tmp_path / "media" / original.asset.storage.object_key
+                                ).unlink()
+                            raise RetryableNodeFailure("transport")
+    
+                    async def read_hook(
+                        owner,
+                        read_scope,
+                        execution_id,
+                        dispatch_id,
+                        slot,
+                        *,
+                        expected_asset=None,
+                    ):
+                        nonlocal lost_asset
+                        if (
+                            failure == "geometry_lost"
+                            and slot == "geometry"
+                            and lost_asset is None
+                        ):
+                            assert expected_asset is not None
+                            lost_asset = expected_asset
+                            (
+                                tmp_path / "media" / expected_asset.storage.object_key
+                            ).unlink()
+                        return await base_read(
+                            owner,
+                            read_scope,
+                            execution_id,
+                            dispatch_id,
+                            slot,
+                            expected_asset=expected_asset,
+                        )
+    
+                    async def capture_registry(request_scope, task):
+                        source = await fixture.host.worker_source(request_scope, task)
+                        return source.device, source.camera
+    
+                    def open_worker():
+                        return inspection_worker(
+                            fixture.application,
+                            fixture.releases,
+                            fixture.store,
+                            host=VerifiedMediaWorkerHost(
+                                media, fixture.host.capabilities, capture_registry
+                            ),
+                            bundle_limits=LIMITS,
+                            media=media,
+                            request_evidence_root=tmp_path / "requests",
+                            gateway=fixture.gateway,
+                            execute_tools=geometry.execute,
+                            model_resource_scope_id="model",
+                        )
+    
+                    tool = None
+                    with (
+                        patch.object(GeometryNodeAdapter, "_step", step_hook),
+                        patch.object(LocalMediaStore, "read_tool_sidecar", read_hook),
+                        patch.object(store, "begin", old_begin),
+                        patch.object(store, "complete", old_complete),
+                    ):
+                        for index in range(20):
+                            step = await open_worker().run_once(
+                                scope, eid, owner=f"audit-{index}", lease_ms=10000
+                            )
+                            async with fixture.application.connect() as connection:
+                                locked = await repository.get_execution(
+                                    connection, scope, eid
+                                )
+                                assert locked is not None
+                                state = await load_records(connection, scope, locked)
+                            tool = next(
+                                (
+                                    item
+                                    for item in state.messages.values()
+                                    if item.kind == "tool"
+                                ),
+                                None,
+                            )
+                            if tool is not None:
+                                break
+                            if step in {WorkerStep.IDLE, WorkerStep.RETRY_SCHEDULED}:
+                                await asyncio.sleep(0.04)
+    
+                    assert tool is not None
+                    assert tool.output.envelope.status is NodeRunStatus.FAILED
+                    assert tool.output.envelope.output_artifacts == ()
+                    retained = 1 if failure == "original_lost" else 3
+                    assert len(tool.executions) == len(tool.authorities) == retained
+                    assert (
+                        sum(
+                            isinstance(step, InvokedToolStep)
+                            for step in tool.output.summary.steps
+                        )
+                        == retained
+                    )
+                    branch = state.inputs(tool.inputs.object_record.object_id)
+                    facts, selections = branch.selected_facts()
+                    assert not {fact.fact_id for fact in facts} & {
+                        fact.fact_id for fact in tool.facts
+                    }
+                    assert not set(selections) & set(tool.authorities)
+                    if lost_asset is not None:
+                        assert lost_asset in tool.evidence
+                        assert lost_asset not in branch.selected_evidence()
+                    async with fixture.application.connect() as connection:
+                        restored = await load_parent_step_history(
+                            connection, scope, tool.inputs
+                        )
+                    assert restored is not None
+                    assert {item.selection for item in restored.entries} == set(
+                        tool.authorities
+                    )
+                    if failure != "geometry_lost":
+                        assert restored.current_parent_attempt.attempt_number == 2
+    
+>       asyncio.run(run())
+
+tests/contract/test_wp05_geometry_recovery.py:297: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/asyncio/runners.py:194: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/contract/test_wp05_geometry_recovery.py:243: in run
+    step = await open_worker().run_once(
+                 ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def open_worker():
+>       return inspection_worker(
+            fixture.application,
+            fixture.releases,
+            fixture.store,
+            host=VerifiedMediaWorkerHost(
+                media, fixture.host.capabilities, capture_registry
+            ),
+            bundle_limits=LIMITS,
+            media=media,
+            request_evidence_root=tmp_path / "requests",
+            gateway=fixture.gateway,
+            execute_tools=geometry.execute,
+            model_resource_scope_id="model",
+        )
+E       TypeError: inspection_worker() got an unexpected keyword argument 'request_evidence_root'
+
+tests/contract/test_wp05_geometry_recovery.py:220: TypeError
+_ test_n05_preserves_audit_without_publishing_unverified_results[geometry_lost] _
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-454/test_n05_preserves_audit_witho1')
+loopback_only = set(), failure = 'geometry_lost'
+
+    @pytest.mark.parametrize("failure", ["original_lost", "geometry_lost", "legacy"])
+    def test_n05_preserves_audit_without_publishing_unverified_results(
+        tmp_path, loopback_only, failure
+    ):
+        async def run():
+            async def peer(reader, writer):
+                incoming = await http_support.read_request(reader)
+                body = json.loads(incoming.body)
+                role = body["response_format"]["json_schema"]["schema"]["$id"].split(":")[
+                    -2
+                ]
+                reply = {
+                    "profile_discovery-result": {"profile_hits": ["nonmotor_vehicle"]},
+                    "object_grounding-result": {"boxes": [{"xyxy": [40, 23, 52, 33]}]},
+                    "object_observation-result": {
+                        "vehicle_type": "electric_bicycle",
+                        "parking_state": "parked",
+                        "parking_position": "outside_parking_area",
+                    },
+                    "candidate_prediction-result": {"categories": []},
+                }[role]
+                writer.write(
+                    http_support.response(
+                        http_support.chat_body(
+                            model=body["model"], content=json.dumps(reply)
+                        ),
+                        headers=(
+                            (b"X-Request-ID", b"wp05-audit"),
+                            (b"X-Jimu-Deployment-Version", b"1.0.0"),
+                            (b"X-Jimu-Model-Version", b"1.0.0"),
+                        ),
+                    )
+                )
+                await writer.drain()
+    
+            async with http_support.http_peer(loopback_only, peer) as url:
+                async with perception_fixture(tmp_path, url, with_media=True) as fixture:
+                    media = fixture.media_store
+                    assert media is not None
+                    accepted = fixture.accepted
+                    scope, eid = (
+                        accepted.task.idempotency_scope,
+                        accepted.execution.execution_id,
+                    )
+                    catalogue = fixture.scene.execution.catalogue
+                    definitions = tuple(
+                        require_definition(catalogue, item.ref, ToolDefinition)
+                        for item in catalogue.of_kind(ArtifactKind.TOOL)
+                    )
+                    store = StepAttemptStore(fixture.application, actor=ACTOR)
+                    registry = ToolWorkerRegistry(
+                        synthetic_cpu_implementations(
+                            fixture.resources,
+                            "cpu",
+                            "geometry-audit",
+                            definitions,
+                            fixture.tool_proofs,
+                            synthetic_image_digests=frozenset(
+                                {accepted.task.media_ref.sha256}
+                            ),
+                        )
+                    )
+                    bridge = ToolExecutionAdapter(
+                        ToolExecutor(registry),
+                        store,
+                        fixture.journal,
+                        fixture.host.capabilities,
+                    )
+                    geometry = GeometryNodeAdapter(media, bridge)
+                    base_step = GeometryNodeAdapter._step
+                    base_read = LocalMediaStore.read_tool_sidecar
+                    initial_begin, initial_complete = store.begin, store.complete
+                    cut = False
+                    lost_asset = None
+    
+                    async def old_begin(claim, inputs, step, digest, **kwargs):
+                        if (
+                            failure == "legacy"
+                            and not cut
+                            and step.step_id == "wheel_boundary_geometry"
+                        ):
+                            # Reproduce the old writer while retaining real DB-owned steps and receipts.
+                            kwargs.pop("ancestor_evidence")
+                            kwargs.pop("ancestor_tools")
+                            with patch.object(
+                                _StepInput,
+                                "has_required_ancestor_inputs",
+                                return_value=True,
+                            ):
+                                return await initial_begin(
+                                    claim, inputs, step, digest, **kwargs
+                                )
+                        return await initial_begin(claim, inputs, step, digest, **kwargs)
+    
+                    async def old_complete(handle, result):
+                        tool = result.execution
+                        if (
+                            failure == "legacy"
+                            and not cut
+                            and tool.tool_ref.artifact_id == "wheel_boundary_geometry"
+                        ):
+                            tool = tool.model_copy(
+                                update={
+                                    "input_refs": _tool_input_refs(handle.inputs.envelope)
+                                }
+                            )
+                            result = result.model_copy(update={"execution": tool})
+                        return await initial_complete(handle, result)
+    
+                    async def step_hook(
+                        adapter,
+                        claimed,
+                        inputs,
+                        facts,
+                        original,
+                        region,
+                        state,
+                        step,
+                        definition,
+                        failures,
+                    ):
+                        nonlocal cut
+                        await base_step(
+                            adapter,
+                            claimed,
+                            inputs,
+                            facts,
+                            original,
+                            region,
+                            state,
+                            step,
+                            definition,
+                            failures,
+                        )
+                        cut_step = {
+                            "original_lost": "wheel_segmentation",
+                            "legacy": "wheel_boundary_geometry",
+                        }.get(failure)
+                        if not cut and step.step_id == cut_step:
+                            assert state.completions[step.step_id].selection is not None
+                            cut = True
+                            if failure == "original_lost":
+                                (
+                                    tmp_path / "media" / original.asset.storage.object_key
+                                ).unlink()
+                            raise RetryableNodeFailure("transport")
+    
+                    async def read_hook(
+                        owner,
+                        read_scope,
+                        execution_id,
+                        dispatch_id,
+                        slot,
+                        *,
+                        expected_asset=None,
+                    ):
+                        nonlocal lost_asset
+                        if (
+                            failure == "geometry_lost"
+                            and slot == "geometry"
+                            and lost_asset is None
+                        ):
+                            assert expected_asset is not None
+                            lost_asset = expected_asset
+                            (
+                                tmp_path / "media" / expected_asset.storage.object_key
+                            ).unlink()
+                        return await base_read(
+                            owner,
+                            read_scope,
+                            execution_id,
+                            dispatch_id,
+                            slot,
+                            expected_asset=expected_asset,
+                        )
+    
+                    async def capture_registry(request_scope, task):
+                        source = await fixture.host.worker_source(request_scope, task)
+                        return source.device, source.camera
+    
+                    def open_worker():
+                        return inspection_worker(
+                            fixture.application,
+                            fixture.releases,
+                            fixture.store,
+                            host=VerifiedMediaWorkerHost(
+                                media, fixture.host.capabilities, capture_registry
+                            ),
+                            bundle_limits=LIMITS,
+                            media=media,
+                            request_evidence_root=tmp_path / "requests",
+                            gateway=fixture.gateway,
+                            execute_tools=geometry.execute,
+                            model_resource_scope_id="model",
+                        )
+    
+                    tool = None
+                    with (
+                        patch.object(GeometryNodeAdapter, "_step", step_hook),
+                        patch.object(LocalMediaStore, "read_tool_sidecar", read_hook),
+                        patch.object(store, "begin", old_begin),
+                        patch.object(store, "complete", old_complete),
+                    ):
+                        for index in range(20):
+                            step = await open_worker().run_once(
+                                scope, eid, owner=f"audit-{index}", lease_ms=10000
+                            )
+                            async with fixture.application.connect() as connection:
+                                locked = await repository.get_execution(
+                                    connection, scope, eid
+                                )
+                                assert locked is not None
+                                state = await load_records(connection, scope, locked)
+                            tool = next(
+                                (
+                                    item
+                                    for item in state.messages.values()
+                                    if item.kind == "tool"
+                                ),
+                                None,
+                            )
+                            if tool is not None:
+                                break
+                            if step in {WorkerStep.IDLE, WorkerStep.RETRY_SCHEDULED}:
+                                await asyncio.sleep(0.04)
+    
+                    assert tool is not None
+                    assert tool.output.envelope.status is NodeRunStatus.FAILED
+                    assert tool.output.envelope.output_artifacts == ()
+                    retained = 1 if failure == "original_lost" else 3
+                    assert len(tool.executions) == len(tool.authorities) == retained
+                    assert (
+                        sum(
+                            isinstance(step, InvokedToolStep)
+                            for step in tool.output.summary.steps
+                        )
+                        == retained
+                    )
+                    branch = state.inputs(tool.inputs.object_record.object_id)
+                    facts, selections = branch.selected_facts()
+                    assert not {fact.fact_id for fact in facts} & {
+                        fact.fact_id for fact in tool.facts
+                    }
+                    assert not set(selections) & set(tool.authorities)
+                    if lost_asset is not None:
+                        assert lost_asset in tool.evidence
+                        assert lost_asset not in branch.selected_evidence()
+                    async with fixture.application.connect() as connection:
+                        restored = await load_parent_step_history(
+                            connection, scope, tool.inputs
+                        )
+                    assert restored is not None
+                    assert {item.selection for item in restored.entries} == set(
+                        tool.authorities
+                    )
+                    if failure != "geometry_lost":
+                        assert restored.current_parent_attempt.attempt_number == 2
+    
+>       asyncio.run(run())
+
+tests/contract/test_wp05_geometry_recovery.py:297: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/asyncio/runners.py:194: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/contract/test_wp05_geometry_recovery.py:243: in run
+    step = await open_worker().run_once(
+                 ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def open_worker():
+>       return inspection_worker(
+            fixture.application,
+            fixture.releases,
+            fixture.store,
+            host=VerifiedMediaWorkerHost(
+                media, fixture.host.capabilities, capture_registry
+            ),
+            bundle_limits=LIMITS,
+            media=media,
+            request_evidence_root=tmp_path / "requests",
+            gateway=fixture.gateway,
+            execute_tools=geometry.execute,
+            model_resource_scope_id="model",
+        )
+E       TypeError: inspection_worker() got an unexpected keyword argument 'request_evidence_root'
+
+tests/contract/test_wp05_geometry_recovery.py:220: TypeError
+____ test_n05_preserves_audit_without_publishing_unverified_results[legacy] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-454/test_n05_preserves_audit_witho2')
+loopback_only = set(), failure = 'legacy'
+
+    @pytest.mark.parametrize("failure", ["original_lost", "geometry_lost", "legacy"])
+    def test_n05_preserves_audit_without_publishing_unverified_results(
+        tmp_path, loopback_only, failure
+    ):
+        async def run():
+            async def peer(reader, writer):
+                incoming = await http_support.read_request(reader)
+                body = json.loads(incoming.body)
+                role = body["response_format"]["json_schema"]["schema"]["$id"].split(":")[
+                    -2
+                ]
+                reply = {
+                    "profile_discovery-result": {"profile_hits": ["nonmotor_vehicle"]},
+                    "object_grounding-result": {"boxes": [{"xyxy": [40, 23, 52, 33]}]},
+                    "object_observation-result": {
+                        "vehicle_type": "electric_bicycle",
+                        "parking_state": "parked",
+                        "parking_position": "outside_parking_area",
+                    },
+                    "candidate_prediction-result": {"categories": []},
+                }[role]
+                writer.write(
+                    http_support.response(
+                        http_support.chat_body(
+                            model=body["model"], content=json.dumps(reply)
+                        ),
+                        headers=(
+                            (b"X-Request-ID", b"wp05-audit"),
+                            (b"X-Jimu-Deployment-Version", b"1.0.0"),
+                            (b"X-Jimu-Model-Version", b"1.0.0"),
+                        ),
+                    )
+                )
+                await writer.drain()
+    
+            async with http_support.http_peer(loopback_only, peer) as url:
+                async with perception_fixture(tmp_path, url, with_media=True) as fixture:
+                    media = fixture.media_store
+                    assert media is not None
+                    accepted = fixture.accepted
+                    scope, eid = (
+                        accepted.task.idempotency_scope,
+                        accepted.execution.execution_id,
+                    )
+                    catalogue = fixture.scene.execution.catalogue
+                    definitions = tuple(
+                        require_definition(catalogue, item.ref, ToolDefinition)
+                        for item in catalogue.of_kind(ArtifactKind.TOOL)
+                    )
+                    store = StepAttemptStore(fixture.application, actor=ACTOR)
+                    registry = ToolWorkerRegistry(
+                        synthetic_cpu_implementations(
+                            fixture.resources,
+                            "cpu",
+                            "geometry-audit",
+                            definitions,
+                            fixture.tool_proofs,
+                            synthetic_image_digests=frozenset(
+                                {accepted.task.media_ref.sha256}
+                            ),
+                        )
+                    )
+                    bridge = ToolExecutionAdapter(
+                        ToolExecutor(registry),
+                        store,
+                        fixture.journal,
+                        fixture.host.capabilities,
+                    )
+                    geometry = GeometryNodeAdapter(media, bridge)
+                    base_step = GeometryNodeAdapter._step
+                    base_read = LocalMediaStore.read_tool_sidecar
+                    initial_begin, initial_complete = store.begin, store.complete
+                    cut = False
+                    lost_asset = None
+    
+                    async def old_begin(claim, inputs, step, digest, **kwargs):
+                        if (
+                            failure == "legacy"
+                            and not cut
+                            and step.step_id == "wheel_boundary_geometry"
+                        ):
+                            # Reproduce the old writer while retaining real DB-owned steps and receipts.
+                            kwargs.pop("ancestor_evidence")
+                            kwargs.pop("ancestor_tools")
+                            with patch.object(
+                                _StepInput,
+                                "has_required_ancestor_inputs",
+                                return_value=True,
+                            ):
+                                return await initial_begin(
+                                    claim, inputs, step, digest, **kwargs
+                                )
+                        return await initial_begin(claim, inputs, step, digest, **kwargs)
+    
+                    async def old_complete(handle, result):
+                        tool = result.execution
+                        if (
+                            failure == "legacy"
+                            and not cut
+                            and tool.tool_ref.artifact_id == "wheel_boundary_geometry"
+                        ):
+                            tool = tool.model_copy(
+                                update={
+                                    "input_refs": _tool_input_refs(handle.inputs.envelope)
+                                }
+                            )
+                            result = result.model_copy(update={"execution": tool})
+                        return await initial_complete(handle, result)
+    
+                    async def step_hook(
+                        adapter,
+                        claimed,
+                        inputs,
+                        facts,
+                        original,
+                        region,
+                        state,
+                        step,
+                        definition,
+                        failures,
+                    ):
+                        nonlocal cut
+                        await base_step(
+                            adapter,
+                            claimed,
+                            inputs,
+                            facts,
+                            original,
+                            region,
+                            state,
+                            step,
+                            definition,
+                            failures,
+                        )
+                        cut_step = {
+                            "original_lost": "wheel_segmentation",
+                            "legacy": "wheel_boundary_geometry",
+                        }.get(failure)
+                        if not cut and step.step_id == cut_step:
+                            assert state.completions[step.step_id].selection is not None
+                            cut = True
+                            if failure == "original_lost":
+                                (
+                                    tmp_path / "media" / original.asset.storage.object_key
+                                ).unlink()
+                            raise RetryableNodeFailure("transport")
+    
+                    async def read_hook(
+                        owner,
+                        read_scope,
+                        execution_id,
+                        dispatch_id,
+                        slot,
+                        *,
+                        expected_asset=None,
+                    ):
+                        nonlocal lost_asset
+                        if (
+                            failure == "geometry_lost"
+                            and slot == "geometry"
+                            and lost_asset is None
+                        ):
+                            assert expected_asset is not None
+                            lost_asset = expected_asset
+                            (
+                                tmp_path / "media" / expected_asset.storage.object_key
+                            ).unlink()
+                        return await base_read(
+                            owner,
+                            read_scope,
+                            execution_id,
+                            dispatch_id,
+                            slot,
+                            expected_asset=expected_asset,
+                        )
+    
+                    async def capture_registry(request_scope, task):
+                        source = await fixture.host.worker_source(request_scope, task)
+                        return source.device, source.camera
+    
+                    def open_worker():
+                        return inspection_worker(
+                            fixture.application,
+                            fixture.releases,
+                            fixture.store,
+                            host=VerifiedMediaWorkerHost(
+                                media, fixture.host.capabilities, capture_registry
+                            ),
+                            bundle_limits=LIMITS,
+                            media=media,
+                            request_evidence_root=tmp_path / "requests",
+                            gateway=fixture.gateway,
+                            execute_tools=geometry.execute,
+                            model_resource_scope_id="model",
+                        )
+    
+                    tool = None
+                    with (
+                        patch.object(GeometryNodeAdapter, "_step", step_hook),
+                        patch.object(LocalMediaStore, "read_tool_sidecar", read_hook),
+                        patch.object(store, "begin", old_begin),
+                        patch.object(store, "complete", old_complete),
+                    ):
+                        for index in range(20):
+                            step = await open_worker().run_once(
+                                scope, eid, owner=f"audit-{index}", lease_ms=10000
+                            )
+                            async with fixture.application.connect() as connection:
+                                locked = await repository.get_execution(
+                                    connection, scope, eid
+                                )
+                                assert locked is not None
+                                state = await load_records(connection, scope, locked)
+                            tool = next(
+                                (
+                                    item
+                                    for item in state.messages.values()
+                                    if item.kind == "tool"
+                                ),
+                                None,
+                            )
+                            if tool is not None:
+                                break
+                            if step in {WorkerStep.IDLE, WorkerStep.RETRY_SCHEDULED}:
+                                await asyncio.sleep(0.04)
+    
+                    assert tool is not None
+                    assert tool.output.envelope.status is NodeRunStatus.FAILED
+                    assert tool.output.envelope.output_artifacts == ()
+                    retained = 1 if failure == "original_lost" else 3
+                    assert len(tool.executions) == len(tool.authorities) == retained
+                    assert (
+                        sum(
+                            isinstance(step, InvokedToolStep)
+                            for step in tool.output.summary.steps
+                        )
+                        == retained
+                    )
+                    branch = state.inputs(tool.inputs.object_record.object_id)
+                    facts, selections = branch.selected_facts()
+                    assert not {fact.fact_id for fact in facts} & {
+                        fact.fact_id for fact in tool.facts
+                    }
+                    assert not set(selections) & set(tool.authorities)
+                    if lost_asset is not None:
+                        assert lost_asset in tool.evidence
+                        assert lost_asset not in branch.selected_evidence()
+                    async with fixture.application.connect() as connection:
+                        restored = await load_parent_step_history(
+                            connection, scope, tool.inputs
+                        )
+                    assert restored is not None
+                    assert {item.selection for item in restored.entries} == set(
+                        tool.authorities
+                    )
+                    if failure != "geometry_lost":
+                        assert restored.current_parent_attempt.attempt_number == 2
+    
+>       asyncio.run(run())
+
+tests/contract/test_wp05_geometry_recovery.py:297: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/asyncio/runners.py:194: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/contract/test_wp05_geometry_recovery.py:243: in run
+    step = await open_worker().run_once(
+                 ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def open_worker():
+>       return inspection_worker(
+            fixture.application,
+            fixture.releases,
+            fixture.store,
+            host=VerifiedMediaWorkerHost(
+                media, fixture.host.capabilities, capture_registry
+            ),
+            bundle_limits=LIMITS,
+            media=media,
+            request_evidence_root=tmp_path / "requests",
+            gateway=fixture.gateway,
+            execute_tools=geometry.execute,
+            model_resource_scope_id="model",
+        )
+E       TypeError: inspection_worker() got an unexpected keyword argument 'request_evidence_root'
+
+tests/contract/test_wp05_geometry_recovery.py:220: TypeError
+____ test_configured_worker_executes_signed_parking_scene[storage_failure] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-454/test_configured_worker_execute2')
+loopback_only = set(), candidate_case = 'storage_failure'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x72f497af83e0>
+
+    @pytest.mark.parametrize(
+        "candidate_case", ["usable", "transport_failure", "storage_failure"]
+    )
+    def test_configured_worker_executes_signed_parking_scene(
+        tmp_path: Path,
+        loopback_only: set[int],
+        candidate_case: str,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        source_indexes: list[str] = []
+        read_types: list[EvidenceType] = []
+        original_sources = InspectionNodes._decision_sources
+        original_read = InspectionNodes._read_evidence
+    
+        def check_source_pins(nodes: InspectionNodes, claimed: ClaimedNode):
+            originals = tuple(
+                row
+                for row in claimed.evidence
+                if row.evidence_type is EvidenceType.ORIGINAL_IMAGE
+            )
+            assert originals
+            asset = originals[0]
+            substituted = asset.model_copy(update={"producer_version": "9.9.9"})
+            with pytest.raises(
+                AdapterRejected, match="inspection_evidence_snapshot_mismatch"
+            ):
+                original_sources(
+                    nodes,
+                    replace(
+                        claimed,
+                        evidence=tuple(
+                            substituted if row == asset else row for row in claimed.evidence
+                        ),
+                    ),
+                )
+            source_indexes.append(claimed.attempt.attempt_id)
+            return original_sources(nodes, claimed)
+    
+        async def count_read(nodes, claimed, row):
+            read_types.append(row.evidence_type)
+            return await original_read(nodes, claimed, row)
+    
+        monkeypatch.setattr(InspectionNodes, "_decision_sources", check_source_pins)
+        monkeypatch.setattr(InspectionNodes, "_read_evidence", count_read)
+    
+        if candidate_case == "storage_failure":
+            persist = LocalMediaStore.stage_model_response
+    
+            async def interrupt_candidate_write(
+                media, scope, execution_id, dispatch_id, receipt
+            ):
+                if receipt.parsed_content is not None and "categories" in json.loads(
+                    receipt.parsed_content
+                ):
+                    raise OSError("fixture evidence write failed")
+                return await persist(media, scope, execution_id, dispatch_id, receipt)
+    
+            monkeypatch.setattr(
+                LocalMediaStore, "stage_model_response", interrupt_candidate_write
+            )
+    
+        async def run() -> None:
+            captured: list[tuple[str, bytes]] = []
+            calls: Counter[str] = Counter()
+    
+            async def peer(
+                reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+            ) -> None:
+                request = await http_support.read_request(reader)
+                body = json.loads(request.body)
+                schema = body["response_format"]["json_schema"]["schema"]
+                name = schema["$id"].split(":")[-2]
+                calls[name] += 1
+                if (
+                    name == "candidate_prediction-result"
+                    and candidate_case == "transport_failure"
+                ):
+                    writer.close()
+                    return
+                reply = {
+                    "profile_discovery-result": {"profile_hits": ["nonmotor_vehicle"]},
+                    "object_grounding-result": {"boxes": [{"xyxy": _BBOX}]},
+                    "object_observation-result": _ANSWERS,
+                    "candidate_prediction-result": {"categories": []},
+                }[name]
+                if name == "object_observation-result" and calls[name] == 1:
+                    reply = {**_ANSWERS, "object_id": "outside.claimed.object"}
+                raw = http_support.chat_body(model=body["model"], content=json.dumps(reply))
+                captured.append((name, raw))
+                writer.write(
+                    http_support.response(
+                        raw,
+                        headers=(
+                            (b"X-Request-ID", f"inspection-{len(captured)}".encode()),
+                            (b"X-Jimu-Deployment-Version", b"1.0.0"),
+                            (b"X-Jimu-Model-Version", b"1.0.0"),
+                        ),
+                    )
+                )
+                await writer.drain()
+    
+            async with http_support.http_peer(loopback_only, peer) as url:
+                async with perception_fixture(tmp_path, url, with_media=True) as fixture:
+                    from examples.nonmotor_vehicle_illegal_parking.compilable.lifecycle import (
+                        ACTOR,
+                    )
+    
+                    media = fixture.media_store
+                    assert media is not None
+                    accepted = fixture.accepted
+                    scope, eid = (
+                        accepted.task.idempotency_scope,
+                        accepted.execution.execution_id,
+                    )
+                    catalogue = fixture.scene.execution.catalogue
+                    definitions = tuple(
+                        require_definition(catalogue, item.ref, ToolDefinition)
+                        for item in catalogue.of_kind(ArtifactKind.TOOL)
+                    )
+                    tool_registry = ToolWorkerRegistry(
+                        synthetic_cpu_implementations(
+                            fixture.resources,
+                            "cpu",
+                            "inspection-tools",
+                            definitions,
+                            fixture.tool_proofs,
+                            synthetic_image_digests=frozenset(
+                                {accepted.task.media_ref.sha256}
+                            ),
+                        )
+                    )
+                    tool_bridge = ToolExecutionAdapter(
+                        ToolExecutor(tool_registry),
+                        StepAttemptStore(fixture.application, actor=ACTOR),
+                        fixture.journal,
+                        fixture.host.capabilities,
+                    )
+                    tools = GeometryNodeAdapter(media, tool_bridge)
+                    capture_reads = 0
+    
+                    async def capture_registry(request_scope, task):
+                        nonlocal capture_reads
+                        capture_reads += 1
+                        source = await fixture.host.worker_source(request_scope, task)
+                        if capture_reads > 1:
+                            raise AssertionError(
+                                "a completed N01 must reopen the durable capture revisions"
+                            )
+                        return source.device, source.camera
+    
+                    host = VerifiedMediaWorkerHost(
+                        media, fixture.host.capabilities, capture_registry
+                    )
+    
+                    def open_worker():
+                        return inspection_worker(
+                            fixture.application,
+                            fixture.releases,
+                            fixture.store,
+                            host=host,
+                            bundle_limits=LIMITS,
+                            media=media,
+                            gateway=fixture.gateway,
+                            execute_tools=tools.execute,
+                            model_resource_scope_id="model",
+                        )
+    
+                    dispositions = []
+                    for index in range(20):
+                        step = await open_worker().run_once(
+                            scope, eid, owner=f"inspection-{index}", lease_ms=10000
+                        )
+                        dispositions.append(step)
+                        if step is WorkerStep.FINALIZED:
+                            break
+                        if step in {WorkerStep.IDLE, WorkerStep.RETRY_SCHEDULED}:
+                            await asyncio.sleep(0.025)
+                    final = await open_worker().read_finalization(scope, eid)
+                    assert final is not None, tuple(dispositions)
+                    assert capture_reads == 1
+                    assert WorkerStep.RETRY_SCHEDULED in dispositions
+                    assert WorkerStep.STAGED in dispositions
+                    assert len(source_indexes) == 2 and len(set(source_indexes)) == 1
+                    assert EvidenceType.ORIGINAL_IMAGE in read_types
+                    assert EvidenceType.MASK in read_types
+                    assert EvidenceType.MODEL_REQUEST not in read_types
+                    (decision,) = final.decisions
+                    assert decision.result.value == "violation", decision.model_dump_json()
+                    assert len(final.coverage.matches) == 1
+                    assert calls == {
+                        "profile_discovery-result": 1,
+                        "object_grounding-result": 1,
+                        "object_observation-result": 2,
+                        "candidate_prediction-result": 1,
+                    }
+    
+                    async with fixture.application.connect() as connection:
+                        locked = await repository.get_execution(connection, scope, eid)
+                        assert locked is not None
+                        state = await load_records(connection, scope, locked)
+                    if candidate_case == "storage_failure":
+                        message = next(
+                            row
+                            for key, row in state.messages.items()
+                            if key.node_id is NodeId.N06
+                        )
+                        invoice = message.invocation
+                        assert invoice is not None and invoice.outcome.status == "succeeded"
+                        stored = await media.read_model_response(
+                            scope, eid, invoice.model_invocation_id, late=False
+                        )
+                        assert (
+                            stored.receipt.response_evidence_error
+                            == "model.response_evidence_store_unavailable"
+                        )
+                        assert stored.normalized is None
+                        assert (
+                            message.draft.candidate.failure_code
+                            == stored.receipt.response_evidence_error
+                        )
+                    inputs = state.inputs(decision.object_ref.record_id)
+                    assert (
+                        inputs.observation is not None
+                        and inputs.observation.authority is not None
+                    )
+                    assert inputs.observation.batch.retry_of_batch_ref is not None
+                    assert (
+                        inputs.tool is not None
+                        and inputs.tool.output.summary.status == "succeeded"
+                    )
+                    assert len(inputs.tool.executions) == 3
+                    for execution in inputs.tool.executions:
+                        row = await fixture.journal.get_dispatch(
+                            scope, eid, execution.tool_execution_id
+                        )
+                        assert row is not None and row.send_admitted
+                        assert row.intent.input_digest != row.intent.request_digest
+                        (recorded,) = row.results
+                        assert not recorded.late
+                        assert isinstance(recorded.result, ToolDispatchResult)
+                        assert recorded.result.acknowledgement == "tool_process"
+                        provisional = recorded.result.execution
+                        assert (
+                            provisional is not None
+                            and provisional.authority_observation is not None
+                        )
+                        assert (
+                            provisional.authority_observation.arrival_qualification
+                            == "unresolved"
+                        )
+                        assert execution.authority_observation is not None
+                        assert (
+                            execution.authority_observation.arrival_qualification
+                            == "on_time"
+                        )
+                        assert (
+                            provisional.model_copy(
+                                update={
+                                    "authority_observation": execution.authority_observation
+                                }
+                            ).stable_json()
+                            == execution.stable_json()
+                        )
+                    tool = inputs.tool.executions[-1]
+                    output = await media.read_tool_sidecar(
+                        scope, eid, tool.tool_execution_id, "geometry"
+                    )
+                    assert output.asset in inputs.tool.evidence
+                    assert len(output.content) > 0
+                    actual = await media.read_model_response(
+                        scope,
+                        eid,
+                        inputs.observation.invocation.model_invocation_id,
+                        late=False,
+                    )
+                    received = [
+                        data
+                        for name, data in captured
+                        if name == "object_observation-result"
+                    ]
+                    assert actual.raw == received[-1]
+                    assert actual.receipt.response_digest == sha256_digest(received[-1])
+                    assert json.loads(actual.normalized) == _ANSWERS
+                    n06 = next(
+                        node
+                        for key, node in state.runs.items()
+                        if key.node_id is NodeId.N06
+                    )
+                    expected = {row.evidence_id for row in inputs.selected_evidence()}
+                    assert expected == {
+                        pin.ref.record_id
+                        for pin in n06.upstream_inputs
+                        if pin.ref.record_kind.value == "evidence"
+                    }
+                    assert (
+                        await open_worker().read_finalization(
+                            scope.model_copy(update={"client_id": "another.client"}), eid
+                        )
+                        is None
+                    )
+    
+>       asyncio.run(run())
+
+tests/contract/test_wp05_worker_inspection.py:350: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/asyncio/runners.py:194: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def run() -> None:
+        captured: list[tuple[str, bytes]] = []
+        calls: Counter[str] = Counter()
+    
+        async def peer(
+            reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+        ) -> None:
+            request = await http_support.read_request(reader)
+            body = json.loads(request.body)
+            schema = body["response_format"]["json_schema"]["schema"]
+            name = schema["$id"].split(":")[-2]
+            calls[name] += 1
+            if (
+                name == "candidate_prediction-result"
+                and candidate_case == "transport_failure"
+            ):
+                writer.close()
+                return
+            reply = {
+                "profile_discovery-result": {"profile_hits": ["nonmotor_vehicle"]},
+                "object_grounding-result": {"boxes": [{"xyxy": _BBOX}]},
+                "object_observation-result": _ANSWERS,
+                "candidate_prediction-result": {"categories": []},
+            }[name]
+            if name == "object_observation-result" and calls[name] == 1:
+                reply = {**_ANSWERS, "object_id": "outside.claimed.object"}
+            raw = http_support.chat_body(model=body["model"], content=json.dumps(reply))
+            captured.append((name, raw))
+            writer.write(
+                http_support.response(
+                    raw,
+                    headers=(
+                        (b"X-Request-ID", f"inspection-{len(captured)}".encode()),
+                        (b"X-Jimu-Deployment-Version", b"1.0.0"),
+                        (b"X-Jimu-Model-Version", b"1.0.0"),
+                    ),
+                )
+            )
+            await writer.drain()
+    
+        async with http_support.http_peer(loopback_only, peer) as url:
+            async with perception_fixture(tmp_path, url, with_media=True) as fixture:
+                from examples.nonmotor_vehicle_illegal_parking.compilable.lifecycle import (
+                    ACTOR,
+                )
+    
+                media = fixture.media_store
+                assert media is not None
+                accepted = fixture.accepted
+                scope, eid = (
+                    accepted.task.idempotency_scope,
+                    accepted.execution.execution_id,
+                )
+                catalogue = fixture.scene.execution.catalogue
+                definitions = tuple(
+                    require_definition(catalogue, item.ref, ToolDefinition)
+                    for item in catalogue.of_kind(ArtifactKind.TOOL)
+                )
+                tool_registry = ToolWorkerRegistry(
+                    synthetic_cpu_implementations(
+                        fixture.resources,
+                        "cpu",
+                        "inspection-tools",
+                        definitions,
+                        fixture.tool_proofs,
+                        synthetic_image_digests=frozenset(
+                            {accepted.task.media_ref.sha256}
+                        ),
+                    )
+                )
+                tool_bridge = ToolExecutionAdapter(
+                    ToolExecutor(tool_registry),
+                    StepAttemptStore(fixture.application, actor=ACTOR),
+                    fixture.journal,
+                    fixture.host.capabilities,
+                )
+                tools = GeometryNodeAdapter(media, tool_bridge)
+                capture_reads = 0
+    
+                async def capture_registry(request_scope, task):
+                    nonlocal capture_reads
+                    capture_reads += 1
+                    source = await fixture.host.worker_source(request_scope, task)
+                    if capture_reads > 1:
+                        raise AssertionError(
+                            "a completed N01 must reopen the durable capture revisions"
+                        )
+                    return source.device, source.camera
+    
+                host = VerifiedMediaWorkerHost(
+                    media, fixture.host.capabilities, capture_registry
+                )
+    
+                def open_worker():
+                    return inspection_worker(
+                        fixture.application,
+                        fixture.releases,
+                        fixture.store,
+                        host=host,
+                        bundle_limits=LIMITS,
+                        media=media,
+                        gateway=fixture.gateway,
+                        execute_tools=tools.execute,
+                        model_resource_scope_id="model",
+                    )
+    
+                dispositions = []
+                for index in range(20):
+                    step = await open_worker().run_once(
+                        scope, eid, owner=f"inspection-{index}", lease_ms=10000
+                    )
+                    dispositions.append(step)
+                    if step is WorkerStep.FINALIZED:
+                        break
+                    if step in {WorkerStep.IDLE, WorkerStep.RETRY_SCHEDULED}:
+                        await asyncio.sleep(0.025)
+                final = await open_worker().read_finalization(scope, eid)
+                assert final is not None, tuple(dispositions)
+                assert capture_reads == 1
+                assert WorkerStep.RETRY_SCHEDULED in dispositions
+>               assert WorkerStep.STAGED in dispositions
+E               AssertionError: assert <WorkerStep.STAGED: 'staged'> in [<WorkerStep.APPLIED: 'applied'>, <WorkerStep.APPLIED: 'applied'>, <WorkerStep.APPLIED: 'applied'>, <WorkerStep.RETRY_SCHEDULED: 'retry_scheduled'>, <WorkerStep.APPLIED: 'applied'>, <WorkerStep.APPLIED: 'applied'>, ...]
+E                +  where <WorkerStep.STAGED: 'staged'> = WorkerStep.STAGED
+
+tests/contract/test_wp05_worker_inspection.py:230: AssertionError
+_____________________ test_rejects_invalid_budget[change5] _____________________
+
+change = {'retryable_error_classes': ('validation',)}
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            {"max_attempts": 1025},
+            {"timeout_ms": 2**31},
+            {"retry_backoff_ms": ()},
+            {"retry_backoff_ms": (0,)},
+            {"retryable_error_classes": ("transport", "transport")},
+            {"retryable_error_classes": ("validation",)},
+            {"retryable_error_classes": ("resource_exhausted",)},
+            {"retry_on_lease_loss": 1},
+        ],
+    )
+    def test_rejects_invalid_budget(change):
+>       with pytest.raises(ValidationError):
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+tests/negative/test_wp03_jobs_scheduling_rejections.py:30: Failed
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/early_regression/f4c27c5baa09/all.xml -
+=========================== short test summary info ============================
+FAILED tests/contract/test_b_schema_inventory.py::test_independent_ast_coverage_for_public_roots_and_named_unions
+FAILED tests/contract/test_c_schema_inventory.py::test_published_b_schemas_keep_their_sealed_file_hashes
+FAILED tests/contract/test_wp05_geometry_recovery.py::test_n05_preserves_audit_without_publishing_unverified_results[original_lost]
+FAILED tests/contract/test_wp05_geometry_recovery.py::test_n05_preserves_audit_without_publishing_unverified_results[geometry_lost]
+FAILED tests/contract/test_wp05_geometry_recovery.py::test_n05_preserves_audit_without_publishing_unverified_results[legacy]
+FAILED tests/contract/test_wp05_worker_inspection.py::test_configured_worker_executes_signed_parking_scene[storage_failure]
+FAILED tests/negative/test_wp03_jobs_scheduling_rejections.py::test_rejects_invalid_budget[change5]
+7 failed, 3866 passed in 1254.05s (0:20:54)

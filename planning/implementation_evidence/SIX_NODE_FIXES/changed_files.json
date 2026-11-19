@@ -1,0 +1,297 @@
+{
+  "scope": "src, ops, scripts, tests, schemas, examples (excluding cache files)",
+  "baseline_commit": "2552affeb69fbc2594fe70724f895b0db0967d47",
+  "baseline_wp07_zip_sha256": "a458149665893542f29b71e48e9d4d4fbf6c9025f231a86c557a4bc59c14d1c9",
+  "changed_path_count": 72,
+  "product_manifest_sha256": "bf40cea2d52a07559cb7756953309ab870c8b637f2ae4e5f1dc05d3dcb22441f",
+  "files": {
+    "ops/recovery/media_validation.py": {
+      "before_sha256": "5225c31a39c7a1aa016c9425485a5b7321b12d1f755ed07cba3fd3091c706640",
+      "after_sha256": "d37135a1a9b30aba05d3666c8aa46aebe6ae782a7a68e48ba9394cc9b1c38c05"
+    },
+    "ops/recovery/postgres.py": {
+      "before_sha256": "7bc2eae4a7ca9806af055f49ebf2965360c6b5489982791ecc8c37b2992ace0c",
+      "after_sha256": "7d273b1b8312f05fc9b8d4040b5c2d693a01d7f811b2292cb93990ab244d0a28"
+    },
+    "schemas/generated/definitions.capabilities.GroundingGrouping.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "1fbf84dc5f8963228998f13f402fdc9a5dc5d1aea05e50a922763bc630198f4f"
+    },
+    "schemas/generated/definitions.capabilities.ProfileDefinition.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "26d4393642df2bb58b6dd11f463f99f403bea1b3587624f78ba70e97a4cc723d"
+    },
+    "schemas/generated/index.json": {
+      "before_sha256": "843f08cd7810b6313113f1dc1b8444f63a23a148b268d0a37a4ef26ceaf8cdb0",
+      "after_sha256": "c26628a52522916d715fa3c43739f5b28b8aee719120549ddbd7eead57a933f2"
+    },
+    "schemas/generated/nodes.decision.DecisionInput.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "41cb79ae025e44f7e7171d52092eddc474af94d3c7f6c16fab9acff5ec1f6985"
+    },
+    "schemas/generated/nodes.observation.ObservationInput.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "a4fb541a379b2a05dde84dbfe800ad65083dbf8f6c805bae45551cc38ed9eeed"
+    },
+    "schemas/generated/nodes.tool_execution.ToolNodeInput.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "1611779a4c5125399aefa759718cc8fc2c1fbe6d4e5008b5a960070d35167b30"
+    },
+    "schemas/generated/runtime.executions.NodeRun.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "a1f5cbcef2d7a2522e3cd5389cd8e68c8ab048c9f2c764477ddce461acc8eaae"
+    },
+    "schemas/generated/runtime.perception.ObjectRecord.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "42ead3a7e6a81a1fcd5b89349fdb6cb1c1a051cc471661da4eb283a334d5d306"
+    },
+    "schemas/generated/validation.coverage_sources.CoverageSources.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "316d475c8f06a6e81d568a330e691b72f57c6f749982d319676880c986d8b63f"
+    },
+    "schemas/generated/validation.definition_inputs.DefinitionRegistration.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "8e8f0614801b8c400694db534cebb6e42b30abcecaef6425188b1c6d13f58fb2"
+    },
+    "schemas/generated/validation.definition_inputs.DefinitionValidationInput.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "eaaa584810507ed2b53e3a2984fcebe90aae6e333cd71a0987a00b487420e9ab"
+    },
+    "schemas/generated/validation.producer_authority_inputs.ProducerAuthorityValidationInput.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "d1c732152a14984ce1f0def2219de087165bc9685efc3bba20af575b7b36b5a4"
+    },
+    "schemas/generated/validation.producer_inputs.ProducerCatalogueContext.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "454b8fbc27d25028e301dfe9e1259242d2e6bcc29777cc57835b5ebab107c725"
+    },
+    "schemas/generated/validation.producer_inputs.ProducerValidationContext.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "036f9b3616eaf21cc93a4411c1eab962d2065a636282663e9cf98dad9ef34b13"
+    },
+    "schemas/generated/validation.rule_type_inputs.RuleTypeBindings.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "d4f3fe0575a2831ca087bff1b2c2c14dd77ef778a67e14b5a01012c5b8664054"
+    },
+    "schemas/generated/validation.runtime_authority.RuntimeAuthorityRecords.v1.1.0.schema.json": {
+      "before_sha256": null,
+      "after_sha256": "20154981bf2dd6eeb9a1de4cc19d350a89e2ff2f8d618e772833c3c1cc34a65a"
+    },
+    "scripts/generate_schemas.py": {
+      "before_sha256": "807bb9b9a106fa01f5967f87f0ddbeadc032c92b69c033659686251ccc5fc679",
+      "after_sha256": "86cded5d6ac060ef83cbb5823f42881dd5a0c1a3a7e17c226bbd8125f13f48f0"
+    },
+    "src/jimu_runtime/bundle/schema_validation.py": {
+      "before_sha256": "f8c9931b347efb4f2a4ea86e12f18008ee9e809c686c7c62762ad772c54fa82c",
+      "after_sha256": "7b68d2338b99caa8b1750bc41d5c197d8dc5676abe38edf29005d464fe52e5bc"
+    },
+    "src/jimu_runtime/bundle/schema_views.py": {
+      "before_sha256": "f494f66b111eee03afa768fe6d79fdd29466b9504ce17ff1dbb08f77b12d54ec",
+      "after_sha256": "25a9ea274048870e9bbdb373e4f8d6f2c9917d416545375a431783c66203c2f8"
+    },
+    "src/jimu_runtime/deployment/service.py": {
+      "before_sha256": "f65184768b19f2f00fbf46dcee785523c218188e68f87a8ad4e8c996bfeee6d6",
+      "after_sha256": "e779f0a6272c7dc193122bddb98769591b81e319e68b36198cd9bda21441bbf3"
+    },
+    "src/jimu_runtime/domain/definitions/capabilities.py": {
+      "before_sha256": "622ec3952e731b5065420b283759adbfa0394c352887e0399577d44f1c2ad001",
+      "after_sha256": "dac078f9cc6ea4ee8f7dc0a344d36b2d2a28f8dba10ffce8743fffd506a66b77"
+    },
+    "src/jimu_runtime/domain/nodes/grounding.py": {
+      "before_sha256": "0f4b70777c9a1cd8b1899937577f721f2d2a193aa98f3719fde6aae09f7cf656",
+      "after_sha256": "a5fb89721d53dee463174555b8a1f71fa7412399f675086da35ba6110d2930f9"
+    },
+    "src/jimu_runtime/domain/nodes/observation.py": {
+      "before_sha256": "3e0148364243adcebf2b982264d29ea2b82b8d94700e095bde169e8c0a8ef376",
+      "after_sha256": "8548ac6cb30db9ba77e7d0ea858bf22e1a916d720859dcb0a9ddf284fdb64555"
+    },
+    "src/jimu_runtime/domain/nodes/tool_execution.py": {
+      "before_sha256": "17aea2e1bdfecd7317c433e6f50181a54d67bd708a89b635d8223e4626dd7b85",
+      "after_sha256": "eba6cd97b0e8bb6cb4afc46f19a99afe0798de6b9826c9036b1f5769e7e4414c"
+    },
+    "src/jimu_runtime/domain/runtime/executions.py": {
+      "before_sha256": "f0192364484604a5c400f3a522c445b62dcc934c0edf3f13625a4e026c5099ef",
+      "after_sha256": "bba805b5f84e6ce5bc3e5f0a7720ab19e1c199bb490959964745b0695e7c3666"
+    },
+    "src/jimu_runtime/domain/runtime/grounding_groups.py": {
+      "before_sha256": null,
+      "after_sha256": "b572b1fc280a4c799fd94d7c0aa08eee130f32835d182a7eb2b148588ffd2702"
+    },
+    "src/jimu_runtime/domain/runtime/media.py": {
+      "before_sha256": "19b6c632702fb17068a98778482933a6293afd2fd3b9b4fc8e9aa4c449033b83",
+      "after_sha256": "3a2c9bc792e852924f5c278c4dc532b5fd0ee884c39f8889a3f1929793493423"
+    },
+    "src/jimu_runtime/domain/runtime/perception.py": {
+      "before_sha256": "ac29ec89b150a2e935bb17661115bc704215dab376ba6371cf711ad922a74136",
+      "after_sha256": "ee119c7159204198cdf65ead6959fd008646e3d34543d225ddc6af4c63948441"
+    },
+    "src/jimu_runtime/gateway/bridge.py": {
+      "before_sha256": "801ab71bbb137e13ecf3a0c4d5955043f7dd95c935a2fa5978f23aec66e50a51",
+      "after_sha256": "a79994d1bd8481e266a1379b430d94d4b9c19cf70aa51a885bd3edc8cdfaa8f6"
+    },
+    "src/jimu_runtime/gateway/bridge_tools.py": {
+      "before_sha256": "8778279a5e9c9f17c53ec3292a1c36d7150f3a11cafbe1d014f10f975e481cc8",
+      "after_sha256": "d4413e40c513f0dc5cd3051076c3aff5c1aab3c54996928663f88a03847fc000"
+    },
+    "src/jimu_runtime/inspection/geometry/node.py": {
+      "before_sha256": "c76b65037dee53e0ca9e47c39626f5f0ace87bf6e555afa6f7ba22b0f9e07f34",
+      "after_sha256": "7fcc710416ffacc7bfe8c63d31aba849bd39badaeeb96069457a4e7d677655c0"
+    },
+    "src/jimu_runtime/inspection/media/decoder.py": {
+      "before_sha256": "1c39b8a5dc8f452e99be246654e96acf60fab3ff04a7ec09d069d0a4d320ec24",
+      "after_sha256": "4db02676d359514e63c645fcfe506e9ee22fe9693eb6fb0cac30d70216f528ef"
+    },
+    "src/jimu_runtime/inspection/media/group_frame.py": {
+      "before_sha256": null,
+      "after_sha256": "d209ae3043f9ef675d95e34434ee843da18b10e810efefa2f8f13d383c3f0cad"
+    },
+    "src/jimu_runtime/inspection/media/persistence.py": {
+      "before_sha256": "6754ea6ff7f29cdfb22f5a4befc7f3d7833dab3c1fcc330d36bb073b2feb107f",
+      "after_sha256": "9c454d97f27b9208b32335c12ba86e1eaba14461b4fe04d34fc953e943d7cdfe"
+    },
+    "src/jimu_runtime/inspection/media/retention.py": {
+      "before_sha256": "130ca89b00f9336a4a9bcfc46a49b90206ecc5c636f27ba142f51ca8e3ee347b",
+      "after_sha256": "95b10375ac8e27c1083e3168bdd437861cb895d482727fff4f5dcd597df6da4c"
+    },
+    "src/jimu_runtime/inspection/perception/adapter.py": {
+      "before_sha256": "10c4be5048d0b5705db6b59ee4ae2b0c87aa65111038d01cc1b143595b121c6f",
+      "after_sha256": "84570215a6bfbc37e907cc994ea1ef793364049c6d7e13043620da0a944b55d9"
+    },
+    "src/jimu_runtime/inspection/perception/grounding.py": {
+      "before_sha256": "0e029d959818c46fc1f070d46978bba1d4f04245c40b702abef471f2bb13dd26",
+      "after_sha256": "3f1c0e34deec865e264008539cf6bfa59bb54e9394e1d5de941612402f345308"
+    },
+    "src/jimu_runtime/inspection/perception/model.py": {
+      "before_sha256": "d07ae3f8b2386ed340b999b32b2f4d8053000e1da8584b122e1c4c5ca1d1ba83",
+      "after_sha256": "1b23a8d74058db310e183f7fb5db5af6c6c0e0b7df56e718949d699b5d911cd7"
+    },
+    "src/jimu_runtime/inspection/perception/observation.py": {
+      "before_sha256": "55ac2829f016063a6624915a23d1ef5238870cc817000ae2f926dc6284adef51",
+      "after_sha256": "6d29e94126c8d96f7aea4f3698b19bf47bed7882135f47a9a8e5bdf5db8d559d"
+    },
+    "src/jimu_runtime/tools/step_attempts.py": {
+      "before_sha256": "5b153c951ff951750e22b3d742b8d04d16f2bd9b77d3c73ed4e5aeb70cedf90a",
+      "after_sha256": "76cb6a7450885d5409d8ce1524becf599c7bf6c80ef8f46b286976b34e9e08d4"
+    },
+    "src/jimu_runtime/workflow/engine.py": {
+      "before_sha256": "f07ae7b11a8ec5faf4405e3fb0f73193835d23d8f6e97fbae87c77fbdaba11fc",
+      "after_sha256": "009220277ef701d35e23df2510aa42cf887ab521734db259bd6461b9dde2a1a3"
+    },
+    "src/jimu_runtime/workflow/jobs.py": {
+      "before_sha256": "623054cdab18ee16c5019f8b02e9ab20e9c62cf5f64f329c14a8802c69aca8c9",
+      "after_sha256": "4e4758fe0da78edce39a7de4d0fbc17c24b09dbd296d5ebe7c339cc5953f953b"
+    },
+    "src/jimu_runtime/workflow/migrations/012_marked_frame_media.sql": {
+      "before_sha256": null,
+      "after_sha256": "ded7f61dc321a722325df3f814026680aff6d9efd57364ecbbae1cc2278910e2"
+    },
+    "src/jimu_runtime/workflow/migrations/013_observation_dependency_wait.sql": {
+      "before_sha256": null,
+      "after_sha256": "c582625248eb06500b974f2b40bf7eff2d0eeb333c52db451d221bb1039212fd"
+    },
+    "src/jimu_runtime/workflow/mock_facts.py": {
+      "before_sha256": "8e650171f0cd0c4beece0527470edfd432c95788b1d438acc90e95b90ae4cf96",
+      "after_sha256": "38d12d42afbf9e95877d446d281f4db8817553c50caa9141415efae78c5e5ffe"
+    },
+    "src/jimu_runtime/workflow/repository.py": {
+      "before_sha256": "f7b851fb1ffab5bca45e551597b24ab9c3fde47ad79a736522a2fbf38f1534bf",
+      "after_sha256": "33bb32132f3af7aa4251debcd3969c906261c331b702d2f28de5d3ef2004860b"
+    },
+    "src/jimu_runtime/workflow/tool_dependencies.py": {
+      "before_sha256": null,
+      "after_sha256": "2fec9791777b8c0a092c2587cf23b7cb9187aa1c4c8fa05b187b1d207eda7951"
+    },
+    "src/jimu_runtime/workflow/worker.py": {
+      "before_sha256": "9fcb471bbbad829548fa9b531d4844c38cb84a4b4579d75124cd60463dc3b2a2",
+      "after_sha256": "9cb4af959d6eb87135b593b70ec76d9104c314cf61c0b8291ffa6f5f97f1be15"
+    },
+    "src/jimu_runtime/workflow/worker_inspection.py": {
+      "before_sha256": "ccac788d15ff9b7bdeb60b34b68f8e50f85c3f0529bf7b9cb5381c98982cda71",
+      "after_sha256": "4731643079a19a90526f8d36363a037b0c620bf8c1f825e95a19283cd561cb53"
+    },
+    "src/jimu_runtime/workflow/worker_nodes.py": {
+      "before_sha256": "e8f684dcc253a3ed5a0097394936234f1e5be3a3d52bd3eda6e6c8eedcf8f2e8",
+      "after_sha256": "3738b2d58852fd9d378ea87e8213441122037b6e168cb7bcd6088b401669f12a"
+    },
+    "src/jimu_runtime/workflow/worker_poll.py": {
+      "before_sha256": "45b22199fce145ebc02b4f32da3e95f6d3ad7faa2ea43c40123c96db04fe2b03",
+      "after_sha256": "bde74f90a7bed9844e54cb669c7af8dd7f747c2f2b9d9f8398ae83894853b89c"
+    },
+    "src/jimu_runtime/workflow/worker_records.py": {
+      "before_sha256": "2c99d3bb3f35759ca8a8c740aaf34edabd66e788e002b537b1a316db6503fa79",
+      "after_sha256": "b5211a6f8cccbbe3a83c644c72c19e65d7718934200786ee8f3c3f9d72dd4aab"
+    },
+    "src/jimu_runtime/workflow/worker_schedule.py": {
+      "before_sha256": "1a6787571831cf31d5044057577a436ff22765bc6d469cb3c7abbac4e7d4c82c",
+      "after_sha256": "4ebf6a24c8394acbb681e0dab4c45546a76b00c279723977c59bc048a911728a"
+    },
+    "src/jimu_runtime/workflow/worker_state.py": {
+      "before_sha256": "5d65dba19b5ca1d3607e416ea55d4efbc1ac473d80612ab97c365af50eb85479",
+      "after_sha256": "4101aa5221d6a2193e9f5b87ea170dc4cd42cd485c27397cba51ec55a352485f"
+    },
+    "src/jimu_runtime/workflow/worker_validation.py": {
+      "before_sha256": "7a71a3fe569be78250fa911b1937afbcf3a7590785c647832387a04ef8c8968b",
+      "after_sha256": "6a2783bf8890333da5e07455d9fbe698b3206653017f25412e78d2af24bdeb79"
+    },
+    "tests/contract/test_c_schema_inventory.py": {
+      "before_sha256": "eff6d3cfb4977af37e150ba3520c9a10eabc1ac4a0139be8fae94d1f0f840c40",
+      "after_sha256": "43207d9e2e41227854f1c73a79f427292fec430c132b368a12cbf5d30d50d7da"
+    },
+    "tests/contract/test_grouped_inspection_worker.py": {
+      "before_sha256": null,
+      "after_sha256": "cf703567e80937f947daedf1041d154ffa23249464addfaca3d91cce3477de0e"
+    },
+    "tests/contract/test_n03_marked_frame_media.py": {
+      "before_sha256": null,
+      "after_sha256": "d74eed5ad37281e427d87524236afcff9073297c6685735b8f1c2f57a0b78c6e"
+    },
+    "tests/contract/test_n04_mixed_observation.py": {
+      "before_sha256": null,
+      "after_sha256": "8e2b509a135017ee71039e5e039b7416e3750b61a23b5d6b7fe144f9cccf0ae2"
+    },
+    "tests/contract/test_wp03_jobs.py": {
+      "before_sha256": "af531c855615142e3df4713c2784aae30c9d0974db43a6553033c0c7a7196b89",
+      "after_sha256": "3f53097cbb07154e966d1d6538ca72d17ada5d4b59af0db948f3fea1cb7ef67b"
+    },
+    "tests/contract/test_wp04_dispatch_journal.py": {
+      "before_sha256": "2a4ca66aa671f410b37f4ffef50100b7fc45cafe56561590011c6a4ec482a0dd",
+      "after_sha256": "152d126f83d55d6939114ddd0246fc92698196ecf1b66b19331913fc832add01"
+    },
+    "tests/contract/test_wp04_nested_dispatch_journal.py": {
+      "before_sha256": "015750e472294fc802ce140246739d21bdb3571a6a72014e79265b72fee9f9a5",
+      "after_sha256": "3798f36d78695b3016729edf83450a238e6f891678d9913f2e61f0d54b53ed0b"
+    },
+    "tests/contract/test_wp05_mixed_tool_plan.py": {
+      "before_sha256": null,
+      "after_sha256": "83557a9716bac2f060e1315f179144266977992fc49a5a005c24b11aac998768"
+    },
+    "tests/contract/test_wp05_perception_loopback.py": {
+      "before_sha256": "fad51c36c3a89c1ffda2dfc60957f85f425ec4274be358448a9b5503b05d1480",
+      "after_sha256": "f14eceeb8c5446d5c65f1f9f0d57447e9e68cb689086cafdf89085046067b417"
+    },
+    "tests/contract/test_wp05_worker_inspection.py": {
+      "before_sha256": "ad7af180148eca9fb123163eae4c174842f3424610a3a3ffe2bfe9dc5415a253",
+      "after_sha256": "a4259463e9ef6a4c640496575a1ab27868bf39de4397ab8918e209d268d2494c"
+    },
+    "tests/contract/test_wp06_retention_postgres.py": {
+      "before_sha256": "a06d4d1c1412be5cdba90f5c9a45d942f609ac2a1c9a39d6cb02faf187270b42",
+      "after_sha256": "4e1b33d9ab2228db3d4743743de6baec7a5ddbe26e0f7a01181b6bc2edacab07"
+    },
+    "tests/fixtures/wp03/jobs/support.py": {
+      "before_sha256": "d1dc0bbf07d316b55c95b97a7163c4ba6d9861de2c3f9852c084bf1f9d9ded00",
+      "after_sha256": "9bc28c63c1c5950b738b6a9f3846beab5515e790a12ad2078ca6c1a64efdd078"
+    },
+    "tests/unit/test_p1_grounding_groups.py": {
+      "before_sha256": null,
+      "after_sha256": "4dd7d664a259be9f336458a2dcc9a49978a4a13a5ab5754f7feef1ce5b7ef854"
+    },
+    "tests/unit/test_service_parallel_poll.py": {
+      "before_sha256": null,
+      "after_sha256": "11c47a5c6c91f2e0164e4fcd485aedfe65b4332844b90f5e099cae1166726d20"
+    },
+    "tests/unit/test_wp03_engine.py": {
+      "before_sha256": "f72c39b9d97797def147647f0335acc92844abb88ed431f680fe62e06dc19e76",
+      "after_sha256": "d2b209d11ce2bc3632e921cd717d16f1e4953db7aa50f6fe19814db81cd3073a"
+    }
+  }
+}

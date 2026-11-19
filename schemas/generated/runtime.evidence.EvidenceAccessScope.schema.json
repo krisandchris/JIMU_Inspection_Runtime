@@ -1,0 +1,83 @@
+{
+  "$defs": {
+    "ProjectEvidenceAccess": {
+      "additionalProperties": false,
+      "properties": {
+        "project_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Project Id",
+          "type": "string"
+        },
+        "scope": {
+          "const": "project",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "project_id"
+      ],
+      "title": "ProjectEvidenceAccess",
+      "type": "object"
+    },
+    "TaskEvidenceAccess": {
+      "additionalProperties": false,
+      "properties": {
+        "project_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Project Id",
+          "type": "string"
+        },
+        "scope": {
+          "const": "task",
+          "title": "Scope",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "project_id",
+        "task_id"
+      ],
+      "title": "TaskEvidenceAccess",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "project": "#/$defs/ProjectEvidenceAccess",
+      "task": "#/$defs/TaskEvidenceAccess"
+    },
+    "propertyName": "scope"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ProjectEvidenceAccess"
+    },
+    {
+      "$ref": "#/$defs/TaskEvidenceAccess"
+    }
+  ]
+}

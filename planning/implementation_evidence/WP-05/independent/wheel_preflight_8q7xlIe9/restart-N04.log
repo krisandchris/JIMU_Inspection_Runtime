@@ -1,0 +1,17 @@
+2026-11-18T06:00:21Z
++ PYTHONPATH=/tmp/jimu-wp05-wheel-O7NQXKLP/snapshot/product
++ WP05_PROBE_DIAGNOSTICS=1
++ /tmp/jimu-wp05-wheel-O7NQXKLP/venv/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py --installed --trace-dir /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_8q7xlIe9/restart-N04-exec --restart-at N04 known_violation
+{"check": "worker_process_ready", "pid": 3578315, "runtime_install": "/tmp/jimu-wp05-wheel-O7NQXKLP/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3578315, "signal": "SIGKILL"}
+{"check": "worker_process_ready", "pid": 3580222, "runtime_install": "/tmp/jimu-wp05-wheel-O7NQXKLP/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3580222, "signal": null}
+{"check": "worker_process_ready", "pid": 3581531, "runtime_install": "/tmp/jimu-wp05-wheel-O7NQXKLP/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3581531, "signal": null}
+{"after_release_switch": "N04", "authority_count": 6, "check": "scenario_terminal_audit", "context": "perception.context.e0f920330629f0bab4230faa4eeaf3d45d4918ca42c2fa830c9a4d54cbb6677c", "coverage": "complete", "decisions": {"outside": "violation"}, "name": "known_violation", "objects": 1, "observed_cpu_execve": 3, "post": {"candidate": 1, "discovery": 1, "grounding": 1, "observation": 1}, "product_steps": ["applied", "applied", "applied", "applied", "applied", "staged", "finalized"], "summary": "violation", "tool_sidecars": 3}
++ result=0
++ date -u +%FT%TZ
+2026-11-18T06:01:24Z
++ printf 'exit=%s\n' 0
+exit=0
++ exit 0

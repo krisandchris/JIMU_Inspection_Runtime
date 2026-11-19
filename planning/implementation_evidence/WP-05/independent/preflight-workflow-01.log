@@ -1,0 +1,33 @@
+2026-11-18T05:47:40Z
+{"check": "worker_process_ready", "pid": 3499075, "runtime_install": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/__init__.py"}
+{"check": "durable_node_diagnostics", "rows": [["N01", "succeeded", null, null], ["N02", "succeeded", null, null], ["N03", "succeeded", null, null], ["N04", "succeeded", null, null], ["N05", "failed", "worker_provider_invalid_output", "worker_provider_invalid_output"], ["N05", "succeeded", null, null], ["N05", "succeeded", null, null], ["N05", "failed", null, null], ["N06", "succeeded", null, null]]}
+{"calls": [["discovery", null, null], ["grounding", null, null], ["observation", [40, 23, 52, 33], "perception.object.48c67c84b0ce02c31a376e8588030183c57f586ec0c5118c011c6b8e09fba64d"], ["candidate", [40, 23, 52, 33], "perception.object.48c67c84b0ce02c31a376e8588030183c57f586ec0c5118c011c6b8e09fba64d"]], "check": "provider_transcript_on_failure", "errors": []}
+{"check": "worker_process_closed", "pid": 3499075, "signal": null}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 285, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 271, in main
+    await run_case(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 201, in run_case
+    final = ExecutionFinalization.model_validate(published["final"])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-independent-preflight-env/lib/python3.12/site-packages/pydantic/main.py", line 716, in model_validate
+    return cls.__pydantic_validator__.validate_python(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 2 validation errors for ExecutionFinalization
+coverage.created_at
+  Input should be a valid datetime [type=datetime_type, input_value='2026-11-18T05:47:57.830024Z', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/datetime_type
+decisions.0.created_at
+  Input should be a valid datetime [type=datetime_type, input_value='2026-11-18T05:47:56.652052Z', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/datetime_type
+exit=1

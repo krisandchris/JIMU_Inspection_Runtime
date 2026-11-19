@@ -1,0 +1,2393 @@
+--- a/src/jimu_runtime/domain/nodes/decision.py
++++ b/src/jimu_runtime/domain/nodes/decision.py
+@@ -1,5 +1,7 @@
+ """N06 records advisory prediction and deterministic full-scope Rule results."""
+ 
++from dataclasses import dataclass
++from hashlib import sha256
+ from typing import Annotated, Literal, Self
+ 
+ from pydantic import BeforeValidator, Field, model_validator
+@@ -11,14 +13,22 @@
+     immutable_sequence,
+     omit_default_from_schema,
+ )
+-from jimu_runtime.domain.enums import DecisionResult, NodeRunStatus
++from jimu_runtime.domain.enums import DecisionResult, NodeRunStatus, RuntimeRecordKind
++from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
+ from jimu_runtime.domain.nodes.envelopes import (
+     NodeInputEnvelope,
+     NodeOutputEnvelope,
+     check_envelope_pair,
+ )
+ from jimu_runtime.domain.runtime.applicability import (
++    ApplicabilityDisposition,
++    ApplicabilityEvaluationRef,
++    ApplicabilityLevel,
++    ApplicabilityTrace,
++    ApplicabilityTraceRef,
+     ContextSnapshotRef,
++    EvaluatedApplicabilityLevel,
++    NotEvaluatedApplicabilityLevel,
+     ProfileEligibilityEvaluation,
+     ProfileEligibilityEvaluationRef,
+     RuleApplicabilityEvaluation,
+@@ -35,7 +45,9 @@
+     ExecutionCoverage,
+     GuardBlockedObligation,
+     MandatoryRuleCoverage,
++    MandatoryRuleObligation,
+     RuleObligationTarget,
++    RuleSetObligationTarget,
+     UnresolvedMandatoryObligation,
+ )
+ from jimu_runtime.domain.runtime.decisions import (
+@@ -52,9 +64,145 @@
+ from jimu_runtime.domain.runtime.facts import (
+     AuthoritySelectionRef,
+     FactRefs,
++    TypedRuntimeRef,
+     require_unique_runtime_refs,
+ )
+ from jimu_runtime.domain.runtime.perception import ObjectRecord
++
++
++@dataclass(frozen=True, slots=True)
++class _ExclusionRecords:
++    obligations: dict[str, MandatoryRuleObligation]
++    evaluations: dict[
++        ApplicabilityEvaluationRef,
++        RuleSetApplicabilityEvaluation | RuleApplicabilityEvaluation,
++    ]
++    traces: dict[ApplicabilityTraceRef, ApplicabilityTrace]
++    output_digests: dict[tuple[RuntimeRecordKind, str], str]
++
++    def matches_output(self, ref: TypedRuntimeRef, record: ContractModel) -> bool:
++        expected = self.output_digests.get((ref.record_kind, ref.record_id))
++        return (
++            expected is not None
++            and expected
++            == sha256(canonical_bytes(record.model_dump(mode="json"))).hexdigest()
++        )
++
++    def proves_exclusion(
++        self,
++        decision: DecisionRecord,
++        target: RuleObligationTarget,
++        outcome: AncestorNotEvaluatedObligation,
++    ) -> bool:
++        parent = self.obligations.get(outcome.ancestor_obligation_id)
++        if parent is None or not isinstance(parent.outcome, ExcludedObligation):
++            return False
++        selected_parent = parent.outcome.selected_applicability
++        selected_child = outcome.selected_applicability
++        parent_eval = self.evaluations.get(selected_parent.evaluation_ref)
++        child_eval = self.evaluations.get(selected_child.evaluation_ref)
++        parent_trace = self.traces.get(selected_parent.trace_ref)
++        child_trace = self.traces.get(selected_child.trace_ref)
++        explanation = decision.explanation
++        if (
++            parent.target
++            != RuleSetObligationTarget(
++                scope="rule_set",
++                rule_set_ref=target.rule_set_ref,
++                object_ref=decision.object_ref,
++            )
++            or parent.profile_ref != decision.profile_ref
++            or parent.obligation_id not in explanation.obligation_ids
++            or selected_parent.evaluation_ref != outcome.decisive_ancestor_ref
++            or not isinstance(parent_eval, RuleSetApplicabilityEvaluation)
++            or not isinstance(child_eval, RuleApplicabilityEvaluation)
++            or parent_trace is None
++            or child_trace is None
++            or parent_trace.target_ref != target.rule_set_ref
++            or child_trace.target_ref != target.rule_ref
++            or selected_parent.trace_ref not in explanation.applicability_trace_refs
++            or selected_child.trace_ref not in explanation.applicability_trace_refs
++        ):
++            return False
++        if (
++            parent_eval.rule_set_ref != target.rule_set_ref
++            or parent_eval.applicability_trace_ref != parent_trace.trace_ref
++            or parent_eval.decisive_ancestor_ref is not None
++            or (
++                parent_eval.object_ref,
++                parent_eval.node_run_ref,
++                parent_eval.attempt_ref,
++            )
++            != (decision.object_ref, decision.node_run_ref, decision.attempt_ref)
++            or child_eval.rule_ref != target.rule_ref
++            or child_eval.rule_set_ref != target.rule_set_ref
++            or child_eval.applicability_trace_ref != child_trace.trace_ref
++            or child_eval.rule_set_applicability_evaluation_ref
++            != parent_eval.evaluation_ref
++            or child_eval.decisive_ancestor_ref != parent_eval.evaluation_ref
++            or any(
++                ref is not None
++                for ref in (
++                    child_eval.object_ref,
++                    child_eval.node_run_ref,
++                    child_eval.attempt_ref,
++                )
++            )
++        ):
++            return False
++        pin = (
++            decision.execution_id,
++            decision.release_id,
++            decision.bundle_digest,
++            decision.context_snapshot_ref,
++            decision.profile_ref,
++        )
++        if any(
++            (
++                record.execution_id,
++                record.release_id,
++                record.bundle_digest,
++                record.context_snapshot_ref,
++                record.profile_ref,
++            )
++            != pin
++            for record in (parent_eval, child_eval, parent_trace, child_trace)
++        ) or any(
++            record.profile_eligibility_evaluation_ref
++            != decision.profile_eligibility_evaluation_ref
++            for record in (parent_eval, child_eval)
++        ):
++            return False
++        top, decisive = parent_trace.levels
++        successor = child_trace.levels[-1]
++        return (
++            isinstance(top, EvaluatedApplicabilityLevel)
++            and top.truth is RuleTruth.TRUE
++            and top.source_evaluation_ref == decision.profile_eligibility_evaluation_ref
++            and isinstance(decisive, EvaluatedApplicabilityLevel)
++            and decisive.source_evaluation_ref == parent_eval.evaluation_ref
++            and decisive.truth is RuleTruth.FALSE
++            and isinstance(successor, NotEvaluatedApplicabilityLevel)
++            and successor.decisive_ancestor_ref == parent_eval.evaluation_ref
++            and child_trace.levels[:-1] == parent_trace.levels
++            and parent_trace.context_snapshot_digest
++            == child_trace.context_snapshot_digest
++            and all(
++                row.disposition is ApplicabilityDisposition.EXCLUDED
++                and row.effective_truth is RuleTruth.FALSE
++                and row.decisive_level is ApplicabilityLevel.RULE_SET
++                for row in (parent_trace, child_trace)
++            )
++            and all(
++                self.matches_output(ref, record)
++                for ref, record in (
++                    (parent_eval.evaluation_ref, parent_eval),
++                    (child_eval.evaluation_ref, child_eval),
++                    (parent_trace.trace_ref, parent_trace),
++                    (child_trace.trace_ref, child_trace),
++                )
++            )
++        )
+ 
+ 
+ class DecisionInput(ContractModel):
+@@ -152,6 +300,8 @@
+         rule_set_results: tuple[RuleSetApplicabilityEvaluation, ...],
+         rule_results: tuple[RuleApplicabilityEvaluation, ...],
+         configured_paths: tuple[RulePath, ...],
++        *,
++        applicability_traces: tuple[ApplicabilityTrace, ...] = (),
+     ) -> None:
+         check_envelope_pair(inputs.envelope, self.envelope)
+         inputs.check_gate(gate)
+@@ -238,13 +388,42 @@
+             for profile in coverage.profiles
+         ):
+             raise ValueError("N06 Object must belong to the recorded Profile coverage")
+-        self._check_scan(inputs, decision)
++        traces = {
++            trace.trace_ref: ApplicabilityTrace.model_validate(trace)
++            for trace in applicability_traces
++        }
++        if len(traces) != len(applicability_traces):
++            raise ValueError("selected applicability traces must be unique")
++        evaluations: tuple[
++            RuleSetApplicabilityEvaluation | RuleApplicabilityEvaluation, ...
++        ] = (
++            *rule_set_results,
++            *rule_results,
++        )
++        exclusions = _ExclusionRecords(
++            obligations={
++                row.obligation_id: row
++                for row in self.mandatory_rule_coverage.obligations
++            },
++            evaluations={row.evaluation_ref: row for row in evaluations},
++            traces=traces,
++            output_digests={
++                (item.ref.record_kind, item.ref.record_id): item.digest
++                for item in self.envelope.output_artifacts
++            },
++        )
++        self._check_scan(inputs, decision, exclusions)
+         self._check_fact_inputs(inputs, decision)
+         self._check_applicability(
+             inputs, decision, coverage, rule_set_results, rule_results
+         )
+ 
+-    def _check_scan(self, inputs: DecisionInput, decision: DecisionRecord) -> None:
++    def _check_scan(
++        self,
++        inputs: DecisionInput,
++        decision: DecisionRecord,
++        exclusions: _ExclusionRecords,
++    ) -> None:
+         trace = decision.explanation
+         recorded_paths = set(
+             trace.evaluated_rules
+@@ -321,10 +500,15 @@
+                     raise ValueError(
+                         "unresolved mandatory Rule must remain not_evaluated in the Decision"
+                     )
+-            if decision.result is DecisionResult.NO_VIOLATION and not isinstance(
+-                outcome, EvaluatedObligation | ExcludedObligation
+-            ):
+-                raise ValueError("unresolved mandatory scope precludes no_violation")
++            if decision.result is DecisionResult.NO_VIOLATION:
++                complete = isinstance(outcome, EvaluatedObligation | ExcludedObligation)
++                proven_excluded = isinstance(
++                    outcome, AncestorNotEvaluatedObligation
++                ) and exclusions.proves_exclusion(decision, target, outcome)
++                if not complete and not proven_excluded:
++                    raise ValueError(
++                        "unresolved mandatory scope precludes no_violation"
++                    )
+ 
+     def _check_fact_inputs(
+         self, inputs: DecisionInput, decision: DecisionRecord
+--- a/src/jimu_runtime/domain/nodes/observation.py
++++ b/src/jimu_runtime/domain/nodes/observation.py
+@@ -33,6 +33,7 @@
+ )
+ from jimu_runtime.domain.runtime.intake import ContextValue
+ from jimu_runtime.domain.runtime.invocations import (
++    FailedInvocation,
+     InvocationContractSnapshot,
+     ModelInvocation,
+ )
+@@ -244,11 +245,24 @@
+             raise ValueError(
+                 "observation must retain the actual joint invocation and its exact input contract"
+             )
+-        if (batch.outcome == "transport_error") == (
+-            invocation.outcome.status == "succeeded"
+-        ):
+-            raise ValueError(
+-                "observation transport disposition must match the invocation"
++        invocation_status = invocation.outcome
++        validation_class = (
++            invocation_status.error.error_class
++            if isinstance(invocation_status, FailedInvocation)
++            and invocation_status.error.error_class in {"validation", "association"}
++            else None
++        )
++        if invocation_status.status == "succeeded":
++            outcomes = {"complete", "partial", "parse_error", "association_error"}
++        elif validation_class == "validation":
++            outcomes = {"parse_error"}
++        elif validation_class == "association":
++            outcomes = {"association_error"}
++        else:
++            outcomes = {"transport_error"}
++        if batch.outcome not in outcomes:
++            raise ValueError(
++                "observation batch disposition must match the actual invocation outcome"
+             )
+         if (
+             batch.profile_ref,
+@@ -286,6 +300,7 @@
+         if (
+             previous_batch is None
+             or self.retry.previous_batch_ref != previous_batch.batch_ref
++            or previous_batch.outcome in {"complete", "partial"}
+             or (
+                 batch.retry_of_batch_ref != previous_batch.batch_ref
+                 or batch.attempt_ref == previous_batch.attempt_ref
+--- a/src/jimu_runtime/workflow/engine.py
++++ b/src/jimu_runtime/workflow/engine.py
+@@ -240,6 +240,8 @@
+         coverage: ExecutionCoverage,
+         gate: ProfileEligibilityEvaluation,
+         configured_paths: tuple[RulePath, ...],
++        *,
++        applicability_traces: tuple[ApplicabilityTrace, ...] = (),
+     ) -> DecisionOutput:
+         values = dict(
+             schema_version="1.0.0",
+@@ -260,6 +262,7 @@
+             self.rule_set_evaluations,
+             self.rule_evaluations,
+             configured_paths,
++            applicability_traces=applicability_traces,
+         )
+         return output
+ 
+--- a/src/jimu_runtime/workflow/scheduling.py
++++ b/src/jimu_runtime/workflow/scheduling.py
+@@ -10,7 +10,7 @@
+ from jimu_runtime.domain.runtime.executions import NodeId
+ 
+ type Milliseconds = Annotated[int, Field(ge=1, le=2**31 - 1)]
+-type TransientNodeError = Literal["transport", "timeout", "resource"]
++type RetryableNodeError = Literal["transport", "timeout", "resource", "validation"]
+ 
+ _ms: TypeAdapter[int] = TypeAdapter(Milliseconds)
+ 
+@@ -28,8 +28,8 @@
+         BeforeValidator(immutable_sequence),
+     ]
+     retryable_error_classes: Annotated[
+-        tuple[TransientNodeError, ...],
+-        Field(max_length=3),
++        tuple[RetryableNodeError, ...],
++        Field(max_length=4),
+         BeforeValidator(immutable_sequence),
+     ]
+     retry_on_lease_loss: bool
+@@ -62,6 +62,14 @@
+     def validate_overrides(self) -> Self:
+         if len({entry.node_id for entry in self.overrides}) != len(self.overrides):
+             raise ValueError("a node can have only one budget override")
++        if "validation" in self.default.retryable_error_classes or any(
++            entry.node_id is not NodeId.N04
++            and "validation" in entry.budget.retryable_error_classes
++            for entry in self.overrides
++        ):
++            raise ValueError(
++                "validation retry requires an explicit N04 budget override"
++            )
+         return self
+ 
+     def for_node(self, node_id: NodeId) -> JobBudget:
+--- a/src/jimu_runtime/workflow/worker.py
++++ b/src/jimu_runtime/workflow/worker.py
+@@ -15,11 +15,14 @@
+ from jimu_runtime.bundle.store import LocalBundleStore, StoreBusy
+ from jimu_runtime.domain.base import ContractModel
+ from jimu_runtime.domain.enums import ExecutionStatus, NodeRunStatus
++from jimu_runtime.domain.nodes.context import SuccessfulContextBuild
+ from jimu_runtime.domain.nodes.envelopes import (
+     FailedNodeOutput,
+     NodeError,
+     SucceededNodeOutput,
+ )
++from jimu_runtime.domain.runtime.applicability import UnresolvedObligation
++from jimu_runtime.domain.runtime.evidence import EvidenceAsset
+ from jimu_runtime.domain.runtime.executions import (
+     Attempt,
+     ExecutionRecord,
+@@ -28,6 +31,7 @@
+ )
+ from jimu_runtime.domain.runtime.intake import IdempotencyScope
+ from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.validation.coverage_sources import CoverageAuthorityInput
+ from jimu_runtime.tools.step_attempts import load_parent_step_history
+ from jimu_runtime.workflow import repository as repo
+ from jimu_runtime.workflow.engine import BranchKey, ExecutionFinalization
+@@ -43,7 +47,12 @@
+ from jimu_runtime.workflow.pins import ExecutionPinError
+ from jimu_runtime.workflow.scheduling import validated_milliseconds
+ from jimu_runtime.workflow.worker_capabilities import read_historical_capabilities
+-from jimu_runtime.workflow.worker_completion import finalize, persist_result
++from jimu_runtime.workflow.worker_completion import (
++    finalize,
++    persist_result,
++    runtime_authority_records,
++)
++from jimu_runtime.workflow.worker_coverage import build_coverage_authority
+ from jimu_runtime.workflow.worker_nodes import (
+     BranchInputs,
+     NodeResult,
+@@ -51,14 +60,27 @@
+     invoke,
+ )
+ from jimu_runtime.workflow.worker_poll import runnable_executions
+-from jimu_runtime.workflow.worker_records import DecisionMessage, ToolMessage
+-from jimu_runtime.workflow.worker_schedule import schedule_after_terminal
++from jimu_runtime.workflow.worker_records import (
++    DecisionMessage,
++    ObservationMessage,
++    ToolMessage,
++)
++from jimu_runtime.workflow.worker_schedule import (
++    ProfileGate,
++    check_configured_gate,
++    schedule_after_terminal,
++)
+ from jimu_runtime.workflow.worker_source import (
+     OpenExecution,
+     WorkerHost,
+     open_execution,
+ )
+-from jimu_runtime.workflow.worker_state import load_records
++from jimu_runtime.workflow.worker_state import (
++    load_attempts,
++    load_records,
++    read_context_snapshot,
++    read_observation_retry,
++)
+ from jimu_runtime.workflow.worker_validation import check_result
+ 
+ _ACTIVE = frozenset((ExecutionStatus.INITIALIZED, ExecutionStatus.RUNNING))
+@@ -81,9 +103,25 @@
+     previous: BranchInputs
+     execution: ExecutionRecord
+     deadline: datetime
++    authority: CoverageAuthorityInput | None = None
++    evidence: tuple[EvidenceAsset, ...] = ()
+ 
+ 
+ type ClaimedNodeInvoker = Callable[[ClaimedNode], Awaitable[NodeResult]]
++
++
++@dataclass(frozen=True, slots=True)
++class WorkflowAdapters:
++    """Host-composed real node ports and independent validation of their durable output."""
++
++    invoke: ClaimedNodeInvoker
++    profile_gate: ProfileGate
++    validate_observation: Callable[[ClaimedNode, ObservationMessage], Awaitable[None]]
++    validate_decision: Callable[[ClaimedNode, DecisionMessage], Awaitable[None]]
++    verify_invocation: Callable[[ClaimedNode, ModelInvocation], Awaitable[None]]
++    decision_unresolved: (
++        Callable[[DecisionMessage], tuple[UnresolvedObligation, ...]] | None
++    ) = None
+ 
+ 
+ class WorkerStep(Enum):
+@@ -254,8 +292,17 @@
+         bundle_limits: BundleLimits,
+         invoke_node: NodeInvoker = _synthetic_invocation,
+         invoke_claimed_node: ClaimedNodeInvoker | None = None,
++        adapters: WorkflowAdapters | None = None,
+     ) -> None:
+-        if invoke_claimed_node is not None and invoke_node is not _synthetic_invocation:
++        if (
++            invoke_claimed_node is not None
++            and invoke_node is not _synthetic_invocation
++            or adapters is not None
++            and (
++                invoke_claimed_node is not None
++                or invoke_node is not _synthetic_invocation
++            )
++        ):
+             raise ValueError("choose one node adapter for this worker")
+         self._engine = engine
+         self._manager = release_manager
+@@ -263,7 +310,10 @@
+         self._host = host
+         self._limits = bundle_limits
+         self._invoke_node = invoke_node
+-        self._invoke_claimed_node = invoke_claimed_node
++        self._invoke_claimed_node = (
++            invoke_claimed_node if adapters is None else adapters.invoke
++        )
++        self._adapters = adapters
+ 
+     async def request_cancel(self, scope: IdempotencyScope, execution_id: str) -> bool:
+         """Persist a host-authorized cancellation for worker reconciliation."""
+@@ -354,11 +404,16 @@
+ 
+         try:
+             historical = None
++            historical_context = None
+             if self._invoke_claimed_node is not None:
+                 async with self._engine.connect() as connection:
+                     historical = await read_historical_capabilities(
+                         connection, scope, locked.execution
+                     )
++                    if self._adapters is not None:
++                        historical_context = await read_context_snapshot(
++                            connection, scope, locked
++                        )
+                 if historical is None:
+                     raise WorkerSourceError(
+                         "worker_historical_capabilities_unavailable", retryable=False
+@@ -373,6 +428,7 @@
+                 at,
+                 historical=historical,
+                 require_historical=self._invoke_claimed_node is not None,
++                historical_context=historical_context,
+             )
+         except WorkerSourceError:
+             raise
+@@ -399,7 +455,14 @@
+             now: datetime,
+         ) -> None:
+             await schedule_after_terminal(
+-                connection, job_scope, opened, state.execution.execution_id, now
++                connection,
++                job_scope,
++                opened,
++                state.execution.execution_id,
++                now,
++                profile_gate=None
++                if self._adapters is None
++                else self._adapters.profile_gate,
+             )
+ 
+         async def publish(
+@@ -409,7 +472,17 @@
+             drafts: tuple[StagedDecision, ...],
+             now: datetime,
+         ) -> bool:
+-            return await finalize(connection, job_scope, state, drafts, now, opened)
++            return await finalize(
++                connection,
++                job_scope,
++                state,
++                drafts,
++                now,
++                opened,
++                decision_unresolved=None
++                if self._adapters is None
++                else self._adapters.decision_unresolved,
++            )
+ 
+         jobs = DurableJobs(self._engine, on_terminal=on_terminal)
+         claim = await jobs.claim(scope, owner, lease_ms, execution_id=execution_id)
+@@ -437,12 +510,25 @@
+                     if current is None or current.execution.status not in _ACTIVE:
+                         return WorkerStep.LEASE_LOST
+                     data = await load_records(connection, scope, current)
+-                (branch,) = tuple(
+-                    key
+-                    for key, node in data.runs.items()
+-                    if node.node_run_id == claim.node_run_id
+-                )
+-                previous, node = data.inputs(branch.object_id), data.runs[branch]
++                    (branch,) = tuple(
++                        key
++                        for key, node in data.runs.items()
++                        if node.node_run_id == claim.node_run_id
++                    )
++                    node = data.runs[branch]
++                    previous = data.inputs(branch.object_id)
++                    authority = None
++                    evidence: tuple[EvidenceAsset, ...] = ()
++                    if self._adapters is not None and node.node_id is NodeId.N04:
++                        previous.observation_retry = await read_observation_retry(
++                            connection, scope, node, attempt
++                        )
++                    if self._adapters is not None and node.node_id is NodeId.N06:
++                        records, _ = runtime_authority_records(
++                            opened, data, await load_attempts(connection, scope, data)
++                        )
++                        authority = build_coverage_authority(opened.resolved, records)
++                        evidence = previous.selected_evidence()
+                 assert attempt.started_at is not None
+                 attempt_deadline = attempt.started_at + timedelta(
+                     milliseconds=data.locked.scheduling_limits.for_node(
+@@ -451,21 +537,33 @@
+                 )
+                 result: NodeResult | None
+                 try:
++                    claimed = ClaimedNode(
++                        claim,
++                        attempt,
++                        node,
++                        branch,
++                        opened,
++                        previous,
++                        data.locked.execution,
++                        attempt_deadline,
++                        authority,
++                        evidence,
++                    )
++                    if self._adapters is not None and previous.gate is not None:
++                        context = previous.context
++                        if context is None or not isinstance(
++                            context.output, SuccessfulContextBuild
++                        ):
++                            raise AdapterRejected("worker_gate_context_unavailable")
++                        check_configured_gate(opened, context.output, previous.gate)
++                        if previous.gate != self._adapters.profile_gate(
++                            opened, context.inputs, context.output, previous.snapshot()
++                        ):
++                            raise AdapterRejected("worker_gate_revalidation_failed")
+                     candidate = (
+                         await self._invoke_node(opened, previous, branch, node, attempt)
+                         if self._invoke_claimed_node is None
+-                        else await self._invoke_claimed_node(
+-                            ClaimedNode(
+-                                claim,
+-                                attempt,
+-                                node,
+-                                branch,
+-                                opened,
+-                                previous,
+-                                data.locked.execution,
+-                                attempt_deadline,
+-                            )
+-                        )
++                        else await self._invoke_claimed_node(claimed)
+                     )
+                     history = None
+                     if isinstance(candidate.message, ToolMessage):
+@@ -481,7 +579,24 @@
+                         attempt,
+                         candidate,
+                         tool_step_history=history,
+-                    )
++                        configured=self._adapters is not None,
++                    )
++                    if self._adapters is not None:
++                        for item in result.artifacts:
++                            invoice = item.record
++                            if (
++                                isinstance(invoice, ModelInvocation)
++                                and invoice.node_run_ref.record_id == node.node_run_id
++                            ):
++                                await self._adapters.verify_invocation(claimed, invoice)
++                        if isinstance(result.message, ObservationMessage):
++                            await self._adapters.validate_observation(
++                                claimed, result.message
++                            )
++                        elif isinstance(result.message, DecisionMessage):
++                            await self._adapters.validate_decision(
++                                claimed, result.message
++                            )
+                     failure = None
+                 except Exception as error:
+                     failure = _failed_node(node, attempt, error)
+--- a/src/jimu_runtime/workflow/worker_completion.py
++++ b/src/jimu_runtime/workflow/worker_completion.py
+@@ -1,5 +1,6 @@
+ """Apply fenced artifacts and close one Execution with its shared Coverage ledger."""
+ 
++from collections.abc import Callable
+ from datetime import datetime
+ 
+ from sqlalchemy.ext.asyncio import AsyncConnection
+@@ -8,6 +9,7 @@
+ from jimu_runtime.domain.nodes.context import SuccessfulContextBuild
+ from jimu_runtime.domain.nodes.envelopes import FailedNodeOutput, SucceededNodeOutput
+ from jimu_runtime.domain.references import RuntimeRecordRef
++from jimu_runtime.domain.runtime.applicability import UnresolvedObligation
+ from jimu_runtime.domain.runtime.authority import AuthoritativeResultSelection
+ from jimu_runtime.domain.runtime.evidence import EvidenceAsset
+ from jimu_runtime.domain.runtime.executions import Attempt, ContextSnapshotPin, NodeRun
+@@ -188,37 +190,18 @@
+     return ExecutionStatus.FAILED, TaskStatus.FAILED
+ 
+ 
+-async def finalize(
+-    connection: AsyncConnection,
+-    scope: IdempotencyScope,
+-    locked: repo.LockedExecution,
+-    staged: tuple[StagedDecision, ...],
+-    now: datetime,
++def runtime_authority_records(
+     opened: OpenExecution,
+-) -> bool:
+-    eid = locked.execution.execution_id
+-    data = await load_records(connection, scope, locked)
+-    state = data.planner_state(opened)
+-    work = plan_work(state).coverage
+-    if not work.ready_to_finalize:
+-        return False
+-    stages = tuple(
+-        item.result()
+-        for item in data.messages.values()
+-        if isinstance(item, DecisionMessage)
+-    )
+-    if {item.draft for item in stages} != {
+-        DecisionDraft.model_validate_json(item.draft_json) for item in staged
+-    }:
+-        raise ValueError(
+-            "execution publication requires the exact fenced set of staged Decisions"
+-        )
+-    attempts = await load_attempts(connection, scope, data)
++    data: WorkerRecords,
++    attempts: tuple[Attempt, ...],
++) -> tuple[RuntimeAuthorityRecords, tuple[EvidenceAsset, ...]]:
++    """Project typed producer results from one scoped PostgreSQL snapshot."""
+     sources = data.coverage_sources(attempts)
+-    gate = None if data.gate is None else data.gate.result()
+-    all_facts: list[FactRecord] = []
++    if data.gate is None:
++        raise ValueError("authority requires the selected Profile gate")
++    facts: list[FactRecord] = []
+     authorities: list[AuthoritativeResultSelection] = []
+-    evidence: list[EvidenceAsset] = []
++    evidence: dict[str, EvidenceAsset] = {}
+     invocations: list[ModelInvocation] = []
+     observations: list[ObservationBatch] = []
+     tool_executions: list[ToolExecution] = []
+@@ -229,41 +212,86 @@
+             invocations.extend(message.invocations)
+             invocations.extend(message.nested_invocations)
+             tool_executions.extend(message.tool_executions)
+-            evidence.extend(message.evidence)
+         elif isinstance(message, ObservationMessage):
+-            all_facts.extend(message.facts)
+-            authorities.append(message.authority)
+-            evidence.extend(message.evidence)
++            facts.extend(message.facts)
++            if message.authority is not None:
++                authorities.append(message.authority)
+             invocations.append(message.invocation)
+             observations.append(message.batch)
+         elif isinstance(message, ToolMessage):
+-            all_facts.extend(message.facts)
++            facts.extend(message.facts)
+             authorities.extend(message.authorities)
+             tool_executions.extend(message.executions)
+-            evidence.extend(message.evidence)
+             invocations.extend(message.nested_invocations)
+-        elif isinstance(message, DecisionMessage):
+-            evidence.extend(message.evidence)
++        elif isinstance(message, DecisionMessage) and message.invocation is not None:
+             invocations.append(message.invocation)
+-    authority = None
+-    if gate is not None and (all_facts or authorities):
+-        records = RuntimeAuthorityRecords(
+-            execution=state.execution,
+-            release=opened.release,
+-            manifest=opened.resolved.files.manifest,
+-            eligibility=gate.evaluation,
+-            objects=sources.objects,
+-            node_runs=sources.node_runs,
+-            attempts=attempts,
+-            question_selections=sources.question_selections,
+-            observations=tuple(observations),
+-            tool_executions=tuple(tool_executions),
+-            model_invocations=tuple(invocations),
+-            execution_events=(),
+-            facts=tuple(all_facts),
+-            authority_selections=tuple(authorities),
+-        )
+-        authority = build_coverage_authority(opened.resolved, records)
++        if isinstance(
++            message,
++            GroundingMessage | ObservationMessage | ToolMessage | DecisionMessage,
++        ):
++            for item in message.evidence:
++                if evidence.setdefault(item.evidence_id, item) != item:
++                    raise ValueError(
++                        "durable Evidence identity has conflicting metadata"
++                    )
++    return RuntimeAuthorityRecords(
++        execution=data.locked.execution,
++        release=opened.release,
++        manifest=opened.resolved.files.manifest,
++        eligibility=data.gate.evaluation,
++        objects=sources.objects,
++        node_runs=sources.node_runs,
++        attempts=attempts,
++        question_selections=sources.question_selections,
++        observations=tuple(observations),
++        tool_executions=tuple(tool_executions),
++        model_invocations=tuple(invocations),
++        execution_events=(),
++        facts=tuple(facts),
++        authority_selections=tuple(authorities),
++    ), tuple(evidence.values())
++
++
++async def finalize(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    locked: repo.LockedExecution,
++    staged: tuple[StagedDecision, ...],
++    now: datetime,
++    opened: OpenExecution,
++    *,
++    decision_unresolved: Callable[[DecisionMessage], tuple[UnresolvedObligation, ...]]
++    | None = None,
++) -> bool:
++    eid = locked.execution.execution_id
++    data = await load_records(connection, scope, locked)
++    state = data.planner_state(opened)
++    work = plan_work(state).coverage
++    if not work.ready_to_finalize:
++        return False
++    decision_messages = tuple(
++        item for item in data.messages.values() if isinstance(item, DecisionMessage)
++    )
++    stages = tuple(item.result() for item in decision_messages)
++    if {item.draft for item in stages} != {
++        DecisionDraft.model_validate_json(item.draft_json) for item in staged
++    }:
++        raise ValueError(
++            "execution publication requires the exact fenced set of staged Decisions"
++        )
++    attempts = await load_attempts(connection, scope, data)
++    sources = data.coverage_sources(attempts)
++    gate = None if data.gate is None else data.gate.result()
++    records, evidence = (
++        runtime_authority_records(opened, data, attempts)
++        if gate is not None
++        else (None, ())
++    )
++    authority = (
++        build_coverage_authority(opened.resolved, records)
++        if records is not None and (records.facts or records.authority_selections)
++        else None
++    )
+     result = finalize_execution(
+         state,
+         work,
+@@ -271,12 +299,21 @@
+         sources=sources,
+         gate=gate,
+         stages=stages,
+-        facts=tuple(all_facts),
+-        authorities=tuple(authorities),
+-        evidence=tuple(evidence),
+-        invocations=tuple(invocations),
++        facts=() if records is None else records.facts,
++        authorities=() if records is None else records.authority_selections,
++        evidence=evidence,
++        invocations=() if records is None else records.model_invocations,
+         authority=authority,
+         tool_step_nodes=data.tool_step_nodes,
++        additional_unresolved=(
++            ()
++            if decision_unresolved is None
++            else tuple(
++                row
++                for message in decision_messages
++                for row in decision_unresolved(message)
++            )
++        ),
+         now=now,
+     )
+     if gate is not None:
+--- a/src/jimu_runtime/workflow/worker_coverage.py
++++ b/src/jimu_runtime/workflow/worker_coverage.py
+@@ -600,8 +600,13 @@
+     source: ProfileCoverageSource,
+     decisions: tuple[DecisionRecord, ...],
+     work: CoverageWork,
++    obligations: tuple[MandatoryRuleObligation, ...],
+ ) -> tuple[CoverageReason, ...]:
+     reasons = list(source.reasons)
++    if any(
++        isinstance(item.outcome, UnresolvedMandatoryObligation) for item in obligations
++    ):
++        reasons.append(CoverageReason.APPLICABILITY_UNRESOLVED)
+     for item in work.objects:
+         if item.object_ref in source.object_refs:
+             reasons.extend(item.reasons)
+@@ -788,9 +793,11 @@
+                     raise ValueError(
+                         "N06 inputs must retain exact persisted Facts and authority revisions"
+                     )
+-        if invocation_by_id.get(
+-            stage.invocation.model_invocation_id
+-        ) != stage.invocation or any(
++        if (
++            stage.invocation is not None
++            and invocation_by_id.get(stage.invocation.model_invocation_id)
++            != stage.invocation
++        ) or any(
+             evidence_by_id.get(item.evidence_id) != item for item in stage.evidence
+         ):
+             raise ValueError(
+@@ -813,6 +820,7 @@
+     authority: CoverageAuthorityInput | None,
+     now: datetime,
+     tool_step_nodes: tuple[NodeRun, ...] = (),
++    additional_unresolved: tuple[UnresolvedObligation, ...] = (),
+ ) -> ExecutionFinalization:
+     """Check one settled, caller-supplied transaction snapshot and derive its result."""
+     execution = state.execution
+@@ -899,7 +907,7 @@
+                     "coverage_status": _profile_status(
+                         profile, rows, profile_decisions
+                     ),
+-                    "reasons": _profile_reasons(profile, profile_decisions, work),
++                    "reasons": _profile_reasons(profile, profile_decisions, work, rows),
+                     "missing_evidence_refs": (),
+                 }
+             )
+@@ -937,6 +945,7 @@
+         for rule in decision.conflict_resolution.matched_rules
+     )
+     profiles = tuple(profile_records)
++    unresolved = (*ledger.unresolved, *additional_unresolved)
+     status, result = _summary(profiles, decisions, work.discovery_outcome, matches)
+     discovery_reason = _DISCOVERY_GAP.get(work.discovery_outcome)
+     reasons = tuple(
+@@ -972,7 +981,7 @@
+                 dict.fromkeys(item.trace_ref for item in selected)
+             ),
+             "unresolved_obligation_refs": tuple(
+-                item.obligation_ref for item in ledger.unresolved
++                item.obligation_ref for item in unresolved
+             ),
+             "object_count": len(state.objects),
+             "coverage_status": status,
+@@ -1014,7 +1023,7 @@
+                     ),
+                     *ledger.projected_rules,
+                 ),
+-                unresolved_obligations=tuple(ledger.unresolved),
++                unresolved_obligations=unresolved,
+                 node_runs=nodes,
+                 attempts=tuple(
+                     ApplicabilityAttemptBinding(
+@@ -1055,7 +1064,7 @@
+         projected_traces=tuple(ledger.projected_traces),
+         projected_rule_set_evaluations=tuple(ledger.projected_sets),
+         projected_rule_evaluations=tuple(ledger.projected_rules),
+-        unresolved_obligations=tuple(ledger.unresolved),
++        unresolved_obligations=unresolved,
+     )
+ 
+ 
+@@ -1092,7 +1101,7 @@
+     resolved: ResolvedExecutionPins,
+     records: RuntimeAuthorityRecords,
+ ) -> CoverageAuthorityInput:
+-    """Project the mock Producer claims checked against actual runtime records."""
++    """Project admitted Producer claims from the selected runtime records."""
+     if (
+         records.execution.pins != resolved.pins
+         or records.manifest != resolved.files.manifest
+@@ -1107,7 +1116,7 @@
+         for item in entry.value.declarations
+     ):
+         raise ValueError(
+-            "synthetic authority requires unconditional Question and Tool fixture declarations"
++            "workflow authority currently requires unconditional Question or Tool declarations"
+         )
+     catalogue_ref = ProducerCatalogueContentRef.model_validate(entry.ref.model_dump())
+     definitions = resolved.definition_inputs
+--- /dev/null
++++ b/src/jimu_runtime/workflow/worker_inspection.py
+@@ -0,0 +1,395 @@
++"""Programmatic composition of the configured six-node inspection worker."""
++
++from asyncio import get_running_loop, run_coroutine_threadsafe, to_thread
++from collections.abc import Awaitable, Callable
++from dataclasses import dataclass
++from datetime import UTC, datetime
++from pathlib import Path
++from typing import cast
++
++from sqlalchemy.ext.asyncio import AsyncEngine
++
++from jimu_runtime.bundle.archive import BundleLimits
++from jimu_runtime.bundle.capabilities import CapabilitySnapshot
++from jimu_runtime.bundle.releases import ReleaseManager
++from jimu_runtime.bundle.store import LocalBundleStore
++from jimu_runtime.domain.definition_enums import EvidenceType
++from jimu_runtime.domain.runtime.evidence import EvidenceAsset, OriginalImageEvidence
++from jimu_runtime.domain.runtime.executions import NodeId
++from jimu_runtime.domain.runtime.facts import EvidenceRef
++from jimu_runtime.domain.runtime.intake import (
++    AcceptedTask,
++    ContextSnapshot,
++    IdempotencyScope,
++    RegistryRecordRef,
++)
++from jimu_runtime.domain.runtime.media import MediaAsset, MediaRef
++from jimu_runtime.domain.runtime.tool_executions import (
++    FailedToolResult,
++    ReturnedToolAttempt,
++)
++from jimu_runtime.gateway.bridge import CapabilityGateway
++from jimu_runtime.gateway.http_wire import ImageMediaType, VerifiedImage
++from jimu_runtime.inspection.decision import (
++    DecisionSourceSnapshot,
++    build_decision,
++    build_profile_gate,
++    candidate_binding,
++    decision_unresolved,
++    validate_decision,
++)
++from jimu_runtime.inspection.media import LocalMediaStore, MediaError, ToolSidecarSlot
++from jimu_runtime.inspection.perception import (
++    ConfiguredPerception,
++    project_candidate_result,
++    verify_observation_result,
++)
++from jimu_runtime.workflow.mock_support import K, VerifiedExecutionScope, artifact
++from jimu_runtime.workflow.worker import (
++    AdapterRejected,
++    ClaimedNode,
++    ClaimedNodeInvoker,
++    WorkflowAdapters,
++    WorkflowWorker,
++)
++from jimu_runtime.workflow.worker_nodes import NodeResult, invocation_envelope
++from jimu_runtime.workflow.worker_records import DecisionMessage, ObservationMessage
++from jimu_runtime.workflow.worker_request_evidence import LocalRequestEvidence
++from jimu_runtime.workflow.worker_source import TrustedWorkerSource, WorkerHost
++
++type CaptureRegistry = Callable[
++    [IdempotencyScope, AcceptedTask],
++    Awaitable[tuple[RegistryRecordRef, RegistryRecordRef]],
++]
++
++
++@dataclass(frozen=True, slots=True)
++class VerifiedMediaWorkerHost:
++    """Read registered media bytes and retain the capture refs selected by N01."""
++
++    media: LocalMediaStore
++    current_capabilities: Callable[[IdempotencyScope], Awaitable[CapabilitySnapshot]]
++    capture_registry: CaptureRegistry
++
++    async def capabilities(self, scope: IdempotencyScope) -> CapabilitySnapshot:
++        return await self.current_capabilities(scope)
++
++    async def verified_original(
++        self, scope: IdempotencyScope, media_ref: MediaRef
++    ) -> MediaAsset:
++        return await self.media.verified_original(scope, media_ref)
++
++    async def worker_source(
++        self, scope: IdempotencyScope, task: AcceptedTask
++    ) -> TrustedWorkerSource:
++        original = await self.media.verified_task_original(scope, task)
++        device, camera = await self.capture_registry(scope, task)
++        return TrustedWorkerSource(original.asset, device, camera)
++
++    async def worker_source_for_snapshot(
++        self, scope: IdempotencyScope, task: AcceptedTask, snapshot: ContextSnapshot
++    ) -> TrustedWorkerSource:
++        original = await self.media.verified_task_original(scope, task)
++        return TrustedWorkerSource(
++            original.asset, snapshot.device_ref, snapshot.camera_ref
++        )
++
++
++class InspectionNodes:
++    """Compose N01–N04, the ToolPlan adapter, and configured N06 with verified sources."""
++
++    def __init__(
++        self,
++        media: LocalMediaStore,
++        requests: LocalRequestEvidence,
++        model_gateway: CapabilityGateway,
++        execute_tools: ClaimedNodeInvoker,
++        *,
++        model_resource_scope_id: str,
++        max_evidence_bytes: int,
++    ) -> None:
++        if (
++            type(max_evidence_bytes) is not int
++            or not 0 < max_evidence_bytes <= 64 * 1024 * 1024
++        ):
++            raise ValueError("invalid inspection evidence byte budget")
++        if not model_gateway.retains_response_evidence:
++            raise ValueError(
++                "configured inspection requires a model response evidence writer"
++            )
++        self._media = media
++        self._requests = requests
++        self._gateway = model_gateway
++        self._tools = execute_tools
++        self._budget = max_evidence_bytes
++        self._perception = ConfiguredPerception(
++            self._load_image, requests.stage, model_resource_scope_id
++        )
++
++    def ports(self) -> WorkflowAdapters:
++        return WorkflowAdapters(
++            invoke=self.invoke,
++            profile_gate=build_profile_gate,
++            validate_observation=self._validate_observation,
++            validate_decision=self._validate_decision,
++            verify_invocation=self._gateway.verify_invocation,
++            decision_unresolved=decision_unresolved,
++        )
++
++    async def _load_image(self, scope: VerifiedExecutionScope) -> VerifiedImage:
++        original = await self._media.verified_task_original(
++            scope.task.idempotency_scope, scope.task
++        )
++        if original.asset != scope.media or original.asset.mime_type not in {
++            "image/png",
++            "image/jpeg",
++        }:
++            raise AdapterRejected("inspection_original_image_mismatch")
++        return VerifiedImage(
++            original.content,
++            cast(ImageMediaType, original.asset.mime_type),
++            original.asset.media_ref.sha256,
++        )
++
++    async def invoke(self, claimed: ClaimedNode) -> NodeResult:
++        node_id = claimed.node.node_id
++        if node_id is NodeId.N05:
++            return await self._tools(claimed)
++        if node_id is not NodeId.N06:
++            return await self._perception.execute(claimed, self._gateway)
++        obj = claimed.previous.object_record(claimed.branch)
++        binding = candidate_binding(claimed.opened, obj)
++        candidate = (
++            None
++            if binding is None
++            else await self._perception.predict_candidates(
++                claimed, self._gateway, binding
++            )
++        )
++        assert claimed.attempt.started_at is not None
++        return await to_thread(
++            build_decision,
++            claimed.opened,
++            claimed.previous,
++            invocation_envelope(
++                claimed.opened, claimed.branch, claimed.node, claimed.attempt
++            ),
++            obj,
++            claimed.attempt.started_at,
++            self._decision_sources(claimed),
++            candidate,
++        )
++
++    async def _validate_observation(
++        self, claimed: ClaimedNode, message: ObservationMessage
++    ) -> None:
++        scope = claimed.opened.scope
++        discovery = claimed.previous.discovery
++        if discovery is None:
++            raise AdapterRejected("inspection_observation_selection_missing")
++        (selection,) = tuple(
++            item
++            for item in discovery.selections
++            if item.selection_id
++            == message.inputs.object_record.question_selection_ref.record_id
++        )
++        for row in message.durable_request_evidence:
++            await self._requests.read(scope.task, row)
++        known = await self._media.read_model_response(
++            claimed.claim.scope,
++            scope.execution_id,
++            message.invocation.model_invocation_id,
++            late=False,
++        )
++        if known.receipt.invocation != message.invocation:
++            raise AdapterRejected("inspection_observation_invocation_unqualified")
++        if (
++            known.receipt.acknowledgement == "http_headers"
++            and known.receipt.response_digest is not None
++            and known.receipt.response_bytes_omission_reason is None
++            and known.raw is None
++        ):
++            raise AdapterRejected("inspection_observation_response_unavailable")
++        verify_observation_result(
++            scope,
++            message,
++            claimed.previous.snapshot(),
++            selection,
++            known.normalized,
++            failure_code=None
++            if known.receipt.error is None
++            else known.receipt.error.code,
++        )
++
++    async def _validate_decision(
++        self, claimed: ClaimedNode, message: DecisionMessage
++    ) -> None:
++        candidate = None
++        invocation = message.invocation
++        if invocation is not None:
++            binding = candidate_binding(
++                claimed.opened, message.draft.inputs.object_record
++            )
++            if binding is None:
++                raise AdapterRejected("inspection_candidate_binding_missing")
++            response = await self._media.read_model_response(
++                claimed.claim.scope,
++                claimed.claim.execution_id,
++                invocation.model_invocation_id,
++                late=False,
++            )
++            if response.receipt.invocation != invocation:
++                raise AdapterRejected("inspection_candidate_invocation_unqualified")
++            candidate = project_candidate_result(
++                claimed,
++                binding,
++                invocation,
++                response.normalized,
++                failure_code=None
++                if response.receipt.error is None
++                else response.receipt.error.code,
++            )
++        await to_thread(
++            validate_decision,
++            claimed.opened,
++            claimed.previous,
++            message,
++            self._decision_sources(claimed),
++            candidate=candidate,
++        )
++
++    def _decision_sources(self, claimed: ClaimedNode) -> DecisionSourceSnapshot:
++        authority = claimed.authority
++        if authority is None:
++            raise AdapterRejected("inspection_authority_snapshot_missing")
++        expected_pins = {
++            pin.ref.record_id: pin.digest
++            for pin in claimed.node.upstream_inputs
++            if pin.ref.record_kind is K.EVIDENCE
++        }
++        assets = claimed.evidence
++        if expected_pins != {
++            row.evidence_id: artifact(K.EVIDENCE, row.evidence_id, row).pin.digest
++            for row in assets
++        }:
++            raise AdapterRejected("inspection_evidence_snapshot_mismatch")
++        loop = get_running_loop()
++        allowed = frozenset(assets)
++
++        def read(asset: EvidenceAsset, limit: int) -> bytes | None:
++            # The pure guard runs in a worker thread. It asks for only exact,
++            # policy-relevant assets after checking each Rule's own byte budget.
++            if asset not in allowed or asset.byte_size > min(limit, self._budget):
++                return None
++            remaining = (claimed.deadline - datetime.now(UTC)).total_seconds()
++            if remaining <= 0:
++                return None
++            pending = run_coroutine_threadsafe(
++                self._read_evidence(claimed, asset), loop
++            )
++            try:
++                content = pending.result(timeout=min(remaining, 10))
++            except MediaError:
++                return None
++            except TimeoutError:
++                pending.cancel()
++                return None
++            return (
++                content
++                if content is not None and len(content) == asset.byte_size
++                else None
++            )
++
++        return DecisionSourceSnapshot(
++            authority,
++            tuple(
++                EvidenceRef(record_kind=K.EVIDENCE, record_id=row.evidence_id)
++                for row in assets
++            ),
++            assets,
++            read,
++            self._budget,
++        )
++
++    async def _read_evidence(
++        self, claimed: ClaimedNode, row: EvidenceAsset
++    ) -> bytes | None:
++        task = claimed.opened.scope.task
++        scope, eid = claimed.claim.scope, claimed.claim.execution_id
++        if isinstance(row.spatial, OriginalImageEvidence):
++            original = await self._media.verified_task_original(scope, task)
++            row.validate_original_media(original.asset)
++            return (
++                original.content
++                if (
++                    row.storage == original.asset.storage
++                    and row.stage == original.asset.stage
++                    and row.spatial.coordinate_system == original.coordinate_system
++                )
++                else None
++            )
++        if row.evidence_type is EvidenceType.MODEL_REQUEST:
++            return await self._requests.read(task, row)
++        tool = claimed.previous.tool
++        if tool is None:
++            return None
++        for execution in tool.executions:
++            reply = execution.attempt_result
++            if not isinstance(reply, ReturnedToolAttempt) or isinstance(
++                reply.result, FailedToolResult
++            ):
++                continue
++            for named in reply.result.evidence:
++                if named.name not in {
++                    "wheel_mask",
++                    "tactile_paving_mask",
++                    "geometry",
++                } or all(
++                    ref.record_id != row.evidence_id for ref in named.evidence_refs
++                ):
++                    continue
++                try:
++                    loaded = await self._media.read_tool_sidecar(
++                        scope,
++                        eid,
++                        execution.tool_execution_id,
++                        cast(ToolSidecarSlot, named.name),
++                        expected_asset=row,
++                    )
++                except MediaError:
++                    continue
++                return loaded.content
++        return None
++
++
++def inspection_worker(
++    engine: AsyncEngine,
++    release_manager: ReleaseManager,
++    bundle_store: LocalBundleStore,
++    *,
++    host: WorkerHost,
++    bundle_limits: BundleLimits,
++    media: LocalMediaStore,
++    request_evidence_root: Path,
++    gateway: CapabilityGateway,
++    execute_tools: ClaimedNodeInvoker,
++    model_resource_scope_id: str,
++    max_evidence_bytes: int = 32 * 1024 * 1024,
++) -> WorkflowWorker:
++    """Open a real six-node worker with caller-provisioned trusted host adapters."""
++    nodes = InspectionNodes(
++        media,
++        LocalRequestEvidence(request_evidence_root, engine),
++        gateway,
++        execute_tools,
++        model_resource_scope_id=model_resource_scope_id,
++        max_evidence_bytes=max_evidence_bytes,
++    )
++    return WorkflowWorker(
++        engine,
++        release_manager,
++        bundle_store,
++        host=host,
++        bundle_limits=bundle_limits,
++        adapters=nodes.ports(),
++    )
+--- a/src/jimu_runtime/workflow/worker_nodes.py
++++ b/src/jimu_runtime/workflow/worker_nodes.py
+@@ -25,6 +25,7 @@
+     ObservationBatchSelection,
+     ToolStepSelection,
+ )
++from jimu_runtime.domain.runtime.evidence import EvidenceAsset
+ from jimu_runtime.domain.runtime.executions import Attempt, NodeId, NodeRun
+ from jimu_runtime.domain.runtime.facts import (
+     AuthoritySelectionRef,
+@@ -86,6 +87,15 @@
+     model_refs: tuple[ModelInvocationRef, ...] = ()
+ 
+ 
++@dataclass(frozen=True, slots=True)
++class ObservationRetryWitness:
++    """A prior whole-batch failure committed with its exact N04 Attempt."""
++
++    message: ObservationMessage
++    node: NodeRun
++    attempt: Attempt
++
++
+ @dataclass(slots=True)
+ class BranchInputs:
+     context: ContextMessage | None = None
+@@ -94,6 +104,7 @@
+     grounding: GroundingMessage | None = None
+     observation: ObservationMessage | None = None
+     tool: ToolMessage | None = None
++    observation_retry: ObservationRetryWitness | None = None
+ 
+     def snapshot(self) -> ContextSnapshot:
+         if self.context is None or self.context.snapshot is None:
+@@ -107,6 +118,18 @@
+             item for item in self.grounding.objects if item.object_id == key.object_id
+         )
+         return obj
++
++    def selected_evidence(self) -> tuple[EvidenceAsset, ...]:
++        rows: dict[str, EvidenceAsset] = {}
++        for item in (
++            *(() if self.observation is None else self.observation.evidence),
++            *(() if self.tool is None else self.tool.evidence),
++        ):
++            if rows.setdefault(item.evidence_id, item) != item:
++                raise ValueError(
++                    "selected evidence conflicts for one immutable identity"
++                )
++        return tuple(rows.values())
+ 
+     def selected_facts(
+         self,
+@@ -132,7 +155,11 @@
+                 ),
+             ),
+             (
+-                *(() if observations is None else (observations.authority,)),
++                *(
++                    ()
++                    if observations is None or observations.authority is None
++                    else (observations.authority,)
++                ),
+                 *(() if tools is None else tools.authorities),
+             ),
+         )
+@@ -153,7 +180,9 @@
+ def _observation_authority(
+     batch: ObservationMessage | None,
+ ) -> tuple[SyntheticArtifact, ...]:
+-    return () if batch is None else (batch.authority_artifact,)
++    return (
++        () if batch is None or batch.authority is None else (batch.authority_artifact,)
++    )
+ 
+ 
+ def _case(
+@@ -493,6 +522,7 @@
+     result = stage_decision(
+         scope, inputs, snapshot, gate, at, facts=facts, authorities=authorities
+     )
++    assert result.invocation is not None
+     return NodeResult(
+         DecisionMessage(
+             schema_version=VERSION,
+--- a/src/jimu_runtime/workflow/worker_records.py
++++ b/src/jimu_runtime/workflow/worker_records.py
+@@ -10,8 +10,10 @@
+ from jimu_runtime.domain.nodes.context import ContextBuildInput, ContextBuildOutput
+ from jimu_runtime.domain.nodes.discovery import DiscoveryAttemptOutput, DiscoveryInput
+ from jimu_runtime.domain.nodes.envelopes import (
++    FailedNodeOutput,
+     NodeInputEnvelope,
+     NodeOutputEnvelope,
++    SucceededNodeOutput,
+     check_envelope_pair,
+ )
+ from jimu_runtime.domain.nodes.grounding import GroundingInput, GroundingOutput
+@@ -220,8 +222,9 @@
+     output: NodeOutputEnvelope
+     batch: ObservationBatch
+     invocation: ModelInvocation
+-    request_evidence: RecordList[FixtureEvidenceContent]
+-    authority: ObservationBatchSelection
++    request_evidence: RecordList[FixtureEvidenceContent] = ()
++    durable_request_evidence: RecordList[EvidenceAsset] = ()
++    authority: ObservationBatchSelection | None
+ 
+     def input_envelope(self) -> NodeInputEnvelope:
+         return self.inputs.envelope
+@@ -231,14 +234,39 @@
+ 
+     @property
+     def evidence(self) -> tuple[EvidenceAsset, ...]:
+-        return tuple(item.evidence for item in self.request_evidence)
++        return (
++            *tuple(item.evidence for item in self.request_evidence),
++            *self.durable_request_evidence,
++        )
+ 
+     @property
+     def facts(self) -> tuple[FactRecord, ...]:
+         return tuple(result.primary_fact for result in self.batch.question_results)
+ 
++    @model_validator(mode="after")
++    def check_batch_authority(self) -> Self:
++        trusted = self.batch.outcome in {"complete", "partial"}
++        if self.request_evidence and self.durable_request_evidence:
++            raise ValueError("observation requires a single request evidence source")
++        if trusted:
++            if (
++                not isinstance(self.output, SucceededNodeOutput)
++                or self.authority is None
++                or self.batch.arrival_qualification != "on_time"
++            ):
++                raise ValueError(
++                    "trusted observation requires selected on-time authority"
++                )
++        elif (
++            not isinstance(self.output, FailedNodeOutput) or self.authority is not None
++        ):
++            raise ValueError("failed whole batch cannot select observation authority")
++        return self
++
+     @property
+     def authority_artifact(self) -> SyntheticArtifact:
++        if self.authority is None:
++            raise ValueError("failed observation batch has no authority artifact")
+         return artifact(
+             K.AUTHORITATIVE_RESULT_SELECTION,
+             self.authority.selection_id,
+@@ -275,7 +303,7 @@
+     draft: DecisionDraft
+     obligations: RecordList[MandatoryRuleObligation]
+     traces: RecordList[ApplicabilityTrace]
+-    invocation: ModelInvocation
++    invocation: ModelInvocation | None
+     evidence: RecordList[EvidenceAsset]
+ 
+     def input_envelope(self) -> NodeInputEnvelope:
+@@ -297,8 +325,16 @@
+                     ),
+                 )
+             ),
+-            artifact(
+-                K.MODEL_INVOCATION, self.invocation.model_invocation_id, self.invocation
++            *(
++                ()
++                if self.invocation is None
++                else (
++                    artifact(
++                        K.MODEL_INVOCATION,
++                        self.invocation.model_invocation_id,
++                        self.invocation,
++                    ),
++                )
+             ),
+             *(
+                 artifact(K.RULE_SET_APPLICABILITY_EVALUATION, item.evaluation_id, item)
+--- /dev/null
++++ b/src/jimu_runtime/workflow/worker_request_evidence.py
+@@ -0,0 +1,190 @@
++"""Scoped, bounded storage for generated joint-observation request artifacts."""
++
++from asyncio import to_thread
++from pathlib import Path
++
++from sqlalchemy import text
++from sqlalchemy.ext.asyncio import AsyncEngine
++
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.definition_enums import EvidenceType
++from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
++from jimu_runtime.domain.policies import EvidencePolicyArtifact
++from jimu_runtime.domain.runtime.evidence import (
++    EvidenceAsset,
++    NonSpatialEvidence,
++    ObjectEvidenceScope,
++    ProjectEvidenceAccess,
++    RetentionPolicyRef,
++    TaskEvidenceAccess,
++)
++from jimu_runtime.domain.runtime.executions import NodeId
++from jimu_runtime.domain.runtime.facts import ObjectRef, PolicyContentRef
++from jimu_runtime.domain.runtime.intake import AcceptedTask
++from jimu_runtime.domain.runtime.media import FinalizedAsset, StorageReference
++from jimu_runtime.domain.runtime.perception import ObjectRecord
++from jimu_runtime.inspection.media.files import LocalBytes
++from jimu_runtime.inspection.perception import RequestEvidenceKind
++from jimu_runtime.workflow.mock_support import VERSION, K
++from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
++
++_STORE_ID = "jimu.local-request"
++_MAX_REQUEST_EVIDENCE = 1024 * 1024
++_MIMES = {
++    "compiled_prompt": "text/plain",
++    "response_schema": "application/schema+json",
++}
++
++
++def _identity(
++    task: AcceptedTask,
++    execution_id: str,
++    object_id: str,
++    kind: RequestEvidenceKind,
++    digest: str,
++) -> str:
++    return "request." + sha256_digest(
++        canonical_bytes(
++            [
++                task.idempotency_scope.project_id,
++                task.idempotency_scope.client_id,
++                task.task_id,
++                execution_id,
++                object_id,
++                kind,
++                digest,
++            ]
++        )
++    )
++
++
++class LocalRequestEvidence:
++    """Content-addressed files are discoverable through the fenced N04 message."""
++
++    def __init__(self, root: Path, engine: AsyncEngine) -> None:
++        self._files = LocalBytes(root)
++        self._engine = engine
++
++    async def stage(
++        self,
++        claimed: ClaimedNode,
++        obj: ObjectRecord,
++        kind: RequestEvidenceKind,
++        content: bytes,
++        policy_ref: PolicyContentRef,
++    ) -> EvidenceAsset:
++        scope = claimed.opened.scope
++        at = claimed.attempt.started_at
++        if (
++            claimed.node.node_id is not NodeId.N04
++            or obj != claimed.previous.object_record(claimed.branch)
++            or claimed.claim.scope != scope.task.idempotency_scope
++            or obj.execution_id != scope.execution_id
++            or at is None
++            or kind not in _MIMES
++            or not 0 < len(content) <= _MAX_REQUEST_EVIDENCE
++        ):
++            raise AdapterRejected("observation_request_scope_invalid")
++        policy = scope.resolve(policy_ref, EvidencePolicyArtifact).policy
++        digest = sha256_digest(content)
++        evidence_id = _identity(
++            scope.task, obj.execution_id, obj.object_id, kind, digest
++        )
++        previous = claimed.previous.observation_retry
++        if previous is not None:
++            retained = next(
++                (
++                    row
++                    for row in previous.message.evidence
++                    if row.evidence_id == evidence_id
++                ),
++                None,
++            )
++            if retained is None or await self.read(scope.task, retained) != content:
++                raise AdapterRejected("observation_retry_request_evidence_mismatch")
++            return retained
++        async with self._engine.begin() as connection:
++            await connection.execute(
++                text(
++                    "SELECT pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(:key, 0))"
++                ),
++                {"key": evidence_id},
++            )
++            await to_thread(
++                self._files.publish, evidence_id, content, digest, recover_orphan=True
++            )
++        project_id = scope.task.idempotency_scope.project_id
++        return EvidenceAsset(
++            schema_version=VERSION,
++            evidence_id=evidence_id,
++            evidence_type=EvidenceType.MODEL_REQUEST,
++            scope=ObjectEvidenceScope(
++                scope="object",
++                execution_id=obj.execution_id,
++                profile_ref=obj.profile_ref,
++                object_ref=ObjectRef(record_kind=K.OBJECT, record_id=obj.object_id),
++            ),
++            storage=StorageReference(store_id=_STORE_ID, object_key=evidence_id),
++            sha256=digest,
++            mime_type=_MIMES[kind],
++            byte_size=len(content),
++            stage=FinalizedAsset(
++                stage="finalized",
++                staged_at=at,
++                verified_at=at,
++                object_version=f"sha256:{digest}",
++                verified_sha256=digest,
++            ),
++            spatial=NonSpatialEvidence(kind="non_spatial"),
++            producer_id=_STORE_ID,
++            producer_version=VERSION,
++            access_scope=(
++                TaskEvidenceAccess(
++                    scope="task", project_id=project_id, task_id=scope.task.task_id
++                )
++                if policy.access_scope == "task"
++                else ProjectEvidenceAccess(scope="project", project_id=project_id)
++            ),
++            retention=RetentionPolicyRef(
++                evidence_policy_ref=policy_ref, retention_class=policy.retention_class
++            ),
++            created_at=at,
++        )
++
++    async def read(self, task: AcceptedTask, asset: EvidenceAsset) -> bytes:
++        kind: RequestEvidenceKind | None = (
++            "compiled_prompt"
++            if asset.mime_type == _MIMES["compiled_prompt"]
++            else "response_schema"
++            if asset.mime_type == _MIMES["response_schema"]
++            else None
++        )
++        access = asset.access_scope
++        if (
++            kind is None
++            or asset.evidence_type is not EvidenceType.MODEL_REQUEST
++            or not isinstance(asset.scope, ObjectEvidenceScope)
++            or not isinstance(asset.stage, FinalizedAsset)
++            or asset.stage.object_version != f"sha256:{asset.sha256}"
++            or asset.storage.store_id != _STORE_ID
++            or asset.storage.object_key != asset.evidence_id
++            or asset.evidence_id
++            != _identity(
++                task,
++                asset.scope.execution_id,
++                asset.scope.object_ref.record_id,
++                kind,
++                asset.sha256,
++            )
++            or access.project_id != task.idempotency_scope.project_id
++            or isinstance(access, TaskEvidenceAccess)
++            and access.task_id != task.task_id
++        ):
++            raise AdapterRejected("observation_request_storage_pin_invalid")
++        return await to_thread(
++            self._files.read,
++            asset.evidence_id,
++            asset.sha256,
++            asset.byte_size,
++            _MAX_REQUEST_EVIDENCE,
++        )
+--- a/src/jimu_runtime/workflow/worker_schedule.py
++++ b/src/jimu_runtime/workflow/worker_schedule.py
+@@ -1,19 +1,29 @@
+ """Persist deterministic branch transitions and successors in the caller's transaction."""
+ 
++from collections.abc import Callable
+ from datetime import datetime
+ 
+ from sqlalchemy.ext.asyncio import AsyncConnection
+ 
+ from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.definitions.tools import ToolPlanDefinition
+ from jimu_runtime.domain.enums import NodeRunStatus
+-from jimu_runtime.domain.nodes.context import SuccessfulContextBuild
++from jimu_runtime.domain.fact_selectors import QuestionProducerSelector
++from jimu_runtime.domain.nodes.context import ContextBuildInput, SuccessfulContextBuild
++from jimu_runtime.domain.policies import ApplicabilityPolicyArtifact
+ from jimu_runtime.domain.runtime.executions import (
+     LifecycleReason,
+     NodeId,
+     NodeRun,
+     PinnedRuntimeInput,
+ )
+-from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.facts import QuestionFactSource
++from jimu_runtime.domain.runtime.intake import ContextSnapshot, IdempotencyScope
++from jimu_runtime.domain.tool_mappings import FactInput
++from jimu_runtime.domain.validation.applicability import (
++    ApplicabilityRecordSet,
++    validate_applicability_records,
++)
+ from jimu_runtime.domain.validation.transitions import NodeTransitionGuard
+ from jimu_runtime.workflow import repository as repo
+ from jimu_runtime.workflow.engine import BranchKey, ReadyWork, UninvokedWork, plan_work
+@@ -31,6 +41,11 @@
+ from jimu_runtime.workflow.worker_source import OpenExecution
+ from jimu_runtime.workflow.worker_state import WorkerRecords, branch_name, load_records
+ 
++type ProfileGate = Callable[
++    [OpenExecution, ContextBuildInput, SuccessfulContextBuild, ContextSnapshot],
++    EligibilityMessage,
++]
++
+ 
+ def _gate_artifact(data: WorkerRecords) -> SyntheticArtifact:
+     if data.gate is None:
+@@ -39,7 +54,9 @@
+     return artifact(K.PROFILE_ELIGIBILITY_EVALUATION, value.evaluation_id, value)
+ 
+ 
+-def _inputs(data: WorkerRecords, work: ReadyWork) -> tuple[PinnedRuntimeInput, ...]:
++def _inputs(
++    data: WorkerRecords, work: ReadyWork, opened: OpenExecution, *, configured: bool
++) -> tuple[PinnedRuntimeInput, ...]:
+     key = work.key
+     previous = data.inputs(key.object_id)
+     if key.node_id is NodeId.N02:
+@@ -63,11 +80,55 @@
+                     K.QUESTION_SELECTION_RECORD, selection.selection_id, selection
+                 ).pin
+             )
++        if (
++            key.node_id is NodeId.N05
++            and configured
++            and previous.observation is not None
++        ):
++            observation = previous.observation
++            profile = next(
++                item.definition
++                for item in opened.profiles
++                if item.rules.profile_ref == obj.profile_ref
++            )
++            if profile.tool_plan_ref is not None and observation.authority is not None:
++                tool_plan = opened.scope.resolve(
++                    profile.tool_plan_ref, ToolPlanDefinition
++                )
++                selectors = {
++                    (
++                        source.selector.fact_key,
++                        source.selector.fact_schema_ref,
++                        producer.question_ref,
++                    )
++                    for step in tool_plan.steps
++                    for binding in step.input_bindings
++                    if isinstance(source := binding.source, FactInput)
++                    and isinstance(
++                        producer := source.selector.producer_selector,
++                        QuestionProducerSelector,
++                    )
++                }
++                facts = tuple(
++                    fact
++                    for fact in observation.facts
++                    if isinstance(fact.source, QuestionFactSource)
++                    and (fact.fact_key, fact.fact_schema_ref, fact.source.question_ref)
++                    in selectors
++                )
++                if facts:
++                    refs.extend(fact_artifact(fact).pin for fact in facts)
++                    refs.append(observation.authority_artifact.pin)
+         if key.node_id is NodeId.N06:
+             refs.append(_gate_artifact(data).pin)
+             facts, authorities = previous.selected_facts()
+             refs.extend(fact_artifact(fact).pin for fact in facts)
+             refs.extend(authority_artifact(selection).pin for selection in authorities)
++            if configured:
++                refs.extend(
++                    artifact(K.EVIDENCE, item.evidence_id, item).pin
++                    for item in previous.selected_evidence()
++                )
+         return tuple(refs)
+     raise ValueError("successor requires its exact durable predecessor records")
+ 
+@@ -133,9 +194,19 @@
+     scope: IdempotencyScope,
+     data: WorkerRecords,
+     work: ReadyWork,
++    opened: OpenExecution,
+     now: datetime,
++    *,
++    configured: bool,
+ ) -> None:
+-    pending = await _create(connection, scope, data, work.key, now, _inputs(data, work))
++    pending = await _create(
++        connection,
++        scope,
++        data,
++        work.key,
++        now,
++        _inputs(data, work, opened, configured=configured),
++    )
+     for key in _prerequisites(work.key):
+         await repo.link_successor(
+             connection,
+@@ -220,12 +291,68 @@
+     )
+ 
+ 
++def check_configured_gate(
++    opened: OpenExecution, context: SuccessfulContextBuild, gate: EligibilityMessage
++) -> None:
++    expected_profiles = tuple(item.rules.profile_ref for item in opened.profiles)
++    state = gate.scope
++    if (
++        state.execution_id,
++        state.release_id,
++        state.bundle_digest,
++        state.workflow_version,
++        state.configured_profile_refs,
++        state.context_snapshot_ref,
++        state.context_snapshot_digest,
++        state.context_node_run.node_run_ref.record_id,
++    ) != (
++        opened.scope.execution_id,
++        opened.scope.pins.release_id,
++        opened.scope.pins.bundle_digest,
++        opened.scope.pins.workflow_version,
++        expected_profiles,
++        context.context_snapshot_ref,
++        context.context_snapshot_digest,
++        context.envelope.node_run_id,
++    ):
++        raise ValueError(
++            "Profile gate must match the pinned Context and admitted Profile set"
++        )
++    for binding, profile in zip(state.target_bindings, opened.profiles, strict=True):
++        if (
++            binding.target_ref.stable_json() != profile.rules.profile_ref.stable_json()
++            or binding.policy_ref.stable_json()
++            != profile.definition.applicability_policy_ref.stable_json()
++            or binding.child_refs != profile.definition.rule_set_refs
++            or binding.policy
++            != opened.scope.resolve(binding.policy_ref, ApplicabilityPolicyArtifact)
++        ):
++            raise ValueError(
++                "Profile gate must retain the admitted policy and RuleSets"
++            )
++    validate_applicability_records(
++        state,
++        ApplicabilityRecordSet(
++            profile_eligibility=gate.evaluation,
++            traces=gate.traces,
++            rule_set_evaluations=(),
++            rule_evaluations=(),
++            unresolved_obligations=(),
++            node_runs=(),
++            attempts=(),
++            objects=(),
++        ),
++    )
++
++
+ async def schedule_after_terminal(
+     connection: AsyncConnection,
+     scope: IdempotencyScope,
+     opened: OpenExecution,
+     execution_id: str,
+     now: datetime,
++    *,
++    profile_gate: ProfileGate | None = None,
+ ) -> None:
+     locked = await repo.get_execution(connection, scope, execution_id)
+     if locked is None:
+@@ -239,15 +366,20 @@
+         context = previous.context
+         if context is None or not isinstance(context.output, SuccessfulContextBuild):
+             raise ValueError("Pre-N02 requires the selected successful ContextSnapshot")
+-        gate = build_gate(
+-            opened.scope, context.inputs, context.output, previous.snapshot(), now
+-        )
+-        data.gate = EligibilityMessage(
+-            schema_version=VERSION,
+-            evaluation=gate.evaluation,
+-            traces=gate.traces,
+-            scope=gate.scope,
+-        )
++        snapshot = previous.snapshot()
++        if profile_gate is None:
++            gate = build_gate(
++                opened.scope, context.inputs, context.output, snapshot, now
++            )
++            data.gate = EligibilityMessage(
++                schema_version=VERSION,
++                evaluation=gate.evaluation,
++                traces=gate.traces,
++                scope=gate.scope,
++            )
++        else:
++            data.gate = profile_gate(opened, context.inputs, context.output, snapshot)
++            check_configured_gate(opened, context.output, data.gate)
+         await repo.store_engine_output(
+             connection,
+             scope,
+@@ -268,4 +400,12 @@
+         for work in plan.uninvoked:
+             await _uninvoked(connection, scope, data, opened, work, now)
+     for ready in plan.ready:
+-        await _ready(connection, scope, data, ready, now)
++        await _ready(
++            connection,
++            scope,
++            data,
++            ready,
++            opened,
++            now,
++            configured=profile_gate is not None,
++        )
+--- a/src/jimu_runtime/workflow/worker_source.py
++++ b/src/jimu_runtime/workflow/worker_source.py
+@@ -1,9 +1,9 @@
+ """Open the historical configuration and trusted inputs outside PG locks."""
+ 
+ from asyncio import to_thread
+-from dataclasses import dataclass
++from dataclasses import dataclass, replace
+ from datetime import datetime
+-from typing import Protocol
++from typing import Protocol, runtime_checkable
+ 
+ from jimu_runtime.bundle.archive import BundleLimits
+ from jimu_runtime.bundle.capabilities import CapabilitySnapshot
+@@ -18,6 +18,7 @@
+ from jimu_runtime.domain.runtime.facts import ProfileContentRef
+ from jimu_runtime.domain.runtime.intake import (
+     AcceptedTask,
++    ContextSnapshot,
+     IdempotencyScope,
+     RegistryRecordRef,
+ )
+@@ -86,6 +87,13 @@
+     ) -> TrustedWorkerSource: ...
+ 
+ 
++@runtime_checkable
++class HistoricalWorkerHost(WorkerHost, Protocol):
++    async def worker_source_for_snapshot(
++        self, scope: IdempotencyScope, task: AcceptedTask, snapshot: ContextSnapshot
++    ) -> TrustedWorkerSource: ...
++
++
+ @dataclass(frozen=True, slots=True)
+ class OpenExecution:
+     scope: VerifiedExecutionScope
+@@ -147,6 +155,7 @@
+     *,
+     historical: HistoricalCapabilities | None = None,
+     require_historical: bool = False,
++    historical_context: ContextSnapshot | None = None,
+ ) -> OpenExecution:
+     task, execution = locked.task, locked.execution
+     if historical is None and require_historical:
+@@ -183,7 +192,29 @@
+         or release.approval_receipt is None
+     ):
+         raise ValueError("worker requires the exact approved historical Release")
+-    source = await host.worker_source(scope, task)
++    if historical_context is None:
++        source = await host.worker_source(scope, task)
++    elif isinstance(host, HistoricalWorkerHost):
++        source = await host.worker_source_for_snapshot(scope, task, historical_context)
++    else:
++        source = replace(
++            await host.worker_source(scope, task),
++            device=historical_context.device_ref,
++            camera=historical_context.camera_ref,
++        )
++    if historical_context is not None and (
++        historical_context.task_id != task.task_id
++        or historical_context.execution_id != execution.execution_id
++        or historical_context.release_id != task.release_id
++        or historical_context.bundle_digest != task.bundle_digest
++        or historical_context.media_ref != source.media.media_ref
++        or (historical_context.device_ref, historical_context.camera_ref)
++        != (source.device, source.camera)
++    ):
++        raise ValueError(
++            "historical Worker source differs from the pinned ContextSnapshot"
++        )
++
+     bound: VerifiedExecutionScope
+     if isinstance(source, WorkerSource):
+         deployment = {
+--- a/src/jimu_runtime/workflow/worker_state.py
++++ b/src/jimu_runtime/workflow/worker_state.py
+@@ -6,12 +6,12 @@
+ from sqlalchemy.ext.asyncio import AsyncConnection
+ 
+ from jimu_runtime.domain.definition_support import reference_identity
+-from jimu_runtime.domain.enums import NodeRunStatus
++from jimu_runtime.domain.enums import AttemptStatus, NodeRunStatus
+ from jimu_runtime.domain.nodes.discovery import SkippedDiscoveryOutput
+ from jimu_runtime.domain.nodes.envelopes import FailedNodeOutput, NodeOutputEnvelope
+ from jimu_runtime.domain.runtime.executions import Attempt, NodeId, NodeRun
+ from jimu_runtime.domain.runtime.facts import NodeRunRef, ObjectRef
+-from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.intake import ContextSnapshot, IdempotencyScope
+ from jimu_runtime.domain.validation.coverage_sources import (
+     CoverageSources,
+     ObjectDecisionBlocker,
+@@ -20,8 +20,8 @@
+ from jimu_runtime.workflow import repository as repo
+ from jimu_runtime.workflow.engine import BranchKey, BranchRun, PlannerState
+ from jimu_runtime.workflow.jobs import NODE_OUTPUT_KEY
+-from jimu_runtime.workflow.mock_support import K
+-from jimu_runtime.workflow.worker_nodes import BranchInputs
++from jimu_runtime.workflow.mock_support import K, record_digest
++from jimu_runtime.workflow.worker_nodes import BranchInputs, ObservationRetryWitness
+ from jimu_runtime.workflow.worker_records import (
+     GATE_KEY,
+     MESSAGE_KEY,
+@@ -63,6 +63,9 @@
+     tool_step_nodes: tuple[NodeRun, ...] = ()
+     gate: EligibilityMessage | None = None
+     skipped_discovery: SkippedDiscoveryOutput | None = None
++    observation_retries: dict[str, ObservationRetryWitness] = field(
++        default_factory=dict
++    )
+ 
+     def inputs(self, object_id: str | None = None) -> BranchInputs:
+         context = self.messages.get(BranchKey(NodeId.N01))
+@@ -216,6 +219,86 @@
+     return message
+ 
+ 
++async def read_context_snapshot(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    locked: repo.LockedExecution,
++) -> ContextSnapshot | None:
++    """Read the N01 output selected by the Execution's immutable snapshot pin."""
++    pin = locked.execution.context_snapshot
++    if pin is None:
++        return None
++    for name, node in await repo.list_branches(
++        connection, scope, locked.execution.execution_id
++    ):
++        if name != "global" or node.node_id is not NodeId.N01:
++            continue
++        message = await _node_message(connection, scope, locked, node)
++        if not isinstance(message, ContextMessage) or message.snapshot is None:
++            break
++        snapshot = message.snapshot
++        if (
++            snapshot.context_snapshot_id != pin.snapshot_ref.record_id
++            or record_digest(snapshot) != pin.snapshot_digest
++        ):
++            raise ValueError("selected ContextSnapshot differs from the execution pin")
++        return snapshot
++    raise ValueError("execution snapshot requires its selected durable N01 output")
++
++
++async def read_observation_retry(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    node: NodeRun,
++    running_attempt: Attempt,
++) -> ObservationRetryWitness | None:
++    """Read the latest committed whole-batch failure, never a late receipt."""
++    if (
++        node.node_id is not NodeId.N04
++        or node.status is not NodeRunStatus.RUNNING
++        or running_attempt.status is not AttemptStatus.RUNNING
++        or not running_attempt.belongs_to_node(node)
++        or len(node.attempt_history) < 2
++        or node.attempt_history[-1].attempt_ref.record_id != running_attempt.attempt_id
++    ):
++        return None
++    eid, nid = node.execution_id, node.node_run_id
++    for link in reversed(node.attempt_history[:-1]):
++        aid = link.attempt_ref.record_id
++        message = await repo.read_output(
++            connection, scope, eid, nid, aid, MESSAGE_KEY, ObservationMessage
++        )
++        if message is None:
++            continue
++        attempt = await repo.get_attempt(connection, scope, eid, nid, aid)
++        output = await repo.read_output(
++            connection, scope, eid, nid, aid, NODE_OUTPUT_KEY, _OUTPUT
++        )
++        env = message.inputs.envelope
++        if (
++            attempt is None
++            or not attempt.belongs_to_node(node)
++            or attempt.attempt_number != link.attempt_number
++            or attempt.attempt_number >= running_attempt.attempt_number
++            or attempt.status is not AttemptStatus.FAILED
++            or not isinstance(output, FailedNodeOutput)
++            or not output.error.retryable
++            or message.output != output
++            or message.authority is not None
++            or (env.execution_id, env.node_run_id, env.attempt_id, env.trace)
++            != (eid, nid, aid, node.trace)
++            or tuple(item.stable_json() for item in env.upstream_artifacts)
++            != tuple(item.stable_json() for item in node.upstream_inputs)
++            or message.batch.node_run_ref.record_id != nid
++            or message.batch.attempt_ref.record_id != aid
++        ):
++            raise ValueError(
++                "observation retry requires committed failed batch evidence"
++            )
++        return ObservationRetryWitness(message, node, attempt)
++    return None
++
++
+ async def load_records(
+     connection: AsyncConnection,
+     scope: IdempotencyScope,
+--- a/src/jimu_runtime/workflow/worker_validation.py
++++ b/src/jimu_runtime/workflow/worker_validation.py
+@@ -7,7 +7,8 @@
+ from jimu_runtime.domain.definitions.tools import ToolPlanDefinition
+ from jimu_runtime.domain.enums import NodeRunStatus
+ from jimu_runtime.domain.nodes.context import SuccessfulContextBuild
+-from jimu_runtime.domain.nodes.tool_execution import ToolStepHistory
++from jimu_runtime.domain.nodes.envelopes import FailedNodeOutput
++from jimu_runtime.domain.nodes.tool_execution import InvokedToolStep, ToolStepHistory
+ from jimu_runtime.domain.runtime.executions import Attempt, NodeId, NodeRun
+ from jimu_runtime.domain.runtime.facts import ModelInvocationRef
+ from jimu_runtime.workflow.engine import BranchKey
+@@ -55,6 +56,7 @@
+     result: NodeResult,
+     *,
+     tool_step_history: ToolStepHistory | None = None,
++    configured: bool = False,
+ ) -> NodeResult:
+     message = NODE_MESSAGE.validate_json(result.message.model_dump_json())
+     env, output = message.input_envelope(), message.output_envelope()
+@@ -168,28 +170,119 @@
+                     for ref in obj.effective_question_refs
+                 ),
+             )
+-            message.inputs.check_batch(message.batch, (message.invocation,), None)
+-            expected, evidence = prepare_observation(
+-                scope, env, obj, previous.snapshot(), attempt.started_at
+-            )
+-            if message.inputs != expected or message.evidence != tuple(
+-                item.record for item in evidence
+-            ):
+-                raise ValueError(
+-                    "joint observation must persist the selected synthetic request evidence"
+-                )
+-            if (
++            retry = previous.observation_retry
++            message.inputs.check_batch(
++                message.batch,
++                (message.invocation,),
++                None if retry is None else retry.message.batch,
++            )
++            # WP-03 historical and WP-04 compatibility adapters have synthetic
++            # inline bytes. Configured production execution supplies verified records.
++            if configured:
++                if message.request_evidence or not message.durable_request_evidence:
++                    raise ValueError(
++                        "configured observation requires durable request evidence"
++                    )
++                prompt = message.inputs.compiled_prompt_evidence_ref
++                schema = message.inputs.contract_snapshot.response_schema_evidence_ref
++                if (
++                    prompt == schema
++                    or {item.evidence_id for item in message.evidence}
++                    != {prompt.record_id, schema.record_id}
++                    or len(message.evidence) != 2
++                    or set((prompt, schema)) - set(message.invocation.evidence_refs)
++                    or any(
++                        item.scope.scope != "object"
++                        or item.scope.execution_id != env.execution_id
++                        or item.scope.object_ref.record_id != obj.object_id
++                        or item.scope.profile_ref != obj.profile_ref
++                        for item in message.evidence
++                    )
++                    or next(
++                        item.sha256
++                        for item in message.evidence
++                        if item.evidence_id == schema.record_id
++                    )
++                    != message.inputs.contract_snapshot.response_schema_sha256
++                ):
++                    raise ValueError(
++                        "observation evidence requires its distinct exact prompt and Schema records"
++                    )
++                if retry is not None and (
++                    message.inputs.retry is None
++                    or message.inputs.retry.reason != retry.message.batch.outcome
++                    or message.inputs.compiled_prompt_evidence_ref
++                    != retry.message.inputs.compiled_prompt_evidence_ref
++                    or message.inputs.contract_snapshot
++                    != retry.message.inputs.contract_snapshot
++                    or message.inputs.joint_questions
++                    != retry.message.inputs.joint_questions
++                    or message.inputs.image_view != retry.message.inputs.image_view
++                ):
++                    raise ValueError(
++                        "observation retry must preserve the initial request scope and contract"
++                    )
++            else:
++                expected, evidence = prepare_observation(
++                    scope, env, obj, previous.snapshot(), attempt.started_at
++                )
++                if message.inputs != expected or message.evidence != tuple(
++                    item.record for item in evidence
++                ):
++                    raise ValueError(
++                        "joint observation must persist the selected synthetic request evidence"
++                    )
++            authority = message.authority
++            if authority is not None and (
+                 output.status is not NodeRunStatus.SUCCEEDED
+-                or message.authority.selected_result_ref != message.batch.batch_ref
+-                or message.authority.selected_attempt_id != attempt.attempt_id
++                or authority.selected_result_ref != message.batch.batch_ref
++                or authority.selected_attempt_id != attempt.attempt_id
++                or (authority.execution_id, authority.profile_ref, authority.object_id)
++                != (env.execution_id, obj.profile_ref, obj.object_id)
+                 or {
+                     (ref.record_kind, ref.record_id)
+-                    for ref in message.authority.selected_fact_refs
++                    for ref in authority.selected_fact_refs
+                 }
+                 != {(K.FACT, fact.fact_id) for fact in message.facts}
+             ):
+                 raise ValueError(
+                     "joint observation selection must name its exact successful result and Facts"
++                )
++            if isinstance(output, FailedNodeOutput) and (
++                not configured
++                or (message.batch.outcome in {"parse_error", "association_error"})
++                != (output.error.error_class == "validation")
++                or output.error.retryable
++                and output.error.error_class
++                not in {"validation", "transport", "timeout", "resource"}
++            ):
++                raise ValueError(
++                    "whole-batch failure must retain its actual failure disposition"
++                )
++            batch_records = (
++                artifact(
++                    K.OBSERVATION_BATCH,
++                    message.batch.observation_batch_id,
++                    message.batch,
++                ),
++                artifact(
++                    K.MODEL_INVOCATION,
++                    message.invocation.model_invocation_id,
++                    message.invocation,
++                ),
++                *(
++                    artifact(K.EVIDENCE, item.evidence_id, item)
++                    for item in message.evidence
++                ),
++                *(artifact(K.FACT, item.fact_id, item) for item in message.facts),
++            )
++            if configured and (
++                not {item.pin for item in batch_records} <= set(output.output_artifacts)
++                or authority is not None
++                and message.authority_artifact not in result.artifacts
++            ):
++                raise ValueError(
++                    "observation manifest must pin its physical inputs and actual results"
+                 )
+         elif isinstance(message, ToolMessage):
+             plan = scope.resolve(message.inputs.tool_plan_ref, ToolPlanDefinition)
+@@ -213,6 +306,22 @@
+                 if observation is None or not requested_facts
+                 else observation.authority,
+             )
++            if configured and (
++                any(
++                    isinstance(step, InvokedToolStep)
++                    for step in message.output.summary.steps
++                )
++                and tool_step_history is None
++                or requested_facts
++                != {
++                    pin.ref.record_id
++                    for pin in env.upstream_artifacts
++                    if pin.ref.record_kind is K.FACT
++                }
++            ):
++                raise ValueError(
++                    "configured N05 requires exact child results and pinned input Facts"
++                )
+             message.output.check_steps(
+                 message.inputs,
+                 profile,
+@@ -229,7 +338,33 @@
+                     "Decision requires the durable Profile eligibility scope"
+                 )
+             message.draft.inputs.check_gate(previous.gate.evaluation)
+-            message.draft.inputs.check_mandatory_scope(mandatory_paths(scope, obj))
++            paths = (
++                next(
++                    item.mandatory_rule_paths
++                    for item in opened.profiles
++                    if item.rules.profile_ref == obj.profile_ref
++                )
++                if configured
++                else mandatory_paths(scope, obj)
++            )
++            message.draft.inputs.check_mandatory_scope(paths)
++            if configured:
++                staged = message.result()
++                facts, authorities = previous.selected_facts()
++                if {ref.record_id for ref in message.draft.inputs.fact_refs} != {
++                    fact.fact_id for fact in facts
++                } or {
++                    ref.record_id
++                    for ref in message.draft.inputs.authority_selection_refs
++                } != {selection.selection_id for selection in authorities}:
++                    raise ValueError(
++                        "N06 must read the exact selected upstream Facts and authority"
++                    )
++                all_artifacts = set(result.artifacts)
++                if not set(staged.artifacts) <= all_artifacts:
++                    raise ValueError(
++                        "Decision manifest must include its actual runtime records"
++                    )
+ 
+     if not {pin for pin in output.output_artifacts} <= {
+         item.pin for item in result.artifacts

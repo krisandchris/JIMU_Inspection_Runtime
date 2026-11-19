@@ -1,0 +1,98 @@
+[
+  {
+    "argv": [
+      "uv",
+      "sync",
+      "--offline",
+      "--locked",
+      "--no-dev",
+      "--python",
+      ".venv/bin/python"
+    ],
+    "duration_seconds": 0.1896,
+    "end_utc": "2026-11-18T03:12:52.373551+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "sync_without_dev",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "844ed4ac127528dad9eead9fb927459fa964ce784d405cb90bd4cb6d464e2556"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "844ed4ac127528dad9eead9fb927459fa964ce784d405cb90bd4cb6d464e2556"
+    },
+    "start_utc": "2026-11-18T03:12:52.183904+00:00",
+    "stderr": "sync_without_dev.stderr",
+    "stdout": "sync_without_dev.stdout"
+  },
+  {
+    "argv": [
+      "/tmp/jimu-wp02-cpu-nodev-c3t93c2a/venv/bin/python",
+      "-c",
+      "from importlib.metadata import version; from importlib.util import find_spec; assert all(find_spec(name) is None for name in ('pytest','ruff','mypy')); print({name:version(name) for name in ('jimu-runtime','jsonschema','pydantic','rfc8785')})"
+    ],
+    "duration_seconds": 0.1957,
+    "end_utc": "2026-11-18T03:12:52.569299+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "runtime_package_versions",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "844ed4ac127528dad9eead9fb927459fa964ce784d405cb90bd4cb6d464e2556"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "844ed4ac127528dad9eead9fb927459fa964ce784d405cb90bd4cb6d464e2556"
+    },
+    "start_utc": "2026-11-18T03:12:52.373589+00:00",
+    "stderr": "runtime_package_versions.stderr",
+    "stdout": "runtime_package_versions.stdout"
+  },
+  {
+    "argv": [
+      "/tmp/jimu-wp02-cpu-nodev-c3t93c2a/venv/bin/python",
+      "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/independent/runtime_probe.py"
+    ],
+    "duration_seconds": 5.4531,
+    "end_utc": "2026-11-18T03:12:58.022414+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "runtime_without_dev",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "844ed4ac127528dad9eead9fb927459fa964ce784d405cb90bd4cb6d464e2556"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "844ed4ac127528dad9eead9fb927459fa964ce784d405cb90bd4cb6d464e2556"
+    },
+    "start_utc": "2026-11-18T03:12:52.569335+00:00",
+    "stderr": "runtime_without_dev.stderr",
+    "stdout": "runtime_without_dev.stdout"
+  }
+]

@@ -1,0 +1,279 @@
+{
+  "$defs": {
+    "ApplicabilityTraceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "applicability_trace",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ApplicabilityTraceRef",
+      "type": "object"
+    },
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "evidence",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "EvidenceRefs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "FactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "fact",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "FactRef",
+      "type": "object"
+    },
+    "FactRefs": {
+      "items": {
+        "$ref": "#/$defs/FactRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "not": {
+          "pattern": "\\s"
+        },
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+        "type": "string"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_ApplicabilityTraceRef_": {
+      "items": {
+        "$ref": "#/$defs/ApplicabilityTraceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_RulePath_": {
+      "items": {
+        "$ref": "#/$defs/RulePath"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RuleContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "rule",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RuleContentRef",
+      "type": "object"
+    },
+    "RulePath": {
+      "additionalProperties": false,
+      "properties": {
+        "rule_ref": {
+          "$ref": "#/$defs/RuleContentRef"
+        },
+        "rule_set_ref": {
+          "$ref": "#/$defs/RuleSetContentRef"
+        }
+      },
+      "required": [
+        "rule_set_ref",
+        "rule_ref"
+      ],
+      "title": "RulePath",
+      "type": "object"
+    },
+    "RuleSetContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "rule_set",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RuleSetContentRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "applicability_trace_refs": {
+      "$ref": "#/$defs/RecordList_ApplicabilityTraceRef_"
+    },
+    "applicable_rules": {
+      "$ref": "#/$defs/RecordList_RulePath_"
+    },
+    "blocked_rules": {
+      "$ref": "#/$defs/RecordList_RulePath_"
+    },
+    "evaluated_rules": {
+      "$ref": "#/$defs/RecordList_RulePath_"
+    },
+    "evidence_refs": {
+      "$ref": "#/$defs/EvidenceRefs"
+    },
+    "fact_refs": {
+      "$ref": "#/$defs/FactRefs"
+    },
+    "not_evaluated_rules": {
+      "$ref": "#/$defs/RecordList_RulePath_"
+    },
+    "obligation_ids": {
+      "$ref": "#/$defs/RecordList_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___"
+    },
+    "skipped_rules": {
+      "$ref": "#/$defs/RecordList_RulePath_"
+    }
+  },
+  "required": [
+    "applicable_rules",
+    "evaluated_rules",
+    "skipped_rules",
+    "blocked_rules",
+    "not_evaluated_rules",
+    "applicability_trace_refs",
+    "obligation_ids",
+    "fact_refs",
+    "evidence_refs"
+  ],
+  "title": "ExplanationTrace",
+  "type": "object"
+}

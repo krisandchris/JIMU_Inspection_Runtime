@@ -1,0 +1,16 @@
+2026-11-18T04:44:09Z
+$ uv build --wheel --no-build-isolation --offline --out-dir "$journal_wheel_dir"
+Building wheel (uv build backend)...
+Successfully built /tmp/jimu-nested-verify.fTwOAg/jimu_runtime-0.1.0-py3-none-any.whl
+Exit 0
+$ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python - "$journal_wheel_dir"
+Loaded migrations from /tmp/jimu-nested-verify.fTwOAg/jimu_runtime-0.1.0-py3-none-any.whl/jimu_runtime/workflow/migrations/__init__.py
+001 ccefae91fe83358132413207dc9caab1b7ec7fa53f3bcb3714144ca6d4242407 001_workflow_schema.sql
+002 9a48bfd3146120b7598e45d85e3e0572f5582b1ce2fccc26d66d9bc5e792c285 002_workflow_tables.sql
+003 b9e1e60916396be3e1ba90e8da710f582bdcc36263116270a9ff9fb8ed2870e2 003_dispatch_journal.sql
+004 9f8a7bd1cf5a0b476ad43d5bf49891d4b1f9d1dab6bb067dc4c6209645022192 004_tool_step_attempts.sql
+005 6ce424390eff0e3a46da571e576318ecae74c90b8042289a4c583dc9d78bdc9a 005_execution_capabilities.sql
+006 347afaa5966e185cecb7faacab362e7f7b9ef6cd82746034e4dc2ac54193aeaa 006_nested_dispatch_fence.sql
+.                                                                        [100%]
+1 passed in 2.95s
+Exit 0

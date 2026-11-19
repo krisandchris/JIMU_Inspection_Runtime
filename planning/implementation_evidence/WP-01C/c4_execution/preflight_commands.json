@@ -1,0 +1,132 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "environment": {
+    "UV_CACHE_DIR": "/tmp/jimu-c4-execution-lqb31823/uv",
+    "RUFF_CACHE_DIR": "/tmp/jimu-c4-execution-lqb31823/ruff",
+    "MYPY_CACHE_DIR": "/tmp/jimu-c4-execution-lqb31823/mypy",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "cpu_only_lock_sha256": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb",
+  "platform": "Linux-6.8.0-149-generic-x86_64-with-glibc2.39",
+  "commands": [
+    {
+      "argv": [
+        "uv",
+        "--version"
+      ],
+      "shell_display": "uv --version",
+      "started_at_utc": "2026-11-18T01:57:51.075477+00:00",
+      "ended_at_utc": "2026-11-18T01:57:51.079166+00:00",
+      "exit_code": 0,
+      "stdout": "uv 0.9.15\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-c",
+        "import json, platform, sys; from importlib.metadata import version; print(json.dumps({'python':sys.version,'platform':platform.platform(),'architecture':platform.machine(),'packages':{n:version(n) for n in ('pydantic','pydantic-core','pytest','jsonschema','ruff','mypy','rfc8785','uv-build')}}, sort_keys=True))"
+      ],
+      "shell_display": "uv run --locked --no-sync python -c 'import json, platform, sys; from importlib.metadata import version; print(json.dumps({'\"'\"'python'\"'\"':sys.version,'\"'\"'platform'\"'\"':platform.platform(),'\"'\"'architecture'\"'\"':platform.machine(),'\"'\"'packages'\"'\"':{n:version(n) for n in ('\"'\"'pydantic'\"'\"','\"'\"'pydantic-core'\"'\"','\"'\"'pytest'\"'\"','\"'\"'jsonschema'\"'\"','\"'\"'ruff'\"'\"','\"'\"'mypy'\"'\"','\"'\"'rfc8785'\"'\"','\"'\"'uv-build'\"'\"')}}, sort_keys=True))'",
+      "started_at_utc": "2026-11-18T01:57:51.079187+00:00",
+      "ended_at_utc": "2026-11-18T01:57:51.165299+00:00",
+      "exit_code": 0,
+      "stdout": "{\"architecture\": \"x86_64\", \"packages\": {\"jsonschema\": \"4.25.1\", \"mypy\": \"1.18.2\", \"pydantic\": \"2.12.5\", \"pydantic-core\": \"2.41.5\", \"pytest\": \"8.4.2\", \"rfc8785\": \"0.1.4\", \"ruff\": \"0.14.14\", \"uv-build\": \"0.9.15\"}, \"platform\": \"Linux-6.8.0-149-generic-x86_64-with-glibc2.39\", \"python\": \"3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-m",
+        "pytest",
+        "tests/unit/test_c_execution.py",
+        "tests/contract/test_c_execution_schema.py",
+        "tests/negative/test_c_execution_invalid.py",
+        "tests/contract/test_dependency_boundaries.py",
+        "tests/contract/test_b_authority_history.py",
+        "tests/contract/test_b_fact_records.py",
+        "-q",
+        "-o",
+        "cache_dir=/tmp/jimu-c4-execution-lqb31823/pytest-cache",
+        "--basetemp=/tmp/jimu-c4-execution-lqb31823/pytest-tmp",
+        "--junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_execution/pytest.xml"
+      ],
+      "shell_display": "uv run --locked --no-sync python -m pytest tests/unit/test_c_execution.py tests/contract/test_c_execution_schema.py tests/negative/test_c_execution_invalid.py tests/contract/test_dependency_boundaries.py tests/contract/test_b_authority_history.py tests/contract/test_b_fact_records.py -q -o cache_dir=/tmp/jimu-c4-execution-lqb31823/pytest-cache --basetemp=/tmp/jimu-c4-execution-lqb31823/pytest-tmp --junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_execution/pytest.xml",
+      "started_at_utc": "2026-11-18T01:57:51.165322+00:00",
+      "ended_at_utc": "2026-11-18T01:57:54.163292+00:00",
+      "exit_code": 0,
+      "stdout": "........................................................................ [ 24%]\n........................................................................ [ 49%]\n........................................................................ [ 73%]\n........................................................................ [ 98%]\n.....                                                                    [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_execution/pytest.xml -\n293 passed in 2.73s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "check",
+        "src/jimu_runtime/domain/runtime/executions.py",
+        "src/jimu_runtime/domain/validation/transitions.py",
+        "tests/fixtures/wp01c/executions/support.py",
+        "tests/unit/test_c_execution.py",
+        "tests/contract/test_c_execution_schema.py",
+        "tests/negative/test_c_execution_invalid.py"
+      ],
+      "shell_display": "uv run --locked --no-sync ruff check src/jimu_runtime/domain/runtime/executions.py src/jimu_runtime/domain/validation/transitions.py tests/fixtures/wp01c/executions/support.py tests/unit/test_c_execution.py tests/contract/test_c_execution_schema.py tests/negative/test_c_execution_invalid.py",
+      "started_at_utc": "2026-11-18T01:57:54.163318+00:00",
+      "ended_at_utc": "2026-11-18T01:57:54.176950+00:00",
+      "exit_code": 0,
+      "stdout": "All checks passed!\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "format",
+        "--check",
+        "src/jimu_runtime/domain/runtime/executions.py",
+        "src/jimu_runtime/domain/validation/transitions.py",
+        "tests/fixtures/wp01c/executions/support.py",
+        "tests/unit/test_c_execution.py",
+        "tests/contract/test_c_execution_schema.py",
+        "tests/negative/test_c_execution_invalid.py"
+      ],
+      "shell_display": "uv run --locked --no-sync ruff format --check src/jimu_runtime/domain/runtime/executions.py src/jimu_runtime/domain/validation/transitions.py tests/fixtures/wp01c/executions/support.py tests/unit/test_c_execution.py tests/contract/test_c_execution_schema.py tests/negative/test_c_execution_invalid.py",
+      "started_at_utc": "2026-11-18T01:57:54.176980+00:00",
+      "ended_at_utc": "2026-11-18T01:57:54.191153+00:00",
+      "exit_code": 0,
+      "stdout": "6 files already formatted\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "mypy",
+        "src/jimu_runtime/domain/runtime/executions.py",
+        "src/jimu_runtime/domain/validation/transitions.py"
+      ],
+      "shell_display": "uv run --locked --no-sync mypy src/jimu_runtime/domain/runtime/executions.py src/jimu_runtime/domain/validation/transitions.py",
+      "started_at_utc": "2026-11-18T01:57:54.191177+00:00",
+      "ended_at_utc": "2026-11-18T01:57:56.407672+00:00",
+      "exit_code": 0,
+      "stdout": "Success: no issues found in 2 source files\n",
+      "stderr": ""
+    }
+  ]
+}

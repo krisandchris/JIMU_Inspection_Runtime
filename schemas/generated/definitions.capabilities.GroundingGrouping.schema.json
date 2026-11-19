@@ -1,0 +1,59 @@
+{
+  "$defs": {
+    "ConnectedBoxesGrouping": {
+      "additionalProperties": false,
+      "description": "Group boxes connected by Euclidean rectangle distance in source pixels.",
+      "properties": {
+        "max_gap_pixels": {
+          "maximum": 8192,
+          "minimum": 0,
+          "title": "Max Gap Pixels",
+          "type": "integer"
+        },
+        "mode": {
+          "const": "connected_boxes",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "max_gap_pixels"
+      ],
+      "title": "ConnectedBoxesGrouping",
+      "type": "object"
+    },
+    "PerBoxGrouping": {
+      "additionalProperties": false,
+      "description": "Mark every detection separately, including intersecting detections.",
+      "properties": {
+        "mode": {
+          "const": "per_box",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "PerBoxGrouping",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "connected_boxes": "#/$defs/ConnectedBoxesGrouping",
+      "per_box": "#/$defs/PerBoxGrouping"
+    },
+    "propertyName": "mode"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ConnectedBoxesGrouping"
+    },
+    {
+      "$ref": "#/$defs/PerBoxGrouping"
+    }
+  ]
+}

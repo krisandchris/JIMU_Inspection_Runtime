@@ -1,0 +1,118 @@
+{
+  "recorded_at": "2026-11-18T02:15:15.006955+00:00",
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "baseline_head": "2552affeb69fbc2594fe70724f895b0db0967d47",
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "platform": "Linux-6.8.0-149-generic-x86_64-with-glibc2.39",
+  "dependencies": {
+    "pydantic": "2.12.5",
+    "pytest": "8.4.2",
+    "jsonschema": "4.25.1",
+    "mypy": "1.18.2",
+    "ruff": "0.14.14",
+    "rfc8785": "0.1.4"
+  },
+  "commands": [
+    {
+      "argv": [
+        ".venv/bin/pytest",
+        "-q",
+        "tests/contract/test_c_decision_schemas.py",
+        "tests/negative/test_c_decision_coverage_invalid.py",
+        "tests/negative/test_c_decision_guard_authority.py",
+        "tests/negative/test_c_decision_sources_invalid.py",
+        "tests/unit/test_c_decision_coverage.py",
+        "tests/unit/test_c_decision_sources.py",
+        "--junitxml=planning/implementation_evidence/WP-01C/c4_decisions/pytest.xml"
+      ],
+      "exit_code": 0,
+      "stdout": "......................................................                   [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_decisions/pytest.xml -\n54 passed in 2.25s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        ".venv/bin/ruff",
+        "check",
+        "src/jimu_runtime/domain/runtime/decisions.py",
+        "src/jimu_runtime/domain/runtime/coverage.py",
+        "src/jimu_runtime/domain/validation/decision_coverage.py",
+        "src/jimu_runtime/domain/validation/coverage_sources.py",
+        "tests/contract/test_c_decision_schemas.py",
+        "tests/negative/test_c_decision_coverage_invalid.py",
+        "tests/negative/test_c_decision_guard_authority.py",
+        "tests/negative/test_c_decision_sources_invalid.py",
+        "tests/unit/test_c_decision_coverage.py",
+        "tests/unit/test_c_decision_sources.py",
+        "tests/fixtures/wp01c/decisions/cases.py"
+      ],
+      "exit_code": 0,
+      "stdout": "All checks passed!\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "src/jimu_runtime/domain/runtime/decisions.py",
+        "src/jimu_runtime/domain/runtime/coverage.py",
+        "src/jimu_runtime/domain/validation/decision_coverage.py",
+        "src/jimu_runtime/domain/validation/coverage_sources.py",
+        "tests/contract/test_c_decision_schemas.py",
+        "tests/negative/test_c_decision_coverage_invalid.py",
+        "tests/negative/test_c_decision_guard_authority.py",
+        "tests/negative/test_c_decision_sources_invalid.py",
+        "tests/unit/test_c_decision_coverage.py",
+        "tests/unit/test_c_decision_sources.py",
+        "tests/fixtures/wp01c/decisions/cases.py"
+      ],
+      "exit_code": 0,
+      "stdout": "11 files already formatted\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        ".venv/bin/mypy",
+        "src/jimu_runtime/domain/runtime/decisions.py",
+        "src/jimu_runtime/domain/runtime/coverage.py",
+        "src/jimu_runtime/domain/validation/decision_coverage.py",
+        "src/jimu_runtime/domain/validation/coverage_sources.py"
+      ],
+      "exit_code": 0,
+      "stdout": "Success: no issues found in 4 source files\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "owned_sha256": {
+    "src/jimu_runtime/domain/runtime/decisions.py": "9287e0fea6af586a3afe841bd188c336b41eec420e8697a3fd8bf45d810afc06",
+    "src/jimu_runtime/domain/runtime/coverage.py": "db6e99ed9e57034c61b07a4608067a5214437574aaa39666b303d5d2954ef59d",
+    "src/jimu_runtime/domain/validation/decision_coverage.py": "224cdcb6a3a365a9c18555804b04783180abb6925137d740e26e92867e768753",
+    "src/jimu_runtime/domain/validation/coverage_sources.py": "a65de6d958cc05a5601bc97b70b54cc938a97b6e9b79fb82d8d3127fc52cc5b0",
+    "tests/contract/test_c_decision_schemas.py": "482c035a0340013eff14dd7af05ccb0d09e0f08e57475c1887e83e003ba3c309",
+    "tests/negative/test_c_decision_coverage_invalid.py": "4f798de193c575f845e79b3bde87a4fb60eea48ee5b470194ad01abf476de135",
+    "tests/negative/test_c_decision_guard_authority.py": "1fb637843f3b0ba57496235ebe7e4cb748bd361665dc4b1e2b1ce523edd64b99",
+    "tests/negative/test_c_decision_sources_invalid.py": "9714a81944832e813a39f15fc2521069b61d0d107f94425c2cc85c342c928f69",
+    "tests/unit/test_c_decision_coverage.py": "b84b446abd76e49f05cf7551ffc8eb690fcd11e2e6216df2edc1458348f766ae",
+    "tests/unit/test_c_decision_sources.py": "0ee7f3fcf182c9dfcd87ca42050a1cb24bf402c899d4c7613e60612188dc6678",
+    "tests/fixtures/wp01c/decisions/candidate_prediction.json": "c040676d7c91234f78b19973ced827a166bb056ed35a5be4a1d7190c5410ee8b",
+    "tests/fixtures/wp01c/decisions/cases.py": "18910cd2670c98c8383484f101282d576f4c4f9a0f43d70ea725604e70a4dc8e",
+    "tests/fixtures/wp01c/decisions/decision_record.json": "8e57941a4dcfbc44f2883dae3b5cde43891d32f7c094b57c01b93bec370d8fbc",
+    "tests/fixtures/wp01c/decisions/execution_coverage.json": "3eca4c0eb9dac3518fb6f147d77e289866c4304a7e00cad8d4e99d2a408a0806",
+    "tests/fixtures/wp01c/decisions/invalid_candidate_prediction.json": "f71d8b0e1eb7a16f3e7c446a28129a71f549e7761744c1c1ef386acf364f9667",
+    "tests/fixtures/wp01c/decisions/invalid_decision_record.json": "389ef998f92669cdf7f16a260d2e067e75b23047460a74487f08ac041ace09f1",
+    "tests/fixtures/wp01c/decisions/invalid_execution_coverage.json": "43e79761e0ce907c6cdf3e321b8e691b23fb1b8ae9bc562390750213e3405d57",
+    "tests/fixtures/wp01c/decisions/invalid_profile_coverage.json": "60b86d3bbf8c21b8db765e1b2f4e1bf14eee2b2b31a276191a44b485c1db4b1a",
+    "tests/fixtures/wp01c/decisions/profile_coverage.json": "a805458b6c8e119d951ef5c7ad36499d8460ea7b29a4e33fb32281dbaa57fe6c"
+  },
+  "runtime_evidence": "RUNTIME_NOT_RUN"
+}

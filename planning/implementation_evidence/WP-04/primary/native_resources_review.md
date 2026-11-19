@@ -1,0 +1,1 @@
+审查阻塞（UNVERIFIED）：只读命令在读取仓库前即因 `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted` 退出，未能核对 Git 基线、冻结清单、worker 实现或两个测试文件。没有可证实的 P1/P2；空列表不代表未发现缺陷，`patch is correct` 仅为格式占位，不构成验收结论（TEST_NOT_RUN）。请提供 W4.4 的限定 diff（含尚未被 Git 跟踪的新增文件）、指定的两个测试文件及冻结清单，以便核对行号和对应回归。

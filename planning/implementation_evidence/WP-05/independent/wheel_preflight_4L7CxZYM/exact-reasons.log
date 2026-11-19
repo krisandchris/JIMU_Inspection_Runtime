@@ -1,0 +1,25 @@
+2026-11-18T06:20:37Z
++ PYTHONPATH=/tmp/jimu-wp05-wheel-LDhNK49u/snapshot/product
++ WP05_PROBE_DIAGNOSTICS=0
++ /tmp/jimu-wp05-wheel-LDhNK49u/venv/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py --installed --trace-dir /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_4L7CxZYM/exact-reasons-exec grounding_timeout candidate_timeout missing_slot explicit_visibility partial_valid_violation
+{"check": "worker_process_ready", "pid": 3667512, "runtime_install": "/tmp/jimu-wp05-wheel-LDhNK49u/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3667512, "signal": null}
+{"after_release_switch": null, "authority_count": 2, "check": "scenario_terminal_audit", "context": "perception.context.c0a5b49c5bc603c8e52fca28396feaaea8ac590f3f11632090d138a37d498bf9", "coverage": "none", "decisions": {}, "device_and_camera_revision": "1.0.0", "name": "grounding_timeout", "objects": 0, "observed_cpu_execve": 0, "post": {"discovery": 1, "grounding": 1}, "product_steps": ["applied", "applied", "applied", "finalized"], "summary": "uncertain", "tool_sidecars": 0}
+{"check": "worker_process_ready", "pid": 3667598, "runtime_install": "/tmp/jimu-wp05-wheel-LDhNK49u/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3667598, "signal": null}
+{"after_release_switch": null, "authority_count": 6, "check": "scenario_terminal_audit", "context": "perception.context.56ece3c56a99b01d487a1e134a01a61c78393d4191364ef6b99ce2ed9b490fef", "coverage": "complete", "decisions": {"outside": "violation"}, "device_and_camera_revision": "1.0.0", "name": "candidate_timeout", "objects": 1, "observed_cpu_execve": 3, "post": {"candidate": 1, "discovery": 1, "grounding": 1, "observation": 1}, "product_steps": ["applied", "applied", "applied", "applied", "applied", "staged", "finalized"], "summary": "violation", "tool_sidecars": 3}
+{"check": "worker_process_ready", "pid": 3667926, "runtime_install": "/tmp/jimu-wp05-wheel-LDhNK49u/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3667926, "signal": null}
+{"after_release_switch": null, "authority_count": 6, "check": "scenario_terminal_audit", "context": "perception.context.160866a33a7064f9bf1da9918e330810a76a37d7d8e3a1fb9b396f0d3159d598", "coverage": "complete", "decisions": {"outside": "violation"}, "device_and_camera_revision": "1.0.0", "name": "missing_slot", "objects": 1, "observed_cpu_execve": 3, "post": {"candidate": 1, "discovery": 1, "grounding": 1, "observation": 1}, "product_steps": ["applied", "applied", "applied", "applied", "applied", "staged", "finalized"], "summary": "violation", "tool_sidecars": 3}
+{"check": "worker_process_ready", "pid": 3668317, "runtime_install": "/tmp/jimu-wp05-wheel-LDhNK49u/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3668317, "signal": null}
+{"after_release_switch": null, "authority_count": 6, "check": "scenario_terminal_audit", "context": "perception.context.7607ae339b232542810bbf0b61a82f4b60034b699e9d7aa2a850fecddaa2aa36", "coverage": "complete", "decisions": {"outside": "violation"}, "device_and_camera_revision": "1.0.0", "name": "explicit_visibility", "objects": 1, "observed_cpu_execve": 3, "post": {"candidate": 1, "discovery": 1, "grounding": 1, "observation": 1}, "product_steps": ["applied", "applied", "applied", "applied", "applied", "staged", "finalized"], "summary": "violation", "tool_sidecars": 3}
+{"check": "worker_process_ready", "pid": 3668686, "runtime_install": "/tmp/jimu-wp05-wheel-LDhNK49u/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3668686, "signal": null}
+{"after_release_switch": null, "authority_count": 9, "check": "scenario_terminal_audit", "context": "perception.context.2bfb10766f06c6083c790c3e154ded9e58d0ef5bb8ba31fdeec1c39e5b8974c5", "coverage": "partial", "decisions": {"inside": "uncertain", "outside": "violation"}, "device_and_camera_revision": "1.0.0", "name": "partial_valid_violation", "objects": 2, "observed_cpu_execve": 6, "post": {"candidate": 2, "discovery": 1, "grounding": 1, "observation": 2}, "product_steps": ["applied", "applied", "applied", "applied", "applied", "applied", "applied", "staged", "staged", "finalized"], "summary": "violation", "tool_sidecars": 6}
++ result=0
++ date -u +%FT%TZ
+2026-11-18T06:22:01Z
++ printf 'exit=%s\n' 0
+exit=0
++ exit 0

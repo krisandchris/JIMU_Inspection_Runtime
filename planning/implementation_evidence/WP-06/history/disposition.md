@@ -1,0 +1,14 @@
+# WP-06 historical evaluation export review disposition
+
+| Native finding | Verified behavior |
+|---|---|
+| P1 Tool Fact provenance lost by resolving only the schema | Confirmed and fixed. Derive exact per-Profile producer declarations from the admitted Bundle and verify the catalogue ref, declaration and output slot, ToolPlan, step, tool, Execution, Attempt, Object, selected ToolExecution, and trusted on-time mapped output. Reject ambiguous schemas while deriving the catalogue even when no corresponding Fact is present. Signed-scene regression rejects false ToolExecution and output name. |
+| P1 Grounding/coverage asymmetry omits objects | Confirmed and fixed. Check uniqueness and equality between actual objects and all coverage references per Profile, reject unexpected and duplicate objects and orphan Decisions. Regression perturbs reopened signed-scene records. |
+| P2 Restored file scored against its own pin | Confirmed and fixed. Store the approved pin separately at export, decode both files, score the decoded export against the approved pin, and reject a second internally valid export. |
+| P2 Geometry and Rule were unlabelled | Confirmed and fixed. Independently label the synthetic wheel as outside the parking area and the parking Rule as matched. The actual exported signed scene yields both accuracy and coverage of 1/1 for the specified geometry and Rule. |
+| P2 Scope mismatch and missing Execution were conflated | Confirmed and fixed. Check request-vs-dataset Scope mismatch, same-scope missing Execution, and lack of cross-client record access separately. |
+| P2 Evidence cap applied per evidence type and per sample | Confirmed and fixed. One trial-wide budget covers actual original, model-response, and asset reads. Preserve a per-sample cap and use bounded physical reads. Regression verifies the original is rejected before file read and two sample budget windows sharing real persisted evidence stop before the second read when their aggregate is over budget. |
+| P2 Same Bundle catalogue rebuilt per sample | Confirmed and fixed. All executions are still independently validated. Reuse a single catalogue and its digest per trial. Reject a different verified Bundle or cohort at sample admission. Regression counts one build across different execution input digests for the same cohort and rejects a different Bundle. |
+| P2 Batch error lost the failed sample | Confirmed and fixed. Keep the stable code and exception cause, with the authorized sample ID and Execution ID. Regression asserts both fields for the missing execution and in-budget-stage original rejection. |
+
+Execution, model, tooling, images, and labels are local controlled fixtures. No automatic release route was observed by the historical workflow. The separate mixed-release regression verifies arithmetic and legacy compatibility.

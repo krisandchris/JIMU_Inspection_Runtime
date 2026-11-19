@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "facet_id": "parking-observations",
+  "name": "Parking observations",
+  "description": "Independent categorical facts about the current vehicle.",
+  "fact_schema_refs": [
+    {
+      "$pin": [
+        "fact_schema",
+        "vehicle_type",
+        "1.0.0"
+      ]
+    },
+    {
+      "$pin": [
+        "fact_schema",
+        "parking_state",
+        "1.0.0"
+      ]
+    },
+    {
+      "$pin": [
+        "fact_schema",
+        "parking_position",
+        "1.0.0"
+      ]
+    }
+  ]
+}

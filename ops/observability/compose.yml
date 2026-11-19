@@ -1,0 +1,74 @@
+services:
+  observability:
+    pull_policy: never
+    image: ${JIMU_OBSERVABILITY_RUNTIME_IMAGE:?Set an approved runtime image digest}
+    command: ["python", "-m", "uvicorn", "jimu_runtime.observability.serve:create_app", "--factory", "--host", "0.0.0.0", "--port", "9080", "--no-access-log", "--limit-concurrency", "16"]
+    environment:
+      JIMU_OBSERVABILITY_PROJECT_ID: ${JIMU_OBSERVABILITY_PROJECT_ID:?Set the authorized project}
+      JIMU_OBSERVABILITY_CLIENT_ID: ${JIMU_OBSERVABILITY_CLIENT_ID:?Set the authorized client}
+      JIMU_OBSERVABILITY_DB_URL_FILE: /run/secrets/observability-db-url
+      JIMU_OBSERVABILITY_TOKEN_FILE: /run/secrets/observability-scrape-token
+    secrets:
+      - observability-db-url
+      - observability-scrape-token
+    networks: [monitor, runtime-db]
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; assert urlopen('http://127.0.0.1:9080/livez', timeout=2).status == 200"]
+      timeout: 3s
+      interval: 30s
+      retries: 3
+  prometheus:
+    pull_policy: never
+    image: ${JIMU_OBSERVABILITY_PROMETHEUS_IMAGE:?Set an approved Prometheus image digest}
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus", "--storage.tsdb.retention.time=${JIMU_OBSERVABILITY_METRIC_RETENTION:-15d}"]
+    secrets: [observability-scrape-token]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks: [monitor]
+    stop_grace_period: 1m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  grafana:
+    pull_policy: never
+    image: ${JIMU_OBSERVABILITY_GRAFANA_IMAGE:?Set an approved Grafana image digest}
+    ports:
+      - "127.0.0.1:${JIMU_OBSERVABILITY_GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/observability-grafana-password
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+    secrets: [observability-grafana-password]
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+      - ./grafana:/etc/grafana/provisioning:ro
+    networks: [monitor, dashboard-loopback]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+networks:
+  monitor:
+    internal: true
+  dashboard-loopback:
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  runtime-db:
+    external: true
+    name: ${JIMU_OBSERVABILITY_DB_NETWORK:?Set the authorized database network}
+volumes:
+  prometheus-data: {}
+  grafana-data: {}
+secrets:
+  observability-db-url:
+    file: ${JIMU_OBSERVABILITY_DB_URL_FILE:?Provide the read-only database URL as a secret file}
+  observability-scrape-token:
+    file: ${JIMU_OBSERVABILITY_TOKEN_FILE:?Provide a scoped monitoring credential as a secret file}
+  observability-grafana-password:
+    file: ${JIMU_OBSERVABILITY_GRAFANA_PASSWORD_FILE:?Provide the Grafana password as a secret file}

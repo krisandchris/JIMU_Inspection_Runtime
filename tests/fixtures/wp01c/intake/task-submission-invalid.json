@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "request_id": "request-1",
+  "idempotency_scope": {
+    "project_id": "demo",
+    "client_id": "edge-1"
+  },
+  "idempotency_key": "frame-1",
+  "media_ref": {
+    "media_id": "frame-1",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "context": {
+    "device_id": "rover-01",
+    "camera_id": "front-camera",
+    "region_id": "region-a",
+    "clock": {
+      "captured_at": "2026-11-17T02:30:00Z",
+      "original_timestamp": "2026-11-17T10:30:00+08:00",
+      "original_timezone": "Asia/Shanghai",
+      "source": "device_clock",
+      "clock_id": "rover-01",
+      "uncertainty_ms": 5
+    },
+    "metadata": {
+      "kind": "record",
+      "value": {
+        "scene": {
+          "kind": "string",
+          "value": "street"
+        }
+      }
+    }
+  },
+  "trace": {
+    "trace_id": "trace-1"
+  },
+  "images": [
+    {
+      "media_id": "frame-1",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "media_id": "frame-1",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ]
+}

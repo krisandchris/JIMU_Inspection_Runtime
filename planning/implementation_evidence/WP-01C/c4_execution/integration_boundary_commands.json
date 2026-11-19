@@ -1,0 +1,132 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "environment": {
+    "UV_CACHE_DIR": "/tmp/jimu-c4-execution-ge9fy9ja/uv",
+    "RUFF_CACHE_DIR": "/tmp/jimu-c4-execution-ge9fy9ja/ruff",
+    "MYPY_CACHE_DIR": "/tmp/jimu-c4-execution-ge9fy9ja/mypy",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "cpu_only_lock_sha256": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb",
+  "platform": "Linux-6.8.0-149-generic-x86_64-with-glibc2.39",
+  "commands": [
+    {
+      "argv": [
+        "uv",
+        "--version"
+      ],
+      "shell_display": "uv --version",
+      "started_at_utc": "2026-11-18T01:58:43.839197+00:00",
+      "ended_at_utc": "2026-11-18T01:58:43.842764+00:00",
+      "exit_code": 0,
+      "stdout": "uv 0.9.15\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-c",
+        "import json, platform, sys; from importlib.metadata import version; print(json.dumps({'python':sys.version,'platform':platform.platform(),'architecture':platform.machine(),'packages':{n:version(n) for n in ('pydantic','pydantic-core','pytest','jsonschema','ruff','mypy','rfc8785','uv-build')}}, sort_keys=True))"
+      ],
+      "shell_display": "uv run --locked --no-sync python -c 'import json, platform, sys; from importlib.metadata import version; print(json.dumps({'\"'\"'python'\"'\"':sys.version,'\"'\"'platform'\"'\"':platform.platform(),'\"'\"'architecture'\"'\"':platform.machine(),'\"'\"'packages'\"'\"':{n:version(n) for n in ('\"'\"'pydantic'\"'\"','\"'\"'pydantic-core'\"'\"','\"'\"'pytest'\"'\"','\"'\"'jsonschema'\"'\"','\"'\"'ruff'\"'\"','\"'\"'mypy'\"'\"','\"'\"'rfc8785'\"'\"','\"'\"'uv-build'\"'\"')}}, sort_keys=True))'",
+      "started_at_utc": "2026-11-18T01:58:43.842783+00:00",
+      "ended_at_utc": "2026-11-18T01:58:43.932848+00:00",
+      "exit_code": 0,
+      "stdout": "{\"architecture\": \"x86_64\", \"packages\": {\"jsonschema\": \"4.25.1\", \"mypy\": \"1.18.2\", \"pydantic\": \"2.12.5\", \"pydantic-core\": \"2.41.5\", \"pytest\": \"8.4.2\", \"rfc8785\": \"0.1.4\", \"ruff\": \"0.14.14\", \"uv-build\": \"0.9.15\"}, \"platform\": \"Linux-6.8.0-149-generic-x86_64-with-glibc2.39\", \"python\": \"3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-m",
+        "pytest",
+        "tests/unit/test_c_execution.py",
+        "tests/contract/test_c_execution_schema.py",
+        "tests/negative/test_c_execution_invalid.py",
+        "tests/contract/test_dependency_boundaries.py",
+        "tests/contract/test_b_authority_history.py",
+        "tests/contract/test_b_fact_records.py",
+        "-q",
+        "-o",
+        "cache_dir=/tmp/jimu-c4-execution-ge9fy9ja/pytest-cache",
+        "--basetemp=/tmp/jimu-c4-execution-ge9fy9ja/pytest-tmp",
+        "--junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_execution/pytest.xml"
+      ],
+      "shell_display": "uv run --locked --no-sync python -m pytest tests/unit/test_c_execution.py tests/contract/test_c_execution_schema.py tests/negative/test_c_execution_invalid.py tests/contract/test_dependency_boundaries.py tests/contract/test_b_authority_history.py tests/contract/test_b_fact_records.py -q -o cache_dir=/tmp/jimu-c4-execution-ge9fy9ja/pytest-cache --basetemp=/tmp/jimu-c4-execution-ge9fy9ja/pytest-tmp --junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_execution/pytest.xml",
+      "started_at_utc": "2026-11-18T01:58:43.932882+00:00",
+      "ended_at_utc": "2026-11-18T01:58:46.908666+00:00",
+      "exit_code": 1,
+      "stdout": "........................................................................ [ 24%]\n........................................................................ [ 49%]\n........................................................................ [ 73%]\n...................................................F.................... [ 98%]\n.....                                                                    [100%]\n=================================== FAILURES ===================================\n_________________ test_domain_import_graph_is_pure_and_acyclic _________________\n\n    def test_domain_import_graph_is_pure_and_acyclic():\n>       assert_acyclic(import_graph(Path(\"src\")))\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/contract/test_dependency_boundaries.py:10: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nsource_root = PosixPath('src'), package = 'jimu_runtime'\n\n    def import_graph(source_root: Path, package=\"jimu_runtime\"):\n        \"\"\"Reject unresolved local imports and forbidden dependencies; return real edges.\"\"\"\n        trees = {}\n        for path in sorted((source_root / package).rglob(\"*.py\")):\n            module = \".\".join(path.relative_to(source_root).with_suffix(\"\").parts)\n            module = module.removesuffix(\".__init__\")\n            assert module not in trees, f\"ambiguous local module: {module}\"\n            trees[module] = ast.parse(path.read_text())\n        assert package in trees, f\"missing package: {package}\"\n        symbols = {name: _bound_names(tree) for name, tree in trees.items()}\n        graph = {name: set() for name in trees}\n    \n        def add_local(owner, dependency):\n            assert dependency in trees, f\"unresolved local import: {dependency}\"\n            # Track explicit content dependencies, not implicit initializer edges:\n            # a package reexporting A while A imports sibling B is not an A/package\n            # cycle. A self-qualified access to a symbol also adds no synthetic edge.\n            if dependency != owner:\n                graph[owner].add(dependency)\n    \n        for module, tree in trees.items():\n            for node in ast.walk(tree):\n                if isinstance(node, ast.Name):\n                    assert node.id != \"Any\", \"normative contracts may not use unbounded Any\"\n                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):\n                    assert node.func.id not in {\"eval\", \"exec\", \"__import__\"}\n                if isinstance(node, ast.Import):\n                    imports = [(alias.name, None) for alias in node.names]\n                elif isinstance(node, ast.ImportFrom):\n                    assert node.level == 0, (\n                        \"unresolved relative imports hide dependency edges\"\n                    )\n                    imports = [(node.module or \"\", node.names)]\n                else:\n                    continue\n                for imported, aliases in imports:\n                    top = imported.split(\".\")[0]\n                    assert top in sys.stdlib_module_names | {\n                        \"pydantic\",\n                        \"pydantic_core\",\n                        package,\n                        \"rfc8785\",\n                    }, f\"forbidden dependency: {imported}\"\n                    if top == \"rfc8785\":\n                        assert module in {\n                            f\"{package}.domain.fact_schemas.canonicalization\",\n                            f\"{package}.domain.fact_schemas.projection\",\n                        }, f\"rfc8785 import outside F1: {module}\"\n                    if top != package:\n                        continue\n                    assert imported in trees, f\"unresolved local import: {imported}\"\n                    if aliases is None:\n                        add_local(module, imported)\n                    else:\n                        for alias in aliases:\n                            assert alias.name != \"*\", (\n                                \"local star imports hide reexport edges\"\n                            )\n                            child = f\"{imported}.{alias.name}\"\n                            if child in trees:\n                                add_local(module, child)\n                            else:\n>                               assert alias.name in symbols[imported], (\n                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                                    f\"unresolved local symbol: {child}\"\n                                )\nE                               AssertionError: unresolved local symbol: jimu_runtime.domain.runtime.invocations.InvocationContractSnapshot\n\ntests/helpers/boundary_graph.py:92: AssertionError\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_execution/pytest.xml -\n=========================== short test summary info ============================\nFAILED tests/contract/test_dependency_boundaries.py::test_domain_import_graph_is_pure_and_acyclic\n1 failed, 292 passed in 2.72s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "check",
+        "src/jimu_runtime/domain/runtime/executions.py",
+        "src/jimu_runtime/domain/validation/transitions.py",
+        "tests/fixtures/wp01c/executions/support.py",
+        "tests/unit/test_c_execution.py",
+        "tests/contract/test_c_execution_schema.py",
+        "tests/negative/test_c_execution_invalid.py"
+      ],
+      "shell_display": "uv run --locked --no-sync ruff check src/jimu_runtime/domain/runtime/executions.py src/jimu_runtime/domain/validation/transitions.py tests/fixtures/wp01c/executions/support.py tests/unit/test_c_execution.py tests/contract/test_c_execution_schema.py tests/negative/test_c_execution_invalid.py",
+      "started_at_utc": "2026-11-18T01:58:46.908697+00:00",
+      "ended_at_utc": "2026-11-18T01:58:46.921815+00:00",
+      "exit_code": 0,
+      "stdout": "All checks passed!\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "format",
+        "--check",
+        "src/jimu_runtime/domain/runtime/executions.py",
+        "src/jimu_runtime/domain/validation/transitions.py",
+        "tests/fixtures/wp01c/executions/support.py",
+        "tests/unit/test_c_execution.py",
+        "tests/contract/test_c_execution_schema.py",
+        "tests/negative/test_c_execution_invalid.py"
+      ],
+      "shell_display": "uv run --locked --no-sync ruff format --check src/jimu_runtime/domain/runtime/executions.py src/jimu_runtime/domain/validation/transitions.py tests/fixtures/wp01c/executions/support.py tests/unit/test_c_execution.py tests/contract/test_c_execution_schema.py tests/negative/test_c_execution_invalid.py",
+      "started_at_utc": "2026-11-18T01:58:46.921845+00:00",
+      "ended_at_utc": "2026-11-18T01:58:46.935322+00:00",
+      "exit_code": 0,
+      "stdout": "6 files already formatted\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "mypy",
+        "src/jimu_runtime/domain/runtime/executions.py",
+        "src/jimu_runtime/domain/validation/transitions.py"
+      ],
+      "shell_display": "uv run --locked --no-sync mypy src/jimu_runtime/domain/runtime/executions.py src/jimu_runtime/domain/validation/transitions.py",
+      "started_at_utc": "2026-11-18T01:58:46.935364+00:00",
+      "ended_at_utc": "2026-11-18T01:58:49.064568+00:00",
+      "exit_code": 0,
+      "stdout": "Success: no issues found in 2 source files\n",
+      "stderr": ""
+    }
+  ]
+}

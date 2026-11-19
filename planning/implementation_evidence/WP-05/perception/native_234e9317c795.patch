@@ -1,0 +1,2249 @@
+--- /dev/null
++++ b/src/jimu_runtime/inspection/perception/__init__.py
+@@ -0,0 +1,20 @@
++"""Configuration-driven N02–N04 perception and transport contract registration."""
++
++from jimu_runtime.inspection.perception.adapter import (
++    ConfiguredPerception as ConfiguredPerception,
++)
++from jimu_runtime.inspection.perception.candidates import (
++    CandidateModelResult as CandidateModelResult,
++)
++from jimu_runtime.inspection.perception.model import (
++    build_chat_contract as build_chat_contract,
++)
++from jimu_runtime.inspection.perception.observation import (
++    RequestEvidenceKind as RequestEvidenceKind,
++)
++from jimu_runtime.inspection.perception.observation import (
++    verify_observation_inputs as verify_observation_inputs,
++)
++from jimu_runtime.inspection.perception.observation import (
++    verify_observation_result as verify_observation_result,
++)
+--- /dev/null
++++ b/src/jimu_runtime/inspection/perception/adapter.py
+@@ -0,0 +1,76 @@
++"""Dispatch configured perception nodes through the lease-fenced Worker gateway."""
++
++from dataclasses import dataclass
++
++from jimu_runtime.domain.definitions.capabilities import ModelBindingContentRef
++from jimu_runtime.domain.runtime.executions import NodeId
++from jimu_runtime.gateway.bridge import CapabilityGateway
++from jimu_runtime.inspection.perception.candidates import (
++    CandidateModelResult,
++    predict_candidates,
++)
++from jimu_runtime.inspection.perception.context import build_context
++from jimu_runtime.inspection.perception.discovery import discover
++from jimu_runtime.inspection.perception.grounding import ground
++from jimu_runtime.inspection.perception.model import ImageLoader, ModelAccess
++from jimu_runtime.inspection.perception.observation import StageRequestEvidence, observe
++from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
++from jimu_runtime.workflow.worker_nodes import NodeResult, invocation_envelope
++
++
++@dataclass(frozen=True, slots=True)
++class ConfiguredPerception:
++    """Trusted host callback bindings for the release-scoped N02–N04 adapters."""
++
++    load_image: ImageLoader
++    stage_request_evidence: StageRequestEvidence
++    resource_scope_id: str
++
++    async def execute(
++        self, claimed: ClaimedNode, gateway: CapabilityGateway
++    ) -> NodeResult:
++        envelope = invocation_envelope(
++            claimed.opened, claimed.branch, claimed.node, claimed.attempt
++        )
++        access = ModelAccess(self.load_image, self.resource_scope_id)
++        match claimed.node.node_id:
++            case NodeId.N01:
++                return build_context(claimed, envelope)
++            case NodeId.N02:
++                return await discover(claimed, envelope, gateway, access)
++            case NodeId.N03:
++                return await ground(claimed, envelope, gateway, access)
++            case NodeId.N04:
++                previous = claimed.previous.observation_retry
++                if previous is not None and (
++                    previous.message.authority is not None
++                    or previous.node.node_run_id != claimed.node.node_run_id
++                    or previous.attempt.attempt_id
++                    != previous.message.batch.attempt_ref.record_id
++                    or not previous.attempt.belongs_to_node(claimed.node)
++                    or previous.attempt.attempt_number >= claimed.attempt.attempt_number
++                ):
++                    raise AdapterRejected("perception.retry_has_authority")
++                return await observe(
++                    claimed,
++                    envelope,
++                    gateway,
++                    access,
++                    self.stage_request_evidence,
++                    None if previous is None else previous.message.batch,
++                )
++            case _:
++                raise AdapterRejected("perception.unsupported_node")
++
++    async def predict_candidates(
++        self,
++        claimed: ClaimedNode,
++        gateway: CapabilityGateway,
++        binding_ref: ModelBindingContentRef,
++    ) -> CandidateModelResult:
++        return await predict_candidates(
++            claimed,
++            gateway,
++            ModelAccess(self.load_image, self.resource_scope_id),
++            binding_ref,
++        )
+--- /dev/null
++++ b/src/jimu_runtime/inspection/perception/candidates.py
+@@ -0,0 +1,101 @@
++"""Advisory candidate model calls for N06; rule evaluation is owned by the Worker."""
++
++from dataclasses import dataclass
++
++from jimu_runtime.domain.definition_enums import ModelCapability
++from jimu_runtime.domain.definitions.capabilities import ModelBindingContentRef
++from jimu_runtime.domain.fact_schemas.canonicalization import JSONValue
++from jimu_runtime.domain.runtime.decisions import CandidateCategory
++from jimu_runtime.domain.runtime.executions import NodeId
++from jimu_runtime.domain.runtime.facts import ObjectRef
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.gateway.bridge import CapabilityGateway, ModelCall, ModelCallFailure
++from jimu_runtime.inspection.perception.model import (
++    CandidateReply,
++    ModelAccess,
++    associated_invocation,
++    build_chat_contract,
++    checked_reply,
++    failed_request,
++    gateway_binding,
++    image_input,
++    prepare_binding,
++)
++from jimu_runtime.workflow.mock_support import K
++from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
++
++
++@dataclass(frozen=True, slots=True)
++class CandidateModelResult:
++    categories: tuple[CandidateCategory, ...]
++    invocation: ModelInvocation | None
++    failure_code: str | None
++
++
++async def predict_candidates(
++    claimed: ClaimedNode,
++    gateway: CapabilityGateway,
++    access: ModelAccess,
++    binding_ref: ModelBindingContentRef,
++) -> CandidateModelResult:
++    """Run the configured model once and keep advisory categories and real provenance."""
++    if claimed.node.node_id is not NodeId.N06:
++        raise AdapterRejected("perception.candidate_wrong_node")
++    opened = claimed.opened
++    scope = opened.scope
++    obj = claimed.previous.object_record(claimed.branch)
++    (profile,) = tuple(
++        row for row in opened.profiles if row.rules.profile_ref == obj.profile_ref
++    )
++    allowed = {
++        rule.definition.violation_category
++        for ruleset in profile.rules.rule_sets
++        for rule in ruleset.rules
++    }
++    purpose = ModelCapability.CANDIDATE_PREDICTION
++    binding = prepare_binding(scope, binding_ref, purpose)
++    contract = build_chat_contract(scope, binding_ref)
++    image = await access.image(scope)
++    category_ids: list[JSONValue] = [category for category in sorted(allowed)]
++    call = ModelCall(
++        binding_ref=gateway_binding(binding_ref),
++        purposes=(purpose,),
++        profile_refs=(obj.profile_ref,),
++        prompt=binding.prompt(
++            image_input(scope),
++            {
++                "object_id": obj.object_id,
++                "bbox": {"xyxy": list(obj.bbox.xyxy)},
++                "registered_category_ids": category_ids,
++            },
++        ),
++        resource_scope_id=access.resource_scope_id,
++        image=image,
++        object_ref=ObjectRef(record_kind=K.OBJECT, record_id=obj.object_id),
++    )
++    try:
++        result = await gateway.invoke_model(claimed, call)
++    except ModelCallFailure as exc:
++        return CandidateModelResult((), None, exc.code)
++    invocation = associated_invocation(claimed, call, result)
++    if result.output is None:
++        return CandidateModelResult(
++            (),
++            invocation,
++            failed_request(result, "perception.candidate_unavailable").code,
++        )
++    try:
++        categories = checked_reply(result, contract, CandidateReply).categories
++        ids = {row.category_id for row in categories}
++        if len(ids) != len(categories) or not ids <= allowed:
++            raise AdapterRejected("perception.invalid_candidate_categories")
++    except AdapterRejected as exc:
++        return CandidateModelResult((), invocation, exc.code)
++    return CandidateModelResult(
++        tuple(
++            CandidateCategory(category_id=category.category_id, score=category.score)
++            for category in categories
++        ),
++        invocation,
++        None,
++    )
+--- /dev/null
++++ b/src/jimu_runtime/inspection/perception/context.py
+@@ -0,0 +1,307 @@
++"""N01 freezes the trusted Task, source revisions and admitted Region context."""
++
++from dataclasses import dataclass
++
++from jimu_runtime.bundle.artifacts import DRAFT_2020_12
++from jimu_runtime.domain.definition_enums import ContextProvenanceSource
++from jimu_runtime.domain.definition_support import ContextSchemaRef
++from jimu_runtime.domain.definitions.geometry import GeometryResourceDefinition
++from jimu_runtime.domain.definitions.ontology import RegionDefinition
++from jimu_runtime.domain.definitions.resources import StaticAssetDescriptor
++from jimu_runtime.domain.nodes.context import (
++    ContextBuildInput,
++    FailedContextBuild,
++    RequiredContextFailureReport,
++    SuccessfulContextBuild,
++    UsableContextReport,
++)
++from jimu_runtime.domain.nodes.envelopes import NodeError, NodeInputEnvelope
++from jimu_runtime.domain.policies import ContextProvenancePolicyArtifact
++from jimu_runtime.domain.runtime.executions import NodeId
++from jimu_runtime.domain.runtime.facts import PolicyContentRef
++from jimu_runtime.domain.runtime.intake import (
++    ContextSnapshot,
++    ContextValue,
++    ContextValueProvenance,
++    RegionDefinitionProvenance,
++    TaskMetadataProvenance,
++)
++from jimu_runtime.domain.schema_types import FieldSelector
++from jimu_runtime.domain.validation.issues import ValidationIssue
++from jimu_runtime.domain.validation.schema_descriptors import resolve_field
++from jimu_runtime.domain.values import (
++    ListTypeDefinition,
++    RecordTypeDefinition,
++    RecordValue,
++    TypeDefinition,
++    Value,
++    validate_typed_value,
++)
++from jimu_runtime.inspection.geometry.region import verify_parking_area
++from jimu_runtime.inspection.perception.model import (
++    issue,
++    node_output,
++    original_frame,
++    runtime_id,
++)
++from jimu_runtime.workflow.mock_context import snapshot_artifact, snapshot_ref
++from jimu_runtime.workflow.mock_support import VERSION, K, artifact
++from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
++from jimu_runtime.workflow.worker_nodes import NodeResult
++from jimu_runtime.workflow.worker_records import ContextMessage
++
++
++def _region_inputs(claimed: ClaimedNode) -> dict[str, object]:
++    opened = claimed.opened
++    scope = opened.scope
++    region = scope.resolve(opened.region_ref, RegionDefinition)
++    if region != opened.region or region.geometry_ref is None:
++        raise ValueError("verified Region geometry is unavailable")
++    geometry = scope.resolve(region.geometry_ref, GeometryResourceDefinition)
++    source = scope.catalogue.resolve(geometry.provenance.source_asset_ref)
++    if (
++        not isinstance(source.value, StaticAssetDescriptor)
++        or source.asset_bytes is None
++    ):
++        raise ValueError("verified Region geometry asset is unavailable")
++    area = verify_parking_area(
++        region_ref=opened.region_ref,
++        region=region,
++        geometry_ref=region.geometry_ref,
++        geometry=geometry,
++        source=source.value,
++        source_bytes=source.asset_bytes,
++        coordinates=original_frame(scope),
++    )
++    return {"parking_area": area.model_dump(mode="python")}
++
++
++def _typed_raw(definition: TypeDefinition, raw: object) -> object:
++    if isinstance(definition, RecordTypeDefinition):
++        if not isinstance(raw, dict):
++            raise ValueError("configured context field requires a record")
++        schemas = {field.name: field.type_definition for field in definition.fields}
++        if not raw.keys() <= schemas.keys():
++            raise ValueError("configured context field contains undeclared fields")
++        raw = {key: _typed_raw(schemas[key], value) for key, value in raw.items()}
++    elif isinstance(definition, ListTypeDefinition):
++        if (
++            not isinstance(raw, (list, tuple))
++            or not definition.min_items <= len(raw) <= definition.max_items
++        ):
++            raise ValueError("configured context list falls outside its declared shape")
++        raw = tuple(_typed_raw(definition.item_type, member) for member in raw)
++    return {"kind": definition.kind, "value": raw}
++
++
++def _task_value(metadata: RecordValue, path: tuple[str, ...]) -> Value | None:
++    value: Value | None = metadata
++    for part in path:
++        if not isinstance(value, RecordValue):
++            return None
++        value = value.value.get(part)
++    return value
++
++
++@dataclass(frozen=True, slots=True)
++class _ContextFields:
++    values: tuple[ContextValue, ...]
++    required: tuple[ValidationIssue, ...]
++    optional: tuple[ValidationIssue, ...]
++
++
++def _fields(claimed: ClaimedNode, inputs: ContextBuildInput) -> _ContextFields:
++    scope = claimed.opened.scope
++    policy = scope.resolve(
++        inputs.context_provenance_policy_ref, ContextProvenancePolicyArtifact
++    ).policy
++    region_data = None
++    if any(
++        ContextProvenanceSource.REGION_DEFINITION in field.allowed_sources
++        for field in policy.fields
++    ):
++        try:
++            region_data = _region_inputs(claimed)
++        except ValueError:
++            # A missing proof of same-frame geometry must leave the context absent.
++            pass
++    values: list[ContextValue] = []
++    required: list[ValidationIssue] = []
++    optional: list[ValidationIssue] = []
++    for entry in policy.fields:
++        path = entry.field_path
++        if entry.schema_ref != inputs.context_schema_ref or not path:
++            raise AdapterRejected("perception.context_schema_pin_mismatch")
++        diagnostics = required if entry.required else optional
++        if entry.time_sensitive:
++            diagnostics.append(
++                issue(
++                    "perception.context_time_proof_unavailable",
++                    "No time proof is available for the configured field.",
++                    path,
++                )
++            )
++            continue
++        definition = resolve_field(
++            FieldSelector(schema_ref=entry.schema_ref, field_path=path),
++            scope.schema_descriptors,
++        ).type_definition
++        candidates: list[ContextValue] = []
++        unavailable = False
++        for source in entry.allowed_sources:
++            raw: object
++            provenance: ContextValueProvenance
++            if source is ContextProvenanceSource.TRUSTED_TASK_METADATA:
++                raw = _task_value(scope.task.context.metadata, path)
++                provenance = TaskMetadataProvenance(
++                    source=source, task_id=scope.task.task_id
++                )
++            elif source is ContextProvenanceSource.REGION_DEFINITION:
++                raw = region_data
++                for part in path:
++                    raw = raw.get(part) if isinstance(raw, dict) else None
++                if raw is not None:
++                    try:
++                        raw = _typed_raw(definition, raw)
++                    except ValueError:
++                        unavailable = True
++                        continue
++                provenance = RegionDefinitionProvenance(
++                    source=source, region_ref=inputs.region_ref
++                )
++            else:
++                continue
++            if raw is None:
++                continue
++            try:
++                value = validate_typed_value(definition, raw)
++            except ValueError:
++                unavailable = True
++            else:
++                candidates.append(
++                    ContextValue(field_path=path, value=value, provenance=provenance)
++                )
++        if candidates and any(
++            row.value != candidates[0].value for row in candidates[1:]
++        ):
++            required.append(
++                issue(
++                    "perception.context_source_conflict",
++                    "Declared sources disagree on the context field.",
++                    path,
++                )
++            )
++        elif unavailable:
++            diagnostics.append(
++                issue(
++                    "perception.context_field_invalid",
++                    "The context value does not satisfy its pinned field type.",
++                    path,
++                )
++            )
++        elif candidates:
++            values.append(candidates[0])
++        else:
++            diagnostics.append(
++                issue(
++                    "perception.context_field_unavailable",
++                    "A trusted value is unavailable for the configured context field.",
++                    path,
++                )
++            )
++    return _ContextFields(tuple(values), tuple(required), tuple(optional))
++
++
++def build_context(claimed: ClaimedNode, envelope: NodeInputEnvelope) -> NodeResult:
++    opened = claimed.opened
++    scope = opened.scope
++    started = claimed.attempt.started_at
++    if started is None:
++        raise AdapterRejected("perception.context_attempt_not_started")
++    scope.check_call(envelope, NodeId.N01, started).check_upstream(
++        artifact(K.TASK, scope.task.task_id, scope.task)
++    )
++    inputs = ContextBuildInput(
++        schema_version=VERSION,
++        envelope=envelope,
++        accepted_task=scope.task,
++        media_asset=scope.media,
++        device_ref=opened.source.device,
++        camera_ref=opened.source.camera,
++        region_ref=opened.region_ref,
++        context_schema_ref=ContextSchemaRef.model_validate(
++            {
++                **opened.region.context_schema_ref.model_dump(),
++                "schema_dialect": DRAFT_2020_12,
++            }
++        ),
++        context_provenance_policy_ref=PolicyContentRef.model_validate(
++            opened.resolved.policy.context_provenance_policy_ref.model_dump()
++        ),
++    )
++    fields = _fields(claimed, inputs)
++    if fields.required:
++        first = fields.required[0]
++        failed = FailedContextBuild(
++            schema_version=VERSION,
++            envelope=node_output(
++                claimed,
++                (),
++                (),
++                NodeError(
++                    code=first.code,
++                    error_class="validation",
++                    retryable=False,
++                    message=first.message,
++                    validation_issues=fields.required,
++                ),
++            ),
++            disposition="required_context_failure",
++            validation_report=RequiredContextFailureReport(
++                disposition="required_context_failure",
++                required_issues=fields.required,
++                optional_issues=fields.optional,
++            ),
++        )
++        failed.check_invocation(inputs)
++        return NodeResult(
++            ContextMessage(
++                schema_version=VERSION, inputs=inputs, output=failed, snapshot=None
++            ),
++            (),
++        )
++    snapshot = ContextSnapshot(
++        schema_version=VERSION,
++        context_snapshot_id=runtime_id(envelope, "context"),
++        execution_id=scope.execution_id,
++        task_id=scope.task.task_id,
++        release_id=scope.pins.release_id,
++        bundle_digest=scope.pins.bundle_digest,
++        media_ref=scope.media.media_ref,
++        device_ref=inputs.device_ref,
++        camera_ref=inputs.camera_ref,
++        region_ref=inputs.region_ref,
++        context_schema_ref=inputs.context_schema_ref,
++        context_provenance_policy_ref=inputs.context_provenance_policy_ref,
++        clock=scope.task.context.clock,
++        values=fields.values,
++        created_at=started,
++    )
++    item = snapshot_artifact(snapshot)
++    output = SuccessfulContextBuild(
++        schema_version=VERSION,
++        envelope=node_output(claimed, (item,), ()),
++        disposition="usable",
++        validation_report=UsableContextReport(
++            disposition="usable", optional_issues=fields.optional
++        ),
++        context_snapshot_ref=snapshot_ref(snapshot),
++        context_snapshot_digest=item.pin.digest,
++    )
++    output.check_snapshot(inputs, snapshot)
++    return NodeResult(
++        ContextMessage(
++            schema_version=VERSION, inputs=inputs, output=output, snapshot=snapshot
++        ),
++        (item,),
++    )
+--- /dev/null
++++ b/src/jimu_runtime/inspection/perception/discovery.py
+@@ -0,0 +1,261 @@
++"""N02 discovers eligible Profiles and preserves the declared Question set."""
++
++from jimu_runtime.domain.definition_enums import ModelCapability
++from jimu_runtime.domain.definitions.capabilities import (
++    ModelBindingContentRef,
++    ProfileDefinition,
++)
++from jimu_runtime.domain.definitions.models import (
++    PolicyContentRef as SelectionPolicyRef,
++)
++from jimu_runtime.domain.fact_selectors import QuestionContentRef
++from jimu_runtime.domain.nodes.discovery import (
++    DiscoveryAttemptOutput,
++    DiscoveryInput,
++    ProfileHit,
++)
++from jimu_runtime.domain.nodes.envelopes import NodeError, NodeInputEnvelope
++from jimu_runtime.domain.policies import QuestionSelectionPolicyArtifact
++from jimu_runtime.domain.runtime.facts import (
++    PolicyContentRef,
++    ProfileContentRef,
++    QuestionSelectionRef,
++)
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.runtime.selection import AllDeclaredSelectionRecord
++from jimu_runtime.gateway.bridge import CapabilityGateway, ModelCall
++from jimu_runtime.inspection.perception.model import (
++    DiscoveryReply,
++    ModelAccess,
++    associated_invocation,
++    build_chat_contract,
++    checked_reply,
++    failed_request,
++    gateway_binding,
++    image_input,
++    invocation_ref,
++    node_output,
++    prepare_binding,
++    runtime_id,
++)
++from jimu_runtime.workflow.mock_context import snapshot_artifact
++from jimu_runtime.workflow.mock_support import (
++    VERSION,
++    K,
++    VerifiedExecutionScope,
++    artifact,
++)
++from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
++from jimu_runtime.workflow.worker_nodes import NodeResult, discovery_inputs
++from jimu_runtime.workflow.worker_records import DiscoveryMessage
++
++
++def _question_partitions(
++    scope: VerifiedExecutionScope, profile: ProfileDefinition, ref: PolicyContentRef
++) -> tuple[tuple[QuestionContentRef, ...], tuple[QuestionContentRef, ...]]:
++    policy = scope.resolve(ref, QuestionSelectionPolicyArtifact).policy
++    if policy.mode != "all_declared":
++        raise AdapterRejected("perception.unsupported_question_selection")
++    configured = profile.question_refs
++    mandatory, optional = (
++        set(policy.mandatory_question_refs),
++        set(policy.optional_question_refs),
++    )
++    if set(configured) != mandatory | optional:
++        raise AdapterRejected("perception.invalid_question_partition")
++    for question in configured:
++        scope.catalogue.resolve(question)
++    return (
++        tuple(question for question in configured if question in mandatory),
++        tuple(question for question in configured if question in optional),
++    )
++
++
++async def discover(
++    claimed: ClaimedNode,
++    envelope: NodeInputEnvelope,
++    gateway: CapabilityGateway,
++    access: ModelAccess,
++) -> NodeResult:
++    opened, previous = claimed.opened, claimed.previous
++    scope = opened.scope
++    inputs = discovery_inputs(opened, previous, envelope)
++    gate = previous.gate
++    started = claimed.attempt.started_at
++    if gate is None or started is None:
++        raise AdapterRejected("perception.discovery_inputs_unavailable")
++    inputs.check_gate(gate.evaluation)
++    profiles = tuple(
++        scope.resolve(ref, ProfileDefinition) for ref in inputs.eligible_profiles
++    )
++    inputs.check_profiles(profiles)
++    snapshot = previous.snapshot()
++    scope.check_snapshot(snapshot, inputs.context_snapshot_ref)
++    scoped_call = scope.check_call(envelope, envelope.node_id, started)
++    scoped_call.check_upstream(
++        snapshot_artifact(snapshot),
++        artifact(
++            K.PROFILE_ELIGIBILITY_EVALUATION,
++            gate.evaluation.evaluation_id,
++            gate.evaluation,
++        ),
++    )
++    groups: dict[ModelBindingContentRef, list[ProfileContentRef]] = {}
++    partitions = {}
++    for entry, profile in zip(inputs.bindings, profiles, strict=True):
++        partitions[entry.profile_ref] = _question_partitions(
++            scope, profile, entry.question_selection_policy_ref
++        )
++        groups.setdefault(entry.discovery_binding_ref, []).append(entry.profile_ref)
++    image = await access.image(scope)
++    invocations: list[ModelInvocation] = []
++    accepted: dict[ProfileContentRef, ModelInvocation] = {}
++    completed = 0
++    failure: NodeError | None = None
++    for ref, group in groups.items():
++        purpose = ModelCapability.PROFILE_DISCOVERY
++        binding = prepare_binding(scope, ref, purpose)
++        if any(
++            entry.prompt_template_ref != binding.definition.prompt_template_ref
++            for entry in inputs.bindings
++            if entry.discovery_binding_ref == ref
++        ):
++            raise AdapterRejected("perception.discovery_prompt_pin_mismatch")
++        by_id = {profile.artifact_id: profile for profile in group}
++        if len(by_id) != len(group):
++            raise AdapterRejected("perception.ambiguous_profile_ids")
++        contract = build_chat_contract(scope, ref)
++        call = ModelCall(
++            binding_ref=gateway_binding(ref),
++            purposes=(purpose,),
++            profile_refs=tuple(group),
++            prompt=binding.prompt(
++                image_input(scope), {"eligible_profile_ids": list(by_id)}
++            ),
++            resource_scope_id=access.resource_scope_id,
++            image=image,
++        )
++        result = await gateway.invoke_model(claimed, call)
++        invocation = associated_invocation(claimed, call, result)
++        if invocation is not None:
++            invocations.append(invocation)
++        if result.output is None:
++            error = failed_request(result, "perception.discovery_unavailable")
++            if failure is None or error.retryable:
++                failure = error
++            continue
++        assert invocation is not None
++        try:
++            proposed = checked_reply(result, contract, DiscoveryReply).profile_hits
++            if set(proposed) - by_id.keys() or len(set(proposed)) != len(proposed):
++                raise AdapterRejected("perception.invalid_profile_proposal")
++        except AdapterRejected as exc:
++            # A semantically invalid successful wire reply cannot satisfy the gate.
++            failure = failed_request(result, exc.code)
++            accepted.clear()
++            completed = 0
++            break
++        completed += 1
++        accepted.update((by_id[name], invocation) for name in proposed)
++    return _discovery_result(
++        claimed, inputs, tuple(invocations), accepted, partitions, completed, failure
++    )
++
++
++def _discovery_result(
++    claimed: ClaimedNode,
++    inputs: DiscoveryInput,
++    invocations: tuple[ModelInvocation, ...],
++    accepted: dict[ProfileContentRef, ModelInvocation],
++    partitions: dict[
++        ProfileContentRef,
++        tuple[tuple[QuestionContentRef, ...], tuple[QuestionContentRef, ...]],
++    ],
++    completed: int,
++    failure: NodeError | None,
++) -> NodeResult:
++    selections = []
++    hits = []
++    for item in inputs.bindings:
++        ref = item.profile_ref
++        if (invocation := accepted.get(ref)) is None:
++            continue
++        profile = claimed.opened.scope.resolve(ref, ProfileDefinition)
++        mandatory, optional = partitions[ref]
++        env = inputs.envelope
++        selection = AllDeclaredSelectionRecord(
++            schema_version=VERSION,
++            selection_id=runtime_id(env, "questions", ref.stable_json()),
++            execution_id=env.execution_id,
++            profile_ref=ref,
++            policy_ref=SelectionPolicyRef.model_validate(
++                item.question_selection_policy_ref.model_dump()
++            ),
++            configured_question_refs=profile.question_refs,
++            mandatory_question_refs=mandatory,
++            proposed_optional_question_refs=(),
++            selected_optional_question_refs=optional,
++            effective_question_refs=profile.question_refs,
++            excluded_question_reasons=(),
++            context_snapshot_ref=inputs.context_snapshot_ref,
++            context_snapshot_digest=inputs.context_snapshot_digest,
++            node_run_id=env.node_run_id,
++            attempt_id=env.attempt_id,
++            discovery_model_invocation_ref=invocation_ref(invocation),
++            validation_issues=(),
++            created_at=invocation.completed_at,
++            method="all_declared",
++            fallback_applied=False,
++        )
++        selections.append(selection)
++        hits.append(
++            ProfileHit(
++                profile_ref=ref,
++                question_selection_ref=QuestionSelectionRef(
++                    record_kind=K.QUESTION_SELECTION_RECORD,
++                    record_id=selection.selection_id,
++                ),
++                effective_question_refs=selection.effective_question_refs,
++                model_invocation_ref=invocation_ref(invocation),
++            )
++        )
++    artifacts = (
++        *(
++            artifact(K.MODEL_INVOCATION, row.model_invocation_id, row)
++            for row in invocations
++        ),
++        *(
++            artifact(K.QUESTION_SELECTION_RECORD, row.selection_id, row)
++            for row in selections
++        ),
++    )
++    refs = tuple(invocation_ref(row) for row in invocations)
++    output = DiscoveryAttemptOutput(
++        schema_version=VERSION,
++        execution_id=inputs.envelope.execution_id,
++        outcome="failed"
++        if not completed
++        else "partial"
++        if failure
++        else "hits"
++        if hits
++        else "no_hits",
++        envelope=node_output(
++            claimed, artifacts, invocations, failure if not completed else None
++        ),
++        profile_hits=tuple(hits),
++        diagnostics=(),
++        model_invocation_refs=refs,
++    )
++    output.check_records(inputs, tuple(selections), invocations)
++    return NodeResult(
++        DiscoveryMessage(
++            schema_version=VERSION,
++            inputs=inputs,
++            output=output,
++            selections=tuple(selections),
++            invocations=invocations,
++        ),
++        artifacts,
++        refs,
++    )
+--- /dev/null
++++ b/src/jimu_runtime/inspection/perception/grounding.py
+@@ -0,0 +1,270 @@
++"""N03 creates Objects from independently dispatched Profile grounding."""
++
++from jimu_runtime.bundle.schema_validation import compile_offline_response_schema
++from jimu_runtime.domain.definition_enums import ModelCapability
++from jimu_runtime.domain.definitions.capabilities import (
++    ModelGroundingBinding,
++    ProfileDefinition,
++)
++from jimu_runtime.domain.nodes.envelopes import NodeError, NodeInputEnvelope
++from jimu_runtime.domain.nodes.grounding import (
++    GroundingInput,
++    GroundingOutput,
++    GroundingProfileInput,
++)
++from jimu_runtime.domain.references import SchemaRef
++from jimu_runtime.domain.runtime.facts import ObjectRef
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.runtime.media import BBoxXYXY
++from jimu_runtime.domain.runtime.perception import (
++    GroundingOutcome,
++    GroundingRecord,
++    GroundingRecordRef,
++    ModelGroundingProvenance,
++    ObjectRecord,
++)
++from jimu_runtime.domain.tool_mappings import ImageInput
++from jimu_runtime.gateway.bridge import (
++    CapabilityGateway,
++    ModelCall,
++    require_model_output,
++)
++from jimu_runtime.inspection.perception.model import (
++    GroundingReply,
++    ModelAccess,
++    associated_invocation,
++    build_chat_contract,
++    checked_reply,
++    failed_request,
++    gateway_binding,
++    image_input,
++    invocation_ref,
++    node_output,
++    original_frame,
++    prepare_binding,
++    runtime_id,
++    schema_resource,
++)
++from jimu_runtime.workflow.mock_support import VERSION, K, artifact
++from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
++from jimu_runtime.workflow.worker_nodes import NodeResult
++from jimu_runtime.workflow.worker_records import GroundingMessage
++
++
++def _verify_image_binding(
++    claimed: ClaimedNode, binding: ModelGroundingBinding, input_schema: SchemaRef
++) -> None:
++    entries = binding.input_bindings or ()
++    if len(entries) != 1:
++        raise AdapterRejected("perception.unsupported_grounding_inputs")
++    (entry,) = entries
++    if (
++        not isinstance(entry.source, ImageInput)
++        or entry.source.selector.field_path != ()
++        or entry.target.schema_ref != input_schema
++        or entry.target.field_path != ("image",)
++        or not entry.required
++        or entry.on_missing != "block"
++    ):
++        raise AdapterRejected("perception.unsupported_grounding_inputs")
++    scope = claimed.opened.scope
++    resource = schema_resource(scope, entry.source.selector.schema_ref)
++    compile_offline_response_schema(resource.document).validate(
++        image_input(scope)["image"]
++    )
++
++
++async def ground(
++    claimed: ClaimedNode,
++    envelope: NodeInputEnvelope,
++    gateway: CapabilityGateway,
++    access: ModelAccess,
++) -> NodeResult:
++    scope = claimed.opened.scope
++    discovery = claimed.previous.discovery
++    started = claimed.attempt.started_at
++    if discovery is None or started is None:
++        raise AdapterRejected("perception.grounding_inputs_unavailable")
++    checked = discovery.result()
++    checked.output.check_records(
++        discovery.inputs, checked.selections, checked.invocations
++    )
++    scope.check_call(envelope, envelope.node_id, started).check_upstream(
++        *checked.artifacts
++    )
++    hits = discovery.output.profile_hits
++    definitions = tuple(
++        scope.resolve(hit.profile_ref, ProfileDefinition) for hit in hits
++    )
++    frame = original_frame(scope)
++    inputs = GroundingInput(
++        schema_version=VERSION,
++        envelope=envelope,
++        original_media_ref=scope.media.media_ref,
++        original_coordinate_system=frame,
++        profiles=tuple(
++            GroundingProfileInput(hit=hit, grounding_binding=profile.grounding_binding)
++            for hit, profile in zip(hits, definitions, strict=True)
++        ),
++    )
++    inputs.check_discovery(checked.output)
++    inputs.check_profiles(definitions)
++    image = await access.image(scope)
++    records: list[GroundingRecord] = []
++    objects: list[ObjectRecord] = []
++    invocations: list[ModelInvocation] = []
++    failure: NodeError | None = None
++    for entry, profile in zip(inputs.profiles, definitions, strict=True):
++        hit, grounding = entry.hit, entry.grounding_binding
++        if not isinstance(grounding, ModelGroundingBinding):
++            raise AdapterRejected("perception.unsupported_grounding_binding")
++        ref, purpose = grounding.model_binding_ref, ModelCapability.OBJECT_GROUNDING
++        binding = prepare_binding(scope, ref, purpose)
++        _verify_image_binding(claimed, grounding, binding.definition.input_schema_ref)
++        contract = build_chat_contract(scope, ref)
++        call = ModelCall(
++            binding_ref=gateway_binding(ref),
++            purposes=(purpose,),
++            profile_refs=(hit.profile_ref,),
++            prompt=binding.prompt(
++                image_input(scope), {"profile_id": hit.profile_ref.artifact_id}
++            ),
++            resource_scope_id=access.resource_scope_id,
++            image=image,
++        )
++        result = await gateway.invoke_model(claimed, call)
++        invocation = associated_invocation(claimed, call, result)
++        if invocation is None:
++            require_model_output(result)
++            raise AdapterRejected("perception.grounding_invocation_missing")
++        invocations.append(invocation)
++        error = None
++        boxes: tuple[BBoxXYXY, ...] = ()
++        if result.output is None:
++            error = failed_request(result, "perception.grounding_unavailable")
++        else:
++            try:
++                boxes = tuple(checked_reply(result, contract, GroundingReply).boxes)
++                for box in boxes:
++                    box.validate_bounds(frame.dimensions)
++            except ValueError:
++                boxes = ()
++                error = failed_request(result, "perception.invalid_grounding_boxes")
++        if error is not None and (failure is None or error.retryable):
++            failure = error
++        record, new_objects = _profile_objects(
++            inputs, entry, profile, grounding, invocation, boxes, error
++        )
++        records.append(record)
++        objects.extend(new_objects)
++    artifacts = (
++        *(
++            artifact(K.GROUNDING_RECORD, row.grounding_record_id, row)
++            for row in records
++        ),
++        *(artifact(K.OBJECT, row.object_id, row) for row in objects),
++        *(
++            artifact(K.MODEL_INVOCATION, row.model_invocation_id, row)
++            for row in invocations
++        ),
++    )
++    output = GroundingOutput(
++        schema_version=VERSION,
++        envelope=node_output(
++            claimed,
++            artifacts,
++            tuple(invocations),
++            failure
++            if all(row.outcome is GroundingOutcome.FAILED for row in records)
++            else None,
++        ),
++        profile_results=tuple(row.as_profile_result() for row in records),
++    )
++    output.check_records(
++        inputs,
++        tuple(records),
++        tuple(objects),
++        checked.selections,
++        tuple(invocations),
++        definitions,
++    )
++    return NodeResult(
++        GroundingMessage(
++            schema_version=VERSION,
++            inputs=inputs,
++            output=output,
++            records=tuple(records),
++            objects=tuple(objects),
++            invocations=tuple(invocations),
++        ),
++        artifacts,
++        tuple(invocation_ref(row) for row in invocations),
++    )
++
++
++def _profile_objects(
++    inputs: GroundingInput,
++    entry: GroundingProfileInput,
++    profile: ProfileDefinition,
++    grounding: ModelGroundingBinding,
++    invocation: ModelInvocation,
++    boxes: tuple[BBoxXYXY, ...],
++    error: NodeError | None,
++) -> tuple[GroundingRecord, tuple[ObjectRecord, ...]]:
++    hit, env = entry.hit, inputs.envelope
++    record_ref = GroundingRecordRef(
++        record_kind=K.GROUNDING_RECORD,
++        record_id=runtime_id(env, "grounding", hit.profile_ref.stable_json()),
++    )
++    producer = ModelGroundingProvenance(
++        kind="model",
++        model_binding_ref=grounding.model_binding_ref,
++        model_invocation_ref=invocation_ref(invocation),
++    )
++    objects = tuple(
++        ObjectRecord(
++            schema_version=VERSION,
++            object_id=runtime_id(
++                env, "object", hit.profile_ref.stable_json(), str(index)
++            ),
++            execution_id=env.execution_id,
++            entity_ref=profile.entity_ref,
++            grounding_record_ref=record_ref,
++            source_media_ref=inputs.original_media_ref,
++            coordinate_system=inputs.original_coordinate_system,
++            bbox=box,
++            grounding_producer=producer,
++            visibility="unknown",
++            localization_status="localized",
++            evidence_refs=(),
++            profile_ref=hit.profile_ref,
++            question_selection_ref=hit.question_selection_ref,
++            effective_question_refs=hit.effective_question_refs,
++        )
++        for index, box in enumerate(boxes)
++    )
++    return GroundingRecord(
++        schema_version=VERSION,
++        grounding_record_id=record_ref.record_id,
++        execution_id=env.execution_id,
++        node_run_id=env.node_run_id,
++        attempt_id=env.attempt_id,
++        grounding_binding=grounding,
++        source_media_ref=inputs.original_media_ref,
++        coordinate_system=inputs.original_coordinate_system,
++        transforms=(),
++        outcome=GroundingOutcome.FAILED
++        if error
++        else GroundingOutcome.OBJECTS
++        if objects
++        else GroundingOutcome.NO_TARGET,
++        object_refs=tuple(
++            ObjectRef(record_kind=K.OBJECT, record_id=obj.object_id) for obj in objects
++        ),
++        evidence_refs=(),
++        producer=producer,
++        validation_issues=() if error is None else error.validation_issues,
++        profile_ref=hit.profile_ref,
++        question_selection_ref=hit.question_selection_ref,
++        effective_question_refs=hit.effective_question_refs,
++    ), objects
+--- /dev/null
++++ b/src/jimu_runtime/inspection/perception/model.py
+@@ -0,0 +1,360 @@
++"""Release-pinned model preparation and exact dispatch association."""
++
++from collections.abc import Awaitable, Callable
++from dataclasses import dataclass
++from datetime import timedelta
++from typing import Annotated, Literal
++
++from pydantic import Field, TypeAdapter
++
++from jimu_runtime.bundle.artifacts import SchemaResource
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.bundle.schema_validation import compile_offline_response_schema
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_enums import ModelCapability
++from jimu_runtime.domain.definition_support import reference_identity
++from jimu_runtime.domain.definitions.capabilities import ModelBindingContentRef
++from jimu_runtime.domain.definitions.models import ModelBinding
++from jimu_runtime.domain.definitions.models import (
++    ModelBindingContentRef as GatewayBindingRef,
++)
++from jimu_runtime.domain.definitions.prompts import (
++    PromptTemplateContentRef,
++    PromptTemplateDefinition,
++    placeholder_names,
++)
++from jimu_runtime.domain.enums import NodeRunStatus
++from jimu_runtime.domain.fact_schemas.canonicalization import JSONValue, canonical_bytes
++from jimu_runtime.domain.fact_selectors import QuestionContentRef
++from jimu_runtime.domain.nodes.envelopes import (
++    FailedNodeOutput,
++    NodeError,
++    NodeInputEnvelope,
++    NodeOutputEnvelope,
++    SucceededNodeOutput,
++)
++from jimu_runtime.domain.primitives import ArtifactId
++from jimu_runtime.domain.references import ContentRef, SchemaRef
++from jimu_runtime.domain.runtime.facts import ModelInvocationRef
++from jimu_runtime.domain.runtime.invocations import ModelInvocation, SucceededInvocation
++from jimu_runtime.domain.runtime.media import BBoxXYXY, CoordinateSystem
++from jimu_runtime.domain.validation.issues import ValidationIssue
++from jimu_runtime.gateway.bridge import ModelCall, require_model_output
++from jimu_runtime.gateway.http_wire import ChatContract, VerifiedImage, strict_json
++from jimu_runtime.gateway.invocation import DispatchOutcome
++from jimu_runtime.workflow.mock_support import (
++    K,
++    SyntheticArtifact,
++    VerifiedExecutionScope,
++)
++from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
++
++
++class DiscoveryReply(ContractModel):
++    profile_hits: Annotated[list[ArtifactId], Field(max_length=1024)]
++
++
++class GroundingReply(ContractModel):
++    boxes: Annotated[list[BBoxXYXY], Field(max_length=1024)]
++
++
++class CandidateScore(ContractModel):
++    category_id: ArtifactId
++    score: Annotated[float, Field(allow_inf_nan=False)]
++
++
++class CandidateReply(ContractModel):
++    categories: Annotated[list[CandidateScore], Field(max_length=1024)]
++
++
++class ObservationReply(ContractModel):
++    """The exact dynamic slot list is supplied by the admitted Schema."""
++
++
++_RESPONSE_MODELS: dict[ModelCapability, type[ContractModel]] = {
++    ModelCapability.PROFILE_DISCOVERY: DiscoveryReply,
++    ModelCapability.OBJECT_GROUNDING: GroundingReply,
++    ModelCapability.OBJECT_OBSERVATION: ObservationReply,
++    ModelCapability.CANDIDATE_PREDICTION: CandidateReply,
++}
++_RESOURCE_SCOPE = TypeAdapter(ArtifactId)
++
++
++def _schema(
++    scope: VerifiedExecutionScope, ref: ContentRef
++) -> tuple[SchemaResource, bytes]:
++    member = scope.catalogue.resolve(ref)
++    if (
++        not isinstance(member.value, SchemaResource)
++        or sha256_digest(member.canonical_bytes) != ref.digest
++    ):
++        raise AdapterRejected("perception.schema_pin_mismatch")
++    return member.value, member.canonical_bytes
++
++
++def build_chat_contract(
++    scope: VerifiedExecutionScope,
++    binding_ref: ModelBindingContentRef,
++    effective_questions: tuple[QuestionContentRef, ...] = (),
++) -> ChatContract:
++    """Register stock HTTP against the exact admitted binding and schema bytes."""
++    binding = scope.resolve(binding_ref, ModelBinding)
++    model = _RESPONSE_MODELS.get(binding.capability)
++    if model is None or bool(effective_questions) != (
++        binding.capability is ModelCapability.OBJECT_OBSERVATION
++    ):
++        raise AdapterRejected("perception.unsupported_model_contract")
++    _schema(scope, binding.input_schema_ref)
++    _, raw = _schema(scope, binding.output_schema_ref)
++    for ref in effective_questions:
++        scope.catalogue.resolve(ref)
++    return ChatContract(
++        input_schema_ref=binding.input_schema_ref,
++        output_schema_ref=binding.output_schema_ref,
++        response_model=model,
++        accepts_image=True,
++        response_schema=raw,
++        question_slots=tuple(ref.artifact_id for ref in effective_questions),
++    )
++
++
++def schema_resource(scope: VerifiedExecutionScope, ref: ContentRef) -> SchemaResource:
++    return _schema(scope, ref)[0]
++
++
++def response_schema_bytes(scope: VerifiedExecutionScope, ref: SchemaRef) -> bytes:
++    return _schema(scope, ref)[1]
++
++
++def literal_prompt(
++    scope: VerifiedExecutionScope,
++    ref: PromptTemplateContentRef,
++    purpose: ModelCapability,
++    response_schema_ref: SchemaRef,
++) -> str:
++    template = scope.resolve(ref, PromptTemplateDefinition)
++    if (
++        template.purpose is not purpose
++        or reference_identity(template.response_schema_ref)
++        != reference_identity(response_schema_ref)
++        or template.variables
++        or template.partial_refs
++        or placeholder_names(template.template_text)
++    ):
++        raise AdapterRejected("perception.unsupported_prompt_contract")
++    return template.template_text.replace("{{", "{").replace("}}", "}")
++
++
++@dataclass(frozen=True, slots=True)
++class PreparedBinding:
++    scope: VerifiedExecutionScope
++    definition: ModelBinding
++    template: str
++
++    def prompt(
++        self, model_input: dict[str, JSONValue], instructions: dict[str, JSONValue]
++    ) -> str:
++        schema, _ = _schema(self.scope, self.definition.input_schema_ref)
++        compile_offline_response_schema(schema.document).validate(model_input)
++        return "\n".join(
++            (
++                self.template,
++                canonical_bytes(model_input).decode("utf-8"),
++                canonical_bytes(instructions).decode("utf-8"),
++            )
++        )
++
++
++def prepare_binding(
++    scope: VerifiedExecutionScope,
++    ref: ModelBindingContentRef,
++    purpose: ModelCapability,
++) -> PreparedBinding:
++    definition = scope.resolve(ref, ModelBinding)
++    _schema(scope, definition.output_schema_ref)
++    if definition.capability is not purpose or definition.prompt_template_ref is None:
++        raise AdapterRejected("perception.model_binding_purpose_mismatch")
++    return PreparedBinding(
++        scope,
++        definition,
++        literal_prompt(
++            scope, definition.prompt_template_ref, purpose, definition.output_schema_ref
++        ),
++    )
++
++
++type ImageLoader = Callable[[VerifiedExecutionScope], Awaitable[VerifiedImage]]
++
++
++@dataclass(frozen=True, slots=True)
++class ModelAccess:
++    load_image: ImageLoader
++    resource_scope_id: ArtifactId
++
++    def __post_init__(self) -> None:
++        _RESOURCE_SCOPE.validate_python(self.resource_scope_id)
++
++    async def image(self, scope: VerifiedExecutionScope) -> VerifiedImage:
++        media = scope.media
++        image = await self.load_image(scope)
++        if (
++            not isinstance(image, VerifiedImage)
++            or type(image.content) is not bytes
++            or image.sha256 != media.media_ref.sha256
++            or image.media_type != media.mime_type
++            or len(image.content) != media.byte_size
++            or sha256_digest(image.content) != image.sha256
++        ):
++            raise AdapterRejected("perception.original_media_mismatch")
++        return image
++
++
++def image_input(scope: VerifiedExecutionScope) -> dict[str, JSONValue]:
++    media = scope.media.media_ref
++    return {"image": {"media_id": media.media_id, "sha256": media.sha256}}
++
++
++def original_frame(scope: VerifiedExecutionScope) -> CoordinateSystem:
++    return CoordinateSystem(
++        coordinate_system_id=scope.media.media_ref.media_id,
++        frame="original_image",
++        dimensions=scope.media.dimensions,
++    )
++
++
++def invocation_ref(record: ModelInvocation) -> ModelInvocationRef:
++    return ModelInvocationRef(
++        record_kind=K.MODEL_INVOCATION, record_id=record.model_invocation_id
++    )
++
++
++def associated_invocation(
++    claimed: ClaimedNode, call: ModelCall, result: DispatchOutcome
++) -> ModelInvocation | None:
++    invocation = result.invocation
++    if invocation is None:
++        if result.output is not None:
++            raise AdapterRejected("perception.output_without_invocation")
++        return None
++    if (
++        invocation.execution_id != claimed.opened.scope.execution_id
++        or invocation.node_id != claimed.node.node_id.value
++        or invocation.node_run_ref.record_id != claimed.node.node_run_id
++        or invocation.attempt_ref.record_id != claimed.attempt.attempt_id
++        or invocation.trace_id != claimed.node.trace.trace_id
++        or invocation.request_digest != result.request_digest
++        or invocation.purposes != call.purposes
++        or invocation.profile_refs != call.profile_refs
++        or invocation.object_ref != call.object_ref
++        or invocation.source_discovery_invocation_ref
++        != call.source_discovery_invocation_ref
++        or invocation.contract_snapshot != call.contract_snapshot
++        or reference_identity(invocation.configured_provider.binding_ref)
++        != reference_identity(call.binding_ref)
++        or not set(call.evidence_refs) <= set(invocation.evidence_refs)
++    ):
++        raise AdapterRejected("perception.foreign_invocation")
++    if result.output is not None and (
++        not isinstance(invocation.outcome, SucceededInvocation)
++        or invocation.outcome.response_digest != result.response_digest
++        or result.transport_result.response_digest != result.response_digest
++        or result.error is not None
++        or result.transport_result.parsed_content != result.output
++        or result.transport_result.validated_response_contract_digest
++        != (
++            call.contract_snapshot.response_schema_sha256
++            if call.contract_snapshot is not None
++            else claimed.opened.scope.resolve(
++                call.binding_ref, ModelBinding
++            ).output_schema_ref.digest
++        )
++    ):
++        raise AdapterRejected("perception.unverified_output")
++    return invocation
++
++
++def checked_reply[T: ContractModel](
++    result: DispatchOutcome, contract: ChatContract, response_model: type[T]
++) -> T:
++    payload = require_model_output(result)
++    try:
++        contract.validate_response_content(
++            payload.decode("utf-8"), strict_json(payload, exact_numbers=True)
++        )
++        return response_model.model_validate_json(payload)
++    except ValueError:
++        raise AdapterRejected("perception.invalid_response") from None
++
++
++def gateway_binding(ref: ModelBindingContentRef) -> GatewayBindingRef:
++    return GatewayBindingRef.model_validate(ref.model_dump())
++
++
++def runtime_id(envelope: NodeInputEnvelope, kind: str, *parts: str) -> str:
++    digest = sha256_digest(
++        canonical_bytes(
++            [envelope.execution_id, envelope.node_run_id, envelope.attempt_id, *parts]
++        )
++    )
++    return f"perception.{kind}.{digest}"
++
++
++def issue(code: str, message: str, path: tuple[str | int, ...] = ()) -> ValidationIssue:
++    return ValidationIssue(code=code, message=message, path=path, related_refs=())
++
++
++def failed_request(result: DispatchOutcome, code: str) -> NodeError:
++    error = result.error
++    category: Literal["validation", "transport", "timeout", "resource"] = "validation"
++    if error is not None:
++        if error.error_class in {"transport", "unavailable"}:
++            category = "transport"
++        elif error.error_class == "timeout":
++            category = "timeout"
++        elif error.error_class in {
++            "rate_limit",
++            "resource_exhausted",
++        } and not error.code.endswith("budget_exhausted"):
++            category = "resource"
++    message = "Perception invocation failed to produce usable output."
++    diagnostic = issue(code if error is None else error.code, message)
++    return NodeError(
++        code=diagnostic.code,
++        error_class=category,
++        retryable=category != "validation",
++        message=message,
++        validation_issues=(diagnostic,),
++    )
++
++
++def node_output(
++    claimed: ClaimedNode,
++    artifacts: tuple[SyntheticArtifact, ...],
++    invocations: tuple[ModelInvocation, ...],
++    error: NodeError | None = None,
++) -> NodeOutputEnvelope:
++    started = claimed.attempt.started_at
++    if started is None:
++        raise AdapterRejected("perception.attempt_not_started")
++    finished = max((started, *(record.completed_at for record in invocations)))
++    elapsed = finished - started
++    common = {
++        "schema_version": "1.0.0",
++        "node_id": claimed.node.node_id,
++        "node_run_id": claimed.node.node_run_id,
++        "attempt_id": claimed.attempt.attempt_id,
++        "trace": claimed.node.trace,
++        "output_artifacts": tuple(artifact.pin for artifact in artifacts),
++        "started_at": started,
++        "finished_at": finished,
++        "duration_ms": elapsed // timedelta(milliseconds=1),
++    }
++    return (
++        SucceededNodeOutput.model_validate(
++            {**common, "status": NodeRunStatus.SUCCEEDED}
++        )
++        if error is None
++        else FailedNodeOutput.model_validate(
++            {**common, "status": NodeRunStatus.FAILED, "error": error}
++        )
++    )
+--- /dev/null
++++ b/src/jimu_runtime/inspection/perception/observation.py
+@@ -0,0 +1,830 @@
++"""N04 projects one exact Object dispatch into independently validated Facts."""
++
++from collections.abc import Awaitable, Callable
++from dataclasses import dataclass
++from typing import Literal, cast
++
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.bundle.schema_validation import (
++    OfflineResponseSchema,
++    compile_offline_response_schema,
++)
++from jimu_runtime.domain.definition_enums import (
++    EvidenceType,
++    FactScope,
++    ModelCapability,
++    ProducerKind,
++)
++from jimu_runtime.domain.definitions.capabilities import (
++    ProfileDefinition,
++    QuestionDefinition,
++)
++from jimu_runtime.domain.definitions.prompts import PromptTemplateDefinition
++from jimu_runtime.domain.enums import ArtifactKind, FactStatus
++from jimu_runtime.domain.fact_schemas.canonicalization import JSONValue
++from jimu_runtime.domain.fact_schemas.models import FactSchemaDefinition
++from jimu_runtime.domain.fact_selectors import (
++    ProducerCatalogueContentRef,
++    QuestionContentRef,
++)
++from jimu_runtime.domain.nodes.envelopes import (
++    FailedNodeOutput,
++    NodeError,
++    NodeInputEnvelope,
++)
++from jimu_runtime.domain.nodes.observation import (
++    JointQuestionInput,
++    ObjectImageView,
++    ObservationInput,
++    ObservationRetry,
++)
++from jimu_runtime.domain.policies import (
++    EvidencePolicyArtifact,
++    QuestionValidationPolicyArtifact,
++    ResourceRequirementsArtifact,
++    UnknownPolicyArtifact,
++)
++from jimu_runtime.domain.producers import (
++    FactProducerDeclaration,
++    ProducerCatalogue,
++    QuestionProducer,
++)
++from jimu_runtime.domain.references import SchemaRef
++from jimu_runtime.domain.runtime.authority import ActorRef, ObservationBatchSelection
++from jimu_runtime.domain.runtime.evidence import (
++    EvidenceAsset,
++    NonSpatialEvidence,
++    ObjectEvidenceScope,
++    ProjectEvidenceAccess,
++    TaskEvidenceAccess,
++)
++from jimu_runtime.domain.runtime.facts import (
++    EvidenceRef,
++    FactRef,
++    ObjectRef,
++    ObservationBatchRef,
++    PolicyContentRef,
++    QuestionFactSource,
++)
++from jimu_runtime.domain.runtime.intake import ContextSnapshot
++from jimu_runtime.domain.runtime.invocations import (
++    FailedInvocation,
++    InvocationContractSnapshot,
++    ModelInvocation,
++)
++from jimu_runtime.domain.runtime.media import FinalizedAsset
++from jimu_runtime.domain.runtime.observations import ObservationBatch, QuestionResult
++from jimu_runtime.domain.runtime.perception import ObjectRecord
++from jimu_runtime.domain.runtime.selection import QuestionSelectionRecord
++from jimu_runtime.domain.values import EnumTypeDefinition, validate_typed_value
++from jimu_runtime.gateway.bridge import (
++    CapabilityGateway,
++    ModelCall,
++    require_model_output,
++)
++from jimu_runtime.gateway.http_wire import ChatContract, strict_json
++from jimu_runtime.gateway.invocation import DispatchOutcome
++from jimu_runtime.inspection.perception.model import (
++    ModelAccess,
++    associated_invocation,
++    build_chat_contract,
++    failed_request,
++    gateway_binding,
++    image_input,
++    invocation_ref,
++    issue,
++    literal_prompt,
++    node_output,
++    original_frame,
++    prepare_binding,
++    response_schema_bytes,
++    runtime_id,
++    schema_resource,
++)
++from jimu_runtime.workflow.mock_context import snapshot_artifact, snapshot_ref
++from jimu_runtime.workflow.mock_support import (
++    VERSION,
++    K,
++    VerifiedExecutionScope,
++    artifact,
++    record_digest,
++)
++from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
++from jimu_runtime.workflow.worker_nodes import NodeResult
++from jimu_runtime.workflow.worker_records import ObservationMessage
++
++type RequestEvidenceKind = Literal["compiled_prompt", "response_schema"]
++type StageRequestEvidence = Callable[
++    [ClaimedNode, ObjectRecord, RequestEvidenceKind, bytes, PolicyContentRef],
++    Awaitable[EvidenceAsset],
++]
++_ACTOR = ActorRef(
++    actor_kind="service", actor_id="jimu.workflow", identity_registry_id="jimu.runtime"
++)
++_PURPOSE = ModelCapability.OBJECT_OBSERVATION
++_UNSEEN = "insufficient_visibility"
++
++
++@dataclass(frozen=True, slots=True)
++class QuestionPlan:
++    ref: QuestionContentRef
++    definition: QuestionDefinition
++    declaration: FactProducerDeclaration
++    fact_schema: FactSchemaDefinition
++    validation: QuestionValidationPolicyArtifact
++    fact_payload: OfflineResponseSchema
++    response_payload: OfflineResponseSchema
++
++
++@dataclass(frozen=True, slots=True)
++class ObservationPlan:
++    profile: ProfileDefinition
++    questions: tuple[QuestionPlan, ...]
++    catalogue_ref: ProducerCatalogueContentRef
++    evidence_policy_ref: PolicyContentRef
++    contract: ChatContract
++    prompt: str
++    schema: bytes
++    output_limit: int
++
++
++def _resolve_questions(
++    scope: VerifiedExecutionScope, obj: ObjectRecord
++) -> tuple[ProducerCatalogueContentRef, tuple[QuestionPlan, ...]]:
++    (member,) = scope.catalogue.of_kind(ArtifactKind.FACT_PRODUCER_CATALOG)
++    catalogue_ref = ProducerCatalogueContentRef.model_validate(member.ref.model_dump())
++    catalogue = scope.resolve(catalogue_ref, ProducerCatalogue)
++    declarations = {
++        row.producer.question_ref: row
++        for row in catalogue.declarations
++        if row.profile_ref is not None
++        and row.profile_ref.stable_json() == obj.profile_ref.stable_json()
++        and isinstance(row.producer, QuestionProducer)
++    }
++    plans = []
++    for ref in obj.effective_question_refs:
++        question = scope.resolve(ref, QuestionDefinition)
++        declaration = declarations.get(ref)
++        if declaration is None or (
++            declaration.fact_key,
++            declaration.fact_schema_ref,
++            declaration.scope,
++        ) != (
++            question.primary_fact_key,
++            question.primary_fact_schema_ref,
++            FactScope.OBJECT,
++        ):
++            raise AdapterRejected("perception.question_producer_mismatch")
++        definition = scope.resolve(declaration.fact_schema_ref, FactSchemaDefinition)
++        if not isinstance(definition.type_definition, EnumTypeDefinition):
++            raise AdapterRejected("perception.unsupported_question_fact_type")
++        if _UNSEEN in definition.type_definition.members:
++            raise AdapterRejected("perception.visibility_token_conflicts_with_fact")
++        scope.resolve(question.unknown_policy_ref, UnknownPolicyArtifact)
++        validation = scope.resolve(
++            question.validation_policy_ref, QuestionValidationPolicyArtifact
++        )
++        template = scope.resolve(question.prompt_template_ref, PromptTemplateDefinition)
++        plans.append(
++            QuestionPlan(
++                ref,
++                question,
++                declaration,
++                definition,
++                validation,
++                compile_offline_response_schema(
++                    schema_resource(scope, definition.payload_schema_ref).document
++                ),
++                compile_offline_response_schema(
++                    schema_resource(scope, template.response_schema_ref).document
++                ),
++            )
++        )
++    return catalogue_ref, tuple(plans)
++
++
++def _plan(
++    scope: VerifiedExecutionScope,
++    obj: ObjectRecord,
++    snapshot: ContextSnapshot,
++    selection: QuestionSelectionRecord,
++) -> ObservationPlan:
++    profile = scope.resolve(obj.profile_ref, ProfileDefinition)
++    scope.check_snapshot(snapshot, snapshot_ref(snapshot))
++    obj.check_selection(scope.execution_id, selection)
++    if (
++        obj.source_media_ref != scope.media.media_ref
++        or obj.coordinate_system != original_frame(scope)
++        or obj.entity_ref != profile.entity_ref
++        or selection.context_snapshot_digest != record_digest(snapshot)
++        or selection.context_snapshot_ref != snapshot_ref(snapshot)
++    ):
++        raise AdapterRejected("perception.object_or_context_pin_mismatch")
++    if not obj.effective_question_refs:
++        raise AdapterRejected("perception.no_effective_questions")
++    ref = profile.observation_binding_ref
++    binding = prepare_binding(scope, ref, _PURPOSE)
++    contract = build_chat_contract(scope, ref, obj.effective_question_refs)
++    catalogue_ref, questions = _resolve_questions(scope, obj)
++    policy_refs = {
++        PolicyContentRef.model_validate(
++            plan.definition.evidence_policy_ref.model_dump()
++        )
++        for plan in questions
++    }
++    if len(policy_refs) != 1:
++        raise AdapterRejected("perception.unsupported_joint_evidence_policies")
++    (policy_ref,) = policy_refs
++    policy = scope.resolve(policy_ref, EvidencePolicyArtifact).policy
++    if EvidenceType.MODEL_REQUEST not in policy.allowed_evidence_types:
++        raise AdapterRejected("perception.request_evidence_not_permitted")
++    prompts: dict[str, JSONValue] = {}
++    for plan in questions:
++        question = plan.definition
++        if question.context_allowlist:
++            raise AdapterRejected("perception.unsupported_question_context")
++        template = scope.resolve(question.prompt_template_ref, PromptTemplateDefinition)
++        schema_ref = scope.catalogue.resolve(template.response_schema_ref).ref
++        # Embedded instructions use the admitted per-Question prompt while
++        # the stock transport validates the independent joint response slots.
++        exact_schema = SchemaRef.model_validate(
++            {
++                **schema_ref.model_dump(),
++                "schema_dialect": contract.output_schema_ref.schema_dialect,
++            }
++        )
++        prompts[plan.ref.artifact_id] = literal_prompt(
++            scope, question.prompt_template_ref, _PURPOSE, exact_schema
++        )
++    model_input = image_input(scope)
++    model_input["bbox"] = {"xyxy": list(obj.bbox.xyxy)}
++    prompt = binding.prompt(
++        model_input, {"object_id": obj.object_id, "questions": prompts}
++    )
++    return ObservationPlan(
++        profile,
++        questions,
++        catalogue_ref,
++        policy_ref,
++        contract,
++        prompt,
++        response_schema_bytes(scope, binding.definition.output_schema_ref),
++        scope.resolve(
++            binding.definition.resource_requirements_ref, ResourceRequirementsArtifact
++        ).policy.output_byte_limit,
++    )
++
++
++def _request_inputs(
++    scope: VerifiedExecutionScope,
++    envelope: NodeInputEnvelope,
++    obj: ObjectRecord,
++    snapshot: ContextSnapshot,
++    selection: QuestionSelectionRecord,
++    plan: ObservationPlan,
++    evidence: tuple[EvidenceAsset, ...],
++    retry: ObservationRetry | None,
++) -> ObservationInput:
++    if len(evidence) != 2 or evidence[0].evidence_id == evidence[1].evidence_id:
++        raise AdapterRejected("perception.incomplete_request_evidence")
++    _check_evidence(scope, obj, plan, evidence)
++    (prompt, schema) = evidence
++    inputs = ObservationInput(
++        schema_version=VERSION,
++        envelope=envelope,
++        object_record=obj,
++        context_snapshot_ref=snapshot_ref(snapshot),
++        image_view=ObjectImageView(roi=obj.bbox, transforms=()),
++        observation_binding_ref=plan.profile.observation_binding_ref,
++        compiled_prompt_evidence_ref=_evidence_ref(prompt),
++        contract_snapshot=InvocationContractSnapshot(
++            configured_output_schema_ref=plan.contract.output_schema_ref,
++            effective_question_refs=obj.effective_question_refs,
++            compiler_version=VERSION,
++            response_schema_sha256=plan.contract.response_schema_digest,
++            response_schema_evidence_ref=_evidence_ref(schema),
++        ),
++        joint_questions=tuple(
++            JointQuestionInput(
++                question_ref=question.ref,
++                prompt_template_ref=question.definition.prompt_template_ref,
++                primary_fact_key=question.definition.primary_fact_key,
++                primary_fact_schema_ref=question.definition.primary_fact_schema_ref,
++                context_view=(),
++            )
++            for question in plan.questions
++        ),
++        **({} if retry is None else {"retry": retry}),
++    )
++    inputs.check_configuration(
++        obj.profile_ref,
++        plan.profile,
++        selection,
++        tuple((question.ref, question.definition) for question in plan.questions),
++    )
++    return inputs
++
++
++def _evidence_ref(evidence: EvidenceAsset) -> EvidenceRef:
++    return EvidenceRef(record_kind=K.EVIDENCE, record_id=evidence.evidence_id)
++
++
++def _check_evidence(
++    scope: VerifiedExecutionScope,
++    obj: ObjectRecord,
++    plan: ObservationPlan,
++    evidence: tuple[EvidenceAsset, ...],
++) -> None:
++    policy = scope.resolve(plan.evidence_policy_ref, EvidencePolicyArtifact).policy
++    project_id = scope.task.idempotency_scope.project_id
++    access = (
++        TaskEvidenceAccess(
++            scope="task", project_id=project_id, task_id=scope.task.task_id
++        )
++        if policy.access_scope == "task"
++        else ProjectEvidenceAccess(scope="project", project_id=project_id)
++    )
++    expected_scope = ObjectEvidenceScope(
++        scope="object",
++        execution_id=obj.execution_id,
++        profile_ref=obj.profile_ref,
++        object_ref=ObjectRef(record_kind=K.OBJECT, record_id=obj.object_id),
++    )
++    for record, mime, data in zip(
++        evidence,
++        ("text/plain", "application/schema+json"),
++        (plan.prompt.encode("utf-8"), plan.schema),
++        strict=True,
++    ):
++        if (
++            record.evidence_type is not EvidenceType.MODEL_REQUEST
++            or record.scope != expected_scope
++            or record.access_scope != access
++            or record.retention.evidence_policy_ref != plan.evidence_policy_ref
++            or record.retention.retention_class != policy.retention_class
++            or not isinstance(record.stage, FinalizedAsset)
++            or not isinstance(record.spatial, NonSpatialEvidence)
++            or record.sha256 != sha256_digest(data)
++            or record.byte_size != len(data)
++            or record.mime_type != mime
++        ):
++            raise AdapterRejected("perception.request_evidence_mismatch")
++
++
++def verify_observation_inputs(
++    scope: VerifiedExecutionScope,
++    inputs: ObservationInput,
++    snapshot: ContextSnapshot,
++    selection: QuestionSelectionRecord,
++    evidence: tuple[EvidenceAsset, ...],
++) -> None:
++    """Reconstruct the exact admitted prompt/schema and verify their metadata."""
++    obj = inputs.object_record
++    plan = _plan(scope, obj, snapshot, selection)
++    expected = _request_inputs(
++        scope, inputs.envelope, obj, snapshot, selection, plan, evidence, inputs.retry
++    )
++    if expected != inputs:
++        raise AdapterRejected("perception.observation_input_pin_mismatch")
++
++
++def _question_result(
++    env: NodeInputEnvelope,
++    obj: ObjectRecord,
++    plan: ObservationPlan,
++    question: QuestionPlan,
++    batch_ref: ObservationBatchRef,
++    invocation: ModelInvocation,
++    value: object,
++    failed_slot: str | None,
++) -> QuestionResult:
++    ref, declaration = question.ref, question.declaration
++    fields = {
++        "schema_version": VERSION,
++        "fact_id": runtime_id(env, "fact", obj.object_id, declaration.declaration_id),
++        "scope": FactScope.OBJECT,
++        "execution_id": obj.execution_id,
++        "profile_ref": obj.profile_ref,
++        "object_id": obj.object_id,
++        "fact_key": declaration.fact_key,
++        "fact_schema_ref": declaration.fact_schema_ref,
++        "producer_catalogue_ref": plan.catalogue_ref,
++        "producer_declaration_id": declaration.declaration_id,
++        "producer_kind": declaration.producer_kind,
++        "producer_id": declaration.producer_id,
++        "producer_version": declaration.producer_version,
++        "attempt_id": env.attempt_id,
++        "source": QuestionFactSource(
++            source_kind=ProducerKind.VLM_QUESTION,
++            question_ref=ref,
++            observation_batch_ref=batch_ref,
++            model_invocation_ref=invocation_ref(invocation),
++        ),
++        "evidence_refs": (),
++        "created_at": invocation.completed_at,
++        "trace_id": env.trace.trace_id,
++    }
++    validation: dict[str, object] = {"status": "validated"}
++    if failed_slot is None:
++        limit = question.validation.policy.max_string_chars
++        if type(value) is not str or (limit is not None and len(value) > limit):
++            failed_slot = "perception.question_invalid"
++        elif value == _UNSEEN:
++            fields.update(
++                status=FactStatus.UNKNOWN,
++                reason={
++                    "reason_code": _UNSEEN,
++                    "message": "The answer cannot be determined from visible image content.",
++                    "diagnostic_refs": (),
++                },
++            )
++        else:
++            try:
++                typed = {"kind": "enum", "value": value}
++                question.fact_payload.validate(typed)
++                question.response_payload.validate(typed)
++                fields.update(
++                    status=FactStatus.KNOWN,
++                    value=validate_typed_value(
++                        question.fact_schema.type_definition, typed
++                    ),
++                )
++            except ValueError:
++                failed_slot = "perception.question_invalid"
++    if failed_slot is not None:
++        diagnostic = issue(
++            failed_slot,
++            "Question slot is missing or does not satisfy its declared contract.",
++            (ref.artifact_id,),
++        )
++        validation = {"status": "invalid", "issues": (diagnostic,)}
++        fields.update(
++            status=FactStatus.ERROR,
++            reason={
++                "reason_code": failed_slot,
++                "message": diagnostic.message,
++                "diagnostic_refs": (),
++                "diagnostics": (
++                    {
++                        "code": diagnostic.code,
++                        "message": diagnostic.message,
++                        "path": diagnostic.path,
++                    },
++                ),
++            },
++        )
++    return QuestionResult.model_validate(
++        {
++            "question_ref": ref,
++            "primary_fact_key": declaration.fact_key,
++            "primary_fact_schema_ref": declaration.fact_schema_ref,
++            "primary_fact": fields,
++            "validation": validation,
++        }
++    )
++
++
++def _slots(
++    plan: ObservationPlan, output: bytes
++) -> tuple[dict[str, object], tuple[str, ...], tuple[str, ...]]:
++    if type(output) is not bytes or not 1 <= len(output) <= plan.output_limit:
++        raise AdapterRejected("perception.invalid_joint_response_size")
++    try:
++        raw = strict_json(output, exact_numbers=True)
++        invalid, missing = plan.contract.validate_response_content(
++            output.decode("utf-8"), raw
++        )
++        if not isinstance(raw, dict):
++            raise ValueError
++    except ValueError:
++        raise AdapterRejected("perception.untrusted_joint_response") from None
++    return cast(dict[str, object], raw), invalid, missing
++
++
++def _project_results(
++    plan: ObservationPlan,
++    inputs: ObservationInput,
++    batch_ref: ObservationBatchRef,
++    invocation: ModelInvocation,
++    raw: dict[str, object],
++    invalid: tuple[str, ...],
++    missing: tuple[str, ...],
++) -> tuple[QuestionResult, ...]:
++    return tuple(
++        _question_result(
++            inputs.envelope,
++            inputs.object_record,
++            plan,
++            question,
++            batch_ref,
++            invocation,
++            raw.get(question.ref.artifact_id),
++            "perception.question_missing"
++            if question.ref.artifact_id in missing
++            else "perception.question_invalid"
++            if question.ref.artifact_id in invalid
++            else None,
++        )
++        for question in plan.questions
++    )
++
++
++def verify_observation_result(
++    scope: VerifiedExecutionScope,
++    message: ObservationMessage,
++    snapshot: ContextSnapshot,
++    selection: QuestionSelectionRecord,
++    normalized_content: bytes | None,
++    *,
++    failure_code: str | None = None,
++) -> None:
++    """Reproject a batch from content already authenticated by the dispatch store.
++
++    The caller verifies lease, receipt identity and physical response provenance
++    before supplying normalized bytes or the fixed failure code.
++    """
++    inputs, batch = message.inputs, message.batch
++    obj = inputs.object_record
++    plan = _plan(scope, obj, snapshot, selection)
++    if inputs != _request_inputs(
++        scope,
++        inputs.envelope,
++        obj,
++        snapshot,
++        selection,
++        plan,
++        message.evidence,
++        inputs.retry,
++    ):
++        raise AdapterRejected("perception.observation_input_pin_mismatch")
++    if batch.observation_batch_id != runtime_id(
++        inputs.envelope, "batch", obj.object_id
++    ):
++        raise AdapterRejected("perception.observation_batch_identity_mismatch")
++    if batch.outcome in {"complete", "partial"}:
++        if failure_code is not None or normalized_content is None:
++            raise AdapterRejected("perception.observation_wire_missing")
++        raw, invalid, missing = _slots(plan, normalized_content)
++        expected = _project_results(
++            plan, inputs, batch.batch_ref, message.invocation, raw, invalid, missing
++        )
++        if batch.question_results != expected:
++            raise AdapterRejected("perception.observation_fact_pin_mismatch")
++    else:
++        actual = message.invocation.outcome
++        code = actual.error.code if actual.status != "succeeded" else failure_code
++        if (
++            code is None
++            or failure_code is not None
++            and failure_code != code
++            or batch.question_results
++            or len(batch.validation_issues) != 1
++            or batch.validation_issues[0].code != code
++            or not isinstance(message.output, FailedNodeOutput)
++            or message.output.error.code != code
++        ):
++            raise AdapterRejected("perception.observation_failure_pin_mismatch")
++
++
++type BatchOutcome = Literal[
++    "transport_error", "parse_error", "association_error", "complete", "partial"
++]
++
++
++def _failed_batch(
++    dispatched: DispatchOutcome, invocation: ModelInvocation
++) -> tuple[BatchOutcome, NodeError]:
++    error = failed_request(dispatched, "perception.observation_unavailable")
++    actual = invocation.outcome
++    error_class = (
++        actual.error.error_class
++        if isinstance(actual, FailedInvocation)
++        else dispatched.error.error_class
++        if actual.status == "succeeded" and dispatched.error is not None
++        else None
++    )
++    if error_class == "association":
++        kind: BatchOutcome = "association_error"
++    elif error_class == "validation" or actual.status == "succeeded":
++        kind = "parse_error"
++    else:
++        kind = "transport_error"
++    if kind in {"parse_error", "association_error"}:
++        error = error.model_copy(update={"retryable": True})
++    return kind, error
++
++
++async def observe(
++    claimed: ClaimedNode,
++    envelope: NodeInputEnvelope,
++    gateway: CapabilityGateway,
++    access: ModelAccess,
++    stage: StageRequestEvidence,
++    previous_batch: ObservationBatch | None = None,
++) -> NodeResult:
++    scope, records = claimed.opened.scope, claimed.previous
++    obj = records.object_record(claimed.branch)
++    discovery = records.discovery
++    started = claimed.attempt.started_at
++    if discovery is None or started is None:
++        raise AdapterRejected("perception.observation_inputs_unavailable")
++    (selection,) = tuple(
++        item
++        for item in discovery.selections
++        if item.selection_id == obj.question_selection_ref.record_id
++    )
++    snapshot = records.snapshot()
++    scope.check_call(envelope, envelope.node_id, started).check_upstream(
++        artifact(K.OBJECT, obj.object_id, obj),
++        artifact(K.QUESTION_SELECTION_RECORD, selection.selection_id, selection),
++        snapshot_artifact(snapshot),
++    )
++    if previous_batch is not None and (
++        previous_batch.outcome in {"complete", "partial"}
++        or previous_batch.execution_id != scope.execution_id
++        or previous_batch.node_run_ref.record_id != claimed.node.node_run_id
++        or previous_batch.object_ref.record_id != obj.object_id
++        or previous_batch.profile_ref != obj.profile_ref
++        or previous_batch.question_selection_ref != obj.question_selection_ref
++        or previous_batch.effective_question_refs != obj.effective_question_refs
++        or previous_batch.attempt_ref.record_id == claimed.attempt.attempt_id
++    ):
++        raise AdapterRejected("perception.foreign_observation_retry")
++    retry = (
++        None
++        if previous_batch is None
++        else ObservationRetry(
++            previous_batch_ref=previous_batch.batch_ref, reason=previous_batch.outcome
++        )
++    )
++    plan = _plan(scope, obj, snapshot, selection)
++    image = await access.image(scope)
++    request_evidence = (
++        await stage(
++            claimed,
++            obj,
++            "compiled_prompt",
++            plan.prompt.encode("utf-8"),
++            plan.evidence_policy_ref,
++        ),
++        await stage(
++            claimed, obj, "response_schema", plan.schema, plan.evidence_policy_ref
++        ),
++    )
++    inputs = _request_inputs(
++        scope, envelope, obj, snapshot, selection, plan, request_evidence, retry
++    )
++    obj_ref = ObjectRef(record_kind=K.OBJECT, record_id=obj.object_id)
++    call = ModelCall(
++        binding_ref=gateway_binding(plan.profile.observation_binding_ref),
++        purposes=(_PURPOSE,),
++        profile_refs=(obj.profile_ref,),
++        prompt=plan.prompt,
++        resource_scope_id=access.resource_scope_id,
++        image=image,
++        object_ref=obj_ref,
++        contract_snapshot=inputs.contract_snapshot,
++        evidence_refs=tuple(_evidence_ref(row) for row in request_evidence),
++    )
++    dispatched = await gateway.invoke_model(claimed, call)
++    invocation = associated_invocation(claimed, call, dispatched)
++    if invocation is None:
++        require_model_output(dispatched)
++        raise AdapterRejected("perception.observation_invocation_missing")
++    return _observation_result(
++        claimed, inputs, plan, request_evidence, dispatched, invocation, previous_batch
++    )
++
++
++def _observation_result(
++    claimed: ClaimedNode,
++    inputs: ObservationInput,
++    plan: ObservationPlan,
++    request_evidence: tuple[EvidenceAsset, ...],
++    dispatched: DispatchOutcome,
++    invocation: ModelInvocation,
++    previous_batch: ObservationBatch | None,
++) -> NodeResult:
++    obj, env = inputs.object_record, inputs.envelope
++    batch_ref = ObservationBatchRef(
++        record_kind=K.OBSERVATION_BATCH,
++        record_id=runtime_id(env, "batch", obj.object_id),
++    )
++    inv_ref = invocation_ref(invocation)
++    error = None
++    results: tuple[QuestionResult, ...] = ()
++    if dispatched.output is None:
++        outcome, error = _failed_batch(dispatched, invocation)
++    else:
++        try:
++            raw, invalid, missing = _slots(plan, dispatched.output)
++            transport = dispatched.transport_result
++            if (invalid, missing) != (
++                transport.invalid_question_slots,
++                transport.missing_question_slots,
++            ):
++                raise AdapterRejected("perception.joint_slot_receipt_mismatch")
++        except AdapterRejected:
++            outcome, error = _failed_batch(dispatched, invocation)
++        else:
++            results = _project_results(
++                plan, inputs, batch_ref, invocation, raw, invalid, missing
++            )
++            outcome = (
++                "partial"
++                if any(item.validation.status == "invalid" for item in results)
++                else "complete"
++            )
++    batch = ObservationBatch(
++        schema_version=VERSION,
++        observation_batch_id=batch_ref.record_id,
++        execution_id=obj.execution_id,
++        object_ref=ObjectRef(record_kind=K.OBJECT, record_id=obj.object_id),
++        node_run_ref=invocation.node_run_ref,
++        attempt_ref=invocation.attempt_ref,
++        model_invocation_ref=inv_ref,
++        outcome=outcome,
++        arrival_qualification="on_time"
++        if invocation.completed_at <= claimed.deadline
++        else "late",
++        envelope_validation="unresolved"
++        if outcome == "transport_error"
++        else "untrusted"
++        if outcome == "parse_error"
++        else "trusted",
++        association_validation="untrusted"
++        if outcome == "association_error"
++        else "unresolved"
++        if outcome in {"parse_error", "transport_error"}
++        else "trusted",
++        question_results=results,
++        validation_issues=() if error is None else error.validation_issues,
++        profile_ref=obj.profile_ref,
++        question_selection_ref=obj.question_selection_ref,
++        effective_question_refs=obj.effective_question_refs,
++        **(
++            {}
++            if previous_batch is None
++            else {"retry_of_batch_ref": previous_batch.batch_ref}
++        ),
++    )
++    inputs.check_batch(batch, (invocation,), previous_batch)
++    if batch.arrival_qualification != "on_time" and error is None:
++        raise AdapterRejected("perception.late_observation_batch")
++    artifacts = (
++        *(artifact(K.EVIDENCE, row.evidence_id, row) for row in request_evidence),
++        artifact(K.MODEL_INVOCATION, invocation.model_invocation_id, invocation),
++        artifact(K.OBSERVATION_BATCH, batch.observation_batch_id, batch),
++        *(
++            artifact(K.FACT, row.primary_fact.fact_id, row.primary_fact)
++            for row in results
++        ),
++    )
++    authority = (
++        None
++        if error is not None
++        else ObservationBatchSelection(
++            schema_version=VERSION,
++            execution_id=obj.execution_id,
++            profile_ref=obj.profile_ref,
++            scope=FactScope.OBJECT,
++            object_id=obj.object_id,
++            selection_group="observation_batch",
++            selection_id=runtime_id(env, "observation-authority", obj.object_id),
++            selected_attempt_id=env.attempt_id,
++            selected_result_ref=batch.batch_ref,
++            selected_fact_refs=tuple(
++                FactRef(record_kind=K.FACT, record_id=row.primary_fact.fact_id)
++                for row in results
++            ),
++            reason="validated_success"
++            if previous_batch is None
++            else "explicit_retry_resolution",
++            authority_revision=1,
++            actor_ref=_ACTOR,
++            created_at=invocation.completed_at,
++        )
++    )
++    output = node_output(claimed, artifacts, (invocation,), error)
++    message = ObservationMessage(
++        schema_version=VERSION,
++        inputs=inputs,
++        output=output,
++        batch=batch,
++        invocation=invocation,
++        request_evidence=(),
++        durable_request_evidence=request_evidence,
++        authority=authority,
++    )
++    return NodeResult(
++        message,
++        artifacts
++        if authority is None
++        else (
++            *artifacts,
++            artifact(
++                K.AUTHORITATIVE_RESULT_SELECTION, authority.selection_id, authority
++            ),
++        ),
++        (inv_ref,),
++    )

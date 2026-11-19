@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:jimu:synthetic:parking:object_observation-result:1.0.0",
+  "type": "object",
+  "properties": {
+    "vehicle_type": {
+      "type": "string",
+      "enum": [
+        "bicycle",
+        "electric_bicycle",
+        "insufficient_visibility",
+        "other",
+        "tricycle"
+      ]
+    },
+    "parking_state": {
+      "type": "string",
+      "enum": [
+        "insufficient_visibility",
+        "parked",
+        "unparked"
+      ]
+    },
+    "parking_position": {
+      "type": "string",
+      "enum": [
+        "inside_parking_area",
+        "insufficient_visibility",
+        "outside_parking_area",
+        "over_boundary"
+      ]
+    }
+  },
+  "required": [
+    "vehicle_type",
+    "parking_state",
+    "parking_position"
+  ],
+  "additionalProperties": false
+}

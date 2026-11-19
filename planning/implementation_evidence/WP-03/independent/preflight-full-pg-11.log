@@ -1,0 +1,40 @@
+2026-11-18T03:46:40Z
+PYTHONPATH=. uv run --locked python planning/implementation_evidence/WP-03/independent/probe_wp03.py
+{"check": "postgres", "first": [1, 2], "image_id": "sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae", "repeat": [], "version": "16.14 (Debian 16.14-1.pgdg13+1)"}
+{"check": "app_permission_rejected", "sql": "CREATE TABLE jimu_workflow.independent_denied (x integer)", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "UPDATE jimu_workflow.schema_migrations SET script_sha256=script_sha256", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "UPDATE jimu_workflow.execution_events SET event_number=event_number", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "DELETE FROM jimu_workflow.attempts WHERE false", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "TRUNCATE jimu_workflow.produced_outputs", "sqlstate": "42501"}
+{"bundle_digest": "e9ce8868075927aa405689f9afba6207832fa7ffb2dfb54e5a3d32e1cafc6551", "check": "admission_and_duplicate_intake", "execution_id": "execution.c17a078b8456703828a41526af6eeddada2f1a879bfe35c6523356531f3dce29", "mode": "full"}
+{"after": "2026-11-18T03:46:50.219914+00:00", "before": "2026-11-18T03:46:49.295552+00:00", "check": "heartbeat_and_expired_fence", "contender_backend": 72}
+{"a_pid": 3086528, "b_pid": 3086550, "check": "takeover_and_late_audit", "rows": [[1, 1, "probe-a", "superseded", "fixture-request-a"], [2, 2, "probe-b", "succeeded", null]]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 71, "pid": 3086528}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 72, "pid": 3086550}
+{"check": "mock_returned_before_worker_crash", "worker_marker": {"attempt": "0d25e766097d4d94ab39ce075c70eff3", "external_request_ids": ["synthetic.request.b6147b656568e95c3383050f134e5fe066132eaa7b2878b31419e3254f2157bb", "synthetic.request.7817dd49b4ec21d1c095966a618919f0f24c44181897463af660ebc0d84838cd"], "invocations": ["synthetic.model.2eb2b50f3645f9f907be477791c0b533d935ae2c7b4027c02203aec9fd1b352c", "synthetic.model.109c04ed963de55cd938787ca38680c1f5eac6f5d5f8ccef4c26a79f064779c4"], "label": "mock_returned", "pid": 3086550}}
+{"attempt": "running", "check": "n06_draft_before_authority", "draft_count": 1, "finalization_count": 0, "n06_authority": 0, "node": "running", "terminal_attempt": null}
+{"check": "all_n06_drafts_before_authority", "drafts": 3, "finalizations": 0, "n06_authority": 0}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 73, "pid": 3086605}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 74, "pid": 3086635}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1098, in <module>
+    asyncio.run(child() if sys.argv[1:] == ["child"] else independent())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1084, in independent
+    await crash_publish(full, replacement, orphan)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 940, in crash_publish
+    await relation_probe(probe, final)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 795, in relation_probe
+    assert len(batch["question_results"]) >= 2
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+2026-11-18T03:46:59Z
+exit=1

@@ -1,0 +1,49 @@
+{
+  "payload": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "const": "record"
+      },
+      "value": {
+        "type": "object",
+        "properties": {
+          "wheel_boundary_relation": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "enum"
+              },
+              "value": {
+                "type": "string",
+                "enum": [
+                  "blocking_tactile_paving",
+                  "inside_parking_area",
+                  "outside_parking_area",
+                  "over_boundary"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "kind",
+      "value"
+    ],
+    "additionalProperties": false
+  },
+  "evidence_slots": [
+    "wheel_mask",
+    "tactile_paving_mask",
+    "geometry"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "rule_set_id": "parking-rules",
+  "rule_refs": [
+    {
+      "$pin": [
+        "rule",
+        "nonmotor_vehicle_illegal_parking",
+        "1.0.0"
+      ]
+    }
+  ],
+  "applicability_policy_ref": {
+    "$pin": [
+      "policy",
+      "applicability",
+      "1.0.0"
+    ]
+  },
+  "conflict_policy_ref": {
+    "$pin": [
+      "policy",
+      "conflict",
+      "1.0.0"
+    ]
+  },
+  "candidate_binding_ref": {
+    "$pin": [
+      "model_binding",
+      "candidate_prediction",
+      "1.0.0"
+    ]
+  }
+}

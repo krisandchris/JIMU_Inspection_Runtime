@@ -1,0 +1,62 @@
++ cd /tmp/jimu-wp05-wheel-2j4xlnYv/snapshot/product
++ env UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv uv sync --locked --offline --python /usr/bin/python3.12 --no-dev --no-install-project
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment at: /tmp/jimu-wp05-wheel-2j4xlnYv/system-venv
+Resolved 36 packages in 0.44ms
+Installed 22 packages in 5ms
+ + annotated-types==0.8.0
+ + anyio==4.16.0
+ + attrs==26.1.0
+ + certifi==2026.10.23
+ + greenlet==3.5.6
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.20
+ + jsonschema==4.25.1
+ + jsonschema-specifications==2025.9.1
+ + pillow==12.3.0
+ + psycopg==3.3.5
+ + psycopg-binary==3.3.5
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + referencing==0.37.0
+ + rfc8785==0.1.4
+ + rpds-py==2026.9.1
+ + sqlalchemy==2.0.52
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
++ uv pip install --offline --no-deps --python /tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/bin/python /tmp/jimu-wp05-wheel-2j4xlnYv/wheel/jimu_runtime-0.1.0-py3-none-any.whl
+Using Python 3.12.3 environment at: /tmp/jimu-wp05-wheel-2j4xlnYv/system-venv
+Resolved 1 package in 1ms
+Installed 1 package in 2ms
+ + jimu-runtime==0.1.0 (from file:///tmp/jimu-wp05-wheel-2j4xlnYv/wheel/jimu_runtime-0.1.0-py3-none-any.whl)
++ cd /tmp/jimu-wp05-wheel-2j4xlnYv
++ env PYTHONPATH=/tmp/jimu-wp05-wheel-2j4xlnYv/snapshot/product WP05_PROBE_DIAGNOSTICS=1 /tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py --installed --trace-dir /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_uGjkLZ1k/system-exec known_violation
+{"check": "worker_process_ready", "pid": 3518175, "runtime_install": "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"adapter_error": "TypeError", "diagnostic": "StepAttemptStore.begin() got an unexpected keyword argument 'ancestor_evidence'"}
+{"check": "durable_node_diagnostics", "child_steps": [], "dispatches": [["model", null, "acknowledged", null, null], ["model", null, "acknowledged", null, null], ["model", null, "acknowledged", null, null], ["model", null, "acknowledged", null, null]], "rows": [["N01", "succeeded", null, null], ["N02", "succeeded", null, null], ["N03", "succeeded", null, null], ["N04", "succeeded", null, null], ["N05", "failed", "worker_provider_internal", "worker_provider_internal"], ["N06", "succeeded", null, null]]}
+{"calls": [["discovery", null, null], ["grounding", null, null], ["observation", [40, 23, 52, 33], "perception.object.3896e1bcdf3e661adfc9bb526a570e036168fdb812acea9824a190de76c15827"], ["candidate", [40, 23, 52, 33], "perception.object.3896e1bcdf3e661adfc9bb526a570e036168fdb812acea9824a190de76c15827"]], "check": "provider_transcript_on_failure", "errors": []}
+{"check": "worker_process_closed", "pid": 3518175, "signal": null}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 328, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 314, in main
+    await run_case(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 242, in run_case
+    result = await audit(
+             ^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 258, in audit
+    require_equal("Task-level verdict", coverage.summary_result.value, gold["summary"])
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 44, in require_equal
+    raise AssertionError(f"{label} observed {observed!r}, expected {expected!r}")
+AssertionError: Task-level verdict observed 'uncertain', expected 'violation'

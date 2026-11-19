@@ -1,0 +1,42 @@
++ uv sync --locked --offline --no-dev --no-install-project
+Using CPython 3.12.12
+Creating virtual environment at: /tmp/jimu-wp05-wheel-2j4xlnYv/venv
+Resolved 36 packages in 0.50ms
+Installed 22 packages in 4ms
+ + annotated-types==0.8.0
+ + anyio==4.16.0
+ + attrs==26.1.0
+ + certifi==2026.10.23
+ + greenlet==3.5.6
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.20
+ + jsonschema==4.25.1
+ + jsonschema-specifications==2025.9.1
+ + pillow==12.3.0
+ + psycopg==3.3.5
+ + psycopg-binary==3.3.5
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + referencing==0.37.0
+ + rfc8785==0.1.4
+ + rpds-py==2026.9.1
+ + sqlalchemy==2.0.52
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
++ uv build --offline --wheel --out-dir /tmp/jimu-wp05-wheel-2j4xlnYv/wheel
+Building wheel (uv build backend)...
+Successfully built /tmp/jimu-wp05-wheel-2j4xlnYv/wheel/jimu_runtime-0.1.0-py3-none-any.whl
++ wheel=("$temp"/wheel/*.whl)
++ sha256sum /tmp/jimu-wp05-wheel-2j4xlnYv/wheel/jimu_runtime-0.1.0-py3-none-any.whl
+1b9a6e35f59137aec6f0fc171b0424c482750bbe306976e8c01420c3f0275f8c  /tmp/jimu-wp05-wheel-2j4xlnYv/wheel/jimu_runtime-0.1.0-py3-none-any.whl
++ uv pip install --offline --no-deps --python /tmp/jimu-wp05-wheel-2j4xlnYv/venv/bin/python /tmp/jimu-wp05-wheel-2j4xlnYv/wheel/jimu_runtime-0.1.0-py3-none-any.whl
+Using Python 3.12.12 environment at: /tmp/jimu-wp05-wheel-2j4xlnYv/venv
+Resolved 1 package in 0.96ms
+Prepared 1 package in 3ms
+Installed 1 package in 1ms
+ + jimu-runtime==0.1.0 (from file:///tmp/jimu-wp05-wheel-2j4xlnYv/wheel/jimu_runtime-0.1.0-py3-none-any.whl)
++ PYTHONPATH=/tmp/jimu-wp05-wheel-2j4xlnYv/snapshot/product
++ /tmp/jimu-wp05-wheel-2j4xlnYv/venv/bin/python -c 'import jimu_runtime, sys; from pathlib import Path; print(Path(jimu_runtime.__file__).resolve()); assert Path(jimu_runtime.__file__).resolve().is_relative_to(Path(sys.prefix).resolve())'
+/tmp/jimu-wp05-wheel-2j4xlnYv/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py

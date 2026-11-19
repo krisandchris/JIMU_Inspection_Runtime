@@ -1,0 +1,120 @@
+{
+  "$defs": {
+    "ArgumentCount": {
+      "maximum": 64,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "BooleanTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BooleanTypeDefinition",
+      "type": "object"
+    },
+    "ComparisonOperator": {
+      "enum": [
+        "eq",
+        "ne",
+        "lt",
+        "le",
+        "gt",
+        "ge"
+      ],
+      "title": "ComparisonOperator",
+      "type": "string"
+    },
+    "InputConstraint": {
+      "enum": [
+        "same_comparable_type",
+        "same_numeric_type_unit",
+        "scalar_and_nonempty_list",
+        "boolean_arguments"
+      ],
+      "type": "string"
+    },
+    "NonKnownPropagation": {
+      "enum": [
+        "unknown_operand",
+        "strong_kleene"
+      ],
+      "type": "string"
+    },
+    "OperatorArity": {
+      "additionalProperties": false,
+      "properties": {
+        "max_args": {
+          "$ref": "#/$defs/ArgumentCount"
+        },
+        "min_args": {
+          "$ref": "#/$defs/ArgumentCount"
+        }
+      },
+      "required": [
+        "min_args",
+        "max_args"
+      ],
+      "title": "OperatorArity",
+      "type": "object"
+    },
+    "OperatorId": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ComparisonOperator"
+        },
+        {
+          "enum": [
+            "in",
+            "all",
+            "any",
+            "not"
+          ],
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A code-owned V1 signature with no dispatch hook or execution binding.",
+  "properties": {
+    "arity": {
+      "$ref": "#/$defs/OperatorArity"
+    },
+    "input_constraint": {
+      "$ref": "#/$defs/InputConstraint"
+    },
+    "nonknown_propagation": {
+      "$ref": "#/$defs/NonKnownPropagation"
+    },
+    "operator_id": {
+      "$ref": "#/$defs/OperatorId"
+    },
+    "output_type": {
+      "$ref": "#/$defs/BooleanTypeDefinition"
+    },
+    "version": {
+      "const": "1.0.0",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "operator_id",
+    "version",
+    "arity",
+    "input_constraint",
+    "output_type",
+    "nonknown_propagation"
+  ],
+  "title": "OperatorDescriptor",
+  "type": "object"
+}

@@ -1,0 +1,1 @@
+在所给 diff 内未发现破坏防御性契约的问题：memfd 以 `MFD_CLOEXEC | MFD_ALLOW_SEALING` 创建，封存后及接收 FD 副本时均通过 `F_GET_SEALS` 核验全部四项必需 seal，校验失败不会放行。guardian 在 `Popen` 前探测 pidfd，清理时通过子进程的 pidfd 发送 `SIGKILL`，没有退回按数字 PID 发信号；探测成功本身不证明子进程已退出。结论为 `STATIC_REVIEW_ONLY`：Python 缺少绑定时仍依赖 libc 导出相应符号；本地只读命令被沙箱阻止，冻结基线未独立核验，两个 CPython 构建均为 `RUNTIME_NOT_RUN`。

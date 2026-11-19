@@ -1,0 +1,40 @@
+636 ValueError('Tool result lacks required validated evidence')
+1472 ValueError('Tool result lacks required validated evidence')
+Traceback (most recent call last):
+  File "planning/implementation_evidence/WP-04/independent/probe_tool.py", line 403, in adapter
+    return await real_steps(claimed)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "planning/implementation_evidence/WP-04/independent/probe_tool.py", line 313, in real_steps
+    assert completion.selection is not None, completion
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: schema_version='1.0.0' result=StepResult(schema_version='1.0.0', execution=ToolExecution(schema_version='1.0.0', tool_execution_id='tool:07693d948ad2fed5a4bcbf185c1387a46bf969fbfb605dd2088db77a9c1d3173', execution_id='execution.fa51b5a2703b9dbba82a26ada5faa992701c2b416d676f89bb5b0460f3c8d745', profile_ref=ProfileContentRef(artifact_kind=<ArtifactKind.PROFILE: 'profile'>, artifact_id='nonmotor_vehicle', version='1.0.0', digest='2b8fa9e18d285367ef6f0a32351471e71be556501de72f408d953e8f97ad4dbe'), tool_ref=ToolContentRef(artifact_kind=<ArtifactKind.TOOL: 'tool'>, artifact_id='wheel_boundary', version='1.0.0', digest='c1c5291cb4a87af9ad30921f0221c789bbb9e995c94105e17eae32fe1e90db65'), node_run_ref=NodeRunRef(record_kind=<RuntimeRecordKind.NODE_RUN: 'node_run'>, record_id='8feab7fd3a2943ad81e00483fb65eb02'), attempt_ref=AttemptRef(record_kind=<RuntimeRecordKind.ATTEMPT: 'attempt'>, record_id='644c93ae0d2345acae40c3b215eaf1fd'), invocation_origin=ToolPlanStepOrigin(kind='tool_plan_step', node_id='N05', tool_plan_ref=ToolPlanContentRef(artifact_kind=<ArtifactKind.TOOL_PLAN: 'tool_plan'>, artifact_id='parking_geometry', version='1.0.0', digest='4f24b267c57e9e3f1146204993349992302821983bb0a4a577cda3ce0bac03e1'), step_id='wheel_boundary', producer_declaration_ids=('tool.29150b3b177fe69de3bf9a52e9b17ce664ceb1f89667c9509669c72b4b4f15af',)), scope=<FactScope.OBJECT: 'object'>, object_ref=ObjectRef(record_kind=<RuntimeRecordKind.OBJECT: 'object'>, record_id='synthetic.object.04772f6fdc0785feae39b4c0bbdbd37bd7f359a99ecb0c36a139eb4bbc05d2ac'), input_refs=(ToolArtifactRef(artifact_ref=ToolArtifactRecordRef(record_kind=<RuntimeRecordKind.OBJECT: 'object'>, record_id='synthetic.object.04772f6fdc0785feae39b4c0bbdbd37bd7f359a99ecb0c36a139eb4bbc05d2ac'), digest='bdb965256e7656f22a3bad9ebf34748a2a45ae771a06d90d7d904cb6cbcee4aa'), ToolArtifactRef(artifact_ref=ToolArtifactRecordRef(record_kind=<RuntimeRecordKind.CONTEXT_SNAPSHOT: 'context_snapshot'>, record_id='synthetic.context.184d4b82a92d77b52ba06c35e90861d18e45ee70ad6f0c76c9d00ea8390d60fd'), digest='83aed12816a9b58dac4d8c8058e11999df61aa5d678867f401237f3bb206605f')), output_refs=(), implementation_version_resolution='resolved', actual_implementation_version='1.0.0', implementation_version_unavailable_reason=None, status='failed', attempt_result=FailedToolAttempt(disposition='failed', error=ToolError(error_class='validation', code='tool_result_invalid', diagnostic_refs=())), started_at=datetime.datetime(2026, 11, 18, 4, 25, 4, 736430, tzinfo=TzInfo(0)), completed_at=datetime.datetime(2026, 11, 18, 4, 25, 4, 946430, tzinfo=TzInfo(0)), resource_usage=None, authority_observation=None, generated_fact_refs=(), evidence_refs=(), trace_id='trace-1'), facts=(), evidence=(), invocations=()) selection=None
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "planning/implementation_evidence/WP-04/independent/probe_tool.py", line 503, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "planning/implementation_evidence/WP-04/independent/probe_tool.py", line 496, in main
+    await run(app, Path(root))
+  File "planning/implementation_evidence/WP-04/independent/probe_tool.py", line 427, in run
+    raise errors[0]
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workflow/worker.py", line 444, in run_once
+    else await self._invoke_claimed_node(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "planning/implementation_evidence/WP-04/independent/probe_tool.py", line 403, in adapter
+    return await real_steps(claimed)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "planning/implementation_evidence/WP-04/independent/probe_tool.py", line 313, in real_steps
+    assert completion.selection is not None, completion
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: schema_version='1.0.0' result=StepResult(schema_version='1.0.0', execution=ToolExecution(schema_version='1.0.0', tool_execution_id='tool:07693d948ad2fed5a4bcbf185c1387a46bf969fbfb605dd2088db77a9c1d3173', execution_id='execution.fa51b5a2703b9dbba82a26ada5faa992701c2b416d676f89bb5b0460f3c8d745', profile_ref=ProfileContentRef(artifact_kind=<ArtifactKind.PROFILE: 'profile'>, artifact_id='nonmotor_vehicle', version='1.0.0', digest='2b8fa9e18d285367ef6f0a32351471e71be556501de72f408d953e8f97ad4dbe'), tool_ref=ToolContentRef(artifact_kind=<ArtifactKind.TOOL: 'tool'>, artifact_id='wheel_boundary', version='1.0.0', digest='c1c5291cb4a87af9ad30921f0221c789bbb9e995c94105e17eae32fe1e90db65'), node_run_ref=NodeRunRef(record_kind=<RuntimeRecordKind.NODE_RUN: 'node_run'>, record_id='8feab7fd3a2943ad81e00483fb65eb02'), attempt_ref=AttemptRef(record_kind=<RuntimeRecordKind.ATTEMPT: 'attempt'>, record_id='644c93ae0d2345acae40c3b215eaf1fd'), invocation_origin=ToolPlanStepOrigin(kind='tool_plan_step', node_id='N05', tool_plan_ref=ToolPlanContentRef(artifact_kind=<ArtifactKind.TOOL_PLAN: 'tool_plan'>, artifact_id='parking_geometry', version='1.0.0', digest='4f24b267c57e9e3f1146204993349992302821983bb0a4a577cda3ce0bac03e1'), step_id='wheel_boundary', producer_declaration_ids=('tool.29150b3b177fe69de3bf9a52e9b17ce664ceb1f89667c9509669c72b4b4f15af',)), scope=<FactScope.OBJECT: 'object'>, object_ref=ObjectRef(record_kind=<RuntimeRecordKind.OBJECT: 'object'>, record_id='synthetic.object.04772f6fdc0785feae39b4c0bbdbd37bd7f359a99ecb0c36a139eb4bbc05d2ac'), input_refs=(ToolArtifactRef(artifact_ref=ToolArtifactRecordRef(record_kind=<RuntimeRecordKind.OBJECT: 'object'>, record_id='synthetic.object.04772f6fdc0785feae39b4c0bbdbd37bd7f359a99ecb0c36a139eb4bbc05d2ac'), digest='bdb965256e7656f22a3bad9ebf34748a2a45ae771a06d90d7d904cb6cbcee4aa'), ToolArtifactRef(artifact_ref=ToolArtifactRecordRef(record_kind=<RuntimeRecordKind.CONTEXT_SNAPSHOT: 'context_snapshot'>, record_id='synthetic.context.184d4b82a92d77b52ba06c35e90861d18e45ee70ad6f0c76c9d00ea8390d60fd'), digest='83aed12816a9b58dac4d8c8058e11999df61aa5d678867f401237f3bb206605f')), output_refs=(), implementation_version_resolution='resolved', actual_implementation_version='1.0.0', implementation_version_unavailable_reason=None, status='failed', attempt_result=FailedToolAttempt(disposition='failed', error=ToolError(error_class='validation', code='tool_result_invalid', diagnostic_refs=())), started_at=datetime.datetime(2026, 11, 18, 4, 25, 4, 736430, tzinfo=TzInfo(0)), completed_at=datetime.datetime(2026, 11, 18, 4, 25, 4, 946430, tzinfo=TzInfo(0)), resource_usage=None, authority_observation=None, generated_fact_refs=(), evidence_refs=(), trace_id='trace-1'), facts=(), evidence=(), invocations=()) selection=None

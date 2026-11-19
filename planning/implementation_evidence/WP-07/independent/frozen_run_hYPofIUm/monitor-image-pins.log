@@ -1,0 +1,6 @@
+2026-11-18T11:27:12Z
+docker --host unix:///var/run/docker.sock image inspect --format \{\{.Id\}\}\ \{\{.Architecture\}\}\ \{\{json\ .RepoDigests\}\} quay.io/prometheus/prometheus@sha256:aafa9d694e6a883c02db516d9f6e5b84e14195f49a2a6456a4cca815edda72b9 grafana/grafana@sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf 
+sha256:aafa9d694e6a883c02db516d9f6e5b84e14195f49a2a6456a4cca815edda72b9 amd64 ["quay.io/prometheus/prometheus@sha256:aafa9d694e6a883c02db516d9f6e5b84e14195f49a2a6456a4cca815edda72b9"]
+sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf amd64 ["grafana/grafana@sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf"]
+2026-11-18T11:27:12Z
+exit=0

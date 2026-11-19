@@ -1,0 +1,8 @@
++ PYTHONPATH=/tmp/jimu-wp05-wheel-p15AwMUd/snapshot/product
++ WP05_PROBE_DIAGNOSTICS=1
++ /tmp/jimu-wp05-wheel-p15AwMUd/venv/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py --installed --trace-dir /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_vrVlryJH/exec known_violation
+{"check": "worker_process_ready", "pid": 3623642, "runtime_install": "/tmp/jimu-wp05-wheel-p15AwMUd/venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3623642, "signal": null}
+{"after_release_switch": null, "authority_count": 6, "check": "scenario_terminal_audit", "context": "perception.context.d91285b3bc28ef25b2387348ad3d9e4776d49e377ec96a5c66e28bc9cedc8b9f", "coverage": "complete", "decisions": {"outside": "violation"}, "device_and_camera_revision": "1.0.0", "name": "known_violation", "objects": 1, "observed_cpu_execve": 3, "post": {"candidate": 1, "discovery": 1, "grounding": 1, "observation": 1}, "product_steps": ["applied", "applied", "applied", "applied", "applied", "staged", "finalized"], "summary": "violation", "tool_sidecars": 3}
+2026-11-18T06:10:05Z
+exit=0

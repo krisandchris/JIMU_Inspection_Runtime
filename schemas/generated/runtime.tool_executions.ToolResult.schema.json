@@ -1,0 +1,716 @@
+{
+  "$defs": {
+    "AbsentOptional_Value_": {
+      "$ref": "#/$defs/Value"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "entity",
+        "region",
+        "profile",
+        "facet",
+        "question",
+        "tool",
+        "tool_plan",
+        "rule",
+        "rule_set",
+        "model_binding",
+        "fact_schema",
+        "prompt_template",
+        "response_schema",
+        "attribute_schema",
+        "context_schema",
+        "tool_input_schema",
+        "tool_output_schema",
+        "object_schema",
+        "decision_schema",
+        "value_schema",
+        "policy",
+        "vocabulary",
+        "geometry_resource",
+        "static_asset",
+        "fact_producer_catalog"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "BooleanValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanValue",
+      "type": "object"
+    },
+    "BoundedString": {
+      "maxLength": 4096,
+      "type": "string"
+    },
+    "ContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ContentRef",
+      "type": "object"
+    },
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "EnumValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enum",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "EnumValue",
+      "type": "object"
+    },
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "evidence",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "EvidenceRefs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "FactReason": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "reason_code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Reason Code",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reason_code",
+        "message",
+        "diagnostic_refs"
+      ],
+      "title": "FactReason",
+      "type": "object"
+    },
+    "FailedToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "error": {
+          "$ref": "#/$defs/ToolError"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/ToolResultEvidence"
+          },
+          "maxItems": 64,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "output_states": {
+          "items": {
+            "$ref": "#/$defs/ToolOutputState"
+          },
+          "maxItems": 64,
+          "title": "Output States",
+          "type": "array"
+        },
+        "status": {
+          "const": "failed",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "diagnostics",
+        "evidence_refs",
+        "evidence",
+        "output_states",
+        "status",
+        "error"
+      ],
+      "title": "FailedToolResult",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "IntegerValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "IntegerValue",
+      "type": "object"
+    },
+    "IssueIndex": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "IssuePath": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/FieldName"
+          },
+          {
+            "$ref": "#/$defs/IssueIndex"
+          }
+        ]
+      },
+      "maxItems": 32,
+      "type": "array"
+    },
+    "KnownToolOutputState": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "fact_status": {
+          "const": "known",
+          "title": "Fact Status",
+          "type": "string"
+        },
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "output_name",
+        "evidence_refs",
+        "fact_status"
+      ],
+      "title": "KnownToolOutputState",
+      "type": "object"
+    },
+    "ListValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "$ref": "#/$defs/Value"
+          },
+          "maxItems": 256,
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "ListValue",
+      "type": "object"
+    },
+    "NonKnownToolOutputState": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "fact_status": {
+          "enum": [
+            "unknown",
+            "error",
+            "not_applicable",
+            "not_evaluated"
+          ],
+          "title": "Fact Status",
+          "type": "string"
+        },
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/FactReason"
+        }
+      },
+      "required": [
+        "output_name",
+        "evidence_refs",
+        "fact_status",
+        "reason"
+      ],
+      "title": "NonKnownToolOutputState",
+      "type": "object"
+    },
+    "NumberValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "NumberValue",
+      "type": "object"
+    },
+    "PartialToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/ToolResultEvidence"
+          },
+          "maxItems": 64,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "output_states": {
+          "items": {
+            "$ref": "#/$defs/ToolOutputState"
+          },
+          "maxItems": 64,
+          "title": "Output States",
+          "type": "array"
+        },
+        "payload": {
+          "$ref": "#/$defs/AbsentOptional_Value_"
+        },
+        "status": {
+          "const": "partial",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "diagnostics",
+        "evidence_refs",
+        "evidence",
+        "output_states",
+        "status"
+      ],
+      "title": "PartialToolResult",
+      "type": "object"
+    },
+    "RecordValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Value"
+          },
+          "maxProperties": 64,
+          "propertyNames": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "title": "Value",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "RecordValue",
+      "type": "object"
+    },
+    "StringValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "StringValue",
+      "type": "object"
+    },
+    "SucceededToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/ToolResultEvidence"
+          },
+          "maxItems": 64,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "output_states": {
+          "items": {
+            "$ref": "#/$defs/ToolOutputState"
+          },
+          "maxItems": 64,
+          "title": "Output States",
+          "type": "array"
+        },
+        "payload": {
+          "$ref": "#/$defs/AbsentOptional_Value_"
+        },
+        "status": {
+          "const": "succeeded",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "diagnostics",
+        "evidence_refs",
+        "evidence",
+        "output_states",
+        "status"
+      ],
+      "title": "SucceededToolResult",
+      "type": "object"
+    },
+    "ToolError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "error_class": {
+          "enum": [
+            "transport",
+            "timeout",
+            "rate_limit",
+            "resource_exhausted",
+            "validation",
+            "association",
+            "unavailable",
+            "cancelled",
+            "internal"
+          ],
+          "title": "Error Class",
+          "type": "string"
+        }
+      },
+      "required": [
+        "error_class",
+        "code",
+        "diagnostic_refs"
+      ],
+      "title": "ToolError",
+      "type": "object"
+    },
+    "ToolOutputState": {
+      "discriminator": {
+        "mapping": {
+          "error": "#/$defs/NonKnownToolOutputState",
+          "known": "#/$defs/KnownToolOutputState",
+          "not_applicable": "#/$defs/NonKnownToolOutputState",
+          "not_evaluated": "#/$defs/NonKnownToolOutputState",
+          "unknown": "#/$defs/NonKnownToolOutputState"
+        },
+        "propertyName": "fact_status"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/KnownToolOutputState"
+        },
+        {
+          "$ref": "#/$defs/NonKnownToolOutputState"
+        }
+      ]
+    },
+    "ToolResultEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_refs": {
+          "$ref": "#/$defs/EvidenceRefs",
+          "minLength": 1
+        },
+        "name": {
+          "$ref": "#/$defs/FieldName"
+        }
+      },
+      "required": [
+        "name",
+        "evidence_refs"
+      ],
+      "title": "ToolResultEvidence",
+      "type": "object"
+    },
+    "ValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "path": {
+          "$ref": "#/$defs/IssuePath"
+        },
+        "related_refs": {
+          "items": {
+            "$ref": "#/$defs/ContentRef"
+          },
+          "maxItems": 16,
+          "title": "Related Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "path",
+        "message",
+        "related_refs"
+      ],
+      "title": "ValidationIssue",
+      "type": "object"
+    },
+    "Value": {
+      "discriminator": {
+        "mapping": {
+          "bool": "#/$defs/BooleanValue",
+          "enum": "#/$defs/EnumValue",
+          "integer": "#/$defs/IntegerValue",
+          "list": "#/$defs/ListValue",
+          "number": "#/$defs/NumberValue",
+          "record": "#/$defs/RecordValue",
+          "string": "#/$defs/StringValue"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BooleanValue"
+        },
+        {
+          "$ref": "#/$defs/IntegerValue"
+        },
+        {
+          "$ref": "#/$defs/NumberValue"
+        },
+        {
+          "$ref": "#/$defs/StringValue"
+        },
+        {
+          "$ref": "#/$defs/EnumValue"
+        },
+        {
+          "$ref": "#/$defs/ListValue"
+        },
+        {
+          "$ref": "#/$defs/RecordValue"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "failed": "#/$defs/FailedToolResult",
+      "partial": "#/$defs/PartialToolResult",
+      "succeeded": "#/$defs/SucceededToolResult"
+    },
+    "propertyName": "status"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SucceededToolResult"
+    },
+    {
+      "$ref": "#/$defs/PartialToolResult"
+    },
+    {
+      "$ref": "#/$defs/FailedToolResult"
+    }
+  ]
+}

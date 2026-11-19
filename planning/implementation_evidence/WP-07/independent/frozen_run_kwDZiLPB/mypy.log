@@ -1,0 +1,8 @@
+2026-11-18T11:14:16Z
+/tmp/jimu-wp07-acceptance-2u1gRSVx/dev/bin/mypy --strict src/jimu_runtime scripts/generate_schemas.py examples/nonmotor_vehicle_illegal_parking/compilable/lifecycle.py examples/nonmotor_vehicle_illegal_parking/compilable/local_trust.py examples/nonmotor_vehicle_illegal_parking/compilable/scene.py examples/nonmotor_vehicle_illegal_parking/compilable/__main__.py ops/recovery ops/compose/synthetic_host.py ops/compose/synthetic_provider.py 
+ops/recovery/postgres.py: error: Source file found twice under different module names: "recovery.postgres" and "ops.recovery.postgres"
+ops/recovery/postgres.py: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules for more info
+ops/recovery/postgres.py: note: Common resolutions include: a) adding `__init__.py` somewhere, b) using `--explicit-package-bases` or adjusting MYPYPATH
+Found 1 error in 1 file (errors prevented further checking)
+2026-11-18T11:14:17Z
+exit=2

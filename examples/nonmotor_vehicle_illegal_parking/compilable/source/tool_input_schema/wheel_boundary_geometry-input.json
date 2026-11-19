@@ -1,0 +1,531 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:jimu:synthetic:parking:wheel_boundary_geometry-input:1.0.0",
+  "type": "object",
+  "properties": {
+    "wheel_mask": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "record"
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "evidence_id": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "string"
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "sha256": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "string"
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 64,
+                  "maxLength": 64
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "source_media_sha256": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "string"
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 64,
+                  "maxLength": 64
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "coordinate_system": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "record"
+                },
+                "value": {
+                  "type": "object",
+                  "properties": {
+                    "coordinate_system_id": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "string"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "frame": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "enum"
+                        },
+                        "value": {
+                          "type": "string",
+                          "enum": [
+                            "original_image"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "dimensions": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "record"
+                        },
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "width": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "const": "integer"
+                                },
+                                "value": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 8192
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "value"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "height": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "const": "integer"
+                                },
+                                "value": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 8192
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "value"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "width",
+                            "height"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "coordinate_system_id",
+                    "frame",
+                    "dimensions"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "evidence_id",
+            "sha256",
+            "source_media_sha256",
+            "coordinate_system"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "tactile_paving_mask": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "record"
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "evidence_id": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "string"
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "sha256": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "string"
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 64,
+                  "maxLength": 64
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "source_media_sha256": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "string"
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 64,
+                  "maxLength": 64
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "coordinate_system": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "record"
+                },
+                "value": {
+                  "type": "object",
+                  "properties": {
+                    "coordinate_system_id": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "string"
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "frame": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "enum"
+                        },
+                        "value": {
+                          "type": "string",
+                          "enum": [
+                            "original_image"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "dimensions": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "record"
+                        },
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "width": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "const": "integer"
+                                },
+                                "value": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 8192
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "value"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "height": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "const": "integer"
+                                },
+                                "value": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 8192
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "value"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "width",
+                            "height"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "coordinate_system_id",
+                    "frame",
+                    "dimensions"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "evidence_id",
+            "sha256",
+            "source_media_sha256",
+            "coordinate_system"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "parking_area": {
+      "type": "object",
+      "properties": {
+        "region_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "region_version": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 32
+        },
+        "region_sha256": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "geometry_resource_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "geometry_version": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 32
+        },
+        "geometry_sha256": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "source_asset_sha256": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "coordinate_system": {
+          "type": "object",
+          "properties": {
+            "coordinate_system_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "frame": {
+              "type": "string",
+              "enum": [
+                "original_image"
+              ]
+            },
+            "dimensions": {
+              "type": "object",
+              "properties": {
+                "width": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 8192
+                },
+                "height": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 8192
+                }
+              },
+              "required": [
+                "width",
+                "height"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "coordinate_system_id",
+            "frame",
+            "dimensions"
+          ],
+          "additionalProperties": false
+        },
+        "units": {
+          "type": "string",
+          "enum": [
+            "pixel"
+          ]
+        },
+        "bbox": {
+          "type": "object",
+          "properties": {
+            "xyxy": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 8192
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "xyxy"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "region_id",
+        "region_version",
+        "region_sha256",
+        "geometry_resource_id",
+        "geometry_version",
+        "geometry_sha256",
+        "source_asset_sha256",
+        "coordinate_system",
+        "units",
+        "bbox"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "wheel_mask",
+    "tactile_paving_mask",
+    "parking_area"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,35 @@
+{
+  "$defs": {
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "GeometryCoordinate": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      ],
+      "maximum": 9007199254740991,
+      "minimum": -9007199254740991
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "x": {
+      "$ref": "#/$defs/GeometryCoordinate"
+    },
+    "y": {
+      "$ref": "#/$defs/GeometryCoordinate"
+    }
+  },
+  "required": [
+    "x",
+    "y"
+  ],
+  "title": "GeometryPoint",
+  "type": "object"
+}

@@ -1,0 +1,1415 @@
+diff --git a/examples/nonmotor_vehicle_illegal_parking/compilable/scene.py b/examples/nonmotor_vehicle_illegal_parking/compilable/scene.py
+new file mode 100644
+index 0000000..6e43d14
+--- /dev/null
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/scene.py
+@@ -0,0 +1,334 @@
++"""Compile the local synthetic scene with the installed JIMU Runtime."""
++
++import json
++from dataclasses import replace
++from datetime import UTC, datetime
++from pathlib import Path
++from typing import TypedDict
++
++from pydantic import TypeAdapter
++
++from jimu_runtime.bundle.archive import BundleLimits
++from jimu_runtime.bundle.artifacts import DRAFT_2020_12
++from jimu_runtime.bundle.capabilities import CapabilitySnapshot
++from jimu_runtime.bundle.compiler import (
++    BundleBuildMetadata,
++    BundleCompileInput,
++    ReferenceSlot,
++    SourceArtifact,
++    SourceAssetBytes,
++    SourceIdentity,
++)
++from jimu_runtime.bundle.integrity import JSONLocation, canonical_json, sha256_digest
++from jimu_runtime.domain.definition_support import ExternalCapabilityRequirement
++from jimu_runtime.domain.enums import ArtifactKind
++from jimu_runtime.domain.fact_schemas.canonicalization import JSONValue
++from jimu_runtime.domain.runtime.bundle_manifest import (
++    CompatibilityRequirement,
++    SourceArtifactRef,
++    SourceProvenance,
++)
++from jimu_runtime.domain.runtime.tool_executions import ToolResult
++
++DIRECTORY = Path(__file__).resolve().parent
++VERSION = "1.0.0"
++SOURCE = "synthetic.nonmotor.parking.source"
++START = datetime(2026, 1, 1, tzinfo=UTC)
++AT = datetime(2026, 1, 2, tzinfo=UTC)
++END = datetime(2026, 1, 3, tzinfo=UTC)
++LIMITS = BundleLimits(
++    max_archive_bytes=512 * 1024,
++    max_expanded_bytes=2 * 1024 * 1024,
++    max_file_bytes=256 * 1024,
++    max_files=128,
++    max_json_depth=48,
++)
++
++
++class _JSONLimits(TypedDict):
++    max_bytes: int
++    max_depth: int
++
++
++JSON_LIMITS: _JSONLimits = {
++    "max_bytes": LIMITS.max_file_bytes,
++    "max_depth": LIMITS.max_json_depth,
++}
++QUESTIONS = ("vehicle_type", "parking_state", "parking_position")
++STEPS = ("wheel_segmentation", "tactile_paving_segmentation", "wheel_boundary_geometry")
++PROFILE = "nonmotor_vehicle"
++REGION = "synthetic_nonmotor_parking"
++RULE = "nonmotor_vehicle_illegal_parking"
++
++
++def _extract_slots(
++    value: JSONValue, slots: list[ReferenceSlot], path: JSONLocation = ()
++) -> JSONValue:
++    if isinstance(value, dict):
++        if "$pin" in value:
++            target = value["$pin"]
++            if (
++                not isinstance(target, list)
++                or len(target) != 3
++                or not all(isinstance(item, str) for item in target)
++                or set(value) - {"$pin", "schema_ref"}
++                or value.get("schema_ref", False) not in (True, False)
++            ):
++                raise ValueError(f"Invalid scene pin: {path}")
++            kind, identifier, version = target
++            assert isinstance(kind, str)
++            assert isinstance(identifier, str)
++            assert isinstance(version, str)
++            slots.append(
++                ReferenceSlot(
++                    location=path,
++                    target=(ArtifactKind(kind), identifier, version),
++                    schema_ref=value.get("schema_ref") is True,
++                )
++            )
++            return None
++        return {
++            key: _extract_slots(child, slots, (*path, key))
++            for key, child in value.items()
++        }
++    if isinstance(value, list):
++        return [
++            _extract_slots(child, slots, (*path, index))
++            for index, child in enumerate(value)
++        ]
++    return value
++
++
++def _output_contract(
++    artifact_id: str, payload: JSONValue, evidence_names: list[str]
++) -> dict[str, JSONValue]:
++    """Use the authoritative ToolResult status envelope with scene-owned slots."""
++    schema = TypeAdapter[ToolResult](ToolResult).json_schema()
++    for branch in ("SucceededToolResult", "PartialToolResult", "FailedToolResult"):
++        properties = schema["$defs"][branch]["properties"]
++        if branch != "FailedToolResult":
++            properties["payload"] = payload
++        if not evidence_names:
++            properties["evidence"] = {"type": "array", "maxItems": 0}
++            continue
++        properties["evidence"] = {
++            "type": "array",
++            "maxItems": 64,
++            "items": {
++                "oneOf": [
++                    {
++                        "type": "object",
++                        "additionalProperties": False,
++                        "properties": {
++                            "name": {"const": name},
++                            "evidence_refs": {
++                                "$ref": "#/$defs/EvidenceRefs",
++                                "minItems": 1,
++                                "maxItems": 1,
++                            },
++                        },
++                        "required": ["name", "evidence_refs"],
++                    }
++                    for name in evidence_names
++                ]
++            },
++            "allOf": [
++                {
++                    "contains": {"properties": {"name": {"const": name}}},
++                    "minContains": int(branch == "SucceededToolResult"),
++                    "maxContains": 1,
++                }
++                for name in evidence_names
++            ],
++        }
++    return {
++        "$schema": DRAFT_2020_12,
++        "$id": f"urn:jimu:synthetic:parking:{artifact_id}:{VERSION}",
++        **schema,
++    }
++
++
++def _index() -> dict[str, object]:
++    document: dict[str, object] = json.loads(
++        (DIRECTORY / "source" / "index.json").read_bytes()
++    )
++    if document["schema_version"] != VERSION:
++        raise ValueError("Unsupported scene source version")
++    return document
++
++
++def _rows(value: object) -> list[dict[str, str]]:
++    # The index is authored alongside the example and is used only by this loader.
++    return TypeAdapter(list[dict[str, str]]).validate_python(value, strict=True)
++
++
++def _source_artifact(index_row: dict[str, str]) -> SourceArtifact:
++    kind = ArtifactKind(index_row["kind"])
++    identifier = index_row["id"]
++    raw = (DIRECTORY / "source" / index_row["file"]).read_bytes()
++    slots: list[ReferenceSlot] = []
++    value = json.loads(raw)
++    if kind is ArtifactKind.TOOL_OUTPUT_SCHEMA:
++        value = _output_contract(identifier, value["payload"], value["evidence_slots"])
++        raw = canonical_json(value, path=index_row["path"], **JSON_LIMITS)
++    else:
++        value = _extract_slots(value, slots)
++        if slots:
++            raw = canonical_json(value, path=index_row["path"], **JSON_LIMITS)
++    return SourceArtifact(
++        kind=kind,
++        artifact_id=identifier,
++        version=VERSION,
++        path=index_row["path"],
++        content=raw,
++        origin=SourceIdentity(
++            artifact_id=f"{kind.value}:{identifier}", version=VERSION
++        ),
++        reference_slots=tuple(slots),
++    )
++
++
++def with_source_provenance(source: BundleCompileInput) -> BundleCompileInput:
++    """Declare exact compiler inputs for this wholly synthetic source."""
++    inputs: tuple[SourceArtifact | SourceAssetBytes, ...] = (
++        *source.artifacts,
++        *source.assets,
++    )
++    provenance = SourceProvenance(
++        source_system=SOURCE,
++        artifacts=tuple(
++            SourceArtifactRef(
++                artifact_id=item.origin.artifact_id,
++                version=item.origin.version,
++                digest=sha256_digest(item.content),
++            )
++            for item in inputs
++        ),
++    )
++    return replace(source, metadata=replace(source.metadata, source=provenance))
++
++
++def load_source() -> BundleCompileInput:
++    """Load only the scene's co-located versioned source and its Region asset."""
++    index = _index()
++    requirements = TypeAdapter(list[ExternalCapabilityRequirement])
++    return with_source_provenance(
++        BundleCompileInput(
++            metadata=BundleBuildMetadata(
++                bundle_id="synthetic.nonmotor.parking",
++                bundle_version=VERSION,
++                compiler_version=VERSION,
++                created_at=START,
++                source=SourceProvenance(source_system=SOURCE, artifacts=()),
++                compatibility=CompatibilityRequirement(
++                    minimum_runtime_version_inclusive=VERSION,
++                    maximum_runtime_version_exclusive="2.0.0",
++                ),
++                required_capabilities=tuple(
++                    requirements.validate_python(index["capabilities"])
++                ),
++                producer_catalogue_id="synthetic.nonmotor.parking.producers",
++                producer_catalogue_version=VERSION,
++            ),
++            artifacts=tuple(_source_artifact(row) for row in _rows(index["artifacts"])),
++            assets=tuple(
++                SourceAssetBytes(
++                    path=row["path"],
++                    content=(DIRECTORY / row["file"]).read_bytes(),
++                    origin=SourceIdentity(
++                        artifact_id=f"asset-bytes:{row['id']}", version=VERSION
++                    ),
++                )
++                for row in _rows(index["raw_assets"])
++            ),
++        )
++    )
++
++
++def capability_snapshot(source: BundleCompileInput) -> CapabilitySnapshot:
++    """Host capability declarations for the local compile/admission demonstration."""
++    index = _index()
++    schema_sources = {
++        item.artifact_id: item
++        for item in source.artifacts
++        if item.kind
++        in (
++            ArtifactKind.RESPONSE_SCHEMA,
++            ArtifactKind.TOOL_INPUT_SCHEMA,
++            ArtifactKind.TOOL_OUTPUT_SCHEMA,
++        )
++    }
++    roles = _rows(index["model_roles"])
++    tool_protocols = _rows(index["tool_protocols"])
++    requirements = source.metadata.required_capabilities
++    current = {"valid_from": START, "valid_until": END, "revoked_at": None}
++
++    def schema_ref(identifier: str) -> dict[str, str]:
++        item = schema_sources[identifier]
++        return {
++            "artifact_kind": item.kind.value,
++            "artifact_id": identifier,
++            "version": item.version,
++            "digest": sha256_digest(
++                canonical_json(json.loads(item.content), **JSON_LIMITS)
++            ),
++            "schema_dialect": DRAFT_2020_12,
++        }
++
++    def contract(row: dict[str, str]) -> dict[str, object]:
++        return {
++            "input_schema_ref": schema_ref(row["input_schema"]),
++            "output_schema_ref": schema_ref(row["output_schema"]),
++        }
++
++    model_requirement = next(
++        row for row in requirements if row.family.value == "model_deployment"
++    )
++    return CapabilitySnapshot.model_validate(
++        {
++            "pin": {
++                "identity": "synthetic.scene.capabilities",
++                "version": VERSION,
++                "sha256": sha256_digest(
++                    (DIRECTORY / "source" / "index.json").read_bytes()
++                ),
++            },
++            "runtime_version": VERSION,
++            "bundle_schema_versions": (VERSION,),
++            "valid_from": START,
++            "valid_until": END,
++            "capabilities": tuple(
++                {
++                    "family": row.family,
++                    "capability_id": row.capability_id,
++                    "contract_version": row.contract_version,
++                    "implementation_version": VERSION,
++                    "supported_features": row.required_features,
++                    "evaluations": (),
++                    **current,
++                }
++                for row in requirements
++            ),
++            "model_deployments": (
++                {
++                    "identity": index["deployment"],
++                    "supported_features": model_requirement.required_features,
++                    "contracts": tuple(
++                        {"capability": row["role"], **contract(row)} for row in roles
++                    ),
++                    **current,
++                },
++            ),
++            "model_reviews": (),
++            "supported_workflow_versions": (VERSION,),
++            "runtime_protocols": tuple(
++                {
++                    "role": row.get("role", "tool_execution"),
++                    **contract(row),
++                    "protocol_version": VERSION,
++                    **current,
++                }
++                for row in (*roles, *tool_protocols)
++            ),
++        }
++    )
+diff --git a/examples/nonmotor_vehicle_illegal_parking/compilable/local_trust.py b/examples/nonmotor_vehicle_illegal_parking/compilable/local_trust.py
+new file mode 100644
+index 0000000..85efb39
+--- /dev/null
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/local_trust.py
+@@ -0,0 +1,199 @@
++"""An isolated Ed25519 signing host for the example's private local store."""
++
++import shutil
++import subprocess
++from dataclasses import dataclass
++from datetime import datetime
++from pathlib import Path
++from tempfile import TemporaryDirectory
++
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.bundle.trust import (
++    SignatureEvidence,
++    SignatureProof,
++    SigningKeyGrant,
++    SourceAuthorization,
++    TrustConfiguration,
++    TrustEnvironment,
++    TrustError,
++    TrustPin,
++    TrustPolicy,
++    TrustSnapshot,
++)
++from jimu_runtime.domain.runtime.bundle_manifest import DetachedSignatureRef
++
++from .scene import AT, END, SOURCE, START, VERSION
++
++PROFILE = "jimu-wp02-test-nonmotor-ed25519-v1"
++REGISTRY = "synthetic.scene.signatures"
++ED25519_SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")
++
++
++def _pin(identity: str, content: bytes) -> TrustPin:
++    return TrustPin(identity=identity, version=VERSION, sha256=sha256_digest(content))
++
++
++def _openssl(*args: str) -> subprocess.CompletedProcess[bytes]:
++    path = shutil.which("openssl")
++    if path is None:
++        raise RuntimeError("The isolated signing demo requires OpenSSL 3")
++    return subprocess.run(
++        (path, *args),
++        stdin=subprocess.DEVNULL,
++        capture_output=True,
++        env={"OPENSSL_CONF": "/dev/null", "LC_ALL": "C"},
++        check=False,
++        timeout=10,
++    )
++
++
++def _message(signature: SignatureEvidence, root_digest: str) -> bytes:
++    fields = (
++        signature.profile_id,
++        signature.ref.signature_registry_id,
++        signature.ref.signature_id,
++        signature.ref.version,
++        signature.key_pin.identity,
++        signature.key_pin.version,
++        signature.key_pin.sha256,
++        signature.signed_at.isoformat(),
++        root_digest,
++    )
++    return b"JIMU\x00SYNTHETIC-PARKING-ED25519\x00V1\x00" + b"".join(
++        len(part).to_bytes(4, "big") + part for part in map(str.encode, fields)
++    )
++
++
++@dataclass(slots=True)
++class LocalEd25519:
++    directory: Path
++    grant: SigningKeyGrant | None = None
++    public_der: bytes = b""
++    signature: SignatureEvidence | None = None
++    environment: TrustEnvironment = "isolated_test"
++    profile_id: str = PROFILE
++
++    def resolve(
++        self, ref: DetachedSignatureRef, *, max_bytes: int
++    ) -> SignatureEvidence | None:
++        if (
++            self.signature is not None
++            and self.signature.ref == ref
++            and len(self.signature.payload) <= max_bytes
++        ):
++            return self.signature
++        return None
++
++    def verify(
++        self, evidence: SignatureEvidence, key: SigningKeyGrant, root_digest: str
++    ) -> SignatureProof:
++        if (
++            _pin(key.pin.identity, self.public_der) != key.pin
++            or evidence.key_pin != key.pin
++            or not self.public_der.startswith(ED25519_SPKI_PREFIX)
++            or len(self.public_der) != len(ED25519_SPKI_PREFIX) + 32
++            or len(evidence.payload) != 64
++        ):
++            raise TrustError("trust.scene_key_invalid", "Invalid isolated key or proof")
++        with TemporaryDirectory(dir=self.directory) as staged:
++            directory = Path(staged)
++            public = directory / "public.der"
++            public.write_bytes(self.public_der)
++            message = directory / "message"
++            message.write_bytes(_message(evidence, root_digest))
++            signature = directory / "signature"
++            signature.write_bytes(evidence.payload)
++            verified = _openssl(
++                "pkeyutl",
++                "-verify",
++                "-rawin",
++                "-pubin",
++                "-keyform",
++                "DER",
++                "-inkey",
++                str(public),
++                "-in",
++                str(message),
++                "-sigfile",
++                str(signature),
++            )
++        if verified.returncode != 0:
++            raise TrustError(
++                "trust.scene_signature_invalid", "Invalid Ed25519 signature"
++            )
++        return SignatureProof(evidence.ref, key.pin, evidence.signed_at, root_digest)
++
++    def snapshot_at(self, validation_at: datetime) -> TrustSnapshot | None:
++        if not START <= validation_at < END:
++            return None
++        policy = TrustPolicy(
++            pin=_pin("synthetic.scene.policy", PROFILE.encode()),
++            environment=self.environment,
++            profile_id=self.profile_id,
++            minimum_distinct_signers=1,
++            max_signature_evidence_bytes=64,
++            sources=(
++                SourceAuthorization(source_system=SOURCE, evidence="signer_authorized"),
++            ),
++        )
++        configuration = TrustConfiguration(
++            pin=_pin("synthetic.scene.trust", self.public_der or PROFILE.encode()),
++            policy=policy,
++            valid_from=START,
++            valid_until=END,
++            keys=() if self.grant is None else (self.grant,),
++        )
++        return TrustSnapshot(configuration, self)
++
++
++def sign_bundle(
++    directory: Path, root_digest: str
++) -> tuple[LocalEd25519, DetachedSignatureRef]:
++    """Sign one logical root and return only its public verifier and detached ref."""
++    with TemporaryDirectory(dir=directory) as staged:
++        staging = Path(staged)
++        key_file = staging / "private.pem"
++        key = _openssl("genpkey", "-algorithm", "Ed25519")
++        if key.returncode != 0:
++            raise RuntimeError("Unable to generate isolated Ed25519 key")
++        with open(key_file, "xb", opener=_private_file) as key_stream:
++            key_stream.write(key.stdout)
++        public = _openssl("pkey", "-in", str(key_file), "-outform", "DER", "-pubout")
++        if public.returncode != 0:
++            raise RuntimeError("Unable to export isolated Ed25519 public key")
++        pin = _pin("synthetic.scene.ephemeral-key", public.stdout)
++        grant = SigningKeyGrant(
++            pin=pin,
++            signer_id="synthetic.local.publisher",
++            profile_id=PROFILE,
++            signature_registry_ids=(REGISTRY,),
++            source_systems=(SOURCE,),
++            valid_from=START,
++            valid_until=END,
++            revoked_at=None,
++        )
++        ref = DetachedSignatureRef(
++            signature_id="synthetic.scene.signature",
++            version=VERSION,
++            signature_registry_id=REGISTRY,
++            sha256="0" * 64,
++        )
++        data = SignatureEvidence(
++            ref=ref, profile_id=PROFILE, key_pin=pin, signed_at=AT, payload=b"pending"
++        )
++        message = staging / "message"
++        message.write_bytes(_message(data, root_digest))
++        signed = _openssl(
++            "pkeyutl", "-sign", "-rawin", "-inkey", str(key_file), "-in", str(message)
++        )
++        if signed.returncode != 0 or len(signed.stdout) != 64:
++            raise RuntimeError("Unable to sign the isolated Bundle root")
++    ref = ref.model_copy(update={"sha256": sha256_digest(signed.stdout)})
++    evidence = data.model_copy(update={"ref": ref, "payload": signed.stdout})
++    return LocalEd25519(directory, grant, public.stdout, evidence), ref
++
++
++def _private_file(path: str, flags: int) -> int:
++    import os
++
++    return os.open(path, flags, 0o600)
+diff --git a/examples/nonmotor_vehicle_illegal_parking/compilable/lifecycle.py b/examples/nonmotor_vehicle_illegal_parking/compilable/lifecycle.py
+new file mode 100644
+index 0000000..27d58bc
+--- /dev/null
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/lifecycle.py
+@@ -0,0 +1,237 @@
++"""Exercise the production compiler, local admission and historical pin reopen."""
++
++from dataclasses import dataclass
++from datetime import datetime
++from pathlib import Path
++
++from jimu_runtime.bundle.admission import AdmissionEnvironment, admit_bundle
++from jimu_runtime.bundle.archive import read_bundle
++from jimu_runtime.bundle.catalogue import build_catalogue
++from jimu_runtime.bundle.compiler import (
++    CompiledBundle,
++    CompileEnvironment,
++    attach_signature_refs,
++    compile_bundle,
++)
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.bundle.releases import (
++    ReleaseAction,
++    ReleaseManager,
++    ReleaseTarget,
++    ResolvedTaskScope,
++)
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.bundle.store import LocalBundleStore
++from jimu_runtime.bundle.trust import verify_bundle_trust
++from jimu_runtime.domain.definitions.ontology import RegionDefinition
++from jimu_runtime.domain.enums import ArtifactKind
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.domain.runtime.intake import AcceptedTask, TaskSubmission
++from jimu_runtime.domain.runtime.releases import (
++    ActivationRecord,
++    RegionActivationScope,
++    ReleaseRecord,
++)
++from jimu_runtime.workflow.pins import ResolvedExecutionPins, resolve_execution_pins
++
++from .local_trust import LocalEd25519, sign_bundle
++from .scene import (
++    AT,
++    DIRECTORY,
++    JSON_LIMITS,
++    LIMITS,
++    REGION,
++    VERSION,
++    capability_snapshot,
++    load_source,
++)
++
++ACTOR = ActorRef(
++    actor_id="synthetic.scene.operator",
++    actor_kind="service",
++    identity_registry_id="synthetic.scene.identities",
++)
++SCOPE = RegionActivationScope(scope="region", region_id=REGION)
++DEVICE = "synthetic.device"
++CAMERA = "synthetic.fixed.camera"
++PROJECT = "synthetic.nonmotor.parking"
++CLIENT = "synthetic.edge"
++RELEASE_ID = "synthetic.parking.release"
++
++
++@dataclass(frozen=True, slots=True)
++class ReopenedScene:
++    bundle: CompiledBundle
++    signed_archive: bytes
++    release: ReleaseRecord
++    activation: ActivationRecord
++    task: AcceptedTask
++    execution: ResolvedExecutionPins
++
++
++def local_submission(media: bytes) -> TaskSubmission:
++    return TaskSubmission.model_validate(
++        {
++            "schema_version": VERSION,
++            "request_id": "synthetic.scene.request",
++            "idempotency_scope": {"project_id": PROJECT, "client_id": CLIENT},
++            "idempotency_key": "synthetic.scene.frame",
++            "media_ref": {
++                "media_id": "synthetic.scene.image",
++                "sha256": sha256_digest(media),
++            },
++            "context": {
++                "device_id": DEVICE,
++                "camera_id": CAMERA,
++                "region_id": REGION,
++                "clock": {
++                    "captured_at": AT,
++                    "original_timestamp": AT.isoformat(),
++                    "original_timezone": "UTC",
++                    "source": "device_clock",
++                    "clock_id": DEVICE,
++                },
++                "metadata": {"kind": "record", "value": {}},
++            },
++            "trace": {"trace_id": "synthetic.scene.trace"},
++        }
++    )
++
++
++def exercise_lifecycle(directory: Path) -> ReopenedScene:
++    """Compile, admit, activate and reopen in a caller-owned temporary directory."""
++    source = load_source()
++    host = capability_snapshot(source)
++    compile_environment = CompileEnvironment(
++        capabilities=host, trust=LocalEd25519(directory), validation_at=AT
++    )
++    result = compile_bundle(source, limits=LIMITS, environment=compile_environment)
++    bundle = result.bundle
++    if bundle is None:
++        raise RuntimeError(f"Scene compilation failed: {result.errors}")
++
++    verifier, signature = sign_bundle(directory, bundle.bundle_ref.bundle_digest)
++    signed = attach_signature_refs(bundle.archive_bytes, (signature,), limits=LIMITS)
++    files = read_bundle(signed, LIMITS)
++    verification = verify_bundle_trust(
++        files.manifest, bundle.bundle_ref.bundle_digest, verifier, validation_at=AT
++    )
++    if len(verification.signatures) != 1:
++        raise RuntimeError("Expected one authenticated detached signature")
++    store_dir = directory / "releases"
++    store = LocalBundleStore(store_dir)
++    admitted = admit_bundle(
++        signed,
++        operation_id="admit.synthetic.scene",
++        actor=ACTOR,
++        limits=LIMITS,
++        environment=AdmissionEnvironment(
++            runtime_identity=ACTOR, capabilities=host, trust=verifier, validation_at=AT
++        ),
++        store=store,
++    )
++    if not admitted.accepted or admitted.receipt is None:
++        raise RuntimeError(f"Scene admission failed: {admitted}")
++
++    catalogue = build_catalogue(files.manifest, files.payloads, **JSON_LIMITS)
++    (region_ref,) = (
++        item.ref
++        for item in catalogue.of_kind(ArtifactKind.REGION)
++        if item.ref.artifact_id == REGION
++    )
++    region = require_definition(catalogue, region_ref, RegionDefinition)
++    principal = object()
++    submission = local_submission(
++        (DIRECTORY / "assets" / "synthetic-frame.png").read_bytes()
++    )
++
++    def authorize(
++        caller: object, action: ReleaseAction, target: ReleaseTarget
++    ) -> ActorRef | None:
++        if caller is not principal or target.release_id != RELEASE_ID:
++            return None
++        if action is ReleaseAction.REGISTER and target.scope.scope == "global":
++            return ACTOR
++        if (
++            action
++            in (
++                ReleaseAction.APPROVE,
++                ReleaseAction.ACTIVATE,
++                ReleaseAction.ACCEPT_TASK,
++            )
++            and target.scope == SCOPE
++        ):
++            return ACTOR
++        return None
++
++    def resolve(caller: object, request: TaskSubmission) -> ResolvedTaskScope | None:
++        if caller is not principal or request != submission:
++            return None
++        return ResolvedTaskScope(
++            device_id=DEVICE,
++            camera_id=CAMERA,
++            region_id=REGION,
++            scene_type=region.scene_type,
++        )
++
++    def permit(
++        release: ReleaseRecord,
++        activation: ActivationRecord,
++        scope: ResolvedTaskScope,
++        at: datetime,
++    ) -> bool:
++        return (
++            release.bundle_ref == bundle.bundle_ref
++            and activation.scope == SCOPE
++            and scope.region_id == REGION
++            and at == AT
++        )
++
++    def manager(ledger: LocalBundleStore) -> ReleaseManager:
++        return ReleaseManager(
++            ledger,
++            authorize=authorize,
++            resolve_task_scope=resolve,
++            scope_precedence=("device", "region", "scene", "global"),
++            allow_new_task=permit,
++            clock=lambda: AT,
++        )
++
++    releases = manager(store)
++    releases.register_release(
++        operation_key="register.synthetic.scene",
++        release_id=RELEASE_ID,
++        admission_receipt_id=admitted.receipt.receipt_id,
++        principal=principal,
++    )
++    release = releases.approve_release(
++        operation_key="approve.synthetic.scene",
++        release_id=RELEASE_ID,
++        scope=SCOPE,
++        principal=principal,
++    )
++    activated = releases.activate(
++        operation_key="activate.synthetic.scene",
++        release_id=RELEASE_ID,
++        activation_id="synthetic.parking.activation",
++        scope=SCOPE,
++        expected_previous_activation_id=None,
++        principal=principal,
++    )
++    task = releases.accept_task(submission, principal=principal)
++
++    reopened_store = LocalBundleStore(store_dir)
++    reopened_manager = manager(reopened_store)
++    reopened_task = reopened_manager.get_task(task.task_id)
++    if reopened_task != task or reopened_manager.active_activation(SCOPE) != activated:
++        raise RuntimeError("The reopened local ledger disagrees with accepted state")
++    execution = resolve_execution_pins(
++        reopened_manager,
++        reopened_store,
++        reopened_task,
++        scope=submission.idempotency_scope,
++        host=host,
++        validation_at=AT,
++        limits=LIMITS,
++    )
++    return ReopenedScene(bundle, signed, release, activated, task, execution)
+diff --git a/examples/nonmotor_vehicle_illegal_parking/compilable/__main__.py b/examples/nonmotor_vehicle_illegal_parking/compilable/__main__.py
+new file mode 100644
+index 0000000..e42660f
+--- /dev/null
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/__main__.py
+@@ -0,0 +1,27 @@
++"""Compile and verify the synthetic scene without retaining secrets or a ledger."""
++
++import json
++from pathlib import Path
++from tempfile import TemporaryDirectory
++
++from .lifecycle import exercise_lifecycle
++
++
++def main() -> None:
++    with TemporaryDirectory(prefix="jimu-nonmotor-scene-") as directory:
++        result = exercise_lifecycle(Path(directory))
++        print(
++            json.dumps(
++                {
++                    "bundle": result.bundle.bundle_ref.model_dump(mode="json"),
++                    "release_id": result.release.release_id,
++                    "task_id": result.task.task_id,
++                    "admitted_activated_reopened": True,
++                },
++                indent=2,
++            )
++        )
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/examples/nonmotor_vehicle_illegal_parking/compilable/assets/model-wire.v1.json b/examples/nonmotor_vehicle_illegal_parking/compilable/assets/model-wire.v1.json
+new file mode 100644
+index 0000000..c01ef16
+--- /dev/null
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/assets/model-wire.v1.json
+@@ -0,0 +1,22 @@
++{
++  "schema_version": "1.0.0",
++  "profile_discovery": {
++    "profile_hits": ["nonmotor_vehicle"]
++  },
++  "object_grounding": {
++    "boxes": [{"xyxy": [40, 23, 52, 33]}]
++  },
++  "object_observation": {
++    "vehicle_type": "electric_bicycle",
++    "parking_state": "parked",
++    "parking_position": "outside_parking_area"
++  },
++  "object_observation_insufficient_visibility": {
++    "vehicle_type": "electric_bicycle",
++    "parking_state": "parked",
++    "parking_position": "insufficient_visibility"
++  },
++  "candidate_prediction": {
++    "categories": []
++  }
++}
+diff --git a/examples/nonmotor_vehicle_illegal_parking/compilable/source/rule/nonmotor_vehicle_illegal_parking.json b/examples/nonmotor_vehicle_illegal_parking/compilable/source/rule/nonmotor_vehicle_illegal_parking.json
+new file mode 100644
+index 0000000..c550f36
+--- /dev/null
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/source/rule/nonmotor_vehicle_illegal_parking.json
+@@ -0,0 +1,204 @@
++{
++  "schema_version": "1.0.0",
++  "version": "1.0.0",
++  "rule_id": "nonmotor_vehicle_illegal_parking",
++  "violation_category": "nonmotor_vehicle_illegal_parking",
++  "applicability_policy_ref": {
++    "$pin": [
++      "policy",
++      "applicability",
++      "1.0.0"
++    ]
++  },
++  "required_fact_selectors": [
++    {
++      "scope": "object",
++      "fact_key": "parking_state",
++      "fact_schema_ref": {
++        "$pin": [
++          "fact_schema",
++          "parking_state",
++          "1.0.0"
++        ]
++      },
++      "field_path": [],
++      "producer_selector": {
++        "producer_kind": "vlm_question",
++        "question_ref": {
++          "$pin": [
++            "question",
++            "parking_state",
++            "1.0.0"
++          ]
++        },
++        "output_name": "primary"
++      }
++    },
++    {
++      "scope": "object",
++      "fact_key": "wheel_boundary_relation",
++      "fact_schema_ref": {
++        "$pin": [
++          "fact_schema",
++          "wheel_boundary_relation",
++          "1.0.0"
++        ]
++      },
++      "field_path": [],
++      "producer_selector": {
++        "producer_kind": "tool",
++        "tool_plan_ref": {
++          "$pin": [
++            "tool_plan",
++            "nonmotor_vehicle_geometry",
++            "1.0.0"
++          ]
++        },
++        "step_id": "wheel_boundary_geometry",
++        "tool_ref": {
++          "$pin": [
++            "tool",
++            "wheel_boundary_geometry",
++            "1.0.0"
++          ]
++        },
++        "output_name": "wheel_boundary_relation"
++      }
++    }
++  ],
++  "optional_fact_selectors": [],
++  "condition_ast": {
++    "kind": "all",
++    "arguments": [
++      {
++        "kind": "comparison",
++        "operator": "eq",
++        "left": {
++          "kind": "fact_ref",
++          "selector": {
++            "scope": "object",
++            "fact_key": "parking_state",
++            "fact_schema_ref": {
++              "$pin": [
++                "fact_schema",
++                "parking_state",
++                "1.0.0"
++              ]
++            },
++            "field_path": [],
++            "producer_selector": {
++              "producer_kind": "vlm_question",
++              "question_ref": {
++                "$pin": [
++                  "question",
++                  "parking_state",
++                  "1.0.0"
++                ]
++              },
++              "output_name": "primary"
++            }
++          }
++        },
++        "right": {
++          "kind": "literal",
++          "constant": {
++            "type_definition": {
++              "kind": "enum",
++              "members": [
++                "parked",
++                "unparked"
++              ]
++            },
++            "value": {
++              "kind": "enum",
++              "value": "parked"
++            }
++          }
++        }
++      },
++      {
++        "kind": "in",
++        "item": {
++          "kind": "fact_ref",
++          "selector": {
++            "scope": "object",
++            "fact_key": "wheel_boundary_relation",
++            "fact_schema_ref": {
++              "$pin": [
++                "fact_schema",
++                "wheel_boundary_relation",
++                "1.0.0"
++              ]
++            },
++            "field_path": [],
++            "producer_selector": {
++              "producer_kind": "tool",
++              "tool_plan_ref": {
++                "$pin": [
++                  "tool_plan",
++                  "nonmotor_vehicle_geometry",
++                  "1.0.0"
++                ]
++              },
++              "step_id": "wheel_boundary_geometry",
++              "tool_ref": {
++                "$pin": [
++                  "tool",
++                  "wheel_boundary_geometry",
++                  "1.0.0"
++                ]
++              },
++              "output_name": "wheel_boundary_relation"
++            }
++          }
++        },
++        "collection": {
++          "kind": "literal",
++          "constant": {
++            "type_definition": {
++              "kind": "list",
++              "item_type": {
++                "kind": "enum",
++                "members": [
++                  "inside_parking_area",
++                  "outside_parking_area",
++                  "over_boundary",
++                  "blocking_tactile_paving"
++                ]
++              },
++              "min_items": 2,
++              "max_items": 2
++            },
++            "value": {
++              "kind": "list",
++              "value": [
++                {
++                  "kind": "enum",
++                  "value": "outside_parking_area"
++                },
++                {
++                  "kind": "enum",
++                  "value": "blocking_tactile_paving"
++                }
++              ]
++            }
++          }
++        }
++      }
++    ]
++  },
++  "rule_policy_ref": {
++    "$pin": [
++      "policy",
++      "rule",
++      "1.0.0"
++    ]
++  },
++  "evidence_policy_ref": {
++    "$pin": [
++      "policy",
++      "geometry-evidence",
++      "1.0.0"
++    ]
++  }
++}
+diff --git a/examples/nonmotor_vehicle_illegal_parking/compilable/source/rule_set/parking-rules.json b/examples/nonmotor_vehicle_illegal_parking/compilable/source/rule_set/parking-rules.json
+new file mode 100644
+index 0000000..ac280a5
+--- /dev/null
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/source/rule_set/parking-rules.json
+@@ -0,0 +1,35 @@
++{
++  "schema_version": "1.0.0",
++  "version": "1.0.0",
++  "rule_set_id": "parking-rules",
++  "rule_refs": [
++    {
++      "$pin": [
++        "rule",
++        "nonmotor_vehicle_illegal_parking",
++        "1.0.0"
++      ]
++    }
++  ],
++  "applicability_policy_ref": {
++    "$pin": [
++      "policy",
++      "applicability",
++      "1.0.0"
++    ]
++  },
++  "conflict_policy_ref": {
++    "$pin": [
++      "policy",
++      "conflict",
++      "1.0.0"
++    ]
++  },
++  "candidate_binding_ref": {
++    "$pin": [
++      "model_binding",
++      "candidate_prediction",
++      "1.0.0"
++    ]
++  }
++}
+diff --git a/examples/nonmotor_vehicle_illegal_parking/compilable/source/tool_plan/nonmotor_vehicle_geometry.json b/examples/nonmotor_vehicle_illegal_parking/compilable/source/tool_plan/nonmotor_vehicle_geometry.json
+new file mode 100644
+index 0000000..72720c3
+--- /dev/null
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/source/tool_plan/nonmotor_vehicle_geometry.json
+@@ -0,0 +1,309 @@
++{
++  "schema_version": "1.0.0",
++  "version": "1.0.0",
++  "tool_plan_id": "nonmotor_vehicle_geometry",
++  "steps": [
++    {
++      "step_id": "wheel_segmentation",
++      "tool_ref": {
++        "$pin": [
++          "tool",
++          "wheel_segmentation",
++          "1.0.0"
++        ]
++      },
++      "depends_on": [],
++      "input_bindings": [
++        {
++          "source": {
++            "source_kind": "image",
++            "selector": {
++              "schema_ref": {
++                "$pin": [
++                  "attribute_schema",
++                  "source-image",
++                  "1.0.0"
++                ],
++                "schema_ref": true
++              },
++              "field_path": []
++            }
++          },
++          "target": {
++            "schema_ref": {
++              "$pin": [
++                "tool_input_schema",
++                "wheel_segmentation-input",
++                "1.0.0"
++              ],
++              "schema_ref": true
++            },
++            "field_path": [
++              "image"
++            ]
++          },
++          "required": true,
++          "on_missing": "block"
++        },
++        {
++          "source": {
++            "source_kind": "object",
++            "selector": {
++              "schema_ref": {
++                "$pin": [
++                  "object_schema",
++                  "source-bbox",
++                  "1.0.0"
++                ],
++                "schema_ref": true
++              },
++              "field_path": [
++                "bbox"
++              ]
++            }
++          },
++          "target": {
++            "schema_ref": {
++              "$pin": [
++                "tool_input_schema",
++                "wheel_segmentation-input",
++                "1.0.0"
++              ],
++              "schema_ref": true
++            },
++            "field_path": [
++              "bbox"
++            ]
++          },
++          "required": true,
++          "on_missing": "block"
++        }
++      ],
++      "fact_output_mappings": [
++        {
++          "output_name": "wheel_mask",
++          "target_fact_key": "wheel_mask"
++        }
++      ],
++      "requirement": "required",
++      "failure_policy_ref": {
++        "$pin": [
++          "policy",
++          "tool-failure",
++          "1.0.0"
++        ]
++      },
++      "skip_policy_ref": {
++        "$pin": [
++          "policy",
++          "skip",
++          "1.0.0"
++        ]
++      }
++    },
++    {
++      "step_id": "tactile_paving_segmentation",
++      "tool_ref": {
++        "$pin": [
++          "tool",
++          "tactile_paving_segmentation",
++          "1.0.0"
++        ]
++      },
++      "depends_on": [],
++      "input_bindings": [
++        {
++          "source": {
++            "source_kind": "image",
++            "selector": {
++              "schema_ref": {
++                "$pin": [
++                  "attribute_schema",
++                  "source-image",
++                  "1.0.0"
++                ],
++                "schema_ref": true
++              },
++              "field_path": []
++            }
++          },
++          "target": {
++            "schema_ref": {
++              "$pin": [
++                "tool_input_schema",
++                "tactile_paving_segmentation-input",
++                "1.0.0"
++              ],
++              "schema_ref": true
++            },
++            "field_path": [
++              "image"
++            ]
++          },
++          "required": true,
++          "on_missing": "block"
++        }
++      ],
++      "fact_output_mappings": [
++        {
++          "output_name": "tactile_paving_mask",
++          "target_fact_key": "tactile_paving_mask"
++        }
++      ],
++      "requirement": "required",
++      "failure_policy_ref": {
++        "$pin": [
++          "policy",
++          "tool-failure",
++          "1.0.0"
++        ]
++      },
++      "skip_policy_ref": {
++        "$pin": [
++          "policy",
++          "skip",
++          "1.0.0"
++        ]
++      }
++    },
++    {
++      "step_id": "wheel_boundary_geometry",
++      "tool_ref": {
++        "$pin": [
++          "tool",
++          "wheel_boundary_geometry",
++          "1.0.0"
++        ]
++      },
++      "depends_on": [
++        "wheel_segmentation",
++        "tactile_paving_segmentation"
++      ],
++      "input_bindings": [
++        {
++          "source": {
++            "source_kind": "step_output",
++            "step_id": "wheel_segmentation",
++            "selector": {
++              "schema_ref": {
++                "$pin": [
++                  "tool_output_schema",
++                  "wheel_segmentation-result",
++                  "1.0.0"
++                ],
++                "schema_ref": true
++              },
++              "field_path": [
++                "wheel_mask"
++              ]
++            }
++          },
++          "target": {
++            "schema_ref": {
++              "$pin": [
++                "tool_input_schema",
++                "wheel_boundary_geometry-input",
++                "1.0.0"
++              ],
++              "schema_ref": true
++            },
++            "field_path": [
++              "wheel_mask"
++            ]
++          },
++          "required": true,
++          "on_missing": "block"
++        },
++        {
++          "source": {
++            "source_kind": "step_output",
++            "step_id": "tactile_paving_segmentation",
++            "selector": {
++              "schema_ref": {
++                "$pin": [
++                  "tool_output_schema",
++                  "tactile_paving_segmentation-result",
++                  "1.0.0"
++                ],
++                "schema_ref": true
++              },
++              "field_path": [
++                "tactile_paving_mask"
++              ]
++            }
++          },
++          "target": {
++            "schema_ref": {
++              "$pin": [
++                "tool_input_schema",
++                "wheel_boundary_geometry-input",
++                "1.0.0"
++              ],
++              "schema_ref": true
++            },
++            "field_path": [
++              "tactile_paving_mask"
++            ]
++          },
++          "required": true,
++          "on_missing": "block"
++        },
++        {
++          "source": {
++            "source_kind": "context",
++            "selector": {
++              "source": "context_snapshot",
++              "schema_ref": {
++                "$pin": [
++                  "context_schema",
++                  "parking-context",
++                  "1.0.0"
++                ],
++                "schema_ref": true
++              },
++              "field_path": [
++                "parking_area"
++              ]
++            }
++          },
++          "target": {
++            "schema_ref": {
++              "$pin": [
++                "tool_input_schema",
++                "wheel_boundary_geometry-input",
++                "1.0.0"
++              ],
++              "schema_ref": true
++            },
++            "field_path": [
++              "parking_area"
++            ]
++          },
++          "required": true,
++          "on_missing": "block"
++        }
++      ],
++      "fact_output_mappings": [
++        {
++          "output_name": "wheel_boundary_relation",
++          "target_fact_key": "wheel_boundary_relation"
++        }
++      ],
++      "requirement": "required",
++      "failure_policy_ref": {
++        "$pin": [
++          "policy",
++          "tool-failure",
++          "1.0.0"
++        ]
++      },
++      "skip_policy_ref": {
++        "$pin": [
++          "policy",
++          "skip",
++          "1.0.0"
++        ]
++      }
++    }
++  ]
++}

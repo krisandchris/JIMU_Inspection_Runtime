@@ -1,0 +1,31 @@
+{
+  "$defs": {
+    "AbsentOptional_NonNegativeBudget_": {
+      "$ref": "#/$defs/NonNegativeBudget"
+    },
+    "NonNegativeBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Reported counters; an absent counter preserves lack of measurement.",
+  "properties": {
+    "input_tokens": {
+      "$ref": "#/$defs/AbsentOptional_NonNegativeBudget_"
+    },
+    "output_tokens": {
+      "$ref": "#/$defs/AbsentOptional_NonNegativeBudget_"
+    },
+    "request_bytes": {
+      "$ref": "#/$defs/AbsentOptional_NonNegativeBudget_"
+    },
+    "response_bytes": {
+      "$ref": "#/$defs/AbsentOptional_NonNegativeBudget_"
+    }
+  },
+  "title": "UsageRecord",
+  "type": "object"
+}

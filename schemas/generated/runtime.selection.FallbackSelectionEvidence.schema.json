@@ -1,0 +1,193 @@
+{
+  "$defs": {
+    "AttemptRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "attempt",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "AttemptRef",
+      "type": "object"
+    },
+    "DispatchedSelectionFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs",
+          "minLength": 1
+        },
+        "dispatched": {
+          "const": true,
+          "title": "Dispatched",
+          "type": "boolean"
+        },
+        "fallback_reason": {
+          "enum": [
+            "invalid_proposal",
+            "selection_transport_failure"
+          ],
+          "title": "Fallback Reason",
+          "type": "string"
+        },
+        "trigger_attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        },
+        "trigger_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "triggered_method": {
+          "const": "model_advisory",
+          "title": "Triggered Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "triggered_method",
+        "trigger_attempt_ref",
+        "fallback_reason",
+        "diagnostic_refs",
+        "dispatched",
+        "trigger_invocation_ref"
+      ],
+      "title": "DispatchedSelectionFailure",
+      "type": "object"
+    },
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "evidence",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "EvidenceRefs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "ModelInvocationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "model_invocation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ModelInvocationRef",
+      "type": "object"
+    },
+    "UndispatchedSelectionFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs",
+          "minLength": 1
+        },
+        "dispatched": {
+          "const": false,
+          "title": "Dispatched",
+          "type": "boolean"
+        },
+        "fallback_reason": {
+          "enum": [
+            "context_unknown",
+            "selection_review_unavailable",
+            "additional_budget_unavailable",
+            "selection_transport_failure"
+          ],
+          "title": "Fallback Reason",
+          "type": "string"
+        },
+        "trigger_attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        },
+        "triggered_method": {
+          "enum": [
+            "context_rules",
+            "model_advisory"
+          ],
+          "title": "Triggered Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "triggered_method",
+        "trigger_attempt_ref",
+        "fallback_reason",
+        "diagnostic_refs",
+        "dispatched"
+      ],
+      "title": "UndispatchedSelectionFailure",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "False": "#/$defs/UndispatchedSelectionFailure",
+      "True": "#/$defs/DispatchedSelectionFailure"
+    },
+    "propertyName": "dispatched"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/UndispatchedSelectionFailure"
+    },
+    {
+      "$ref": "#/$defs/DispatchedSelectionFailure"
+    }
+  ]
+}

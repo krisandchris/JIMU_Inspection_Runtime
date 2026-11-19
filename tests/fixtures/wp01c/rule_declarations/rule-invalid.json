@@ -1,0 +1,160 @@
+{
+  "schema_version": "1.0.0",
+  "rule_id": "synthetic-parking-rule",
+  "version": "1.0.0",
+  "violation_category": "synthetic-parking",
+  "applicability_policy_ref": {
+    "artifact_kind": "policy",
+    "artifact_id": "synthetic-applicability",
+    "version": "1.0.0",
+    "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "required_fact_selectors": [
+    {
+      "scope": "object",
+      "fact_key": "state",
+      "fact_schema_ref": {
+        "artifact_kind": "fact_schema",
+        "artifact_id": "state",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "producer_selector": {
+        "producer_kind": "vlm_question",
+        "question_ref": {
+          "artifact_kind": "question",
+          "artifact_id": "state-question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "output_name": "primary"
+      },
+      "field_path": []
+    }
+  ],
+  "optional_fact_selectors": [
+    {
+      "scope": "object",
+      "fact_key": "details",
+      "fact_schema_ref": {
+        "artifact_kind": "fact_schema",
+        "artifact_id": "details",
+        "version": "1.0.0",
+        "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "producer_selector": {
+        "producer_kind": "vlm_question",
+        "question_ref": {
+          "artifact_kind": "question",
+          "artifact_id": "details-question",
+          "version": "1.0.0",
+          "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "output_name": "primary"
+      },
+      "field_path": [
+        "blocked"
+      ]
+    }
+  ],
+  "condition_ast": {
+    "kind": "all",
+    "arguments": [
+      {
+        "kind": "fact_ref",
+        "selector": {
+          "scope": "object",
+          "fact_key": "state",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "state",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "producer_selector": {
+            "producer_kind": "vlm_question",
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "state-question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "output_name": "primary"
+          },
+          "field_path": []
+        }
+      },
+      {
+        "kind": "record_field_ref",
+        "selector": {
+          "scope": "object",
+          "fact_key": "details",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "details",
+            "version": "1.0.0",
+            "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "producer_selector": {
+            "producer_kind": "vlm_question",
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "details-question",
+              "version": "1.0.0",
+              "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "output_name": "primary"
+          },
+          "field_path": [
+            "blocked"
+          ]
+        }
+      },
+      {
+        "kind": "comparison",
+        "operator": "eq",
+        "left": {
+          "kind": "context_ref",
+          "selector": {
+            "source": "context_snapshot",
+            "schema_ref": {
+              "artifact_kind": "context_schema",
+              "artifact_id": "context",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "field_path": [
+              "outer",
+              "leaf"
+            ]
+          }
+        },
+        "right": {
+          "kind": "literal",
+          "constant": {
+            "type_definition": {
+              "kind": "string"
+            },
+            "value": {
+              "kind": "string",
+              "value": "synthetic"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "rule_policy_ref": {
+    "artifact_kind": "question",
+    "artifact_id": "synthetic-rule-policy",
+    "version": "1.0.0",
+    "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "evidence_policy_ref": {
+    "artifact_kind": "policy",
+    "artifact_id": "synthetic-evidence-policy",
+    "version": "1.0.0",
+    "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  }
+}

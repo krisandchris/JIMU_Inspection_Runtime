@@ -218,6 +218,42 @@ def validate_descriptor(descriptor: SchemaDescriptor) -> None:
                 )
 
 
+def tool_output_omission_path(
+    descriptor: ToolResultSchemaDescriptor,
+    path: tuple[str, ...],
+    protected_paths: tuple[tuple[str, ...], ...],
+) -> tuple[str, ...] | None:
+    """Find the deepest optional subtree that can disappear independently."""
+    candidates = describe_field(descriptor, path).optional_ancestor_paths
+    return next(
+        (
+            candidate
+            for candidate in reversed(candidates)
+            if all(
+                candidate[: len(protected)] != protected
+                and protected[: len(candidate)] != candidate
+                for protected in protected_paths
+            )
+        ),
+        None,
+    )
+
+
+def validate_independent_tool_outputs(descriptor: ToolResultSchemaDescriptor) -> None:
+    """Require new Tool contracts to represent each non-known output separately."""
+    outputs = descriptor.output_declarations
+    for output in outputs:
+        protected = tuple(
+            sibling.value_path for sibling in outputs if sibling != output
+        )
+        if tool_output_omission_path(descriptor, output.value_path, protected) is None:
+            _fail(
+                "tool_output_omission_shared",
+                output.value_path,
+                "non-known Tool output must be omittable without removing another declared output",
+            )
+
+
 def require_type_containment(
     source: TypeDefinition,
     target: TypeDefinition,

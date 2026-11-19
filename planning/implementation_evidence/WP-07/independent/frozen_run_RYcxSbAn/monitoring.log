@@ -1,0 +1,41 @@
+2026-11-18T11:14:37Z
+env PYTHONPATH=/tmp/jimu-wp07-acceptance-lkpjWzkU/product JIMU_CAPTURE_DIR=/tmp/jimu-wp07-acceptance-lkpjWzkU/monitor JIMU_CAPTURE_RUNTIME=jimu-wp07-local:monitor-lkpjWzkU JIMU_CAPTURE_PROM=quay.io/prometheus/prometheus@sha256:aafa9d694e6a883c02db516d9f6e5b84e14195f49a2a6456a4cca815edda72b9 JIMU_CAPTURE_GRAFANA=grafana/grafana@sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf /tmp/jimu-wp07-acceptance-lkpjWzkU/dev/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/monitor_smoke.py 
+read_only_scoped_postgres: 16.14 (Debian 16.14-1.pgdg13+1)
+compose_project: jimu-monitor-f2be49d7d048
+services: grafana
+observability
+grafana_random_loopback: 127.0.0.1:35122
+cleaned_compose_containers_volumes_and_networks: True
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/monitor_smoke.py", line 296, in <module>
+    test_configured_worker_executes_signed_parking_scene(workspace, set(), "usable", mp)
+  File "/tmp/jimu-wp07-acceptance-lkpjWzkU/product/tests/contract/test_wp05_worker_inspection.py", line 445, in test_configured_worker_executes_signed_parking_scene
+    asyncio.run(run())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp07-acceptance-lkpjWzkU/product/tests/contract/test_wp05_worker_inspection.py", line 180, in run
+    async with perception_fixture(tmp_path, url, with_media=True) as fixture:
+  File "/usr/lib/python3.12/contextlib.py", line 217, in __aexit__
+    await anext(self.gen)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/monitor_smoke.py", line 280, in fixture
+    async with original(*args, **kwargs) as runtime:
+  File "/usr/lib/python3.12/contextlib.py", line 217, in __aexit__
+    await anext(self.gen)
+  File "/tmp/jimu-wp07-acceptance-lkpjWzkU/product/tests/fixtures/wp05/perception.py", line 540, in perception_fixture
+    async with migrated_application() as application:
+  File "/usr/lib/python3.12/contextlib.py", line 217, in __aexit__
+    await anext(self.gen)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/monitor_smoke.py", line 269, in composed_database
+    compose_smoke(database, scope, ids)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/monitor_smoke.py", line 182, in compose_smoke
+    raise RuntimeError("Services did not report scoped readiness, target up, and Grafana healthy")
+RuntimeError: Services did not report scoped readiness, target up, and Grafana healthy
+2026-11-18T11:16:43Z
+exit=1

@@ -1,0 +1,32 @@
+2026-11-18T09:54:02Z
+{"bundle": "466f4f1196c77d1aa59ef1f4f74bc6e8b809de4f8e231590c0ceb552755c1694", "check": "legacy_wp05_source", "execution": "execution.79c13727946353c4eced266e84e8c2da44757ac41a1127e51c799aaf995bc469", "installed": "/tmp/jimu-wp06-probe-6t9BscGa/legacy-venv/lib/python3.12/site-packages/jimu_runtime/__init__.py", "migrations": [1, 2, 3, 4, 5, 6, 7, 8], "scope": {"client_id": "synthetic.edge", "project_id": "synthetic.nonmotor.parking"}, "steps": ["applied", "applied", "applied", "applied", "applied", "staged", "finalized"], "task": "task.0cd21df03bfc54a4c99e34deddbe6c4db20ad6acfcb1f6273904e328b846e12d"}
+{"applied": [9, 10, 11], "check": "database_upgrade", "historical_row_sets": 20}
+{"check": "artifact_replay", "concurrent_same_key": true, "historical_dispatches": 7, "physical_cpu": 0, "physical_http": 0, "runs": 2, "source_equal": true}
+{"check": "worker_process_ready", "pid": 91450, "runtime_install": "/tmp/jimu-wp06-probe-6t9BscGa/current-venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 91450, "signal": null}
+{"check": "inference_replay", "cpu": 3, "current_bundle": "0678d11ba393fff1d09c816be6d93e9233cb7141449de7778cb061f855614dfd", "http": {"candidate": 1, "discovery": 1, "grounding": 1, "observation": 1}, "pinned_bundle": "466f4f1196c77d1aa59ef1f4f74bc6e8b809de4f8e231590c0ceb552755c1694", "source_equal": true, "target_execution": "execution.replay.67d6eb2b9b424d349a00ef001898a220"}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-06/independent/replay_probe.py", line 416, in <module>
+    asyncio.run(main(Path(sys.argv[1]).resolve()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-06/independent/replay_probe.py", line 408, in main
+    await assert_lifecycle(host, source, output)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-06/independent/lifecycle_probe.py", line 87, in assert_lifecycle
+    ).one()
+      ^^^^^
+  File "/tmp/jimu-wp06-probe-6t9BscGa/current-venv/lib/python3.12/site-packages/sqlalchemy/engine/result.py", line 1574, in one
+    return self._only_one_row(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp06-probe-6t9BscGa/current-venv/lib/python3.12/site-packages/sqlalchemy/engine/result.py", line 852, in _only_one_row
+    raise exc.MultipleResultsFound(
+sqlalchemy.exc.MultipleResultsFound: Multiple rows were found when exactly one was required
+2026-11-18T09:54:37Z
+exit=1

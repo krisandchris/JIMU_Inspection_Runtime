@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "context_build_blocked",
+    "no_eligible_profiles",
+    "empty_configured_scope",
+    "profile_not_discovered",
+    "discovery_no_hits",
+    "discovery_failed",
+    "discovery_partial",
+    "discovery_not_evaluated",
+    "grounding_no_target",
+    "grounding_failed",
+    "grounding_partial",
+    "grounding_not_evaluated",
+    "decision_not_evaluated",
+    "required_evidence_blocked",
+    "predicate_unknown",
+    "applicability_unresolved"
+  ],
+  "title": "CoverageReason",
+  "type": "string"
+}

@@ -1,0 +1,42 @@
+2026-11-18T03:50:23Z
+PYTHONPATH=. uv run --locked python planning/implementation_evidence/WP-03/independent/probe_wp03.py
+{"check": "postgres", "first": [1, 2], "image_id": "sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae", "repeat": [], "version": "16.14 (Debian 16.14-1.pgdg13+1)"}
+{"check": "app_permission_rejected", "sql": "CREATE TABLE jimu_workflow.independent_denied (x integer)", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "UPDATE jimu_workflow.schema_migrations SET script_sha256=script_sha256", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "UPDATE jimu_workflow.execution_events SET event_number=event_number", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "DELETE FROM jimu_workflow.attempts WHERE false", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "TRUNCATE jimu_workflow.produced_outputs", "sqlstate": "42501"}
+{"bundle_digest": "fb92ea591b70a54bb8107748cbcc2abb3e1cef233a7d473218850e5504adabd3", "check": "admission_and_duplicate_intake", "execution_id": "execution.c17a078b8456703828a41526af6eeddada2f1a879bfe35c6523356531f3dce29", "mode": "full"}
+{"after": "2026-11-18T03:50:33.470774+00:00", "before": "2026-11-18T03:50:32.544183+00:00", "check": "heartbeat_and_expired_fence", "contender_backend": 71}
+{"a_pid": 3095232, "b_pid": 3095237, "check": "takeover_and_late_audit", "rows": [[1, 1, "probe-a", "superseded", "fixture-request-a"], [2, 2, "probe-b", "succeeded", null]]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 70, "pid": 3095232}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 71, "pid": 3095237}
+{"check": "mock_returned_before_worker_crash", "worker_marker": {"attempt": "b2e74c991a0f430282891a534355c01c", "external_request_ids": ["synthetic.request.6b3d34944f456d2699695a76b412450f25342cb913524beca463732d29f3bcdf", "synthetic.request.8647d3f21c1628aa1372539f7152d5506a1a456f3d738f22b860dcfefac985b6"], "invocations": ["synthetic.model.d865d583c16d06a8eea1ffadad9c52b3d9cbaa38661a36d3d2a6aa5ff89d34ee", "synthetic.model.a28821ddef6c4b7c647878ba3934fc18b2436b467ced3e5337915bed415698a3"], "label": "mock_returned", "pid": 3095237}}
+{"attempt": "running", "check": "n06_draft_before_authority", "draft_count": 1, "finalization_count": 0, "n06_authority": 0, "node": "running", "terminal_attempt": null}
+{"check": "all_n06_drafts_before_authority", "drafts": 3, "finalizations": 0, "n06_authority": 0}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 72, "pid": 3095256}
+{"active_digest": "b279834abd5e0177af2f354f5f6e5b6177306dc8652953f853542e1e94a7f0f7", "active_release": "release-2", "check": "activated_replacement_before_restart", "pinned_digest": "fb92ea591b70a54bb8107748cbcc2abb3e1cef233a7d473218850e5504adabd3", "pinned_release": "release-1"}
+{"check": "six_nodes_exact_relationships", "decisions": 3, "joint_requests": 3, "mandatory_matched": 3, "objects": 3, "profiles": 2, "question_facts": 6, "tool_executions": 3, "tool_facts": 3, "verified_artifact_digests": 60}
+{"authoritative_attempts": 1, "check": "ambiguous_mock_call_retried", "first_attempt": "b2e74c991a0f430282891a534355c01c", "first_invocations": ["synthetic.model.d865d583c16d06a8eea1ffadad9c52b3d9cbaa38661a36d3d2a6aa5ff89d34ee", "synthetic.model.a28821ddef6c4b7c647878ba3934fc18b2436b467ced3e5337915bed415698a3"], "second_attempt": "232759a0461a4645a6657130dcf1c0a1", "second_invocations": ["synthetic.model.350e998509626879ba422f8f135c58f567096be201f839734bde3b33ab59c166", "synthetic.model.fec20a288867e3e3362f6b75a4633d67ec81dbf25d33df0f012a0190f0dd1832"]}
+{"authority": 3, "check": "restarted_and_published", "drafts": 3, "events": 71, "finalizations": 1, "preserved_history_prefix": 63}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 73, "pid": 3095357}
+{"check": "post_commit_restart_no_duplicate", "events": 71}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 74, "pid": 3095367}
+{"bundle_digest": "a82e7fac93fd86acf0bd2fc6f42a199b9000c8e37d2c1e9271d79989ad270d19", "check": "admission_and_duplicate_intake", "execution_id": "execution.e8d338dbf797d30da300c6488c8c90b4a3b93b85a8d0a05d03b008745185d16f", "mode": "excluded"}
+{"check": "coverage", "mode": "excluded", "node_attempts": [["N01", "succeeded", 1], ["N02", "skipped", 0], ["N03", "skipped", 0], ["N04", "skipped", 0], ["N05", "skipped", 0], ["N06", "skipped", 0]], "observed": ["not_evaluated", "not_applicable", "not_applicable", 0]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 75, "pid": 3095469}
+{"bundle_digest": "01342a6f02f3b1eec9c794c5ab0f2cf8ab7de3d871f7686715e0c074baca7f88", "check": "admission_and_duplicate_intake", "execution_id": "execution.2aea89a92a8d239ae208f5858b3b5a6495afd25216db5eb5fa31b21e42c8061a", "mode": "no_hits"}
+{"check": "coverage", "mode": "no_hits", "node_attempts": [["N01", "succeeded", 1], ["N02", "succeeded", 1], ["N03", "skipped", 0], ["N04", "skipped", 0], ["N05", "skipped", 0], ["N06", "skipped", 0]], "observed": ["no_hits", "none", "uncertain", 0]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 76, "pid": 3095540}
+{"bundle_digest": "01342a6f02f3b1eec9c794c5ab0f2cf8ab7de3d871f7686715e0c074baca7f88", "check": "admission_and_duplicate_intake", "execution_id": "execution.5de1bbda6ab6838e2ea7d7b20dd370876856293197b83896b05ef75738ca768f", "mode": "no_target"}
+{"check": "coverage", "mode": "no_target", "node_attempts": [["N01", "succeeded", 1], ["N02", "succeeded", 1], ["N03", "succeeded", 1], ["N04", "skipped", 0], ["N05", "skipped", 0], ["N06", "skipped", 0]], "observed": ["hits", "none", "uncertain", 0]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 78, "pid": 3095571}
+{"bundle_digest": "e9ce8868075927aa405689f9afba6207832fa7ffb2dfb54e5a3d32e1cafc6551", "check": "admission_and_duplicate_intake", "execution_id": "execution.8e478c04e74af2b3fbf9b9665cedfea6a889c149c3cb8e083c9a8c1c5e693b76", "mode": "partial"}
+{"check": "coverage", "mode": "partial", "node_attempts": [["N01", "succeeded", 1], ["N02", "succeeded", 1], ["N03", "succeeded", 1], ["N04", "succeeded", 1], ["N05", "succeeded", 1], ["N06", "succeeded", 1]], "observed": ["hits", "partial", "violation", 1]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 79, "pid": 3095655}
+{"bundle_digest": "01342a6f02f3b1eec9c794c5ab0f2cf8ab7de3d871f7686715e0c074baca7f88", "check": "admission_and_duplicate_intake", "execution_id": "execution.fe511d88a3090e182987000c556cebaff9d21fd3b4b4e0e35883e28a1f615eab", "mode": "cancel_before_start"}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 80, "pid": 3095711}
+{"attempts": 0, "check": "prestart_cancel_survives_process_kill", "execution": "cancelled", "job": "done", "node": "cancelled", "task": "cancelled"}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 81, "pid": 3095717}
+2026-11-18T03:51:11Z
+exit=0

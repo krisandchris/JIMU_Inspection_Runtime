@@ -1,0 +1,309 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "tool_plan_id": "nonmotor_vehicle_geometry",
+  "steps": [
+    {
+      "step_id": "wheel_segmentation",
+      "tool_ref": {
+        "$pin": [
+          "tool",
+          "wheel_segmentation",
+          "1.0.0"
+        ]
+      },
+      "depends_on": [],
+      "input_bindings": [
+        {
+          "source": {
+            "source_kind": "image",
+            "selector": {
+              "schema_ref": {
+                "$pin": [
+                  "attribute_schema",
+                  "source-image",
+                  "1.0.0"
+                ],
+                "schema_ref": true
+              },
+              "field_path": []
+            }
+          },
+          "target": {
+            "schema_ref": {
+              "$pin": [
+                "tool_input_schema",
+                "wheel_segmentation-input",
+                "1.0.0"
+              ],
+              "schema_ref": true
+            },
+            "field_path": [
+              "image"
+            ]
+          },
+          "required": true,
+          "on_missing": "block"
+        },
+        {
+          "source": {
+            "source_kind": "object",
+            "selector": {
+              "schema_ref": {
+                "$pin": [
+                  "object_schema",
+                  "source-bbox",
+                  "1.0.0"
+                ],
+                "schema_ref": true
+              },
+              "field_path": [
+                "bbox"
+              ]
+            }
+          },
+          "target": {
+            "schema_ref": {
+              "$pin": [
+                "tool_input_schema",
+                "wheel_segmentation-input",
+                "1.0.0"
+              ],
+              "schema_ref": true
+            },
+            "field_path": [
+              "bbox"
+            ]
+          },
+          "required": true,
+          "on_missing": "block"
+        }
+      ],
+      "fact_output_mappings": [
+        {
+          "output_name": "wheel_mask",
+          "target_fact_key": "wheel_mask"
+        }
+      ],
+      "requirement": "required",
+      "failure_policy_ref": {
+        "$pin": [
+          "policy",
+          "tool-failure",
+          "1.0.0"
+        ]
+      },
+      "skip_policy_ref": {
+        "$pin": [
+          "policy",
+          "skip",
+          "1.0.0"
+        ]
+      }
+    },
+    {
+      "step_id": "tactile_paving_segmentation",
+      "tool_ref": {
+        "$pin": [
+          "tool",
+          "tactile_paving_segmentation",
+          "1.0.0"
+        ]
+      },
+      "depends_on": [],
+      "input_bindings": [
+        {
+          "source": {
+            "source_kind": "image",
+            "selector": {
+              "schema_ref": {
+                "$pin": [
+                  "attribute_schema",
+                  "source-image",
+                  "1.0.0"
+                ],
+                "schema_ref": true
+              },
+              "field_path": []
+            }
+          },
+          "target": {
+            "schema_ref": {
+              "$pin": [
+                "tool_input_schema",
+                "tactile_paving_segmentation-input",
+                "1.0.0"
+              ],
+              "schema_ref": true
+            },
+            "field_path": [
+              "image"
+            ]
+          },
+          "required": true,
+          "on_missing": "block"
+        }
+      ],
+      "fact_output_mappings": [
+        {
+          "output_name": "tactile_paving_mask",
+          "target_fact_key": "tactile_paving_mask"
+        }
+      ],
+      "requirement": "required",
+      "failure_policy_ref": {
+        "$pin": [
+          "policy",
+          "tool-failure",
+          "1.0.0"
+        ]
+      },
+      "skip_policy_ref": {
+        "$pin": [
+          "policy",
+          "skip",
+          "1.0.0"
+        ]
+      }
+    },
+    {
+      "step_id": "wheel_boundary_geometry",
+      "tool_ref": {
+        "$pin": [
+          "tool",
+          "wheel_boundary_geometry",
+          "1.0.0"
+        ]
+      },
+      "depends_on": [
+        "wheel_segmentation",
+        "tactile_paving_segmentation"
+      ],
+      "input_bindings": [
+        {
+          "source": {
+            "source_kind": "step_output",
+            "step_id": "wheel_segmentation",
+            "selector": {
+              "schema_ref": {
+                "$pin": [
+                  "tool_output_schema",
+                  "wheel_segmentation-result",
+                  "1.0.0"
+                ],
+                "schema_ref": true
+              },
+              "field_path": [
+                "wheel_mask"
+              ]
+            }
+          },
+          "target": {
+            "schema_ref": {
+              "$pin": [
+                "tool_input_schema",
+                "wheel_boundary_geometry-input",
+                "1.0.0"
+              ],
+              "schema_ref": true
+            },
+            "field_path": [
+              "wheel_mask"
+            ]
+          },
+          "required": true,
+          "on_missing": "block"
+        },
+        {
+          "source": {
+            "source_kind": "step_output",
+            "step_id": "tactile_paving_segmentation",
+            "selector": {
+              "schema_ref": {
+                "$pin": [
+                  "tool_output_schema",
+                  "tactile_paving_segmentation-result",
+                  "1.0.0"
+                ],
+                "schema_ref": true
+              },
+              "field_path": [
+                "tactile_paving_mask"
+              ]
+            }
+          },
+          "target": {
+            "schema_ref": {
+              "$pin": [
+                "tool_input_schema",
+                "wheel_boundary_geometry-input",
+                "1.0.0"
+              ],
+              "schema_ref": true
+            },
+            "field_path": [
+              "tactile_paving_mask"
+            ]
+          },
+          "required": true,
+          "on_missing": "block"
+        },
+        {
+          "source": {
+            "source_kind": "context",
+            "selector": {
+              "source": "context_snapshot",
+              "schema_ref": {
+                "$pin": [
+                  "context_schema",
+                  "parking-context",
+                  "1.0.0"
+                ],
+                "schema_ref": true
+              },
+              "field_path": [
+                "parking_area"
+              ]
+            }
+          },
+          "target": {
+            "schema_ref": {
+              "$pin": [
+                "tool_input_schema",
+                "wheel_boundary_geometry-input",
+                "1.0.0"
+              ],
+              "schema_ref": true
+            },
+            "field_path": [
+              "parking_area"
+            ]
+          },
+          "required": true,
+          "on_missing": "block"
+        }
+      ],
+      "fact_output_mappings": [
+        {
+          "output_name": "wheel_boundary_relation",
+          "target_fact_key": "wheel_boundary_relation"
+        }
+      ],
+      "requirement": "required",
+      "failure_policy_ref": {
+        "$pin": [
+          "policy",
+          "tool-failure",
+          "1.0.0"
+        ]
+      },
+      "skip_policy_ref": {
+        "$pin": [
+          "policy",
+          "skip",
+          "1.0.0"
+        ]
+      }
+    }
+  ]
+}

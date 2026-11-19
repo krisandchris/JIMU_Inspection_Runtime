@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--offline",
+    "--no-sync",
+    "python",
+    "-c",
+    "import importlib.metadata as m, platform; print(platform.platform()); print('python', platform.python_version()); [print(n, m.version(n)) for n in ('jimu-runtime','pydantic','pydantic-core','pytest','jsonschema','ruff','mypy','rfc8785')]"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "started_at": "2026-11-18T02:01:24.332230+00:00",
+  "ended_at": "2026-11-18T02:01:24.387442+00:00",
+  "exit_code": 0
+}

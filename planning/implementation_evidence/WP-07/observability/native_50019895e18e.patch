@@ -1,0 +1,1445 @@
+--- /dev/null
++++ b/src/jimu_runtime/observability/__init__.py
+@@ -0,0 +1,8 @@
++"""WP-07 scoped audit views and operational measurements."""
++
++from jimu_runtime.observability.postgres import (
++    ObservabilityUnavailable,
++    PostgresObservability,
++)
++
++__all__ = ["ObservabilityUnavailable", "PostgresObservability"]
+--- /dev/null
++++ b/src/jimu_runtime/observability/contracts.py
+@@ -0,0 +1,187 @@
++"""Bounded public projections of runtime audit records."""
++
++from typing import Annotated, Literal, Self
++
++from pydantic import Field, model_validator
++
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_support import UTCDateTime
++from jimu_runtime.domain.enums import AttemptStatus, ExecutionStatus, TaskStatus
++from jimu_runtime.domain.primitives import RecordId
++from jimu_runtime.domain.runtime.executions import NodeId
++
++PageSize = Annotated[int, Field(ge=1, le=100)]
++EventNumber = Annotated[int, Field(ge=0, le=2**63 - 1)]
++
++type EventKind = Literal[
++    "task_transition",
++    "execution_transition",
++    "node_transition",
++    "attempt_transition",
++    "late_response",
++    "system_output",
++]
++type Boundary = Literal["not_dispatched", "sent_unknown", "acknowledged"]
++type CallKind = Literal["model", "tool", "unknown"]
++type CallStatus = Literal[
++    "succeeded",
++    "partial",
++    "failed",
++    "not_dispatched",
++    "unqualified",
++]
++type CallErrorClass = Literal[
++    "transport",
++    "timeout",
++    "rate_limit",
++    "unavailable",
++    "validation",
++    "association",
++    "resource_exhausted",
++    "cancelled",
++    "internal",
++    "other",
++]
++type Availability = Literal["ready", "unavailable", "unknown"]
++
++
++class EventCursor(ContractModel):
++    after: EventNumber = 0
++    through: EventNumber | None = None
++
++    @model_validator(mode="after")
++    def validate_range(self) -> Self:
++        if self.through is not None and self.after > self.through:
++            raise ValueError("event cursor is outside its high-water mark")
++        return self
++
++
++class TimeCursor(ContractModel):
++    recorded_at: UTCDateTime
++    record_id: RecordId
++
++
++class TraceExecution(ContractModel):
++    task_id: RecordId
++    execution_id: RecordId
++    trace_id: RecordId
++    task_status: TaskStatus
++    execution_status: ExecutionStatus
++    accepted_at: UTCDateTime
++    initialized_at: UTCDateTime
++    started_at: UTCDateTime | None
++    ended_at: UTCDateTime | None
++
++
++class TraceEvent(ContractModel):
++    number: Annotated[int, Field(ge=1, le=2**63 - 1)]
++    recorded_at: UTCDateTime
++    kind: EventKind
++    span_id: RecordId | None
++    parent_span_id: RecordId | None
++    node_run_id: RecordId | None
++    node_id: NodeId | None
++    attempt_id: RecordId | None
++    attempt_number: Annotated[int, Field(ge=1, le=1024)] | None
++    status: (
++        Literal[
++            "accepted",
++            "queued",
++            "initialized",
++            "pending",
++            "ready",
++            "running",
++            "created",
++            "completed",
++            "partial_failed",
++            "succeeded",
++            "failed",
++            "blocked",
++            "skipped",
++            "cancelled",
++            "timed_out",
++            "superseded",
++        ]
++        | None
++    )
++
++
++class EventPage(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    execution: TraceExecution
++    through: EventNumber
++    items: Annotated[tuple[TraceEvent, ...], Field(max_length=100)]
++    next_cursor: EventCursor | None
++
++
++class CallReceipt(ContractModel):
++    recorded_at: UTCDateTime
++    boundary: Boundary
++    late: bool
++    fence_qualified: bool | None
++    status: CallStatus
++    error_class: CallErrorClass | None
++    producer_id: RecordId | None
++    started_at: UTCDateTime | None
++    completed_at: UTCDateTime | None
++    response_evidence_failed: bool
++    invalid_slots: Annotated[int, Field(ge=0, le=1024)]
++    missing_slots: Annotated[int, Field(ge=0, le=1024)]
++
++
++class CallSpan(ContractModel):
++    dispatch_id: RecordId
++    recorded_at: UTCDateTime
++    kind: CallKind
++    node_id: NodeId
++    node_run_id: RecordId
++    attempt_id: RecordId
++    parent_node_run_id: RecordId | None
++    parent_attempt_id: RecordId | None
++    send_admitted: bool
++    receipts: Annotated[tuple[CallReceipt, ...], Field(max_length=2)]
++
++
++class CallPage(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    task_id: RecordId
++    execution_id: RecordId
++    trace_id: RecordId
++    items: Annotated[tuple[CallSpan, ...], Field(max_length=100)]
++    next_cursor: TimeCursor | None
++
++
++class ToolStepSpan(ContractModel):
++    step_id: RecordId
++    parent_node_run_id: RecordId
++    parent_attempt_id: RecordId
++    child_node_run_id: RecordId
++    child_attempt_id: RecordId
++    started_at: UTCDateTime | None
++    ended_at: UTCDateTime | None
++    tool_execution_id: RecordId | None
++    outcome: CallStatus | None
++    attempt_status: AttemptStatus | None
++
++
++class ToolStepPage(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    task_id: RecordId
++    execution_id: RecordId
++    trace_id: RecordId
++    items: Annotated[tuple[ToolStepSpan, ...], Field(max_length=100)]
++    next_child_attempt: RecordId | None
++
++
++class Readiness(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    database: Availability
++    workflow_schema: Availability
++    worker_claim: Availability
++
++    @property
++    def ready(self) -> bool:
++        return (
++            self.database == self.workflow_schema == "ready"
++            and self.worker_claim != "unavailable"
++        )
+--- /dev/null
++++ b/src/jimu_runtime/observability/postgres.py
+@@ -0,0 +1,358 @@
++"""Scoped, bounded read-only PostgreSQL observability.
++
++The engine port is implemented by the runtime's PostgreSQL AsyncEngine.
++The host authenticates its caller and supplies an already-authorized scope.
++"""
++
++from asyncio import Semaphore, timeout
++from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
++from contextlib import asynccontextmanager
++from datetime import UTC, datetime
++from itertools import groupby
++
++from pydantic import TypeAdapter, ValidationError
++from sqlalchemy.exc import SQLAlchemyError
++from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
++
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.primitives import RecordId
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.observability import queries
++from jimu_runtime.observability.contracts import (
++    Availability,
++    CallKind,
++    CallPage,
++    CallReceipt,
++    CallSpan,
++    EventCursor,
++    EventPage,
++    PageSize,
++    Readiness,
++    TimeCursor,
++    ToolStepPage,
++    ToolStepSpan,
++    TraceEvent,
++    TraceExecution,
++)
++from jimu_runtime.observability.prometheus import CALL_ERROR_CLASSES, render_metrics
++
++type WorkerClaimProbe = Callable[[IdempotencyScope], Awaitable[Availability]]
++
++_PAGE_SIZE = TypeAdapter(PageSize)
++_AVAILABILITY: TypeAdapter[Availability] = TypeAdapter(Availability)
++_ID = TypeAdapter(RecordId)
++_TIMEOUT_BUDGET = 5
++_MAX_TRACE_BYTES = 256 * 1024
++type _Row = Mapping[str, object]
++
++
++class ObservabilityUnavailable(RuntimeError):
++    """No operational payload is produced from a failed or inconsistent read."""
++
++
++def _params(scope: IdempotencyScope) -> tuple[str, str]:
++    scope = IdempotencyScope.model_validate(scope)
++    return scope.project_id, scope.client_id
++
++
++def _utc(row: _Row) -> dict[str, object]:
++    return {
++        key: value.astimezone(UTC) if isinstance(value, datetime) else value
++        for key, value in row.items()
++    }
++
++
++def _bounded[T: ContractModel](output: T) -> T:
++    if len(output.model_dump_json().encode("utf-8")) > _MAX_TRACE_BYTES:
++        raise ObservabilityUnavailable("observability_trace_limit")
++    return output
++
++
++def _kind(value: object) -> CallKind:
++    if value == "tool":
++        return "tool"
++    if value in (
++        "model",
++        "model_unselected",
++        "nested_model",
++        "nested_model_unselected",
++    ):
++        return "model"
++    return "unknown"
++
++
++def _call_span(group: Sequence[_Row]) -> CallSpan:
++    first = _utc(group[0])
++    receipts = tuple(
++        CallReceipt.model_validate(
++            {
++                "recorded_at": row["receipt_at"],
++                "boundary": row["boundary"],
++                "late": row["late"],
++                "fence_qualified": row["fence_qualified"],
++                "status": row["outcome"] or "unqualified",
++                "producer_id": row["producer_id"],
++                "error_class": (
++                    row["error_class"]
++                    if row["error_class"] is None
++                    or row["error_class"] in CALL_ERROR_CLASSES
++                    else "other"
++                ),
++                "started_at": row["started_at"],
++                "completed_at": row["completed_at"],
++                "response_evidence_failed": row["response_evidence_failed"],
++                "invalid_slots": row["invalid_slots"],
++                "missing_slots": row["missing_slots"],
++            }
++        )
++        for raw in group
++        if (row := _utc(raw))["receipt_at"] is not None
++    )
++    return CallSpan.model_validate(
++        {
++            **{
++                key: first[key]
++                for key in (
++                    "dispatch_id",
++                    "recorded_at",
++                    "node_id",
++                    "node_run_id",
++                    "attempt_id",
++                    "parent_node_run_id",
++                    "parent_attempt_id",
++                    "send_admitted",
++                )
++            },
++            "kind": _kind(first["target_kind"]),
++            "receipts": receipts,
++        }
++    )
++
++
++class PostgresObservability:
++    """Read persisted workflow and dispatch state without acquiring worker locks."""
++
++    def __init__(
++        self,
++        engine: AsyncEngine,
++        *,
++        worker_claim_probe: WorkerClaimProbe | None = None,
++    ) -> None:
++        self._engine = engine
++        self._worker_claim_probe = worker_claim_probe
++        self._slots = Semaphore(4)
++
++    @asynccontextmanager
++    async def _transaction(self) -> AsyncIterator[AsyncConnection]:
++        try:
++            async with (
++                timeout(_TIMEOUT_BUDGET),
++                self._slots,
++                self._engine.connect() as connection,
++            ):
++                await connection.exec_driver_sql(
++                    "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY"
++                )
++                await connection.exec_driver_sql("SET LOCAL statement_timeout = '4s'")
++                yield connection
++        except (SQLAlchemyError, TimeoutError, ValidationError):
++            raise ObservabilityUnavailable("observability_read_unavailable") from None
++
++    @staticmethod
++    async def _rows(
++        connection: AsyncConnection, query: str, params: tuple[object, ...] = ()
++    ) -> Sequence[_Row]:
++        return tuple(
++            dict(row)
++            for row in (await connection.exec_driver_sql(query, params)).mappings()
++        )
++
++    async def _execution(
++        self, connection: AsyncConnection, scope: IdempotencyScope, execution_id: str
++    ) -> tuple[TraceExecution, int] | None:
++        rows = await self._rows(
++            connection, queries.EXECUTION, (*_params(scope), execution_id)
++        )
++        if not rows:
++            return None
++        (row,) = rows
++        data = _utc(row)
++        through = data.pop("through")
++        if type(through) is not int or not 0 <= through < 2**63 - 1:
++            raise ValueError("invalid event high-water mark")
++        return TraceExecution.model_validate(data), through
++
++    async def events(
++        self,
++        scope: IdempotencyScope,
++        execution_id: RecordId,
++        *,
++        cursor: EventCursor | None = None,
++        limit: PageSize = 50,
++    ) -> EventPage | None:
++        """List a stable audit page with an immutable event-number high-water mark."""
++        execution_id = _ID.validate_python(execution_id, strict=True)
++        cursor = EventCursor() if cursor is None else EventCursor.model_validate(cursor)
++        limit = _PAGE_SIZE.validate_python(limit, strict=True)
++        async with self._transaction() as connection:
++            anchored = await self._execution(connection, scope, execution_id)
++            if anchored is None:
++                return None
++            execution, high = anchored
++            through = high if cursor.through is None else cursor.through
++            if cursor.after > through or through > high:
++                raise ValueError("event cursor is outside retained execution history")
++            rows = await self._rows(
++                connection,
++                queries.EVENTS,
++                (*_params(scope), execution_id, cursor.after, through, limit + 1),
++            )
++            items = tuple(TraceEvent.model_validate(_utc(row)) for row in rows[:limit])
++            if len(rows) != min(limit + 1, through - cursor.after) or any(
++                item.number != cursor.after + index
++                for index, item in enumerate(items, 1)
++            ):
++                raise ObservabilityUnavailable("observability_event_sequence_invalid")
++            next_cursor = (
++                EventCursor(after=items[-1].number, through=through)
++                if len(rows) > limit
++                else None
++            )
++            return _bounded(
++                EventPage(
++                    execution=execution,
++                    through=through,
++                    items=items,
++                    next_cursor=next_cursor,
++                )
++            )
++
++    async def calls(
++        self,
++        scope: IdempotencyScope,
++        execution_id: RecordId,
++        *,
++        attempt_id: RecordId | None = None,
++        cursor: TimeCursor | None = None,
++        limit: PageSize = 25,
++    ) -> CallPage | None:
++        """Page physical dispatch intents with their independent normal/late receipts."""
++        execution_id = _ID.validate_python(execution_id, strict=True)
++        limit = _PAGE_SIZE.validate_python(limit, strict=True)
++        if attempt_id is not None:
++            attempt_id = _ID.validate_python(attempt_id, strict=True)
++        if cursor is not None:
++            cursor = TimeCursor.model_validate(cursor)
++        since = None if cursor is None else cursor.recorded_at
++        record_id = None if cursor is None else cursor.record_id
++        async with self._transaction() as connection:
++            anchored = await self._execution(connection, scope, execution_id)
++            if anchored is None:
++                return None
++            execution, _ = anchored
++            rows = await self._rows(
++                connection,
++                queries.CALLS,
++                (
++                    *_params(scope),
++                    execution_id,
++                    attempt_id,
++                    attempt_id,
++                    since,
++                    since,
++                    record_id,
++                    limit + 1,
++                ),
++            )
++            spans = tuple(
++                _call_span(tuple(group))
++                for _, group in groupby(rows, key=lambda row: row["dispatch_id"])
++            )
++            items = spans[:limit]
++            next_cursor = (
++                TimeCursor(
++                    recorded_at=items[-1].recorded_at, record_id=items[-1].dispatch_id
++                )
++                if len(spans) > limit
++                else None
++            )
++            return _bounded(
++                CallPage(
++                    task_id=execution.task_id,
++                    execution_id=execution_id,
++                    trace_id=execution.trace_id,
++                    items=items,
++                    next_cursor=next_cursor,
++                )
++            )
++
++    async def tool_steps(
++        self,
++        scope: IdempotencyScope,
++        execution_id: RecordId,
++        *,
++        after: RecordId | None = None,
++        limit: PageSize = 25,
++    ) -> ToolStepPage | None:
++        """Page retained parent/child Tool Plan provenance and normalized outcome."""
++        execution_id = _ID.validate_python(execution_id, strict=True)
++        limit = _PAGE_SIZE.validate_python(limit, strict=True)
++        if after is not None:
++            after = _ID.validate_python(after, strict=True)
++        async with self._transaction() as connection:
++            anchored = await self._execution(connection, scope, execution_id)
++            if anchored is None:
++                return None
++            execution, _ = anchored
++            rows = await self._rows(
++                connection,
++                queries.TOOL_STEPS,
++                (*_params(scope), execution_id, after, after, limit + 1),
++            )
++            items = tuple(
++                ToolStepSpan.model_validate(_utc(row)) for row in rows[:limit]
++            )
++            return _bounded(
++                ToolStepPage(
++                    task_id=execution.task_id,
++                    execution_id=execution_id,
++                    trace_id=execution.trace_id,
++                    items=items,
++                    next_child_attempt=items[-1].child_attempt_id
++                    if len(rows) > limit
++                    else None,
++                )
++            )
++
++    async def metrics(self, scope: IdempotencyScope) -> bytes:
++        """Snapshot measurements of this owner without raw labels or payloads."""
++        params = _params(scope)
++        async with self._transaction() as connection:
++            counts = await self._rows(connection, queries.COUNTS, params)
++            timings = await self._rows(connection, queries.HISTOGRAMS, params)
++            return render_metrics(counts, timings)
++
++    async def readiness(self, scope: IdempotencyScope) -> Readiness:
++        """Distinguish connectivity, required read schema, and unobserved worker state."""
++        database: Availability = "unavailable"
++        try:
++            async with self._transaction() as connection:
++                await self._rows(connection, "SELECT 1")
++                database = "ready"
++                await self._rows(connection, queries.READINESS, _params(scope))
++        except ObservabilityUnavailable:
++            return Readiness(
++                database=database, workflow_schema="unavailable", worker_claim="unknown"
++            )
++        worker: Availability = "unknown"
++        if self._worker_claim_probe is not None:
++            try:
++                async with timeout(1):
++                    worker = _AVAILABILITY.validate_python(
++                        await self._worker_claim_probe(scope)
++                    )
++            except Exception:
++                worker = "unavailable"
++        return Readiness(
++            database=database, workflow_schema="ready", worker_claim=worker
++        )
+--- /dev/null
++++ b/src/jimu_runtime/observability/prometheus.py
+@@ -0,0 +1,202 @@
++"""Render only registered metrics and bounded, low-cardinality dimensions."""
++
++from collections.abc import Mapping, Sequence
++from decimal import Decimal, InvalidOperation
++from typing import get_args
++
++from jimu_runtime.domain.enums import (
++    AttemptStatus,
++    ExecutionStatus,
++    NodeRunStatus,
++    TaskStatus,
++)
++from jimu_runtime.domain.runtime.executions import NodeId
++from jimu_runtime.observability.contracts import CallErrorClass
++
++CALL_ERROR_CLASSES = frozenset(get_args(CallErrorClass.__value__))
++
++_NODES = frozenset(item.value for item in NodeId)
++_KINDS = frozenset(("model", "tool", "unknown"))
++_BOUNDARIES = frozenset(("not_dispatched", "sent_unknown", "acknowledged"))
++_CALL_STATUSES = frozenset(
++    ("succeeded", "partial", "failed", "not_dispatched", "unqualified")
++)
++_TOOL_STATUSES = frozenset(("succeeded", "failed", "timed_out"))
++_SIDES = frozenset(("input", "output"))
++_NO_LABEL = frozenset(("",))
++_BUCKETS = ("0.05", "0.1", "0.25", "0.5", "1", "2", "5", "10", "30", "120")
++
++# Persisted row counts can decrease after retention or restore. Their gauge
++# names intentionally describe snapshots of retained audit data.
++_COUNTERS = {
++    "tasks": (
++        "jimu_retained_tasks",
++        ("status", frozenset(x.value for x in TaskStatus)),
++        ("", _NO_LABEL),
++    ),
++    "accepted_tasks": (
++        "jimu_retained_accepted_tasks",
++        ("", _NO_LABEL),
++        ("", _NO_LABEL),
++    ),
++    "executions": (
++        "jimu_retained_executions",
++        ("status", frozenset(x.value for x in ExecutionStatus)),
++        ("", _NO_LABEL),
++    ),
++    "jobs": (
++        "jimu_workflow_jobs",
++        ("status", frozenset(("ready", "leased", "staged", "done"))),
++        ("", _NO_LABEL),
++    ),
++    "nodes": (
++        "jimu_retained_nodes",
++        ("node", _NODES),
++        ("status", frozenset(x.value for x in NodeRunStatus)),
++    ),
++    "retries": ("jimu_retained_node_retries", ("node", _NODES), ("", _NO_LABEL)),
++    "attempt_results": (
++        "jimu_retained_attempt_results",
++        ("node", _NODES),
++        ("status", frozenset(x.value for x in AttemptStatus)),
++    ),
++    "physical_dispatches": (
++        "jimu_retained_admitted_dispatches",
++        ("kind", _KINDS),
++        ("", _NO_LABEL),
++    ),
++    "receipts": (
++        "jimu_retained_dispatch_receipts",
++        ("kind", _KINDS),
++        ("boundary", _BOUNDARIES),
++    ),
++    "call_outcomes": (
++        "jimu_retained_call_outcomes",
++        ("kind", _KINDS),
++        ("status", _CALL_STATUSES),
++    ),
++    "call_errors": (
++        "jimu_retained_call_errors",
++        ("kind", _KINDS),
++        ("error", CALL_ERROR_CLASSES),
++    ),
++    "late_receipts": ("jimu_retained_late_receipts", ("kind", _KINDS), ("", _NO_LABEL)),
++    "response_evidence_failures": (
++        "jimu_retained_response_evidence_failures",
++        ("", _NO_LABEL),
++        ("", _NO_LABEL),
++    ),
++    "observation_slots": (
++        "jimu_retained_observation_slots",
++        ("status", frozenset(("invalid", "missing"))),
++        ("", _NO_LABEL),
++    ),
++    "token_values": (
++        "jimu_retained_reported_tokens",
++        ("direction", _SIDES),
++        ("", _NO_LABEL),
++    ),
++    "token_observations": (
++        "jimu_retained_token_observations",
++        ("direction", _SIDES),
++        ("", _NO_LABEL),
++    ),
++    "tool_steps": (
++        "jimu_retained_tool_step_completions",
++        ("status", _TOOL_STATUSES),
++        ("", _NO_LABEL),
++    ),
++}
++_HISTOGRAMS = {
++    "queue": ("jimu_queue_wait_seconds", _NO_LABEL),
++    "task": ("jimu_task_duration_seconds", _NO_LABEL),
++    "node": ("jimu_node_duration_seconds", _NODES),
++    "model": ("jimu_model_duration_seconds", _NO_LABEL),
++    "tool": ("jimu_tool_duration_seconds", _NO_LABEL),
++}
++
++
++def _decimal(value: object, *, integer: bool = False) -> Decimal:
++    if not isinstance(value, (int, Decimal)) or isinstance(value, bool):
++        raise ValueError("unexpected database metric value")
++    try:
++        number = Decimal(value)
++        if (
++            not number.is_finite()
++            or number < 0
++            or number > Decimal(10**38)
++            or (integer and number != number.to_integral_value())
++        ):
++            raise ValueError("out-of-range database metric value")
++    except InvalidOperation:
++        raise ValueError("invalid database metric value") from None
++    return number
++
++
++def _labels(*items: tuple[str, str]) -> str:
++    entries = [f'{key}="{value}"' for key, value in items if key]
++    return "{" + ",".join(entries) + "}" if entries else ""
++
++
++def render_metrics(
++    counts: Sequence[Mapping[str, object]],
++    timings: Sequence[Mapping[str, object]],
++) -> bytes:
++    """Emit Prometheus 0.0.4 text; unknown source values cannot become labels."""
++    if len(counts) > 256 or len(timings) > 16:
++        raise ValueError("metrics aggregation exceeds the registered series limit")
++
++    families: dict[str, tuple[str, list[str]]] = {}
++    seen: set[tuple[str, str, str]] = set()
++    for row in counts:
++        family, first, second = (
++            str(row["family"]),
++            str(row["first_label"]),
++            str(row["second_label"]),
++        )
++        metric, (key_a, allowed_a), (key_b, allowed_b) = _COUNTERS[family]
++        key = (family, first, second)
++        if first not in allowed_a or second not in allowed_b or key in seen:
++            raise ValueError("metric has an unknown or duplicate label")
++        seen.add(key)
++        value = _decimal(row["value"], integer=True)
++        samples = families.setdefault(metric, ("gauge", []))[1]
++        samples.append(f"{metric}{_labels((key_a, first), (key_b, second))} {value:f}")
++
++    for row in timings:
++        family, label = str(row["family"]), str(row["label"])
++        metric, allowed = _HISTOGRAMS[family]
++        key = (family, label, "")
++        if label not in allowed or key in seen:
++            raise ValueError("duration metric has an unknown or duplicate label")
++        seen.add(key)
++        count = _decimal(row["samples"], integer=True)
++        total = _decimal(row["total"])
++        raw = row["buckets"]
++        if not isinstance(raw, list | tuple) or len(raw) != len(_BUCKETS):
++            raise ValueError("duration bucket count differs from registered bounds")
++        buckets = tuple(_decimal(item, integer=True) for item in raw)
++        if buckets != tuple(sorted(buckets)) or buckets[-1] > count:
++            raise ValueError("duration bucket counts must be cumulative")
++        node = ("node", label) if label else ("", "")
++        samples = families.setdefault(metric, ("histogram", []))[1]
++        samples.extend(
++            f"{metric}_bucket{_labels(node, ('le', bound))} {value:f}"
++            for bound, value in zip((*_BUCKETS, "+Inf"), (*buckets, count), strict=True)
++        )
++        labels = _labels(node)
++        samples.extend(
++            (f"{metric}_sum{labels} {total:f}", f"{metric}_count{labels} {count:f}")
++        )
++
++    lines = [
++        "# TYPE jimu_telemetry_available gauge",
++        'jimu_telemetry_available{signal="gpu"} 0',
++        'jimu_telemetry_available{signal="reviewed_quality"} 0',
++    ]
++    for metric, (kind, samples) in sorted(families.items()):
++        lines.extend((f"# TYPE {metric} {kind}", *samples))
++    output = ("\n".join(lines) + "\n").encode("ascii")
++    if len(output) > 64 * 1024:
++        raise ValueError("metrics response exceeds its byte limit")
++    return output
+--- /dev/null
++++ b/src/jimu_runtime/observability/queries.py
+@@ -0,0 +1,259 @@
++"""Closed PostgreSQL projections. Every query filters the composite owner key."""
++
++SCOPE = """
++    WITH owner AS (
++        SELECT %s::text AS project_id, %s::text AS client_id
++    )
++"""
++EXECUTION = """
++    SELECT e.task_id, e.execution_id, e.record #>> '{trace,trace_id}' AS trace_id,
++           t.status AS task_status, e.status AS execution_status,
++           (t.record ->> 'accepted_at')::timestamptz AS accepted_at,
++           (e.record ->> 'created_at')::timestamptz AS initialized_at,
++           (e.state ->> 'started_at')::timestamptz AS started_at,
++           (e.state ->> 'ended_at')::timestamptz AS ended_at,
++           e.next_event_number - 1 AS through
++    FROM jimu_workflow.executions e
++    JOIN jimu_workflow.tasks t USING (project_id, client_id, task_id)
++    WHERE e.project_id = %s AND e.client_id = %s AND e.execution_id = %s
++"""
++EVENTS = """
++    SELECT v.event_number AS number, v.recorded_at,
++           v.record #>> '{payload,event_kind}' AS kind,
++           v.record #>> '{payload,next_status}' AS status,
++           v.record #>> '{trace,span_id}' AS span_id,
++           v.record #>> '{trace,parent_span_id}' AS parent_span_id,
++           v.node_run_id, n.node_id, v.attempt_id, a.attempt_number
++    FROM jimu_workflow.execution_events v
++    LEFT JOIN jimu_workflow.node_runs n USING (project_id, client_id, execution_id, node_run_id)
++    LEFT JOIN jimu_workflow.attempts a USING (project_id, client_id, execution_id, node_run_id, attempt_id)
++    WHERE v.project_id = %s AND v.client_id = %s AND v.execution_id = %s
++      AND v.event_number > %s AND v.event_number <= %s
++    ORDER BY v.event_number
++    LIMIT %s
++"""
++CALLS = """
++    WITH selected AS (
++        SELECT project_id, client_id, execution_id, dispatch_id, recorded_at,
++               node_run_id, attempt_id, operation_node_run_id, send_admitted,
++               record #>> '{target,kind}' AS target_kind
++        FROM jimu_workflow.dispatch_intents
++        WHERE project_id = %s AND client_id = %s AND execution_id = %s
++          AND (%s::text IS NULL OR attempt_id = %s)
++          AND (%s::timestamptz IS NULL OR
++              (recorded_at, dispatch_id COLLATE "C") >
++              (%s::timestamptz, %s::text COLLATE "C"))
++        ORDER BY recorded_at, dispatch_id COLLATE "C"
++        LIMIT %s
++    )
++    SELECT i.dispatch_id, i.recorded_at, i.node_run_id, n.node_id, i.attempt_id,
++           s.parent_node_run_id, s.parent_attempt_id,
++           i.send_admitted, i.target_kind,
++           r.recorded_at AS receipt_at, r.boundary, r.late, r.fence_qualified,
++           r.record #>> '{error,error_class}' AS error_class,
++           COALESCE(r.record #>> '{invocation,outcome,status}', r.record #>> '{execution,status}') AS outcome,
++           COALESCE(r.record #>> '{invocation,model_invocation_id}', r.record #>> '{execution,tool_execution_id}') AS producer_id,
++           COALESCE(r.record #>> '{invocation,started_at}', r.record #>> '{execution,started_at}')::timestamptz AS started_at,
++           COALESCE(r.record #>> '{invocation,completed_at}', r.record #>> '{execution,completed_at}')::timestamptz AS completed_at,
++           (r.record ->> 'response_evidence_error') IS NOT NULL AS response_evidence_failed,
++           COALESCE(json_array_length(r.record -> 'invalid_question_slots'), 0) AS invalid_slots,
++           COALESCE(json_array_length(r.record -> 'missing_question_slots'), 0) AS missing_slots
++    FROM selected i
++    JOIN jimu_workflow.node_runs n USING (project_id, client_id, execution_id, node_run_id)
++    LEFT JOIN jimu_workflow.dispatch_results r USING (project_id, client_id, execution_id, dispatch_id)
++    LEFT JOIN jimu_workflow.tool_step_attempts s ON
++        (i.project_id, i.client_id, i.execution_id, i.node_run_id, i.attempt_id)
++        = (s.project_id, s.client_id, s.execution_id, s.child_node_run_id, s.child_attempt_id)
++    ORDER BY i.recorded_at, i.dispatch_id COLLATE "C", r.late
++"""
++TOOL_STEPS = """
++    SELECT s.step_id, s.parent_node_run_id, s.parent_attempt_id,
++           s.child_node_run_id, s.child_attempt_id, c.tool_execution_id,
++           COALESCE(r.record ->> 'started_at', a.record ->> 'started_at')::timestamptz AS started_at,
++           (r.record ->> 'ended_at')::timestamptz AS ended_at,
++           COALESCE(r.status, a.record ->> 'status') AS attempt_status,
++           c.record #>> '{result,execution,status}' AS outcome
++    FROM jimu_workflow.tool_step_attempts s
++    JOIN jimu_workflow.attempts a ON
++        (s.project_id, s.client_id, s.execution_id, s.child_node_run_id, s.child_attempt_id)
++        = (a.project_id, a.client_id, a.execution_id, a.node_run_id, a.attempt_id)
++    LEFT JOIN jimu_workflow.attempt_results r ON
++        (s.project_id, s.client_id, s.execution_id, s.child_node_run_id, s.child_attempt_id)
++        = (r.project_id, r.client_id, r.execution_id, r.node_run_id, r.attempt_id)
++    LEFT JOIN jimu_workflow.tool_step_completions c ON
++        (s.project_id, s.client_id, s.execution_id, s.child_node_run_id, s.child_attempt_id)
++        = (c.project_id, c.client_id, c.execution_id, c.child_node_run_id, c.child_attempt_id)
++    WHERE s.project_id = %s AND s.client_id = %s AND s.execution_id = %s
++      AND (%s::text IS NULL OR s.child_attempt_id COLLATE "C" > %s::text COLLATE "C")
++    ORDER BY s.child_attempt_id COLLATE "C"
++    LIMIT %s
++"""
++
++# bool/enum projection prevents novel journal error codes and IDs becoming labels.
++# Each receipt is counted for audit, while usage/duration uses one
++# attributable physical result per dispatch (normal preferred to late).
++OBSERVATIONS = """
++    , receipts AS (
++        SELECT i.execution_id, i.dispatch_id, r.late, r.boundary,
++               CASE WHEN i.record #>> '{target,kind}' = 'tool' THEN 'tool'
++                    WHEN i.record #>> '{target,kind}' IN
++                        ('model','model_unselected','nested_model','nested_model_unselected') THEN 'model'
++                    ELSE 'unknown' END AS kind,
++               COALESCE(r.record #>> '{invocation,outcome,status}', r.record #>> '{execution,status}') AS outcome,
++               COALESCE(r.record #>> '{invocation,started_at}', r.record #>> '{execution,started_at}')::timestamptz AS started_at,
++               COALESCE(r.record #>> '{invocation,completed_at}', r.record #>> '{execution,completed_at}')::timestamptz AS completed_at,
++               (r.record #>> '{invocation,usage,input_tokens}')::bigint AS input_tokens,
++               (r.record #>> '{invocation,usage,output_tokens}')::bigint AS output_tokens,
++               (r.record ->> 'response_evidence_error') IS NOT NULL AS evidence_error,
++               r.record #>> '{error,error_class}' AS error_class,
++               COALESCE(json_array_length(r.record -> 'invalid_question_slots'), 0) AS invalid_slots,
++               COALESCE(json_array_length(r.record -> 'missing_question_slots'), 0) AS missing_slots
++        FROM owner
++        JOIN jimu_workflow.dispatch_intents i USING (project_id, client_id)
++        JOIN jimu_workflow.dispatch_results r USING (project_id, client_id, execution_id, dispatch_id)
++    ), physical_results AS (
++        SELECT DISTINCT ON (execution_id, dispatch_id) * FROM receipts
++        WHERE boundary <> 'not_dispatched' AND outcome IS NOT NULL
++        ORDER BY execution_id, dispatch_id, late
++    )
++"""
++COUNTS = (
++    SCOPE
++    + OBSERVATIONS
++    + """
++    SELECT 'tasks' AS family, status AS first_label, '' AS second_label, count(*)::numeric AS value
++    FROM owner JOIN jimu_workflow.tasks USING (project_id, client_id) GROUP BY status
++    UNION ALL
++    SELECT 'accepted_tasks', '', '', count(*)::numeric
++    FROM owner JOIN jimu_workflow.tasks USING (project_id, client_id)
++    UNION ALL
++    SELECT 'executions', status, '', count(*)::numeric
++    FROM owner JOIN jimu_workflow.executions USING (project_id, client_id) GROUP BY status
++    UNION ALL
++    SELECT 'jobs', j.status, '', count(*)::numeric
++    FROM owner JOIN jimu_workflow.jobs j USING (project_id, client_id)
++    WHERE NOT internal_tool_step GROUP BY j.status
++    UNION ALL
++    SELECT 'nodes', n.node_id, n.status, count(*)::numeric
++    FROM owner JOIN jimu_workflow.node_runs n USING (project_id, client_id)
++    LEFT JOIN jimu_workflow.jobs j USING (project_id, client_id, execution_id, node_run_id)
++    WHERE j.internal_tool_step IS DISTINCT FROM TRUE GROUP BY n.node_id, n.status
++    UNION ALL
++    SELECT 'retries', n.node_id, '', count(*)::numeric
++    FROM owner JOIN jimu_workflow.attempts a USING (project_id, client_id)
++    JOIN jimu_workflow.node_runs n USING (project_id, client_id, execution_id, node_run_id)
++    JOIN jimu_workflow.jobs j USING (project_id, client_id, execution_id, node_run_id, job_id)
++    WHERE a.attempt_number > 1 AND NOT j.internal_tool_step GROUP BY n.node_id
++    UNION ALL
++    SELECT 'attempt_results', n.node_id, r.status, count(*)::numeric
++    FROM owner JOIN jimu_workflow.attempt_results r USING (project_id, client_id)
++    JOIN jimu_workflow.node_runs n USING (project_id, client_id, execution_id, node_run_id)
++    JOIN jimu_workflow.jobs j USING (project_id, client_id, execution_id, node_run_id)
++    WHERE NOT j.internal_tool_step GROUP BY n.node_id, r.status
++    UNION ALL
++    SELECT 'physical_dispatches',
++           CASE WHEN record #>> '{target,kind}' = 'tool' THEN 'tool'
++                WHEN record #>> '{target,kind}' IN
++                    ('model','model_unselected','nested_model','nested_model_unselected') THEN 'model'
++                ELSE 'unknown' END, '', count(*)::numeric
++    FROM owner JOIN jimu_workflow.dispatch_intents USING (project_id, client_id)
++    WHERE send_admitted GROUP BY 2
++    UNION ALL
++    SELECT 'receipts', kind, boundary, count(*)::numeric FROM receipts GROUP BY kind, boundary
++    UNION ALL
++    SELECT 'call_outcomes', kind,
++           CASE WHEN outcome IN ('succeeded','partial','failed','not_dispatched') THEN outcome
++                ELSE 'unqualified' END, count(*)::numeric
++    FROM receipts GROUP BY 2, 3
++    UNION ALL
++    SELECT 'call_errors', kind,
++           CASE WHEN error_class IN ('transport','timeout','rate_limit','unavailable',
++                       'validation','association','resource_exhausted','cancelled','internal')
++                THEN error_class ELSE 'other' END, count(*)::numeric
++    FROM receipts WHERE error_class IS NOT NULL GROUP BY 2, 3
++    UNION ALL
++    SELECT 'late_receipts', kind, '', count(*)::numeric FROM receipts WHERE late GROUP BY kind
++    UNION ALL
++    SELECT 'response_evidence_failures', '', '', count(*)::numeric FROM receipts WHERE evidence_error
++    UNION ALL
++    SELECT 'observation_slots', 'invalid', '', sum(invalid_slots)::numeric FROM receipts HAVING sum(invalid_slots) > 0
++    UNION ALL
++    SELECT 'observation_slots', 'missing', '', sum(missing_slots)::numeric FROM receipts HAVING sum(missing_slots) > 0
++    UNION ALL
++    SELECT 'token_values', 'input', '', sum(input_tokens)::numeric FROM physical_results HAVING count(input_tokens) > 0
++    UNION ALL
++    SELECT 'token_values', 'output', '', sum(output_tokens)::numeric FROM physical_results HAVING count(output_tokens) > 0
++    UNION ALL
++    SELECT 'token_observations', 'input', '', count(input_tokens)::numeric FROM physical_results
++    UNION ALL
++    SELECT 'token_observations', 'output', '', count(output_tokens)::numeric FROM physical_results
++    UNION ALL
++    SELECT 'tool_steps', attempt_status, '', count(*)::numeric
++    FROM owner JOIN jimu_workflow.tool_step_completions USING (project_id, client_id) GROUP BY attempt_status
++"""
++)
++
++# Task latency follows only the original intake Execution. Replay executions do
++# not increase the count of accepted tasks or overwrite intake latency.
++HISTOGRAMS = (
++    SCOPE
++    + OBSERVATIONS
++    + """
++    , times AS (
++        SELECT 'queue' AS family, '' AS label,
++               (e.state ->> 'started_at')::timestamptz AS end_at,
++               (t.record ->> 'accepted_at')::timestamptz AS start_at
++        FROM owner JOIN jimu_workflow.intake_intents i USING (project_id, client_id)
++        JOIN jimu_workflow.tasks t USING (project_id, client_id, task_id)
++        JOIN jimu_workflow.executions e USING (project_id, client_id, execution_id, task_id)
++        WHERE i.status = 'accepted'
++        UNION ALL
++        SELECT 'task', '', (e.state ->> 'ended_at')::timestamptz,
++               (t.record ->> 'accepted_at')::timestamptz
++        FROM owner JOIN jimu_workflow.intake_intents i USING (project_id, client_id)
++        JOIN jimu_workflow.tasks t USING (project_id, client_id, task_id)
++        JOIN jimu_workflow.executions e USING (project_id, client_id, execution_id, task_id)
++        WHERE i.status = 'accepted'
++        UNION ALL
++        SELECT 'node', n.node_id, (n.state ->> 'ended_at')::timestamptz, (n.state ->> 'started_at')::timestamptz
++        FROM owner JOIN jimu_workflow.node_runs n USING (project_id, client_id)
++        LEFT JOIN jimu_workflow.jobs j USING (project_id, client_id, execution_id, node_run_id)
++        WHERE j.internal_tool_step IS DISTINCT FROM TRUE
++        UNION ALL
++        SELECT kind, '', completed_at, started_at FROM physical_results WHERE kind IN ('model','tool')
++    ), seconds AS (
++        SELECT family, label, EXTRACT(epoch FROM (end_at - start_at)) AS duration
++        FROM times WHERE end_at >= start_at
++    )
++    SELECT family, label, count(*) AS samples, sum(duration) AS total,
++           ARRAY[count(*) FILTER (WHERE duration <= 0.05),
++                 count(*) FILTER (WHERE duration <= 0.1),
++                 count(*) FILTER (WHERE duration <= 0.25),
++                 count(*) FILTER (WHERE duration <= 0.5),
++                 count(*) FILTER (WHERE duration <= 1),
++                 count(*) FILTER (WHERE duration <= 2),
++                 count(*) FILTER (WHERE duration <= 5),
++                 count(*) FILTER (WHERE duration <= 10),
++                 count(*) FILTER (WHERE duration <= 30),
++                 count(*) FILTER (WHERE duration <= 120)] AS buckets
++    FROM seconds GROUP BY family, label
++"""
++)
++
++READINESS = (
++    SCOPE
++    + """
++    SELECT (SELECT 1 FROM owner JOIN jimu_workflow.executions USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.execution_events USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.jobs USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.dispatch_intents USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.dispatch_results USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.tool_step_attempts USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.tool_step_completions USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.tasks USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.attempts USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.attempt_results USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.intake_intents USING (project_id, client_id) LIMIT 1),
++           (SELECT 1 FROM owner JOIN jimu_workflow.node_runs USING (project_id, client_id) LIMIT 1)
++"""
++)
+--- /dev/null
++++ b/src/jimu_runtime/observability/serve.py
+@@ -0,0 +1,153 @@
++"""Small ASGI adapter for one authorized Prometheus target."""
++
++from collections.abc import Awaitable, Callable
++from hmac import compare_digest
++from os import environ
++from pathlib import Path
++from typing import TypedDict
++
++from sqlalchemy.engine import make_url
++from sqlalchemy.ext.asyncio import AsyncEngine
++
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.observability.postgres import (
++    ObservabilityUnavailable,
++    PostgresObservability,
++)
++from jimu_runtime.workflow.postgres import create_postgres_engine
++
++type _Headers = list[tuple[bytes, bytes]]
++type AuthorizeScrape = Callable[[_Headers], Awaitable[IdempotencyScope | None]]
++type _Send = Callable[[dict[str, object]], Awaitable[None]]
++type _Receive = Callable[[], Awaitable[dict[str, object]]]
++
++
++class _Scope(TypedDict, total=False):
++    type: str
++    path: str
++    method: str
++    headers: _Headers
++
++
++class ScrapeApplication:
++    """No URL parameter selects an owner or a resource for this target."""
++
++    def __init__(
++        self,
++        reader: PostgresObservability,
++        scope: IdempotencyScope,
++        authorize: AuthorizeScrape,
++        *,
++        engine: AsyncEngine | None = None,
++    ) -> None:
++        self._reader = reader
++        self._scope = IdempotencyScope.model_validate(scope)
++        self._authorize = authorize
++        self._engine = engine
++
++    async def __call__(self, request: _Scope, receive: _Receive, send: _Send) -> None:
++        if request["type"] == "lifespan":
++            while True:
++                event = await receive()
++                if event["type"] == "lifespan.startup":
++                    await send({"type": "lifespan.startup.complete"})
++                if event["type"] == "lifespan.shutdown":
++                    if self._engine is not None:
++                        await self._engine.dispose()
++                    await send({"type": "lifespan.shutdown.complete"})
++                    return
++        if request["type"] != "http":
++            raise ValueError("unsupported observability transport")
++        path = request["path"]
++        if path not in ("/livez", "/readyz", "/metrics"):
++            await _reply(send, 404, b"not found\n")
++            return
++        if request["method"] != "GET":
++            await _reply(send, 405, b"method not allowed\n", extra=[(b"allow", b"GET")])
++            return
++        if path == "/livez":
++            await _reply(send, 200, b"ok\n")
++            return
++        headers = request.get("headers", [])
++        if (
++            len(headers) > 64
++            or sum(len(name) + len(value) for name, value in headers) > 8192
++        ):
++            await _reply(send, 431, b"request headers too large\n")
++            return
++        try:
++            owner = await self._authorize(headers)
++        except Exception:
++            await _reply(send, 503, b"unavailable\n")
++            return
++        if owner != self._scope:
++            await _reply(
++                send, 401, b"unauthorized\n", extra=[(b"www-authenticate", b"Bearer")]
++            )
++            return
++        if path == "/readyz":
++            status = await self._reader.readiness(self._scope)
++            await _reply(
++                send,
++                200 if status.ready else 503,
++                status.model_dump_json().encode(),
++                b"application/json",
++            )
++            return
++        try:
++            output = await self._reader.metrics(self._scope)
++        except (ObservabilityUnavailable, ValueError):
++            await _reply(send, 503, b"unavailable\n")
++            return
++        await _reply(send, 200, output, b"text/plain; version=0.0.4; charset=utf-8")
++
++
++async def _reply(
++    send: _Send,
++    status: int,
++    body: bytes,
++    mime: bytes = b"text/plain; charset=utf-8",
++    *,
++    extra: _Headers | None = None,
++) -> None:
++    headers = [(b"content-type", mime), (b"cache-control", b"no-store")]
++    if extra:
++        headers.extend(extra)
++    await send({"type": "http.response.start", "status": status, "headers": headers})
++    await send({"type": "http.response.body", "body": body})
++
++
++def _secret(name: str) -> bytes:
++    with Path(environ[name]).open("rb") as secret:
++        value = secret.read(4097)
++    if not 1 <= len(value) <= 4096:
++        raise ValueError("observability credential file has invalid size")
++    return value.rstrip(b"\n")
++
++
++def create_app() -> ScrapeApplication:
++    """Factory for trusted single-scope deployment, with secret-file credentials."""
++    try:
++        scope = IdempotencyScope(
++            project_id=environ["JIMU_OBSERVABILITY_PROJECT_ID"],
++            client_id=environ["JIMU_OBSERVABILITY_CLIENT_ID"],
++        )
++        token = _secret("JIMU_OBSERVABILITY_TOKEN_FILE")
++        if len(token) < 32 or any(not 33 <= byte <= 126 for byte in token):
++            raise ValueError("invalid scrape credential")
++        url = make_url(_secret("JIMU_OBSERVABILITY_DB_URL_FILE").decode("utf-8"))
++        engine = create_postgres_engine(url)
++    except Exception:
++        raise RuntimeError(
++            "observability deployment configuration is invalid"
++        ) from None
++
++    async def authorize(headers: _Headers) -> IdempotencyScope | None:
++        supplied = [value for name, value in headers if name == b"authorization"]
++        if len(supplied) == 1 and compare_digest(supplied[0], b"Bearer " + token):
++            return scope
++        return None
++
++    return ScrapeApplication(
++        PostgresObservability(engine), scope, authorize, engine=engine
++    )
+--- /dev/null
++++ b/tests/contract/test_wp07_observability_postgres.py
+@@ -0,0 +1,197 @@
++"""Read real persisted receipts from the signed PostgreSQL workflow scenarios."""
++
++from contextlib import asynccontextmanager
++from pathlib import Path
++
++import pytest
++
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.observability.contracts import EventCursor
++from jimu_runtime.observability.postgres import PostgresObservability
++from tests.contract import test_wp05_perception_loopback as perception_cases
++from tests.contract import test_wp05_worker_inspection as worker_cases
++from tests.fixtures.wp04 import http_support
++
++loopback_only = http_support.loopback_only
++
++
++@pytest.mark.parametrize(
++    "scenario", ("retry_and_tools", "partial_observation", "cancelled_late")
++)
++def test_scoped_audit_projects_actual_postgres_rows(
++    tmp_path: Path,
++    loopback_only: set[int],
++    monkeypatch: pytest.MonkeyPatch,
++    scenario: str,
++) -> None:
++    module = perception_cases if scenario == "partial_observation" else worker_cases
++    fixture = module.perception_fixture
++    finished = []
++
++    @asynccontextmanager
++    async def monitored(*args, **kwargs):
++        async with fixture(*args, **kwargs) as runtime:
++            yield runtime
++            task, execution = runtime.accepted.task, runtime.accepted.execution
++            scope, eid = task.idempotency_scope, execution.execution_id
++            recorder = PostgresObservability(runtime.application)
++            foreign = IdempotencyScope(
++                project_id=scope.project_id, client_id="other.client"
++            )
++            other_project = IdempotencyScope(
++                project_id="other.project", client_id=scope.client_id
++            )
++            assert await recorder.events(other_project, eid) is None
++            assert await recorder.events(foreign, eid) is None
++            assert await recorder.calls(foreign, eid) is None
++            assert await recorder.tool_steps(foreign, eid) is None
++
++            page = await recorder.events(scope, eid, limit=2)
++            assert page is not None and page.next_cursor is not None
++            assert page.execution.task_id == task.task_id
++            assert page.execution.trace_id == execution.trace.trace_id
++            high = page.through
++            events = list(page.items)
++            while page.next_cursor is not None:
++                page = await recorder.events(
++                    scope, eid, cursor=page.next_cursor, limit=2
++                )
++                assert page is not None and page.through == high
++                events.extend(page.items)
++            assert [event.number for event in events] == list(range(1, high + 1))
++            assert any(event.attempt_id and event.node_run_id for event in events)
++            capped = await recorder.events(
++                scope, eid, cursor=EventCursor(through=high - 1), limit=100
++            )
++            assert capped is not None and capped.items[-1].number == high - 1
++
++            calls = await recorder.calls(scope, eid, limit=1)
++            assert calls is not None and calls.next_cursor is not None
++            spans = list(calls.items)
++            while calls.next_cursor is not None:
++                calls = await recorder.calls(
++                    scope, eid, cursor=calls.next_cursor, limit=1
++                )
++                assert calls is not None
++                spans.extend(calls.items)
++            assert len({span.dispatch_id for span in spans}) == len(spans)
++            assert [(row.recorded_at, row.dispatch_id) for row in spans] == sorted(
++                (row.recorded_at, row.dispatch_id) for row in spans
++            )
++            one = await recorder.calls(scope, eid, attempt_id=spans[0].attempt_id)
++            assert one is not None and all(
++                row.attempt_id == spans[0].attempt_id for row in one.items
++            )
++            output = await recorder.metrics(scope)
++            assert (
++                await PostgresObservability(runtime.application).metrics(scope)
++                == output
++            )
++            assert b"jimu_retained_tasks" in output
++            assert b"jimu_retained_accepted_tasks 1\n" in output
++            assert b"jimu_queue_wait_seconds_count 1\n" in output
++            assert b'jimu_retained_admitted_dispatches{kind="model"}' in output
++            assert b"jimu_retained_reported_tokens" not in output
++            assert b'jimu_telemetry_available{signal="gpu"} 0' in output
++            assert b"jimu_retained_tasks" not in await recorder.metrics(foreign)
++            assert b"jimu_retained_admitted_dispatches" not in await recorder.metrics(
++                foreign
++            )
++            for secret in (
++                scope.project_id,
++                scope.client_id,
++                task.task_id,
++                eid,
++                execution.trace.trace_id,
++            ):
++                assert secret.encode() not in output
++            assert all(
++                span.attempt_id in {event.attempt_id for event in events}
++                for span in spans
++            )
++            assert (await recorder.readiness(scope)).ready
++
++            async def worker_unavailable(verified_scope):
++                assert verified_scope == scope
++                return "unavailable"
++
++            unhealthy = await PostgresObservability(
++                runtime.application, worker_claim_probe=worker_unavailable
++            ).readiness(scope)
++            assert unhealthy.database == unhealthy.workflow_schema == "ready"
++            assert unhealthy.worker_claim == "unavailable" and not unhealthy.ready
++            if scenario == "retry_and_tools":
++                assert b'jimu_retained_node_retries{node="N04"} 1\n' in output
++                assert (
++                    b'jimu_retained_attempt_results{node="N04",status="failed"} 1\n'
++                    in output
++                )
++                assert b"jimu_tool_duration_seconds_count 3\n" in output
++                assert b"jimu_task_duration_seconds_count 1\n" in output
++                assert any(
++                    receipt.error_class == "transport"
++                    and receipt.boundary == "sent_unknown"
++                    for span in spans
++                    if span.kind == "model"
++                    for receipt in span.receipts
++                ), [
++                    (item.status, item.boundary, item.error_class)
++                    for span in spans
++                    for item in span.receipts
++                ]
++                tools = await recorder.tool_steps(scope, eid, limit=2)
++                assert (
++                    tools is not None
++                    and len(tools.items) == 2
++                    and tools.next_child_attempt
++                )
++                tail = await recorder.tool_steps(
++                    scope, eid, after=tools.next_child_attempt
++                )
++                assert tail is not None and len(tail.items) == 1
++                assert (
++                    len({row.tool_execution_id for row in (*tools.items, *tail.items)})
++                    == 3
++                )
++                assert all(
++                    row.parent_attempt_id
++                    and row.child_attempt_id
++                    and row.outcome == "succeeded"
++                    for row in (*tools.items, *tail.items)
++                )
++            elif scenario == "cancelled_late":
++                assert any(event.kind == "late_response" for event in events)
++                assert any(
++                    receipt.late
++                    and receipt.boundary == "acknowledged"
++                    and receipt.fence_qualified is not True
++                    for span in spans
++                    for receipt in span.receipts
++                )
++                assert b'jimu_retained_late_receipts{kind="model"} 1\n' in output
++            else:
++                assert any(
++                    receipt.invalid_slots or receipt.missing_slots
++                    for span in spans
++                    for receipt in span.receipts
++                )
++                assert b'jimu_retained_observation_slots{status="invalid"}' in output
++                assert b'jimu_retained_observation_slots{status="missing"}' in output
++                assert b"jimu_task_duration_seconds_count" not in output
++            finished.append(True)
++
++    monkeypatch.setattr(module, "perception_fixture", monitored)
++    if scenario == "retry_and_tools":
++        worker_cases.test_configured_worker_executes_signed_parking_scene(
++            tmp_path, loopback_only, "transport_failure", monkeypatch
++        )
++    elif scenario == "cancelled_late":
++        worker_cases.test_model_reply_after_cancellation_is_archived_without_authority(
++            tmp_path,
++            loopback_only,
++        )
++    else:
++        perception_cases.test_signed_perception_through_worker(
++            tmp_path, loopback_only, "multiple_objects", monkeypatch
++        )
++    assert finished == [True]
+--- /dev/null
++++ b/tests/unit/test_wp07_observability_render.py
+@@ -0,0 +1,57 @@
++from decimal import Decimal
++
++import pytest
++
++from jimu_runtime.observability.prometheus import render_metrics
++
++
++def test_export_never_invents_token_or_gpu_readings():
++    body = render_metrics(
++        [
++            {
++                "family": "tasks",
++                "first_label": "completed",
++                "second_label": "",
++                "value": 3,
++            }
++        ],
++        [
++            {
++                "family": "model",
++                "label": "",
++                "samples": 2,
++                "total": Decimal("1.55"),
++                "buckets": [0, 0, 0, 1, 1, 2, 2, 2, 2, 2],
++            }
++        ],
++    ).decode()
++    assert 'jimu_telemetry_available{signal="gpu"} 0' in body
++    assert "jimu_reported_tokens" not in body
++    assert 'jimu_model_duration_seconds_bucket{le="+Inf"} 2' in body
++    assert "jimu_model_duration_seconds_sum 1.55" in body
++    assert 'jimu_retained_tasks{status="completed"} 3' in body
++
++
++@pytest.mark.parametrize("label", ("project-id", '\nprivate="credential', ""))
++def test_unregistered_metric_labels_cannot_enter_exposition(label):
++    with pytest.raises(ValueError, match="unknown or duplicate label"):
++        render_metrics(
++            [{"family": "tasks", "first_label": label, "second_label": "", "value": 1}],
++            [],
++        )
++
++
++def test_histogram_rejects_non_cumulative_counts():
++    with pytest.raises(ValueError, match="cumulative"):
++        render_metrics(
++            [],
++            [
++                {
++                    "family": "task",
++                    "label": "",
++                    "samples": 2,
++                    "total": Decimal("1"),
++                    "buckets": [1, 0, 0, 1, 1, 2, 2, 2, 2, 2],
++                }
++            ],
++        )

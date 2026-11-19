@@ -1,0 +1,93 @@
+"""Exercise independent Profile storage for one RGB-frame bounding box."""
+from copy import deepcopy
+import json
+
+from pydantic import ValidationError
+
+from fixtures.wp01c.nodes.cases import cases
+from jimu_runtime.domain.runtime.observations import ObservationBatch
+from jimu_runtime.domain.runtime.perception import GroundingRecord, ObjectRecord
+
+
+def parse(model, payload):
+    return model.model_validate_json(json.dumps(payload))
+
+
+def require_rejection(action, message):
+    try:
+        action()
+    except (ValueError, ValidationError) as exc:
+        assert message in str(exc), str(exc)
+        print(f"Rejected as expected: {message}")
+    else:
+        raise AssertionError(f"missing rejection: {message}")
+
+
+fixture = cases()
+first_object = fixture['object_record']
+first_grounding = fixture['grounding_record']
+first_batch = fixture['batch']
+second_object = deepcopy(first_object)
+second_grounding = deepcopy(first_grounding)
+second_batch = deepcopy(first_batch)
+
+for payload in (second_object, second_grounding, second_batch):
+    payload['profile_ref']['artifact_id'] = 'independent-profile-b'
+    payload['question_selection_ref']['record_id'] = 'independent-selection-b'
+
+second_object['object_id'] = 'independent-object-b'
+second_object['grounding_record_ref']['record_id'] = 'independent-grounding-b'
+second_grounding['grounding_record_id'] = 'independent-grounding-b'
+second_grounding['object_refs'][0]['record_id'] = 'independent-object-b'
+for producer in (second_object['grounding_producer'], second_grounding['producer']):
+    assert producer['kind'] == 'tool'
+    producer['tool_execution_ref']['record_id'] = 'independent-grounding-tool-b'
+
+second_batch['observation_batch_id'] = 'independent-batch-b'
+second_batch['object_ref']['record_id'] = 'independent-object-b'
+second_batch['attempt_ref']['record_id'] = 'independent-observation-attempt-b'
+second_batch['model_invocation_ref']['record_id'] = 'independent-observation-call-b'
+for n, question in enumerate(second_batch['question_results']):
+    fact = question['primary_fact']
+    fact['fact_id'] = f'independent-b-fact-{n}'
+    fact['profile_ref']['artifact_id'] = 'independent-profile-b'
+    fact['object_id'] = 'independent-object-b'
+    fact['attempt_id'] = 'independent-observation-attempt-b'
+    fact['source']['observation_batch_ref']['record_id'] = 'independent-batch-b'
+    fact['source']['model_invocation_ref']['record_id'] = 'independent-observation-call-b'
+
+object_a, object_b = (parse(ObjectRecord, item) for item in (first_object, second_object))
+assert object_a.source_media_ref == object_b.source_media_ref
+assert object_a.coordinate_system == object_b.coordinate_system
+assert object_a.bbox == object_b.bbox
+assert object_a.entity_ref == object_b.entity_ref
+assert object_a.profile_ref != object_b.profile_ref
+assert object_a.object_id != object_b.object_id
+grounding_a, grounding_b = (
+    parse(GroundingRecord, item) for item in (first_grounding, second_grounding)
+)
+grounding_a.check_objects((object_a,))
+grounding_b.check_objects((object_b,))
+print("Accepted two separately grounded Objects with the same original-frame box and Entity")
+
+wrong_profile = deepcopy(first_object)
+wrong_profile['profile_ref']['artifact_id'] = 'independent-profile-b'
+require_rejection(
+    lambda: grounding_a.check_objects((parse(ObjectRecord, wrong_profile),)),
+    'exact Profile grounding provenance',
+)
+
+batch_a, batch_b = (parse(ObservationBatch, item) for item in (first_batch, second_batch))
+assert batch_a.effective_question_refs == batch_b.effective_question_refs
+assert batch_a.object_ref != batch_b.object_ref
+assert batch_a.attempt_ref != batch_b.attempt_ref
+facts_a = {item.primary_fact.fact_id for item in batch_a.question_results}
+facts_b = {item.primary_fact.fact_id for item in batch_b.question_results}
+assert not facts_a & facts_b
+print("Accepted distinct ObservationBatch and Fact identities for shared Question definitions")
+foreign_fact = deepcopy(second_batch)
+foreign_fact['question_results'][0]['primary_fact'] = first_batch['question_results'][0]['primary_fact']
+require_rejection(
+    lambda: parse(ObservationBatch, foreign_fact),
+    'primary Fact must belong to this Object, invocation and batch Attempt',
+)

@@ -116,6 +116,7 @@ from jimu_runtime.domain.validation.schema_descriptors import (
     validate_target_coverage,
 )
 from jimu_runtime.domain.validation.tool_plans import (
+    ToolMappingUse,
     ToolRegistration,
     validate_tool_definition,
     validate_tool_plan,
@@ -676,9 +677,11 @@ class _Validation:
             )
 
     def mapping_view(
-        self, profile: ProfileDefinition, use: ProfileUseContext, context_index: int
+        self,
+        profile: ProfileDefinition,
+        use: ProfileUseContext,
+        context: MappingTypeContext | ToolMappingUse,
     ) -> None:
-        context = use.mapping_contexts[context_index]
         if not _same(context.profile_ref, use.profile_ref) or not _same(
             context.tool_plan_ref, profile.tool_plan_ref
         ):
@@ -732,7 +735,7 @@ class _Validation:
                         "Used nested Object/image view is absent from outer use.",
                         "incomplete",
                     )
-                if not _same(outer_ref, nested):
+                if nested is None or not _same(outer_ref, nested):
                     _fail(
                         "definitions.outer_view_mismatch",
                         "Used nested Object/image view differs from outer use.",
@@ -860,7 +863,7 @@ def _preflight(inputs: DefinitionValidationInput) -> None:
 def _nested_preflight(
     inputs: DefinitionValidationInput,
     use: ProfileUseContext,
-    context: MappingTypeContext,
+    context: MappingTypeContext | ToolMappingUse,
 ) -> None:
     if not _same(context.profile_ref, use.profile_ref):
         _fail(
@@ -1006,6 +1009,7 @@ def _validate_use(
     models: tuple[ModelBindingRegistration, ...],
     prompts: tuple[PromptRegistration, ...],
     used_models: set[tuple[ArtifactKind, str, str, str]],
+    app_mapping_uses: tuple[ToolMappingUse, ...],
 ) -> None:
     results = state.results
     profile = state.definition(use.profile_ref, ProfileDefinition)
@@ -1019,9 +1023,13 @@ def _validate_use(
         results.run(
             "prompt_context", partial(_question_prompt, state, question_ref, use)
         )
-    valid_contexts = []
-    for index, context in enumerate(use.mapping_contexts):
-        if results.run("catalogue", partial(state.mapping_view, profile, use, index)):
+    valid_contexts: list[MappingTypeContext | ToolMappingUse] = []
+    contexts: tuple[MappingTypeContext | ToolMappingUse, ...] = (
+        *use.mapping_contexts,
+        *app_mapping_uses,
+    )
+    for context in contexts:
+        if results.run("catalogue", partial(state.mapping_view, profile, use, context)):
             valid_contexts.append(context)
 
     def plan_checks() -> None:
@@ -1080,7 +1088,11 @@ def _validate_use(
 
 
 def validate_definition_relations(
-    inputs: DefinitionValidationInput, fact_schemas: FactSchemaRegistry
+    inputs: DefinitionValidationInput,
+    fact_schemas: FactSchemaRegistry,
+    *,
+    tool_mapping_uses: Callable[[ProfileUseContext], tuple[ToolMappingUse, ...]]
+    | None = None,
 ) -> ValidationReport:
     """Validate supplied finite relations, preserving every unperformed boundary."""
     results = _Results()
@@ -1169,7 +1181,16 @@ def validate_definition_relations(
         for use in checked.use_contexts:
             results.run(
                 "profiles",
-                partial(_validate_use, state, use, tools, models, prompts, used_models),
+                partial(
+                    _validate_use,
+                    state,
+                    use,
+                    tools,
+                    models,
+                    prompts,
+                    used_models,
+                    () if tool_mapping_uses is None else tool_mapping_uses(use),
+                ),
             )
         active_plans = {
             reference_identity(registration.definition.tool_plan_ref)

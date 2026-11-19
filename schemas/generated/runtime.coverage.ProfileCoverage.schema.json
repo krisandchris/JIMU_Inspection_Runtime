@@ -1,0 +1,261 @@
+{
+  "$defs": {
+    "CoverageReason": {
+      "enum": [
+        "context_build_blocked",
+        "no_eligible_profiles",
+        "empty_configured_scope",
+        "profile_not_discovered",
+        "discovery_no_hits",
+        "discovery_failed",
+        "discovery_partial",
+        "discovery_not_evaluated",
+        "grounding_no_target",
+        "grounding_failed",
+        "grounding_partial",
+        "grounding_not_evaluated",
+        "decision_not_evaluated",
+        "required_evidence_blocked",
+        "predicate_unknown",
+        "applicability_unresolved"
+      ],
+      "title": "CoverageReason",
+      "type": "string"
+    },
+    "CoverageStatus": {
+      "enum": [
+        "complete",
+        "partial",
+        "none",
+        "not_applicable"
+      ],
+      "title": "CoverageStatus",
+      "type": "string"
+    },
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "evidence",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "EvidenceRefs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "GroundingOutcome": {
+      "enum": [
+        "objects",
+        "no_target",
+        "failed",
+        "partial",
+        "not_evaluated"
+      ],
+      "title": "GroundingOutcome",
+      "type": "string"
+    },
+    "ObjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "object",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ObjectRef",
+      "type": "object"
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "RecordList_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "not": {
+          "pattern": "\\s"
+        },
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+        "type": "string"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_CoverageReason_": {
+      "items": {
+        "$ref": "#/$defs/CoverageReason"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_ObjectRef_": {
+      "items": {
+        "$ref": "#/$defs/ObjectRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "bundle_digest": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Bundle Digest",
+      "type": "string"
+    },
+    "coverage_status": {
+      "$ref": "#/$defs/CoverageStatus"
+    },
+    "execution_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "grounding_outcome": {
+      "$ref": "#/$defs/GroundingOutcome"
+    },
+    "missing_evidence_refs": {
+      "$ref": "#/$defs/EvidenceRefs"
+    },
+    "object_count": {
+      "maximum": 1024,
+      "minimum": 0,
+      "title": "Object Count",
+      "type": "integer"
+    },
+    "object_refs": {
+      "$ref": "#/$defs/RecordList_ObjectRef_"
+    },
+    "obligation_ids": {
+      "$ref": "#/$defs/RecordList_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___"
+    },
+    "profile_ref": {
+      "$ref": "#/$defs/ProfileContentRef"
+    },
+    "reasons": {
+      "$ref": "#/$defs/RecordList_CoverageReason_"
+    },
+    "release_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Release Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "execution_id",
+    "release_id",
+    "bundle_digest",
+    "profile_ref",
+    "grounding_outcome",
+    "object_refs",
+    "object_count",
+    "obligation_ids",
+    "coverage_status",
+    "reasons",
+    "missing_evidence_refs"
+  ],
+  "title": "ProfileCoverage",
+  "type": "object"
+}

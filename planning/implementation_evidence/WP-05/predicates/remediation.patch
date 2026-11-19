@@ -1,0 +1,125 @@
+--- a/src/jimu_runtime/inspection/rules/_operands.py
++++ b/src/jimu_runtime/inspection/rules/_operands.py
+@@ -52,6 +52,7 @@
+ _FACT = TypeAdapter[FactRecord](FactRecord)
+ _ID = TypeAdapter[RecordId](RecordId)
+ _MAX_VALUE_NODES = 32_768
++_MISSING_VALUE = object()
+ _SCALARS = (BooleanValue, EnumValue, IntegerValue, NumberValue, StringValue)
+ _FACT_TYPES = (KnownFact, UnknownFact, ErrorFact, NotApplicableFact, NotEvaluatedFact)
+ 
+@@ -117,17 +118,21 @@
+             self.remaining -= 1
+             if self.remaining < 0 or depth > MAX_CONTAINER_DEPTH:
+                 raise PredicateInputError("predicate.value_budget")
+-            if isinstance(node, ListValue):
+-                if type(node.value) is not tuple or len(node.value) > MAX_LIST_ITEMS:
+-                    raise PredicateInputError("predicate.value_budget")
+-                pending.extend((child, depth + 1) for child in node.value)
+-            elif isinstance(node, RecordValue):
+-                if (
+-                    not isinstance(node.value, Mapping)
+-                    or len(node.value) > MAX_RECORD_FIELDS
+-                ):
+-                    raise PredicateInputError("predicate.value_budget")
+-                pending.extend((child, depth + 1) for child in node.value.values())
++            if isinstance(node, (ListValue, RecordValue)):
++                payload: object = getattr(node, "value", _MISSING_VALUE)
++                if payload is _MISSING_VALUE:
++                    raise PredicateInputError("predicate.invalid_value_shape")
++                if isinstance(node, ListValue):
++                    if type(payload) is not tuple or len(payload) > MAX_LIST_ITEMS:
++                        raise PredicateInputError("predicate.value_budget")
++                    pending.extend((child, depth + 1) for child in payload)
++                else:
++                    if (
++                        not isinstance(payload, Mapping)
++                        or len(payload) > MAX_RECORD_FIELDS
++                    ):
++                        raise PredicateInputError("predicate.value_budget")
++                    pending.extend((child, depth + 1) for child in payload.values())
+             elif not isinstance(node, _SCALARS):
+                 raise PredicateInputError("predicate.invalid_value_shape")
+ 
+@@ -184,7 +189,9 @@
+     budget = _ValueBudget()
+     context_operands: dict[ContextFieldSelector, Operand] = {}
+     if context_fields is not None:
+-        if len(context_fields) > len(context_shapes):
++        if not isinstance(context_fields, Mapping) or len(context_fields) > len(
++            context_shapes
++        ):
+             raise PredicateInputError("predicate.context_inputs")
+         for selector, value in context_fields.items():
+             shape = context_shapes.get(selector)
+@@ -208,7 +215,10 @@
+         if not isinstance(raw, _FACT_TYPES):
+             raise PredicateInputError("predicate.invalid_fact_record")
+         if isinstance(raw, KnownFact):
+-            budget.check(raw.value)
++            payload: object = getattr(raw, "value", _MISSING_VALUE)
++            if payload is _MISSING_VALUE:
++                raise PredicateInputError("predicate.invalid_fact_record")
++            budget.check(payload)
+         try:
+             fact = _FACT.validate_python(raw)
+         except ValidationError:
+--- a/tests/negative/test_wp05_predicates_rejections.py
++++ b/tests/negative/test_wp05_predicates_rejections.py
+@@ -9,7 +9,7 @@
+ from jimu_runtime.bundle.artifacts import artifact_identity
+ from jimu_runtime.domain.definition_enums import ConditionInputDomain
+ from jimu_runtime.domain.definition_support import ContextFieldSelector
+-from jimu_runtime.domain.values import ListValue
++from jimu_runtime.domain.values import BooleanValue, ListValue, RecordValue
+ from jimu_runtime.inspection.rules import (
+     PredicateInputError,
+     PredicatePreparationError,
+@@ -247,3 +247,47 @@
+         PredicatePreparationError, match="predicate.fact_schema_binding"
+     ):
+         PreparedPredicate(**options)
++
++
++def test_malformed_context_container_is_rejected_even_when_empty():
++    predicate = PreparedPredicate(**scenario(Example(), literal()))
++    with pytest.raises(PredicateInputError) as exc:
++        predicate.evaluate(execution_id="execution", context_fields=[])
++    assert exc.value.code == "predicate.context_inputs"
++
++
++def test_known_fact_missing_value_is_rejected_before_budget_walk():
++    example = Example()
++    node = example.question_fact()
++    predicate = PreparedPredicate(**scenario(example, node))
++    valid = fact(example, node, value=value("bool", True))
++    incomplete = type(valid).model_construct(**valid.model_dump(exclude={"value"}))
++    with pytest.raises(PredicateInputError) as exc:
++        predicate.evaluate(
++            execution_id="execution", object_id="object", facts=(incomplete,)
++        )
++    assert exc.value.code == "predicate.invalid_fact_record"
++
++
++@pytest.mark.parametrize(
++    ("model", "kind", "code"),
++    [
++        (ListValue, "list", "predicate.invalid_value_shape"),
++        (RecordValue, "record", "predicate.invalid_value_shape"),
++        (BooleanValue, "bool", "predicate.invalid_fact_record"),
++    ],
++)
++def test_nested_typed_value_missing_value_field_is_rejected(model, kind, code):
++    example = Example()
++    node = example.question_fact()
++    predicate = PreparedPredicate(**scenario(example, node))
++    incomplete = model.model_construct(kind=kind)
++    outer = ListValue.model_construct(kind="list", value=(incomplete,))
++    invalid = fact(example, node, value=value("bool", True)).model_copy(
++        update={"value": outer}
++    )
++    with pytest.raises(PredicateInputError) as exc:
++        predicate.evaluate(
++            execution_id="execution", object_id="object", facts=(invalid,)
++        )
++    assert exc.value.code == code

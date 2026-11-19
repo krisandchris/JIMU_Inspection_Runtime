@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "provider",
+  "policy": {
+    "policy_kind": "provider",
+    "routing_mode": "remote_primary",
+    "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+    "deployments": [
+      {
+        "provider_id": "synthetic.loopback",
+        "deployment_id": "synthetic.nonmotor.parking.loopback",
+        "logical_model_id": "synthetic.nonmotor.parking",
+        "provider_kind": "remote",
+        "actual_version_constraints": {
+          "allowed_deployment_versions": [
+            "1.0.0"
+          ],
+          "allowed_model_versions": [
+            "1.0.0"
+          ]
+        },
+        "required_features": [
+          "rgb_image",
+          "typed_context",
+          "structured_output",
+          "original_xyxy"
+        ]
+      }
+    ],
+    "selection": "primary_then_explicit_fallback"
+  }
+}

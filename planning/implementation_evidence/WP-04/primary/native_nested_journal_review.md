@@ -1,0 +1,1 @@
+仅就附件 diff，未发现可证实会破坏实际调用路径的缺陷。迟到回执可作为物理调用证据保留，但不能单独作为 nested fallback 的有效来源，也不会改写 Attempt 终态。本次为 STATIC_REVIEW_ONLY；TEST_NOT_RUN，RUNTIME_NOT_RUN。

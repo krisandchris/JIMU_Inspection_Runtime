@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=planning/implementation_evidence/WP-01C/primary_integration_NMBXibrR/integrated_pytest.xml",
+    "tests/unit/test_c_runtime_authority.py",
+    "tests/negative/test_c_runtime_authority_invalid.py",
+    "tests/unit/test_c_decision_sources.py",
+    "tests/negative/test_c_decision_sources_invalid.py",
+    "tests/negative/test_c_decision_guard_authority.py",
+    "tests/negative/test_c_decision_coverage_invalid.py",
+    "tests/unit/test_c_decision_coverage.py"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "started": "2026-11-18T02:16:00.816258+00:00",
+  "ended": "2026-11-18T02:16:04.627317+00:00",
+  "exit": 0,
+  "stdout": "........................................................................ [ 97%]\n..                                                                       [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/primary_integration_NMBXibrR/integrated_pytest.xml -\n74 passed in 3.44s\n",
+  "stderr": ""
+}

@@ -1,0 +1,18 @@
+{
+  "$defs": {
+    "FiniteNumber": {
+      "type": "number"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "integer"
+    },
+    {
+      "$ref": "#/$defs/FiniteNumber"
+    }
+  ],
+  "maximum": 9007199254740991,
+  "minimum": -9007199254740991
+}

@@ -1,0 +1,77 @@
+2026-11-18T03:45:51Z
+PYTHONPATH=. uv run --locked python planning/implementation_evidence/WP-03/independent/probe_wp03.py
+{"check": "postgres", "first": [1, 2], "image_id": "sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae", "repeat": [], "version": "16.14 (Debian 16.14-1.pgdg13+1)"}
+{"check": "app_permission_rejected", "sql": "CREATE TABLE jimu_workflow.independent_denied (x integer)", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "UPDATE jimu_workflow.schema_migrations SET script_sha256=script_sha256", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "UPDATE jimu_workflow.execution_events SET event_number=event_number", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "DELETE FROM jimu_workflow.attempts WHERE false", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "TRUNCATE jimu_workflow.produced_outputs", "sqlstate": "42501"}
+{"bundle_digest": "e9ce8868075927aa405689f9afba6207832fa7ffb2dfb54e5a3d32e1cafc6551", "check": "admission_and_duplicate_intake", "execution_id": "execution.c17a078b8456703828a41526af6eeddada2f1a879bfe35c6523356531f3dce29", "mode": "full"}
+{"after": "2026-11-18T03:46:01.240489+00:00", "before": "2026-11-18T03:46:00.314051+00:00", "check": "heartbeat_and_expired_fence", "contender_backend": 72}
+{"a_pid": 3085389, "b_pid": 3085398, "check": "takeover_and_late_audit", "rows": [[1, 1, "probe-a", "superseded", "fixture-request-a"], [2, 2, "probe-b", "succeeded", null]]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 71, "pid": 3085389}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 72, "pid": 3085398}
+{"check": "mock_returned_before_worker_crash", "worker_marker": {"attempt": "96204367774446a082d309a101cd8fe1", "external_request_ids": ["synthetic.request.b62f30352e94be3882fdf6f1f58e338667ed28c8ca767c35fa1a4bae28f7fe1e", "synthetic.request.c41f5831932a539ec0fb7949c8bcf044c4e6c6f4fa03cbcbb4ae42226ab1ed66"], "invocations": ["synthetic.model.2350850e9e372311ac9de2c7be28552ccff54e73a929feafb3e72bffb5c98157", "synthetic.model.556f878087925c1daf4dfc47aebecdf1f5b6b7af1ab797a80543d9f45f9cc638"], "label": "mock_returned", "pid": 3085398}}
+{"attempt": "running", "check": "n06_draft_before_authority", "draft_count": 1, "finalization_count": 0, "n06_authority": 0, "node": "running", "terminal_attempt": null}
+{"check": "all_n06_drafts_before_authority", "drafts": 3, "finalizations": 0, "n06_authority": 0}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 73, "pid": 3085509}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1098, in <module>
+    asyncio.run(child() if sys.argv[1:] == ["child"] else independent())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 302, in child
+    poll = await worker.run_next(scope, owner=owner, lease_ms=5_000)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workflow/worker.py", line 272, in run_next
+    step = await self.run_once(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workflow/worker.py", line 351, in run_once
+    if await jobs.finalize_staged(scope, execution_id, publish):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workflow/jobs.py", line 1295, in finalize_staged
+    if not await apply(connection, scope, execution, tuple(staged), now):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workflow/worker.py", line 346, in publish
+    return await finalize(connection, job_scope, state, drafts, now, opened)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workflow/worker_completion.py", line 205, in finalize
+    result = finalize_execution(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workflow/worker_coverage.py", line 1010, in finalize_execution
+    finish_decision(scope, stage, coverage, gate)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workflow/mock_decision.py", line 838, in finish_decision
+    raise ValueError(
+ValueError: synthetic final Decision requires the exact staged artifacts and shared execution Coverage
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1098, in <module>
+    asyncio.run(child() if sys.argv[1:] == ["child"] else independent())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1084, in independent
+    await crash_publish(full, replacement, orphan)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 930, in crash_publish
+    scope_poll = await restart.ask("poll")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 344, in ask
+    result = await reply(self.process)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 365, in reply
+    raise RuntimeError(
+RuntimeError: worker exited without a result, exit=1
+2026-11-18T03:46:10Z
+exit=1

@@ -1,0 +1,135 @@
+{
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "environment": {
+    "UV_CACHE_DIR": "/tmp/jimu-c4-authority-isi0g6mr/uv",
+    "RUFF_CACHE_DIR": "/tmp/jimu-c4-authority-isi0g6mr/ruff",
+    "MYPY_CACHE_DIR": "/tmp/jimu-c4-authority-isi0g6mr/mypy",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "commands": [
+    {
+      "argv": [
+        "uv",
+        "--version"
+      ],
+      "shell_display": "uv --version",
+      "started_at_utc": "2026-11-18T02:15:51.282700+00:00",
+      "ended_at_utc": "2026-11-18T02:15:51.286520+00:00",
+      "exit_code": 0,
+      "stdout": "uv 0.9.15\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-c",
+        "import json,platform,sys; from importlib.metadata import version; print(json.dumps({'python':sys.version,'platform':platform.platform(),'packages':{n:version(n) for n in ('pydantic','pydantic-core','pytest','jsonschema','ruff','mypy','rfc8785','uv-build')}}, sort_keys=True))"
+      ],
+      "shell_display": "uv run --locked --no-sync python -c 'import json,platform,sys; from importlib.metadata import version; print(json.dumps({'\"'\"'python'\"'\"':sys.version,'\"'\"'platform'\"'\"':platform.platform(),'\"'\"'packages'\"'\"':{n:version(n) for n in ('\"'\"'pydantic'\"'\"','\"'\"'pydantic-core'\"'\"','\"'\"'pytest'\"'\"','\"'\"'jsonschema'\"'\"','\"'\"'ruff'\"'\"','\"'\"'mypy'\"'\"','\"'\"'rfc8785'\"'\"','\"'\"'uv-build'\"'\"')}}, sort_keys=True))'",
+      "started_at_utc": "2026-11-18T02:15:51.286544+00:00",
+      "ended_at_utc": "2026-11-18T02:15:51.383491+00:00",
+      "exit_code": 0,
+      "stdout": "{\"packages\": {\"jsonschema\": \"4.25.1\", \"mypy\": \"1.18.2\", \"pydantic\": \"2.12.5\", \"pydantic-core\": \"2.41.5\", \"pytest\": \"8.4.2\", \"rfc8785\": \"0.1.4\", \"ruff\": \"0.14.14\", \"uv-build\": \"0.9.15\"}, \"platform\": \"Linux-6.8.0-149-generic-x86_64-with-glibc2.39\", \"python\": \"3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]\"}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-m",
+        "pytest",
+        "tests/unit/test_c_runtime_authority.py",
+        "tests/contract/test_c_runtime_authority_schema.py",
+        "tests/negative/test_c_runtime_authority_invalid.py",
+        "tests/unit/test_b_producer_authority_integration.py",
+        "tests/negative/test_b_producer_authority_review_regressions.py",
+        "tests/contract/test_b_authority_history.py",
+        "tests/unit/test_c_execution.py",
+        "tests/contract/test_c_execution_schema.py",
+        "tests/negative/test_c_execution_invalid.py",
+        "tests/contract/test_dependency_boundaries.py",
+        "-q",
+        "-o",
+        "cache_dir=/tmp/jimu-c4-authority-isi0g6mr/pytest-cache",
+        "--basetemp=/tmp/jimu-c4-authority-isi0g6mr/pytest",
+        "--junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_runtime_authority/pytest.xml"
+      ],
+      "shell_display": "uv run --locked --no-sync python -m pytest tests/unit/test_c_runtime_authority.py tests/contract/test_c_runtime_authority_schema.py tests/negative/test_c_runtime_authority_invalid.py tests/unit/test_b_producer_authority_integration.py tests/negative/test_b_producer_authority_review_regressions.py tests/contract/test_b_authority_history.py tests/unit/test_c_execution.py tests/contract/test_c_execution_schema.py tests/negative/test_c_execution_invalid.py tests/contract/test_dependency_boundaries.py -q -o cache_dir=/tmp/jimu-c4-authority-isi0g6mr/pytest-cache --basetemp=/tmp/jimu-c4-authority-isi0g6mr/pytest --junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_runtime_authority/pytest.xml",
+      "started_at_utc": "2026-11-18T02:15:51.383529+00:00",
+      "ended_at_utc": "2026-11-18T02:16:01.671708+00:00",
+      "exit_code": 0,
+      "stdout": "........................................................................ [ 19%]\n........................................................................ [ 38%]\n........................................................................ [ 57%]\n........................................................................ [ 76%]\n........................................................................ [ 96%]\n...............                                                          [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_runtime_authority/pytest.xml -\n375 passed in 9.91s\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "check",
+        "src/jimu_runtime/domain/validation/runtime_authority.py",
+        "src/jimu_runtime/domain/runtime/executions.py",
+        "tests/fixtures/wp01c/runtime_authority/cases.py",
+        "tests/unit/test_c_runtime_authority.py",
+        "tests/contract/test_c_runtime_authority_schema.py",
+        "tests/negative/test_c_runtime_authority_invalid.py"
+      ],
+      "shell_display": "uv run --locked --no-sync ruff check src/jimu_runtime/domain/validation/runtime_authority.py src/jimu_runtime/domain/runtime/executions.py tests/fixtures/wp01c/runtime_authority/cases.py tests/unit/test_c_runtime_authority.py tests/contract/test_c_runtime_authority_schema.py tests/negative/test_c_runtime_authority_invalid.py",
+      "started_at_utc": "2026-11-18T02:16:01.671740+00:00",
+      "ended_at_utc": "2026-11-18T02:16:01.688084+00:00",
+      "exit_code": 0,
+      "stdout": "All checks passed!\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "format",
+        "--check",
+        "src/jimu_runtime/domain/validation/runtime_authority.py",
+        "src/jimu_runtime/domain/runtime/executions.py",
+        "tests/fixtures/wp01c/runtime_authority/cases.py",
+        "tests/unit/test_c_runtime_authority.py",
+        "tests/contract/test_c_runtime_authority_schema.py",
+        "tests/negative/test_c_runtime_authority_invalid.py"
+      ],
+      "shell_display": "uv run --locked --no-sync ruff format --check src/jimu_runtime/domain/validation/runtime_authority.py src/jimu_runtime/domain/runtime/executions.py tests/fixtures/wp01c/runtime_authority/cases.py tests/unit/test_c_runtime_authority.py tests/contract/test_c_runtime_authority_schema.py tests/negative/test_c_runtime_authority_invalid.py",
+      "started_at_utc": "2026-11-18T02:16:01.688110+00:00",
+      "ended_at_utc": "2026-11-18T02:16:01.703370+00:00",
+      "exit_code": 0,
+      "stdout": "6 files already formatted\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "mypy",
+        "src/jimu_runtime/domain/validation/runtime_authority.py",
+        "src/jimu_runtime/domain/runtime/executions.py"
+      ],
+      "shell_display": "uv run --locked --no-sync mypy src/jimu_runtime/domain/validation/runtime_authority.py src/jimu_runtime/domain/runtime/executions.py",
+      "started_at_utc": "2026-11-18T02:16:01.703399+00:00",
+      "ended_at_utc": "2026-11-18T02:16:04.595907+00:00",
+      "exit_code": 0,
+      "stdout": "Success: no issues found in 2 source files\n",
+      "stderr": ""
+    }
+  ],
+  "cpu_only_lock_sha256": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb"
+}

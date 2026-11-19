@@ -1,5 +1,6 @@
 """Finite Tool schema and local plan checks; not Bundle or runtime admission."""
 
+from dataclasses import dataclass
 from typing import Self
 
 from pydantic import ValidationError, model_validator
@@ -14,16 +15,20 @@ from jimu_runtime.domain.fact_schemas.registry import (
 from jimu_runtime.domain.fact_selectors import ToolContentRef, ToolPlanContentRef
 from jimu_runtime.domain.schema_types import (
     FieldSelector,
+    ImageSchemaRef,
+    ObjectSchemaRef,
     ResolvedFieldType,
     SchemaDescriptor,
     ToolResultSchemaDescriptor,
 )
 from jimu_runtime.domain.tool_mappings import (
     ContextInput,
+    ContextTypeRegistration,
     FactInput,
     ImageInput,
     MappingTypeContext,
     ObjectInput,
+    ProfileContentRef,
     StepOutputInput,
 )
 from jimu_runtime.domain.validation.issues import (
@@ -281,9 +286,22 @@ def validate_tool_definition(
     return _report(tuple(checks))
 
 
+@dataclass(frozen=True, slots=True)
+class ToolMappingUse:
+    """Application-projected site; unused source roles require no synthetic pin."""
+
+    profile_ref: ProfileContentRef
+    tool_plan_ref: ToolPlanContentRef
+    current_step_id: str
+    context_registrations: tuple[ContextTypeRegistration, ...]
+    descriptors: tuple[SchemaDescriptor, ...]
+    object_schema_ref: ObjectSchemaRef | None
+    image_schema_ref: ImageSchemaRef | None
+
+
 def _source_type(
     source: ContextInput | FactInput | ImageInput | ObjectInput | StepOutputInput,
-    context: MappingTypeContext,
+    context: MappingTypeContext | ToolMappingUse,
     tools: tuple[ToolRegistration, ...],
     plan: ToolPlanDefinition,
     fact_schemas: FactSchemaRegistry | None,
@@ -309,13 +327,17 @@ def _source_type(
             source.selector.fact_schema_ref, source.selector.field_path
         )
     selector = source.selector
-    if isinstance(source, ImageInput) and reference_identity(
-        selector.schema_ref
-    ) != reference_identity(context.image_schema_ref):
+    if isinstance(source, ImageInput) and (
+        context.image_schema_ref is None
+        or reference_identity(selector.schema_ref)
+        != reference_identity(context.image_schema_ref)
+    ):
         raise ValueError("Image input is not the current Task image view")
-    if isinstance(source, ObjectInput) and reference_identity(
-        selector.schema_ref
-    ) != reference_identity(context.object_schema_ref):
+    if isinstance(source, ObjectInput) and (
+        context.object_schema_ref is None
+        or reference_identity(selector.schema_ref)
+        != reference_identity(context.object_schema_ref)
+    ):
         raise ValueError("Object input is not the current Object view")
     if isinstance(source, ContextInput):
         matches = [
@@ -367,7 +389,7 @@ def _source_type(
 def validate_tool_plan(
     plan: ToolPlanDefinition,
     tools: tuple[ToolRegistration, ...],
-    mapping_contexts: tuple[MappingTypeContext, ...] = (),
+    mapping_contexts: tuple[MappingTypeContext | ToolMappingUse, ...] = (),
     fact_schemas: FactSchemaRegistry | None = None,
     *,
     plan_ref: ToolPlanContentRef,
@@ -388,7 +410,10 @@ def validate_tool_plan(
         )
     checked_tools = tuple(ToolRegistration.model_validate(entry) for entry in tools)
     contexts = tuple(
-        MappingTypeContext.model_validate(entry) for entry in mapping_contexts
+        entry
+        if isinstance(entry, ToolMappingUse)
+        else MappingTypeContext.model_validate(entry)
+        for entry in mapping_contexts
     )
     checks: list[CheckResult] = [_check("tool_plan.local_dag", "passed")]
     identities = [(entry.ref.artifact_id, entry.ref.version) for entry in checked_tools]

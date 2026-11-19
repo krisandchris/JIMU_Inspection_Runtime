@@ -1,0 +1,2685 @@
+--- /dev/null
++++ b/src/jimu_runtime/gateway/bridge.py
+@@ -0,0 +1,1238 @@
++"""Run one physically audited model operation from a committed Workflow claim."""
++
++from asyncio import CancelledError, create_task, shield, to_thread
++from collections.abc import Awaitable, Callable
++from dataclasses import dataclass, field, replace
++from datetime import UTC, datetime
++from typing import Protocol, cast, runtime_checkable
++from uuid import uuid4
++
++from sqlalchemy import text
++from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
++
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_enums import ModelCapability
++from jimu_runtime.domain.definition_support import reference_identity
++from jimu_runtime.domain.definitions.capabilities import ProfileDefinition
++from jimu_runtime.domain.definitions.models import ModelBinding, ModelBindingContentRef
++from jimu_runtime.domain.definitions.tools import ToolDefinition
++from jimu_runtime.domain.enums import AttemptStatus, RuntimeRecordKind
++from jimu_runtime.domain.policies import EvaluatedFallbackPolicy, TriggerError
++from jimu_runtime.domain.runtime.executions import Attempt, NodeId, NodeRun
++from jimu_runtime.domain.runtime.facts import (
++    AttemptRef,
++    EvidenceRef,
++    ModelInvocationRef,
++    NodeRunRef,
++    ObjectRef,
++    ProfileContentRef,
++)
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.invocations import (
++    ConfiguredProviderIdentity,
++    FailedInvocation,
++    InvocationContractSnapshot,
++    InvocationError,
++    InvocationNodeId,
++    InvocationPurpose,
++    PrimaryProviderRoute,
++    UndispatchedInvocation,
++)
++from jimu_runtime.domain.validation.authority_inputs import (
++    AttemptDescriptor,
++    NodeRunDescriptor,
++)
++from jimu_runtime.domain.validation.invocations import (
++    NestedModelStepLineage,
++    NestedModelStepOwner,
++)
++from jimu_runtime.gateway.http_wire import VerifiedImage, WireError
++from jimu_runtime.gateway.invocation import (
++    DispatchOutcome,
++    DispatchRequest,
++    ModelTransport,
++    TransportResult,
++    project_dispatch,
++)
++from jimu_runtime.gateway.journal import (
++    DispatchIntent,
++    DispatchJournal,
++    DispatchLease,
++    DispatchLiveGuard,
++    ModelDispatchResult,
++    ModelDispatchTarget,
++    NestedModelDispatchTarget,
++    ProviderDispatchObservation,
++    StoredDispatch,
++    UnselectedModelDispatchTarget,
++    UnselectedNestedModelDispatchTarget,
++)
++from jimu_runtime.gateway.routing import (
++    CurrentRoutingState,
++    DeploymentBudget,
++    PlannedRoute,
++    RecordedInvocation,
++    RouteBudget,
++    RouteOperation,
++    RoutePolicy,
++    RouteRejected,
++    plan_fallback,
++    plan_primary,
++    plan_retry,
++)
++from jimu_runtime.tools.step_attempts import (
++    NestedToolAttemptLink,
++    NestedToolRetryHistory,
++    StepAttempt,
++    StepAttemptStore,
++)
++from jimu_runtime.workers.resources import (
++    ResourceAdmission,
++    ResourceLease,
++    ResourceUnavailable,
++)
++from jimu_runtime.workflow import repository
++from jimu_runtime.workflow.mock_support import record_digest
++from jimu_runtime.workflow.worker import (
++    AdapterRejected,
++    ClaimedNode,
++    ClaimedNodeInvoker,
++    RetryableNodeFailure,
++)
++from jimu_runtime.workflow.worker_nodes import NodeResult
++
++
++class PreparedModelTransport(ModelTransport, Protocol):
++    def prepare(
++        self, route: PlannedRoute, prompt: str, media: VerifiedImage | None = None
++    ) -> bytes: ...
++
++
++@runtime_checkable
++class AsyncPreparingModelTransport(Protocol):
++    async def prepare_async(
++        self, route: PlannedRoute, prompt: str, media: VerifiedImage | None = None
++    ) -> bytes: ...
++
++
++class CurrentModelRegistry(Protocol):
++    async def __call__(self, scope: IdempotencyScope) -> CurrentRoutingState: ...
++
++
++@dataclass(frozen=True, slots=True)
++class ModelCallLimits:
++    """Explicit host ceilings, applied to physical send intents."""
++
++    node: int
++    operation: int
++    deployment: int
++    retryable: tuple[TriggerError, ...]
++    retry_ambiguous_primary: bool = True
++
++    def __post_init__(self) -> None:
++        if any(
++            type(value) is not int or not 1 <= value <= 1024
++            for value in (self.node, self.operation, self.deployment)
++        ):
++            raise ValueError("model call ceilings must be between 1 and 1024")
++
++
++@dataclass(frozen=True, slots=True)
++class ModelCall:
++    binding_ref: ModelBindingContentRef
++    purposes: tuple[InvocationPurpose, ...]
++    profile_refs: tuple[ProfileContentRef, ...]
++    prompt: str = field(repr=False)
++    resource_scope_id: str
++    image: VerifiedImage | None = None
++    object_ref: ObjectRef | None = None
++    source_discovery_invocation_ref: ModelInvocationRef | None = None
++    contract_snapshot: InvocationContractSnapshot | None = None
++    evidence_refs: tuple[EvidenceRef, ...] = ()
++
++
++class _LogicalModelInput(ContractModel):
++    node_input_digest: str
++    binding_ref: ModelBindingContentRef
++    purposes: tuple[InvocationPurpose, ...]
++    profile_refs: tuple[ProfileContentRef, ...]
++    prompt_digest: str
++    image_digest: str | None
++    object_ref: ObjectRef | None
++    source_discovery_invocation_ref: ModelInvocationRef | None
++    contract_snapshot: InvocationContractSnapshot | None
++
++
++@dataclass(frozen=True, slots=True)
++class _OperationHistory:
++    receipts: tuple[StoredDispatch, ...]
++    invocations: tuple[RecordedInvocation, ...]
++    unresolved_after_witness: bool
++
++
++def _operation_history(
++    records: tuple[StoredDispatch, ...],
++    verified: tuple[RecordedInvocation, ...],
++    ranks: dict[str, int],
++) -> _OperationHistory:
++    unresolved_after = False
++    if verified:
++        last = ranks[verified[-1].invocation.model_invocation_id]
++        unresolved_after = any(
++            ranks[row.intent.dispatch_id] > last
++            and row.send_admitted
++            and not any(
++                item.result.boundary == "not_dispatched" for item in row.results
++            )
++            for row in records
++        )
++    return _OperationHistory(records, verified, unresolved_after)
++
++
++class ModelCallFailure(AdapterRejected):
++    """Normalized route or pre-send rejection suited to a Worker diagnostic."""
++
++    pass
++
++
++def require_model_output(result: DispatchOutcome) -> bytes:
++    """Translate dispatch failure for the Worker without losing its raw error class."""
++    if result.output is not None:
++        return result.output
++    error = result.error
++    if error is None:
++        raise ModelCallFailure("model.output_unavailable")
++    if error.error_class in ("transport", "unavailable"):
++        raise RetryableNodeFailure("transport")
++    if error.error_class == "timeout":
++        raise RetryableNodeFailure("timeout")
++    if error.error_class in ("rate_limit", "resource_exhausted"):
++        raise RetryableNodeFailure("resource")
++    raise ModelCallFailure(error.code)
++
++
++def _attempt_descriptor(attempt: Attempt) -> AttemptDescriptor:
++    return AttemptDescriptor(
++        attempt_ref=AttemptRef(
++            record_kind=RuntimeRecordKind.ATTEMPT, record_id=attempt.attempt_id
++        ),
++        execution_id=attempt.execution_id,
++        owner=attempt.owner,
++        attempt_number=attempt.attempt_number,
++        status=attempt.status,
++    )
++
++
++def _node_descriptor(node: NodeRun) -> NodeRunDescriptor:
++    return NodeRunDescriptor(
++        node_run_ref=NodeRunRef(
++            record_kind=RuntimeRecordKind.NODE_RUN, record_id=node.node_run_id
++        ),
++        execution_id=node.execution_id,
++        node_id=node.node_id.value,
++        status=node.status,
++    )
++
++
++def _step_owner(
++    lineage: NestedModelStepLineage, link: NestedToolAttemptLink
++) -> NestedModelStepOwner:
++    return NestedModelStepOwner(
++        lineage,
++        _attempt_descriptor(link.parent_attempt),
++        _node_descriptor(link.child_node),
++        _attempt_descriptor(link.child_attempt),
++    )
++
++
++def _nested_lineage(
++    history: NestedToolRetryHistory, binding_ref: ModelBindingContentRef
++) -> NestedModelStepLineage:
++    identity = history.identity
++    return NestedModelStepLineage(
++        execution_id=identity.execution_id,
++        parent_node_run_ref=identity.parent_node_run_ref,
++        tool_plan_ref=identity.tool_plan_ref,
++        step_id=identity.step_id,
++        tool_ref=identity.tool_ref,
++        profile_ref=identity.profile_ref,
++        object_ref=identity.object_ref,
++        binding_ref=binding_ref,
++        bound_input_digest=identity.bound_input_digest,
++    )
++
++
++def _error(error_class: str, code: str) -> InvocationError:
++    return InvocationError.model_validate(
++        {"error_class": error_class, "code": code, "diagnostic_refs": ()}
++    )
++
++
++def _dispatch_lease(lease: ResourceLease | None) -> DispatchLease | None:
++    if lease is None:
++        return None
++    return DispatchLease(
++        lease_id=lease.lease_id, owner_id=lease.owner_id, scope_id=lease.scope_id
++    )
++
++
++def _model_intent(
++    request: DispatchRequest,
++    lease: ResourceLease | None,
++    nested_owner: NestedModelStepOwner | None,
++) -> DispatchIntent:
++    route, selected = request.route, request.route.selected
++    operation = route.operation
++    ordinary = ModelDispatchTarget(
++        node_id=cast(InvocationNodeId, operation.node_run.node_id),
++        configured_provider=route.configured,
++        route_trace=route.trace,
++        purposes=operation.purposes,
++        profile_refs=operation.profile_refs,
++        object_ref=operation.object_ref,
++        selected_provider_id=selected.provider_id,
++        selected_provider_kind=selected.provider_kind,
++        selected_deployment_id=selected.deployment_id,
++        selected_deployment_version=selected.deployment_version,
++        selected_model_id=route.ownership.model_id,
++        selected_model_version=selected.model_version,
++        endpoint_descriptor_ref=route.ownership.endpoint_descriptor_ref,
++        owner_ref=route.ownership.owner_ref,
++        version_evidence=route.ownership.version_evidence,
++    )
++    target = (
++        ordinary
++        if nested_owner is None
++        else NestedModelDispatchTarget.model_validate(
++            _with_nested_target(ordinary, nested_owner, kind="nested_model")
++        )
++    )
++    return DispatchIntent(
++        dispatch_id=request.dispatch_id,
++        operation_id=operation.operation_id,
++        trace_id=operation.trace_id,
++        request_digest=request.request_digest,
++        input_digest=operation.input_digest,
++        response_contract_digest=operation.response_contract_digest,
++        resource_lease=_dispatch_lease(lease),
++        target=target,
++    )
++
++
++def _with_nested_target(
++    target: ModelDispatchTarget | UnselectedModelDispatchTarget,
++    owner: NestedModelStepOwner,
++    *,
++    kind: str,
++) -> dict[str, object]:
++    lineage = owner.lineage
++    return {
++        **target.model_dump(),
++        "kind": kind,
++        "parent_node_run_id": lineage.parent_node_run_ref.record_id,
++        "parent_attempt_id": owner.parent_attempt.attempt_ref.record_id,
++        "tool_ref": lineage.tool_ref,
++        "tool_plan_ref": lineage.tool_plan_ref,
++        "step_id": lineage.step_id,
++        "bound_input_digest": lineage.bound_input_digest,
++    }
++
++
++def _model_record(outcome: DispatchOutcome) -> ModelDispatchResult:
++    transport = outcome.transport_result
++    observation = transport.observation
++    invocation = outcome.invocation
++    return ModelDispatchResult(
++        boundary=outcome.boundary,
++        error=outcome.error,
++        response_digest=outcome.response_digest,
++        observed_response_bytes=transport.observed_response_bytes or 0,
++        response_status=transport.response_status,
++        response_bytes_omission_reason=transport.response_bytes_omission_reason,
++        acknowledgement=(
++            "http_headers"
++            if transport.response_status is not None
++            else "provider_receipt"
++            if outcome.boundary == "acknowledged"
++            else None
++        ),
++        actual_provider=None if invocation is None else invocation.actual_provider,
++        provider_request_id=None
++        if observation is None
++        else observation.provider_request_id,
++        provider_observation=None
++        if observation is None
++        else ProviderDispatchObservation(
++            model_id=observation.model_id,
++            deployment_version=observation.deployment_version,
++            model_version=observation.model_version,
++        ),
++        invocation=invocation,
++    )
++
++
++class CapabilityGateway:
++    """Compose exact route selection, resource admission and immutable send receipts."""
++
++    def __init__(
++        self,
++        engine: AsyncEngine,
++        journal: DispatchJournal,
++        resources: ResourceAdmission,
++        transport: PreparedModelTransport,
++        current: CurrentModelRegistry,
++        limits: ModelCallLimits,
++    ) -> None:
++        self._engine = engine
++        self._journal = journal
++        self._resources = resources
++        self._transport = transport
++        self._current = current
++        self._limits = limits
++
++    def worker_adapter(
++        self,
++        execute: Callable[[ClaimedNode, "CapabilityGateway"], Awaitable[NodeResult]],
++    ) -> ClaimedNodeInvoker:
++        """Bind trusted node conversion logic to WorkflowWorker's claimed-node port."""
++
++        async def invoke(claimed: ClaimedNode) -> NodeResult:
++            return await execute(claimed, self)
++
++        return invoke
++
++    async def _now(self) -> datetime:
++        async with self._engine.connect() as connection:
++            timestamp = await connection.scalar(
++                text("SELECT pg_catalog.clock_timestamp()")
++            )
++            return cast(datetime, timestamp).astimezone(UTC)
++
++    def _operation(
++        self, claimed: ClaimedNode, call: ModelCall, owner: NestedModelStepOwner | None
++    ) -> RouteOperation:
++        scope = claimed.opened.scope
++        if (
++            not claimed.attempt.belongs_to_node(claimed.node)
++            or claimed.claim.node_run_id != claimed.node.node_run_id
++            or claimed.claim.execution_id != scope.execution_id
++            or set(call.profile_refs)
++            - {item.rules.profile_ref for item in claimed.opened.profiles}
++        ):
++            raise ModelCallFailure("model.foreign_claim_or_profile")
++        if claimed.node.node_id is NodeId.N02 and call.profile_refs:
++            gate = claimed.previous.gate
++            if gate is None or not set(call.profile_refs) <= set(
++                gate.evaluation.eligible_profiles
++            ):
++                raise ModelCallFailure("model.ineligible_discovery_profile")
++            if any(
++                reference_identity(
++                    scope.resolve(ref, ProfileDefinition).discovery_binding_ref
++                )
++                != reference_identity(call.binding_ref)
++                for ref in call.profile_refs
++            ):
++                raise ModelCallFailure("model.discovery_binding_mismatch")
++        if call.image is not None and (
++            call.image.sha256 != scope.media.media_ref.sha256
++            or call.image.media_type != scope.media.mime_type
++            or len(call.image.content) != scope.media.byte_size
++        ):
++            raise ModelCallFailure("model.original_media_mismatch")
++        if call.object_ref is not None:
++            obj = claimed.previous.object_record(claimed.branch)
++            if obj.object_id != call.object_ref.record_id or call.profile_refs != (
++                obj.profile_ref,
++            ):
++                raise ModelCallFailure("model.object_scope_mismatch")
++        logical = _LogicalModelInput(
++            node_input_digest=claimed.node.input_digest,
++            binding_ref=call.binding_ref,
++            purposes=call.purposes,
++            profile_refs=call.profile_refs,
++            prompt_digest=sha256_digest(call.prompt.encode("utf-8")),
++            image_digest=None if call.image is None else call.image.sha256,
++            object_ref=call.object_ref,
++            source_discovery_invocation_ref=call.source_discovery_invocation_ref,
++            contract_snapshot=call.contract_snapshot,
++        )
++        response = (
++            call.contract_snapshot.response_schema_sha256
++            if call.contract_snapshot is not None
++            else scope.resolve(call.binding_ref, ModelBinding).output_schema_ref.digest
++        )
++        digest = record_digest(logical)
++        return RouteOperation(
++            operation_id=f"operation.model.{digest}",
++            execution_input_digest=scope.pins.input_digest,
++            node_run=_node_descriptor(claimed.node),
++            nested_step_input_digest=None
++            if owner is None
++            else owner.lineage.bound_input_digest,
++            binding_ref=call.binding_ref,
++            input_digest=digest,
++            response_contract_digest=response,
++            trace_id=claimed.node.trace.trace_id,
++            purposes=call.purposes,
++            profile_refs=call.profile_refs,
++            object_ref=call.object_ref,
++            region_ref=claimed.opened.region_ref,
++            source_discovery_invocation_ref=call.source_discovery_invocation_ref,
++            contract_snapshot=call.contract_snapshot,
++        )
++
++    async def _history(
++        self, claimed: ClaimedNode, operation: RouteOperation
++    ) -> _OperationHistory:
++        claim = claimed.claim
++        records = await self._journal.get_operation(
++            claim.scope,
++            claim.execution_id,
++            claim.node_run_id,
++            operation.operation_id,
++            limit=1024,
++        )
++        if len(records) == 1024:
++            raise ModelCallFailure("model.dispatch_history_limit")
++        if any(item.attempt_id == claimed.attempt.attempt_id for item in records):
++            raise ModelCallFailure("model.duplicate_attempt_operation")
++        history = []
++        ranks: dict[str, int] = {}
++        async with self._engine.connect() as connection:
++            for item in records:
++                intent = item.intent
++                target = intent.target
++                if (
++                    not isinstance(
++                        target, (ModelDispatchTarget, UnselectedModelDispatchTarget)
++                    )
++                    or (
++                        intent.input_digest,
++                        intent.response_contract_digest,
++                        intent.trace_id,
++                    )
++                    != (
++                        operation.input_digest,
++                        operation.response_contract_digest,
++                        operation.trace_id,
++                    )
++                    or (
++                        target.configured_provider.binding_ref,
++                        target.profile_refs,
++                        target.object_ref,
++                        target.purposes,
++                    )
++                    != (
++                        operation.binding_ref,
++                        operation.profile_refs,
++                        operation.object_ref,
++                        operation.purposes,
++                    )
++                ):
++                    raise ModelCallFailure("model.dispatch_history_pin_mismatch")
++                attempt = await repository.get_attempt(
++                    connection,
++                    claim.scope,
++                    claim.execution_id,
++                    claim.node_run_id,
++                    item.attempt_id,
++                )
++                if attempt is None:
++                    raise ModelCallFailure("model.dispatch_attempt_missing")
++                ranks[item.intent.dispatch_id] = attempt.attempt_number
++                if attempt.status not in {
++                    AttemptStatus.FAILED,
++                    AttemptStatus.TIMED_OUT,
++                }:
++                    continue
++                for seen in item.results:
++                    invoice = seen.result
++                    if (
++                        not seen.late
++                        and isinstance(invoice, ModelDispatchResult)
++                        and invoice.invocation is not None
++                        and isinstance(
++                            invoice.invocation.outcome,
++                            (FailedInvocation, UndispatchedInvocation),
++                        )
++                    ):
++                        history.append(
++                            RecordedInvocation(
++                                operation,
++                                _attempt_descriptor(attempt),
++                                invoice.invocation,
++                            )
++                        )
++        return _operation_history(
++            records,
++            tuple(sorted(history, key=lambda row: row.attempt.attempt_number)),
++            ranks,
++        )
++
++    async def _nested_history(
++        self,
++        claimed: ClaimedNode,
++        operation: RouteOperation,
++        history: NestedToolRetryHistory,
++        owner: NestedModelStepOwner,
++        parent_ranks: dict[str, int],
++    ) -> _OperationHistory:
++        claim = claimed.claim
++        lineage = owner.lineage
++        records = await self._journal.get_nested_model_operation(
++            claim.scope,
++            claim.execution_id,
++            lineage.parent_node_run_ref.record_id,
++            operation.operation_id,
++            limit=1024,
++        )
++        if len(records) == 1024:
++            raise ModelCallFailure("model.dispatch_history_limit")
++        if any(item.attempt_id == claimed.attempt.attempt_id for item in records):
++            raise ModelCallFailure("model.duplicate_attempt_operation")
++        prior = {
++            link.child_attempt.attempt_id: (link, _step_owner(lineage, link))
++            for link in history.priors
++        }
++        verified = []
++        ranks: dict[str, int] = {}
++        for row in records:
++            target = row.intent.target
++            link, prior_owner = prior.get(row.attempt_id, (None, None))
++            if not isinstance(
++                target, (NestedModelDispatchTarget, UnselectedNestedModelDispatchTarget)
++            ) or (
++                target.parent_node_run_id,
++                target.tool_ref,
++                target.tool_plan_ref,
++                target.step_id,
++                target.bound_input_digest,
++                target.configured_provider.binding_ref,
++                target.object_ref,
++                target.profile_refs,
++                target.purposes,
++                row.intent.input_digest,
++                row.intent.response_contract_digest,
++                row.intent.trace_id,
++            ) != (
++                lineage.parent_node_run_ref.record_id,
++                lineage.tool_ref,
++                lineage.tool_plan_ref,
++                lineage.step_id,
++                lineage.bound_input_digest,
++                operation.binding_ref,
++                operation.object_ref,
++                operation.profile_refs,
++                operation.purposes,
++                operation.input_digest,
++                operation.response_contract_digest,
++                operation.trace_id,
++            ):
++                raise ModelCallFailure("model.nested_dispatch_history_pin_mismatch")
++            ordinal = parent_ranks.get(target.parent_attempt_id)
++            if ordinal is None:
++                raise ModelCallFailure("model.nested_parent_attempt_missing")
++            ranks[row.intent.dispatch_id] = ordinal
++            if link is None or prior_owner is None:
++                continue
++            if (
++                target.parent_attempt_id != link.parent_attempt.attempt_id
++                or row.node_run_id != link.child_node.node_run_id
++            ):
++                raise ModelCallFailure("model.nested_dispatch_history_owner_mismatch")
++            for seen in row.results:
++                result = seen.result
++                if (
++                    seen.fence_qualified
++                    and not seen.late
++                    and isinstance(result, ModelDispatchResult)
++                    and (
++                        result.boundary == "acknowledged"
++                        or result.boundary == "sent_unknown"
++                        and result.error is not None
++                        and result.error.error_class == "timeout"
++                    )
++                    and result.invocation in link.invocations
++                    and result.invocation is not None
++                    and isinstance(
++                        result.invocation.outcome,
++                        (FailedInvocation, UndispatchedInvocation),
++                    )
++                ):
++                    verified.append(
++                        RecordedInvocation(
++                            operation.model_copy(
++                                update={"node_run": prior_owner.child_node}
++                            ),
++                            prior_owner.child_attempt,
++                            result.invocation,
++                            nested_step_owner=prior_owner,
++                        )
++                    )
++        return _operation_history(
++            records,
++            tuple(
++                sorted(
++                    verified,
++                    key=lambda item: ranks[item.invocation.model_invocation_id],
++                )
++            ),
++            ranks,
++        )
++
++    def _configured_budget(self, policy: RoutePolicy) -> RouteBudget:
++        return RouteBudget(
++            node_remaining=self._limits.node,
++            operation_remaining=self._limits.operation,
++            deployments=tuple(
++                DeploymentBudget(
++                    deployment_id=entry.deployment_id, remaining=self._limits.deployment
++                )
++                for entry in policy.resolved.deployments
++            ),
++        )
++
++    async def _reserve(
++        self, route: PlannedRoute, scope_id: str, identity: str
++    ) -> ResourceLease:
++        pending = create_task(
++            to_thread(
++                self._resources.reserve,
++                route.resource_requirements,
++                scope_id,
++                owner_id=identity,
++            )
++        )
++        try:
++            return await shield(pending)
++        except CancelledError:
++            # The synchronous admission transaction may have committed despite
++            # cancellation of the waiter. Hand its eventual lease back.
++            def recover(completed: object) -> None:
++                if not pending.cancelled() and pending.exception() is None:
++                    create_task(
++                        to_thread(self._resources.release_reserved, pending.result())
++                    )
++
++            pending.add_done_callback(recover)
++            raise
++
++    def _plan(
++        self,
++        claimed: ClaimedNode,
++        policy: RoutePolicy,
++        operation: RouteOperation,
++        current: CurrentRoutingState,
++        at: datetime,
++        budget: RouteBudget,
++        ledger: _OperationHistory,
++        nested_owner: NestedModelStepOwner | None,
++    ) -> PlannedRoute:
++        if ledger.unresolved_after_witness:
++            raise ModelCallFailure("model.newer_dispatch_unresolved")
++        records, history = ledger.receipts, ledger.invocations
++        descriptor = _attempt_descriptor(claimed.attempt)
++        args = policy, operation, descriptor, current, budget, at
++        if history:
++            failure = history[-1].invocation
++            assert isinstance(
++                failure.outcome, (FailedInvocation, UndispatchedInvocation)
++            )
++            if (
++                isinstance(policy.fallback, EvaluatedFallbackPolicy)
++                and failure.outcome.error.error_class in policy.fallback.trigger_errors
++                and any(
++                    edge.from_deployment_id
++                    == failure.route_trace.selected_deployment_id
++                    for edge in policy.fallback.allowed_transitions
++                )
++            ):
++                return plan_fallback(
++                    *args, history=history, nested_step_owner=nested_owner
++                )
++            return plan_retry(
++                *args,
++                history=history,
++                retryable_errors=self._limits.retryable,
++                nested_step_owner=nested_owner,
++            )
++        selected_records = tuple(
++            item
++            for item in records
++            if isinstance(item.intent.target, ModelDispatchTarget)
++        )
++        if nested_owner is not None and records:
++            # No route switch or duplicate fallback can be inferred from
++            # a model receipt that lacks the original terminal child witness.
++            raise ModelCallFailure("model.nested_retry_without_terminal_witness")
++        if selected_records and (
++            not self._limits.retry_ambiguous_primary
++            or any(
++                not isinstance(item.intent.target, ModelDispatchTarget)
++                or not isinstance(item.intent.target.route_trace, PrimaryProviderRoute)
++                or any(
++                    isinstance(seen.result, ModelDispatchResult)
++                    and seen.result.error is not None
++                    and seen.result.error.error_class not in self._limits.retryable
++                    for seen in item.results
++                )
++                for item in selected_records
++            )
++        ):
++            raise ModelCallFailure("model.retry_without_terminal_witness")
++        return plan_primary(*args, nested_step_owner=nested_owner)
++
++    async def invoke_model(
++        self,
++        claimed: ClaimedNode,
++        call: ModelCall,
++        *,
++        nested: tuple[StepAttemptStore, StepAttempt] | None = None,
++    ) -> DispatchOutcome:
++        """Do one physical send for a typed operation in this Attempt."""
++        opened = claimed.opened
++        call = replace(
++            call,
++            binding_ref=ModelBindingContentRef.model_validate(
++                call.binding_ref.model_dump()
++            ),
++        )
++        if opened.historical is None:
++            raise ModelCallFailure("model.history_unavailable")
++        resolved = next(
++            (
++                row.deployments
++                for row in opened.resolved.model_deployments
++                if row.binding_ref == call.binding_ref
++            ),
++            (),
++        )
++        policy = RoutePolicy.from_execution(
++            opened.resolved,
++            call.binding_ref,
++            tuple(
++                row for row in opened.historical.ownership if row.deployment in resolved
++            ),
++        )
++        owner = None
++        if nested is None:
++            operation = self._operation(claimed, call, None)
++            ledger = await self._history(claimed, operation)
++        else:
++            store, handle = nested
++            if (
++                handle.parent_claim != claimed.claim
++                or handle.parent_attempt_id != claimed.attempt.attempt_id
++            ):
++                raise ModelCallFailure("model.nested_parent_mismatch")
++            sealed = await store.nested_retry_history(handle)
++            if sealed is None:
++                raise ModelCallFailure("model.nested_fence_lost")
++            lineage = _nested_lineage(sealed, call.binding_ref)
++            selected_tool = opened.scope.resolve(lineage.tool_ref, ToolDefinition)
++            if (
++                selected_tool.model_binding_ref is None
++                or selected_tool.model_binding_ref.stable_json()
++                != call.binding_ref.stable_json()
++                or call.profile_refs != (lineage.profile_ref,)
++                or call.object_ref != lineage.object_ref
++                or call.purposes != (ModelCapability.VISION_AUXILIARY,)
++            ):
++                raise ModelCallFailure("model.nested_binding_scope_mismatch")
++            owner = _step_owner(lineage, sealed.current)
++            parent_ranks = {
++                link.attempt_ref.record_id: link.attempt_number
++                for link in claimed.node.attempt_history
++            }
++            claimed = replace(
++                claimed, claim=handle.claim, node=handle.node, attempt=handle.attempt
++            )
++            operation = self._operation(claimed, call, owner)
++            ledger = await self._nested_history(
++                claimed, operation, sealed, owner, parent_ranks
++            )
++        claim = claimed.claim
++        budget = self._configured_budget(policy)
++
++        async def live_guard(connection: AsyncConnection) -> bool:
++            assert nested is not None
++            return await nested[0].dispatch_live(connection, nested[1])
++
++        guard = live_guard if nested is not None else None
++
++        async def current_plan() -> PlannedRoute:
++            current = CurrentRoutingState.model_validate(
++                await self._current(claim.scope)
++            )
++            try:
++                return self._plan(
++                    claimed,
++                    policy,
++                    operation,
++                    current,
++                    await self._now(),
++                    budget,
++                    ledger,
++                    owner,
++                )
++            except RouteRejected as failure:
++                raise ModelCallFailure(failure.code) from None
++
++        identity = f"dispatch.{uuid4().hex}"
++        try:
++            route = await current_plan()
++        except ModelCallFailure as failure:
++            return await self._reject_unselected(
++                claimed,
++                policy,
++                operation,
++                identity,
++                failure.code,
++                owner,
++                guard,
++            )
++        try:
++            payload = (
++                await self._transport.prepare_async(route, call.prompt, call.image)
++                if isinstance(self._transport, AsyncPreparingModelTransport)
++                else self._transport.prepare(route, call.prompt, call.image)
++            )
++        except WireError as failure:
++            return await self._reject(
++                claimed,
++                DispatchRequest(identity, route, b""),
++                _error("validation", failure.code),
++                route.approved_at,
++                call.evidence_refs,
++                owner,
++                guard,
++            )
++        request = DispatchRequest(identity, route, payload)
++        try:
++            lease = await self._reserve(route, call.resource_scope_id, identity)
++        except ResourceUnavailable:
++            return await self._reject(
++                claimed,
++                request,
++                _error("resource_exhausted", "model.resource_unavailable"),
++                route.approved_at,
++                call.evidence_refs,
++                owner,
++                guard,
++            )
++
++        budget_rejection: DispatchOutcome | None = None
++
++        async def budget_guard(
++            connection: AsyncConnection,
++        ) -> ModelDispatchResult | None:
++            nonlocal budget_rejection
++            usage = await self._journal.usage(
++                claim.scope,
++                claim.execution_id,
++                claim.node_run_id,
++                provider_id=route.selected.provider_id,
++                deployment_id=route.selected.deployment_id,
++                operation_id=operation.operation_id,
++                connection=connection,
++                parent_node_run_id=None
++                if owner is None
++                else owner.lineage.parent_node_run_ref.record_id,
++                tool_step_id=None if owner is None else owner.lineage.step_id,
++            )
++            if (
++                usage.node_sends < self._limits.node
++                and usage.operation_sends is not None
++                and usage.operation_sends < self._limits.operation
++                and usage.deployment_sends is not None
++                and usage.deployment_sends < self._limits.deployment
++            ):
++                return None
++            budget_rejection = project_dispatch(
++                request,
++                TransportResult(
++                    False,
++                    error=_error("resource_exhausted", "model.call_budget_exhausted"),
++                ),
++                started_at=route.approved_at,
++                completed_at=route.approved_at,
++                evidence_refs=call.evidence_refs,
++            )
++            return _model_record(budget_rejection)
++
++        activated = False
++        intent = _model_intent(request, lease, owner)
++        try:
++            if not await self._journal.begin(
++                claim,
++                claimed.attempt.attempt_id,
++                intent,
++                live_guard=guard,
++                budget_guard=budget_guard,
++            ):
++                if budget_rejection is not None:
++                    return budget_rejection
++                raise ModelCallFailure("model.dispatch_fence_lost")
++            try:
++                latest = await current_plan()
++                if not _same_route(route, latest):
++                    raise ModelCallFailure("model.live_route_changed")
++                if not await self._journal.is_dispatch_current(
++                    claim, claimed.attempt.attempt_id, intent
++                ):
++                    raise ModelCallFailure("model.dispatch_fence_lost")
++            except ModelCallFailure as failure:
++                return await self._record(
++                    claimed,
++                    request,
++                    TransportResult(False, error=_error("association", failure.code)),
++                    await self._now(),
++                    call.evidence_refs,
++                )
++            request = DispatchRequest(identity, latest, payload)
++            started_at = await self._now()
++            try:
++                activation = create_task(
++                    to_thread(
++                        self._resources.activate_remote, lease, request.dispatch_id
++                    )
++                )
++                try:
++                    await shield(activation)
++                except CancelledError:
++                    # No send occurred. Observe the local transaction before
++                    # releasing or draining the corresponding reservation.
++                    try:
++                        await shield(activation)
++                    except ResourceUnavailable:
++                        pass
++                    else:
++                        activated = True
++                    await self._record(
++                        claimed,
++                        request,
++                        TransportResult(
++                            False,
++                            error=_error("cancelled", "model.cancelled_before_send"),
++                        ),
++                        started_at,
++                        call.evidence_refs,
++                    )
++                    raise
++                activated = True
++            except ResourceUnavailable:
++                result = TransportResult(
++                    False,
++                    error=_error("resource_exhausted", "model.resource_unavailable"),
++                )
++            else:
++                try:
++                    latest = await current_plan()
++                    if not _same_route(route, latest):
++                        raise ModelCallFailure("model.live_route_changed")
++                    if not await self._journal.is_dispatch_current(
++                        claim, claimed.attempt.attempt_id, intent
++                    ):
++                        raise ModelCallFailure("model.dispatch_fence_lost")
++                    started_at = await self._now()
++                    if not latest.authorization_active(started_at):
++                        raise ModelCallFailure("model.live_route_expired")
++                except ModelCallFailure as failure:
++                    result = TransportResult(
++                        False, error=_error("association", failure.code)
++                    )
++                else:
++
++                    async def live_before_wire() -> bool:
++                        try:
++                            observed = await current_plan()
++                        except ModelCallFailure:
++                            return False
++                        return (
++                            _same_route(latest, observed)
++                            and await self._journal.is_dispatch_current(
++                                claim, claimed.attempt.attempt_id, intent
++                            )
++                            and latest.authorization_active(await self._now())
++                        )
++
++                    request = DispatchRequest(
++                        identity, latest, payload, pre_send_allowed=live_before_wire
++                    )
++                    result = await self._send(
++                        claimed, request, started_at, call.evidence_refs
++                    )
++            outcome = await self._record(
++                claimed, request, result, started_at, call.evidence_refs
++            )
++            if outcome.output is not None:
++                try:
++                    latest = await current_plan()
++                    if not _same_route(route, latest):
++                        raise ModelCallFailure("model.live_route_changed")
++                    if not await self._journal.is_dispatch_current(
++                        claim, claimed.attempt.attempt_id, intent
++                    ):
++                        raise ModelCallFailure("model.output_fence_lost")
++                except ModelCallFailure as failure:
++                    # Keep the physical result; consumers receive no usable output.
++                    return replace(
++                        outcome, output=None, error=_error("association", failure.code)
++                    )
++            return outcome
++        finally:
++            cleanup = (
++                self._resources.release
++                if activated
++                else self._resources.release_reserved
++            )
++            await to_thread(cleanup, lease)
++
++    async def _reject_unselected(
++        self,
++        claimed: ClaimedNode,
++        policy: RoutePolicy,
++        operation: RouteOperation,
++        dispatch_id: str,
++        code: str,
++        owner: NestedModelStepOwner | None,
++        guard: DispatchLiveGuard | None,
++    ) -> DispatchOutcome:
++        configured = next(
++            row
++            for row in policy.configured_pin.deployments
++            if row.deployment_id == policy.configured_pin.primary_deployment_id
++        )
++        error = _error("association", code)
++        request_digest = sha256_digest(b"")
++        ordinary = UnselectedModelDispatchTarget(
++            node_id=cast(InvocationNodeId, operation.node_run.node_id),
++            configured_provider=ConfiguredProviderIdentity(
++                binding_ref=policy.binding.ref,
++                provider_policy_ref=policy.provider_registration.ref,
++                primary_deployment_id=configured.deployment_id,
++                provider_id=configured.provider_id,
++                provider_kind=configured.provider_kind,
++                logical_model_id=configured.logical_model_id,
++            ),
++            purposes=operation.purposes,
++            profile_refs=operation.profile_refs,
++            object_ref=operation.object_ref,
++        )
++        target = (
++            ordinary
++            if owner is None
++            else UnselectedNestedModelDispatchTarget.model_validate(
++                _with_nested_target(ordinary, owner, kind="nested_model_unselected")
++            )
++        )
++        intent = DispatchIntent(
++            dispatch_id=dispatch_id,
++            operation_id=operation.operation_id,
++            trace_id=operation.trace_id,
++            input_digest=operation.input_digest,
++            response_contract_digest=operation.response_contract_digest,
++            request_digest=request_digest,
++            target=target,
++        )
++        if not await self._journal.reject(
++            claimed.claim,
++            claimed.attempt.attempt_id,
++            intent,
++            ModelDispatchResult(boundary="not_dispatched", error=error),
++            live_guard=guard,
++        ):
++            raise ModelCallFailure("model.dispatch_fence_lost")
++        return DispatchOutcome(
++            request_digest=request_digest,
++            response_digest=None,
++            boundary="not_dispatched",
++            error=error,
++            transport_result=TransportResult(False, error=error),
++            invocation=None,
++        )
++
++    async def _reject(
++        self,
++        claimed: ClaimedNode,
++        request: DispatchRequest,
++        error: InvocationError,
++        at: datetime,
++        evidence_refs: tuple[EvidenceRef, ...],
++        owner: NestedModelStepOwner | None,
++        guard: DispatchLiveGuard | None,
++    ) -> DispatchOutcome:
++        outcome = project_dispatch(
++            request,
++            TransportResult(False, error=error),
++            started_at=at,
++            completed_at=at,
++            evidence_refs=evidence_refs,
++        )
++        if not await self._journal.reject(
++            claimed.claim,
++            claimed.attempt.attempt_id,
++            _model_intent(request, None, owner),
++            _model_record(outcome),
++            live_guard=guard,
++        ):
++            raise ModelCallFailure("model.dispatch_fence_lost")
++        return outcome
++
++    async def _send(
++        self,
++        claimed: ClaimedNode,
++        request: DispatchRequest,
++        started_at: datetime,
++        evidence_refs: tuple[EvidenceRef, ...],
++    ) -> TransportResult:
++        try:
++            return await self._transport.dispatch(request)
++        except CancelledError:
++            await self._record(
++                claimed,
++                request,
++                TransportResult(
++                    True, error=_error("cancelled", "model.dispatch_cancelled")
++                ),
++                started_at,
++                evidence_refs,
++            )
++            raise
++        except Exception:
++            return TransportResult(
++                True, error=_error("transport", "model.dispatch_failed")
++            )
++
++    async def _record(
++        self,
++        claimed: ClaimedNode,
++        request: DispatchRequest,
++        result: TransportResult,
++        started_at: datetime,
++        evidence_refs: tuple[EvidenceRef, ...],
++    ) -> DispatchOutcome:
++        outcome = project_dispatch(
++            request,
++            result,
++            started_at=started_at,
++            completed_at=await self._now(),
++            evidence_refs=evidence_refs,
++        )
++        await self._journal.append_result(
++            claimed.claim,
++            claimed.attempt.attempt_id,
++            request.dispatch_id,
++            _model_record(outcome),
++        )
++        return outcome
++
++
++def _same_route(left: PlannedRoute, right: PlannedRoute) -> bool:
++    return (left.ownership, left.trace, left.selected) == (
++        right.ownership,
++        right.trace,
++        right.selected,
++    )
+--- /dev/null
++++ b/src/jimu_runtime/gateway/bridge_tools.py
+@@ -0,0 +1,583 @@
++"""Connect supervised Tool calls to the Workflow's durable parent and step fences."""
++
++from collections.abc import Callable, Mapping
++from dataclasses import replace
++from datetime import UTC, datetime, timedelta
++from functools import partial
++from typing import Literal, Protocol, cast
++
++from jimu_runtime.bundle.capabilities import CapabilitySnapshot
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.definition_enums import ModelCapability
++from jimu_runtime.domain.definitions.models import ModelBindingContentRef
++from jimu_runtime.domain.definitions.tools import ToolDefinition, ToolPlanDefinition
++from jimu_runtime.domain.fact_schemas.canonicalization import JSONValue, canonical_bytes
++from jimu_runtime.domain.fact_selectors import ToolContentRef
++from jimu_runtime.domain.nodes.tool_execution import ToolNodeInput
++from jimu_runtime.domain.policies import ToolExecutionPolicyArtifact
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.runtime.tool_executions import (
++    FailedToolAttempt,
++    FailedToolResult,
++    ReturnedToolAttempt,
++    ToolError,
++    ToolExecution,
++    UndispatchedToolAttempt,
++)
++from jimu_runtime.gateway.bridge import CapabilityGateway, ModelCall
++from jimu_runtime.gateway.journal import (
++    DispatchIntent,
++    DispatchJournal,
++    DispatchLease,
++    ModelDispatchResult,
++    NestedModelDispatchTarget,
++    ToolDispatchResult,
++    ToolDispatchTarget,
++    ToolImplementationObservation,
++)
++from jimu_runtime.tools.executor import (
++    GroundingCall,
++    PlanStepCall,
++    RecordResponse,
++    ToolCallResult,
++    ToolCancelled,
++    ToolExecutor,
++)
++from jimu_runtime.tools.registry import (
++    NestedModelRequest,
++    NestedModelResponse,
++    ToolDispatch,
++)
++from jimu_runtime.tools.step_attempts import (
++    StepAttempt,
++    StepAttemptStore,
++    StepCompletion,
++    StepResult,
++)
++from jimu_runtime.workers.resources import ResourceLease
++from jimu_runtime.workflow.mock_support import record_digest
++from jimu_runtime.workflow.worker import (
++    AdapterRejected,
++    ClaimedNode,
++    RetryableNodeFailure,
++)
++from jimu_runtime.workflow.worker_capabilities import ToolOwnershipPin
++
++
++class CurrentToolRegistry(Protocol):
++    async def __call__(self, scope: IdempotencyScope) -> CapabilitySnapshot: ...
++
++
++def tool_step_operation_id(parent_node_run_id: str, step_id: str) -> str:
++    """Stable audit key for a logical step across worker ownership and Attempts."""
++    digest = sha256_digest(canonical_bytes([parent_node_run_id, step_id]))
++    return f"operation.tool_step.{digest}"
++
++
++def _tool_error(tool: ToolExecution) -> ToolError | None:
++    outcome = tool.attempt_result
++    if isinstance(outcome, (UndispatchedToolAttempt, FailedToolAttempt)):
++        return outcome.error
++    if isinstance(outcome, ReturnedToolAttempt) and isinstance(
++        outcome.result, FailedToolResult
++    ):
++        return outcome.result.error
++    return None
++
++
++class ToolExecutionAdapter:
++    """Invoke a bound N03 Tool or create a separately fenced N05 child round."""
++
++    def __init__(
++        self,
++        executor: ToolExecutor,
++        steps: StepAttemptStore,
++        journal: DispatchJournal,
++        current: CurrentToolRegistry,
++        *,
++        record_response: RecordResponse | None = None,
++        model_gateway: CapabilityGateway | None = None,
++        model_resource_scope: Callable[[ClaimedNode, ToolDefinition], str]
++        | None = None,
++    ) -> None:
++        if (model_gateway is None) != (model_resource_scope is None):
++            raise ValueError(
++                "nested model capability requires a registered resource scope source"
++            )
++        self._executor = executor
++        self._steps = steps
++        self._journal = journal
++        self._current = current
++        self._record_response = record_response
++        self._model_gateway = model_gateway
++        self._model_resource_scope = model_resource_scope
++
++    def _binding(
++        self, claimed: ClaimedNode, tool_ref: ToolContentRef
++    ) -> tuple[ToolDefinition, ToolOwnershipPin]:
++        historical = claimed.opened.historical
++        pin = (
++            None
++            if historical is None
++            else next(
++                (
++                    item
++                    for item in historical.tool_ownership
++                    if item.tool_ref == tool_ref
++                ),
++                None,
++            )
++        )
++        if pin is None:
++            raise AdapterRejected("tool_historical_ownership_unavailable")
++        return claimed.opened.scope.resolve(tool_ref, ToolDefinition), pin
++
++    async def _available(
++        self, claimed: ClaimedNode, tool: ToolDefinition, pin: ToolOwnershipPin
++    ) -> bool:
++        snapshot = CapabilitySnapshot.model_validate(
++            await self._current(claimed.claim.scope)
++        )
++        now = datetime.now(UTC)
++        requirement = tool.implementation_requirement
++        features = set(requirement.required_features)
++        return snapshot.is_current(now) and any(
++            row.is_current(now)
++            and (
++                row.family,
++                row.capability_id,
++                row.contract_version,
++                row.implementation_version,
++            )
++            == (
++                requirement.family,
++                requirement.capability_id,
++                requirement.contract_version,
++                pin.implementation_version,
++            )
++            and features <= set(row.supported_features)
++            and (
++                requirement.evaluation_ref is None
++                or any(
++                    entry.ref == requirement.evaluation_ref
++                    and entry.is_current(now)
++                    and features <= set(entry.reviewed_features)
++                    for entry in row.evaluations
++                )
++            )
++            for row in snapshot.capabilities
++        )
++
++    async def execute_step(
++        self,
++        claimed: ClaimedNode,
++        inputs: ToolNodeInput,
++        step_id: str,
++        input_fields: Mapping[str, object],
++        *,
++        peers: tuple[ToolExecution, ...] = (),
++    ) -> StepCompletion:
++        """Return the whole durable output group, reusing it only with exact input."""
++        scope = claimed.opened.scope
++        plan = scope.resolve(inputs.tool_plan_ref, ToolPlanDefinition)
++        step = next((item for item in plan.steps if item.step_id == step_id), None)
++        if step is None:
++            raise AdapterRejected("tool_step_not_in_plan")
++        definition, pin = self._binding(claimed, step.tool_ref)
++        policy = scope.resolve(
++            definition.execution_policy_ref, ToolExecutionPolicyArtifact
++        ).policy
++        fields = dict(input_fields)
++        exact_request = self._executor.prepare_step_input(
++            claimed.opened.resolved,
++            PlanStepCall(inputs, step_id),
++            claimed.opened.source.media,
++            fields,
++        )
++        input_digest = sha256_digest(exact_request)
++        handle = await self._steps.begin(
++            claimed.claim,
++            inputs,
++            step,
++            input_digest,
++            timeout_ms=policy.timeout_ms,
++            max_attempts=policy.max_attempts,
++        )
++        if handle is None:
++            raise AdapterRejected("tool_step_fence_lost")
++        if isinstance(handle, StepCompletion):
++            return handle
++        result = await self._execute(
++            claimed,
++            PlanStepCall(handle.inputs, step.step_id),
++            definition,
++            pin,
++            fields,
++            input_digest,
++            handle=handle,
++            peers=peers,
++        )
++        if result.execution.status != "not_dispatched" and not await self._available(
++            claimed, definition, pin
++        ):
++            raise AdapterRejected("tool_live_registration_revoked")
++        completion = await self._steps.complete(
++            handle,
++            StepResult(
++                schema_version="1.0.0",
++                execution=result.execution,
++                facts=result.facts,
++                evidence=result.evidence,
++                invocations=result.nested_invocations,
++            ),
++        )
++        if completion is None:
++            raise AdapterRejected("tool_step_fence_lost")
++        if result.retryable:
++            retry_tool_step(completion)
++        return completion
++
++    async def execute_grounding(
++        self,
++        claimed: ClaimedNode,
++        call: GroundingCall,
++        input_fields: Mapping[str, object],
++        *,
++        peers: tuple[ToolExecution, ...] = (),
++    ) -> ToolCallResult:
++        from jimu_runtime.domain.definitions.capabilities import ToolGroundingBinding
++
++        binding = next(
++            (
++                item.grounding_binding
++                for item in call.inputs.profiles
++                if item.hit.profile_ref == call.profile_ref
++            ),
++            None,
++        )
++        if not isinstance(binding, ToolGroundingBinding):
++            raise AdapterRejected("tool_grounding_binding_unavailable")
++        definition, pin = self._binding(claimed, binding.tool_ref)
++        result = await self._execute(
++            claimed,
++            call,
++            definition,
++            pin,
++            input_fields,
++            sha256_digest(canonical_bytes(cast(JSONValue, dict(input_fields)))),
++            peers=peers,
++        )
++        if not await self._available(
++            claimed, definition, pin
++        ) or not await self._journal.is_current(
++            claimed.claim, claimed.attempt.attempt_id
++        ):
++            raise AdapterRejected("tool_grounding_authority_unavailable")
++        return result
++
++    async def _execute(
++        self,
++        claimed: ClaimedNode,
++        call: GroundingCall | PlanStepCall,
++        definition: ToolDefinition,
++        pin: ToolOwnershipPin,
++        fields: Mapping[str, object],
++        input_digest: str,
++        *,
++        peers: tuple[ToolExecution, ...],
++        handle: StepAttempt | None = None,
++    ) -> ToolCallResult:
++        claim = claimed.claim if handle is None else handle.claim
++        node = claimed.node if handle is None else handle.node
++        attempt = claimed.attempt if handle is None else handle.attempt
++        policy = claimed.opened.scope.resolve(
++            definition.execution_policy_ref, ToolExecutionPolicyArtifact
++        ).policy
++        assert attempt.started_at is not None
++        deadline = attempt.started_at + timedelta(milliseconds=policy.timeout_ms)
++        requirement = definition.implementation_requirement
++        intended: DispatchIntent | None = None
++        captured: list[ModelInvocation] = []
++        nested_requests = 0
++        nested_outputs = 0
++        model_ref = definition.model_binding_ref
++
++        async def invoke_nested(request: NestedModelRequest) -> NestedModelResponse:
++            nonlocal nested_requests, nested_outputs
++            if (
++                handle is None
++                or model_ref is None
++                or intended is None
++                or self._model_gateway is None
++                or self._model_resource_scope is None
++            ):
++                raise AdapterRejected("tool_nested_gateway_unavailable")
++            target = intended.target
++            assert (
++                isinstance(target, ToolDispatchTarget) and target.object_ref is not None
++            )
++            nested_requests += 1
++            outcome = await self._model_gateway.invoke_model(
++                claimed,
++                ModelCall(
++                    binding_ref=ModelBindingContentRef.model_validate(
++                        model_ref.model_dump()
++                    ),
++                    purposes=(ModelCapability.VISION_AUXILIARY,),
++                    profile_refs=(target.profile_ref,),
++                    object_ref=target.object_ref,
++                    prompt=request.prompt,
++                    resource_scope_id=self._model_resource_scope(claimed, definition),
++                    image=request.media,
++                ),
++                nested=(self._steps, handle),
++            )
++            invoice = outcome.invocation
++            if invoice is not None:
++                receipt = await self._journal.get_dispatch(
++                    claim.scope, claim.execution_id, invoice.model_invocation_id
++                )
++                if (
++                    receipt is None
++                    or receipt.node_run_id != node.node_run_id
++                    or receipt.attempt_id != attempt.attempt_id
++                    or not isinstance(receipt.intent.target, NestedModelDispatchTarget)
++                    or not any(
++                        row.fence_qualified
++                        and not row.late
++                        and isinstance(row.result, ModelDispatchResult)
++                        and row.result.invocation == invoice
++                        for row in receipt.results
++                    )
++                ):
++                    # A late physical result remains in the journal but does
++                    # not become a child completion or a fallback source.
++                    raise AdapterRejected("tool_nested_receipt_unqualified")
++                captured.append(invoice)
++            if outcome.output is not None:
++                nested_outputs += 1
++            return NestedModelResponse(
++                invocation=invoice, content=outcome.output, error=outcome.error
++            )
++
++        def verify_nested(result: ToolCallResult) -> ToolCallResult:
++            actual = tuple(captured)
++            proposed = result.nested_invocations
++            error_code = None
++            if proposed and (
++                len(set(proposed)) != len(proposed) or not set(proposed) <= set(actual)
++            ):
++                error_code = "tool_nested_invocation_unaudited"
++            if (
++                result.execution.status in ("succeeded", "partial")
++                and model_ref is not None
++                and (
++                    not actual
++                    or nested_outputs != nested_requests
++                    or set(actual) != set(proposed)
++                )
++            ):
++                error_code = error_code or "tool_nested_output_unqualified"
++            if error_code is not None:
++                tool = result.execution
++                undispatched = isinstance(tool.attempt_result, UndispatchedToolAttempt)
++                error = ToolError(
++                    error_class="association", code=error_code, diagnostic_refs=()
++                )
++                tool = ToolExecution.model_validate(
++                    tool.model_copy(
++                        update={
++                            "status": "not_dispatched" if undispatched else "failed",
++                            "attempt_result": UndispatchedToolAttempt(
++                                disposition="not_dispatched", error=error
++                            )
++                            if undispatched
++                            else FailedToolAttempt(disposition="failed", error=error),
++                            "output_refs": (),
++                            "generated_fact_refs": (),
++                            "authority_observation": None,
++                        }
++                    )
++                )
++                return replace(
++                    result,
++                    execution=tool,
++                    facts=(),
++                    nested_invocations=actual,
++                    retryable=False,
++                )
++            return replace(result, nested_invocations=actual)
++
++        guard = (
++            None
++            if handle is None
++            else partial(self._steps.dispatch_live, handle=handle)
++        )
++
++        def intent_for(
++            tool_id: str,
++            target: ToolDispatchTarget,
++            request_digest: str,
++            lease: DispatchLease | None,
++        ) -> DispatchIntent:
++            return DispatchIntent(
++                dispatch_id=tool_id,
++                operation_id=(
++                    tool_step_operation_id(
++                        handle.parent_claim.node_run_id, call.step_id
++                    )
++                    if handle is not None and isinstance(call, PlanStepCall)
++                    else f"operation.{tool_id}"
++                ),
++                trace_id=node.trace.trace_id,
++                request_digest=request_digest,
++                input_digest=input_digest,
++                response_contract_digest=definition.output_schema_ref.digest,
++                resource_lease=lease,
++                target=target,
++            )
++
++        async def before_dispatch(dispatch: ToolDispatch, lease: ResourceLease) -> bool:
++            nonlocal intended
++            if not await self._available(claimed, definition, pin):
++                return False
++            wire_digest = sha256_digest(dispatch.request)
++            if handle is not None and wire_digest != input_digest:
++                raise AdapterRejected("tool_prepared_input_digest_changed")
++            candidate = intent_for(
++                dispatch.tool_execution_id,
++                ToolDispatchTarget(
++                    tool_ref=dispatch.tool_ref,
++                    invocation_origin=dispatch.origin,
++                    profile_ref=dispatch.profile_ref,
++                    object_ref=dispatch.object_ref,
++                    capability_id=dispatch.capability_id,
++                    contract_version=dispatch.contract_version,
++                    implementation_version=dispatch.implementation_version,
++                    implementation_proof_ref=dispatch.implementation_proof_ref,
++                    input_refs=dispatch.input_refs,
++                    input_schema_ref=dispatch.input_schema_ref,
++                    output_schema_ref=dispatch.output_schema_ref,
++                    parent_node_run_id=None
++                    if handle is None
++                    else handle.parent_claim.node_run_id,
++                    parent_attempt_id=None
++                    if handle is None
++                    else handle.parent_attempt_id,
++                ),
++                wire_digest,
++                DispatchLease(
++                    lease_id=lease.lease_id,
++                    owner_id=lease.owner_id,
++                    scope_id=lease.scope_id,
++                ),
++            )
++            if not await self._journal.begin(
++                claim,
++                attempt.attempt_id,
++                candidate,
++                live_guard=guard,
++            ):
++                return False
++            intended = candidate
++            return True
++
++        async def retain(result: ToolCallResult) -> None:
++            execution = result.execution
++            error = _tool_error(execution)
++            boundary: Literal["not_dispatched", "acknowledged", "sent_unknown"] = (
++                "not_dispatched"
++                if isinstance(execution.attempt_result, UndispatchedToolAttempt)
++                else "acknowledged"
++                if result.response_digest is not None
++                else "sent_unknown"
++            )
++            record = ToolDispatchResult(
++                boundary=boundary,
++                acknowledgement="tool_process" if boundary == "acknowledged" else None,
++                error=error,
++                response_digest=result.response_digest,
++                observed_response_bytes=result.response_byte_count or 0,
++                execution=execution,
++                implementation=None
++                if execution.actual_implementation_version is None
++                else ToolImplementationObservation(
++                    implementation_version=execution.actual_implementation_version,
++                    proof_ref=pin.implementation_proof_ref,
++                ),
++                tool_execution_digest=record_digest(execution),
++            )
++            if intended is not None:
++                await self._journal.append_result(
++                    claim, attempt.attempt_id, intended.dispatch_id, record
++                )
++                return
++            if boundary != "not_dispatched":
++                raise AdapterRejected("tool_missing_dispatch_intent")
++            target = ToolDispatchTarget(
++                tool_ref=execution.tool_ref,
++                invocation_origin=execution.invocation_origin,
++                profile_ref=execution.profile_ref,
++                object_ref=execution.object_ref,
++                capability_id=requirement.capability_id,
++                contract_version=requirement.contract_version,
++                implementation_version=pin.implementation_version,
++                implementation_proof_ref=pin.implementation_proof_ref,
++                input_refs=execution.input_refs,
++                input_schema_ref=definition.input_schema_ref,
++                output_schema_ref=definition.output_schema_ref,
++                parent_node_run_id=None
++                if handle is None
++                else handle.parent_claim.node_run_id,
++                parent_attempt_id=None if handle is None else handle.parent_attempt_id,
++            )
++            await self._journal.reject(
++                claim,
++                attempt.attempt_id,
++                intent_for(
++                    execution.tool_execution_id,
++                    target,
++                    result.request_digest or sha256_digest(b""),
++                    None,
++                ),
++                record,
++                live_guard=guard,
++            )
++
++        try:
++            result = await self._executor.execute(
++                resolved=claimed.opened.resolved,
++                execution=claimed.execution,
++                node=node,
++                attempt=attempt,
++                call=call,
++                media=claimed.opened.source.media,
++                input_fields=fields,
++                implementation_proof=pin.implementation_proof_ref,
++                deadline=deadline,
++                before_dispatch=before_dispatch,
++                peers=peers,
++                record_response=self._record_response,
++                invoke_nested_model=invoke_nested if model_ref is not None else None,
++            )
++        except ToolCancelled as exc:
++            await retain(verify_nested(exc.result))
++            raise
++        result = verify_nested(result)
++        await retain(result)
++        return result
++
++
++def retry_tool_step(step: StepCompletion) -> None:
++    """Map a failed step for the parent scheduler, keeping its child evidence."""
++    error = _tool_error(step.result.execution)
++    if error is None:
++        return
++    if error.error_class in ("transport", "unavailable"):
++        raise RetryableNodeFailure("transport")
++    if error.error_class == "timeout":
++        raise RetryableNodeFailure("timeout")
++    if error.error_class in ("rate_limit", "resource_exhausted"):
++        raise RetryableNodeFailure("resource")
++    raise AdapterRejected(error.code)
+--- a/src/jimu_runtime/workflow/worker.py
++++ b/src/jimu_runtime/workflow/worker.py
+@@ -1,9 +1,9 @@
+-"""Public durable worker entry point for the offline six-node workflow."""
++"""Public durable worker entry point for the six-node workflow."""
+ 
+ from asyncio import Event, TaskGroup, to_thread, wait_for
+ from collections.abc import Awaitable, Callable
+ from dataclasses import dataclass
+ from datetime import datetime
+ from enum import Enum
+ from typing import Literal
+ 
+@@ -15,56 +15,79 @@
+ from jimu_runtime.bundle.store import LocalBundleStore, StoreBusy
+ from jimu_runtime.domain.base import ContractModel
+ from jimu_runtime.domain.enums import ExecutionStatus, NodeRunStatus
+ from jimu_runtime.domain.nodes.envelopes import (
+     FailedNodeOutput,
+     NodeError,
+     SucceededNodeOutput,
+ )
+-from jimu_runtime.domain.runtime.executions import Attempt, NodeId, NodeRun
++from jimu_runtime.domain.runtime.executions import (
++    Attempt,
++    ExecutionRecord,
++    NodeId,
++    NodeRun,
++)
+ from jimu_runtime.domain.runtime.intake import IdempotencyScope
+ from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.tools.step_attempts import load_parent_step_history
+ from jimu_runtime.workflow import repository as repo
+ from jimu_runtime.workflow.engine import BranchKey, ExecutionFinalization
+ from jimu_runtime.workflow.intake import IntakeAuthorizationError, IntakeHostUnavailable
+ from jimu_runtime.workflow.jobs import (
+     CompletionDisposition,
+     DurableJobs,
+     JobClaim,
+     ResponseEvidence,
+     StagedDecision,
+ )
+ from jimu_runtime.workflow.mock_support import VERSION, synthetic_id
+ from jimu_runtime.workflow.pins import ExecutionPinError
+ from jimu_runtime.workflow.scheduling import validated_milliseconds
++from jimu_runtime.workflow.worker_capabilities import read_historical_capabilities
+ from jimu_runtime.workflow.worker_completion import finalize, persist_result
+ from jimu_runtime.workflow.worker_nodes import (
+     BranchInputs,
+     NodeResult,
+     failed_discovery,
+     invoke,
+ )
+ from jimu_runtime.workflow.worker_poll import runnable_executions
+-from jimu_runtime.workflow.worker_records import DecisionMessage
++from jimu_runtime.workflow.worker_records import DecisionMessage, ToolMessage
+ from jimu_runtime.workflow.worker_schedule import schedule_after_terminal
+ from jimu_runtime.workflow.worker_source import (
+     OpenExecution,
+     WorkerHost,
+     open_execution,
+ )
+ from jimu_runtime.workflow.worker_state import load_records
+ from jimu_runtime.workflow.worker_validation import check_result
+ 
+ _ACTIVE = frozenset((ExecutionStatus.INITIALIZED, ExecutionStatus.RUNNING))
+ type NodeInvoker = Callable[
+     [OpenExecution, BranchInputs, BranchKey, NodeRun, Attempt], Awaitable[NodeResult]
+ ]
+ 
+ type AttemptCheckpoint = Callable[[JobClaim, Attempt], Awaitable[None]]
++
++
++@dataclass(frozen=True, slots=True)
++class ClaimedNode:
++    """An actually started NodeRun and its inputs, available outside the locks."""
++
++    claim: JobClaim
++    attempt: Attempt
++    node: NodeRun
++    branch: BranchKey
++    opened: OpenExecution
++    previous: BranchInputs
++    execution: ExecutionRecord
++
++
++type ClaimedNodeInvoker = Callable[[ClaimedNode], Awaitable[NodeResult]]
+ 
+ 
+ class WorkerStep(Enum):
+     IDLE = "idle"
+     APPLIED = "applied"
+     STAGED = "staged"
+     RETRY_SCHEDULED = "retry_scheduled"
+     DUPLICATE = "duplicate"
+@@ -77,31 +100,45 @@
+ class RetryableNodeFailure(RuntimeError):
+     """A trusted adapter reported a known transient invocation failure."""
+ 
+     def __init__(
+         self, error_class: Literal["transport", "timeout", "resource"]
+     ) -> None:
+         self.error_class = error_class
+         super().__init__(error_class)
++
++
++class AdapterRejected(ValueError):
++    """Trusted, stable diagnostic for an operation that cannot publish output."""
++
++    def __init__(self, code: str) -> None:
++        self.code = code
++        super().__init__(code)
+ 
+ 
+ def _failed_node(node: NodeRun, attempt: Attempt, error: Exception) -> FailedNodeOutput:
+     error_class: Literal["transport", "timeout", "resource", "validation", "internal"]
+     if isinstance(error, RetryableNodeFailure):
+         error_class = error.error_class
+     elif isinstance(error, TimeoutError):
+         error_class = "timeout"
+     elif isinstance(error, ConnectionError):
+         error_class = "transport"
+     elif isinstance(error, ValueError):
+         error_class = "validation"
+     else:
+         error_class = "internal"
+-    code = "invalid_output" if error_class == "validation" else error_class
++    code = (
++        error.code
++        if isinstance(error, AdapterRejected)
++        else "invalid_output"
++        if error_class == "validation"
++        else error_class
++    )
+     assert attempt.started_at is not None
+     return FailedNodeOutput(
+         schema_version=VERSION,
+         node_id=node.node_id,
+         node_run_id=node.node_run_id,
+         attempt_id=attempt.attempt_id,
+         trace=node.trace,
+         output_artifacts=(),
+@@ -143,16 +180,22 @@
+     issues: tuple[PollIssue, ...]
+ 
+ 
+ def _response(
+     result: NodeResult,
+ ) -> tuple[ResponseEvidence | None, ContractModel | None]:
+     if not result.artifacts:
+         return None, None
++    if isinstance(result.message, ToolMessage) and any(
++        execution.node_run_ref.record_id != result.message.inputs.envelope.node_run_id
++        for execution in result.message.executions
++    ):
++        # The step journal retains each physical receipt under its child claim.
++        return None, None
+     response = next(
+         (item for item in result.artifacts if isinstance(item.record, ModelInvocation)),
+         result.artifacts[0],
+     )
+     invocation = response.record
+     env = result.message.input_envelope()
+     return ResponseEvidence(
+         schema_version=VERSION,
+@@ -204,23 +247,27 @@
+         self,
+         engine: AsyncEngine,
+         release_manager: ReleaseManager,
+         bundle_store: LocalBundleStore,
+         *,
+         host: WorkerHost,
+         bundle_limits: BundleLimits,
+         invoke_node: NodeInvoker = _synthetic_invocation,
++        invoke_claimed_node: ClaimedNodeInvoker | None = None,
+     ) -> None:
++        if invoke_claimed_node is not None and invoke_node is not _synthetic_invocation:
++            raise ValueError("choose one node adapter for this worker")
+         self._engine = engine
+         self._manager = release_manager
+         self._store = bundle_store
+         self._host = host
+         self._limits = bundle_limits
+         self._invoke_node = invoke_node
++        self._invoke_claimed_node = invoke_claimed_node
+ 
+     async def request_cancel(self, scope: IdempotencyScope, execution_id: str) -> bool:
+         """Persist a host-authorized cancellation for worker reconciliation."""
+         return await DurableJobs(self._engine).request_cancel(
+             IdempotencyScope.model_validate(scope), execution_id
+         )
+ 
+     async def read_finalization(
+@@ -300,18 +347,36 @@
+             ).scalar_one()
+         if locked is None or locked.execution.status not in _ACTIVE:
+             return WorkerStep.IDLE
+         if locked.cancel_requested_at is not None:
+             changed = await DurableJobs(self._engine).reconcile(scope, execution_id)
+             return WorkerStep.CANCELLED if changed else WorkerStep.IDLE
+ 
+         try:
++            historical = None
++            if self._invoke_claimed_node is not None:
++                async with self._engine.connect() as connection:
++                    historical = await read_historical_capabilities(
++                        connection, scope, locked.execution
++                    )
++                if historical is None:
++                    raise WorkerSourceError(
++                        "worker_historical_capabilities_unavailable", retryable=False
++                    )
+             opened = await open_execution(
+-                locked, scope, self._manager, self._store, self._host, self._limits, at
++                locked,
++                scope,
++                self._manager,
++                self._store,
++                self._host,
++                self._limits,
++                at,
++                historical=historical,
++                require_historical=self._invoke_claimed_node is not None,
+             )
+         except WorkerSourceError:
+             raise
+         except (StoreBusy, IntakeHostUnavailable, OSError) as error:
+             raise WorkerSourceError(
+                 "worker_source_unavailable", retryable=True
+             ) from error
+         except ExecutionPinError as error:
+@@ -374,25 +439,45 @@
+                 (branch,) = tuple(
+                     key
+                     for key, node in data.runs.items()
+                     if node.node_run_id == claim.node_run_id
+                 )
+                 previous, node = data.inputs(branch.object_id), data.runs[branch]
+                 result: NodeResult | None
+                 try:
++                    candidate = (
++                        await self._invoke_node(opened, previous, branch, node, attempt)
++                        if self._invoke_claimed_node is None
++                        else await self._invoke_claimed_node(
++                            ClaimedNode(
++                                claim,
++                                attempt,
++                                node,
++                                branch,
++                                opened,
++                                previous,
++                                data.locked.execution,
++                            )
++                        )
++                    )
++                    history = None
++                    if isinstance(candidate.message, ToolMessage):
++                        async with self._engine.connect() as connection:
++                            history = await load_parent_step_history(
++                                connection, claim.scope, candidate.message.inputs
++                            )
+                     result = check_result(
+                         opened,
+                         previous,
+                         branch,
+                         node,
+                         attempt,
+-                        await self._invoke_node(
+-                            opened, previous, branch, node, attempt
+-                        ),
++                        candidate,
++                        tool_step_history=history,
+                     )
+                     failure = None
+                 except Exception as error:
+                     failure = _failed_node(node, attempt, error)
+                     result = (
+                         failed_discovery(
+                             opened, previous, branch, node, attempt, failure
+                         )
+--- /dev/null
++++ b/src/jimu_runtime/workflow/worker_capabilities.py
+@@ -0,0 +1,125 @@
++"""Persist the trusted capability inputs that reproduce an Execution's pins."""
++
++from typing import Annotated, Literal, Self
++
++from pydantic import Field, model_validator
++from sqlalchemy import text
++from sqlalchemy.ext.asyncio import AsyncConnection
++
++from jimu_runtime.bundle.capabilities import CapabilitySnapshot
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.bundle.trust import TrustPin
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_support import UTCDateTime
++from jimu_runtime.domain.fact_selectors import ToolContentRef
++from jimu_runtime.domain.primitives import Version
++from jimu_runtime.domain.runtime.executions import ExecutionRecord
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.gateway.routing import DeploymentOwnership
++
++
++class ToolOwnershipPin(ContractModel):
++    tool_ref: ToolContentRef
++    implementation_version: Version
++    implementation_proof_ref: TrustPin
++
++
++class HistoricalCapabilities(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    validation_at: UTCDateTime
++    snapshot: CapabilitySnapshot
++    ownership: Annotated[tuple[DeploymentOwnership, ...], Field(max_length=1024)] = ()
++    tool_ownership: Annotated[tuple[ToolOwnershipPin, ...], Field(max_length=1024)] = ()
++
++    @model_validator(mode="after")
++    def verify_ownership(self) -> Self:
++        identities = {row.deployment for row in self.ownership}
++        if len(identities) != len(self.ownership) or not identities <= {
++            entry.identity
++            for entry in self.snapshot.model_deployments
++            if entry.is_current(self.validation_at)
++        }:
++            raise ValueError(
++                "historical ownership must match the frozen capability registry"
++            )
++        if len({item.tool_ref for item in self.tool_ownership}) != len(
++            self.tool_ownership
++        ):
++            raise ValueError("historical Tool ownership pins must be unique")
++        return self
++
++    def check_execution(self, execution: ExecutionRecord) -> None:
++        if (
++            self.validation_at > execution.created_at
++            or not self.snapshot.is_current(self.validation_at)
++            or self.snapshot.runtime_version != execution.pins.runtime_version
++            or not {
++                (row.tool_ref, row.implementation_version)
++                for row in self.tool_ownership
++            }
++            <= {
++                (row.tool_ref, row.implementation_version)
++                for row in execution.pins.tool_pins
++            }
++        ):
++            raise ValueError("historical capability snapshot does not match Execution")
++
++
++def _identity(scope: IdempotencyScope, execution: ExecutionRecord) -> dict[str, str]:
++    return {
++        "project_id": scope.project_id,
++        "client_id": scope.client_id,
++        "execution_id": execution.execution_id,
++        "input_digest": execution.pins.input_digest,
++    }
++
++
++async def record_historical_capabilities(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    execution: ExecutionRecord,
++    historical: HistoricalCapabilities,
++) -> None:
++    historical.check_execution(execution)
++    body = historical.stable_json()
++    await connection.execute(
++        text("""
++            INSERT INTO jimu_workflow.execution_capabilities
++                (project_id, client_id, execution_id, input_digest, record_digest, record)
++            VALUES (:project_id, :client_id, :execution_id, :input_digest,
++                :record_digest, CAST(:body AS json))
++        """),
++        {
++            **_identity(scope, execution),
++            "record_digest": sha256_digest(body.encode("utf-8")),
++            "body": body,
++        },
++    )
++
++
++async def read_historical_capabilities(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    execution: ExecutionRecord,
++) -> HistoricalCapabilities | None:
++    row = (
++        await connection.execute(
++            text("""
++                SELECT input_digest, record_digest, record::text AS record
++                FROM jimu_workflow.execution_capabilities
++                WHERE project_id = :project_id AND client_id = :client_id
++                    AND execution_id = :execution_id
++            """),
++            _identity(scope, execution),
++        )
++    ).one_or_none()
++    if row is None:
++        return None
++    if (
++        row.input_digest != execution.pins.input_digest
++        or row.record_digest != sha256_digest(row.record.encode("utf-8"))
++    ):
++        raise ValueError("historical capability snapshot failed digest verification")
++    historical = HistoricalCapabilities.model_validate_json(row.record)
++    historical.check_execution(execution)
++    return historical
+--- a/src/jimu_runtime/workflow/worker_source.py
++++ b/src/jimu_runtime/workflow/worker_source.py
+@@ -1,9 +1,9 @@
+-"""Open the historical configuration and trusted fixture inputs outside PG locks."""
++"""Open the historical configuration and trusted inputs outside PG locks."""
+ 
+ from asyncio import to_thread
+ from dataclasses import dataclass
+ from datetime import datetime
+ from typing import Protocol
+ 
+ from jimu_runtime.bundle.archive import BundleLimits
+ from jimu_runtime.bundle.capabilities import CapabilitySnapshot
+@@ -27,19 +27,23 @@
+ from jimu_runtime.domain.validation.decision_coverage import (
+     BoundRule,
+     BoundRuleSet,
+     ProfileRuleScope,
+ )
+ from jimu_runtime.domain.values import Value
+ from jimu_runtime.workflow.engine import ProfilePlan
+ from jimu_runtime.workflow.mock_perception import SyntheticGroundingCase
+-from jimu_runtime.workflow.mock_support import SyntheticExecution
++from jimu_runtime.workflow.mock_support import (
++    SyntheticExecution,
++    VerifiedExecutionScope,
++)
+ from jimu_runtime.workflow.pins import ResolvedExecutionPins, resolve_execution_pins
+ from jimu_runtime.workflow.repository import LockedExecution
++from jimu_runtime.workflow.worker_capabilities import HistoricalCapabilities
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+ class SyntheticObjectCase:
+     profile_ref: ProfileContentRef
+     object_index: int
+     readings: tuple[Value, ...] | None = None
+     outside: bool | None = True
+@@ -51,61 +55,80 @@
+ 
+     discovery_hits: tuple[ProfileContentRef, ...] | None = None
+     discovery_failures: tuple[ProfileContentRef, ...] = ()
+     grounding: tuple[SyntheticGroundingCase, ...] = ()
+     objects: tuple[SyntheticObjectCase, ...] = ()
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+-class WorkerSource:
++class TrustedWorkerSource:
++    """Scope-verified information about the original and its capture source."""
++
+     media: MediaAsset
+     device: RegistryRecordRef
+     camera: RegistryRecordRef
++
++
++@dataclass(frozen=True, slots=True)
++class WorkerSource(TrustedWorkerSource):
++    """Additional configuration for the legacy synthetic adapter."""
++
+     fixture_deployment_id: str
+     scenario: SyntheticScenario = SyntheticScenario()
+ 
+ 
+ class WorkerHost(Protocol):
+     """Trusted runtime host for one scope, supplying current capabilities and verified inputs."""
+ 
+     async def capabilities(self, scope: IdempotencyScope) -> CapabilitySnapshot: ...
+ 
+     async def worker_source(
+         self, scope: IdempotencyScope, task: AcceptedTask
+-    ) -> WorkerSource: ...
++    ) -> TrustedWorkerSource: ...
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+ class OpenExecution:
+-    synthetic: SyntheticExecution
++    scope: VerifiedExecutionScope
+     resolved: ResolvedExecutionPins
+     release: ReleaseRecord
+-    source: WorkerSource
++    source: TrustedWorkerSource
+     region_ref: RegionContentRef
+     region: RegionDefinition
+     profiles: tuple[ProfilePlan, ...]
+-
+-
+-def _profile_plan(synthetic: SyntheticExecution, ref: ProfileContentRef) -> ProfilePlan:
+-    profile = synthetic.resolve(ref, ProfileDefinition)
++    historical: HistoricalCapabilities | None = None
++
++    @property
++    def synthetic(self) -> SyntheticExecution:
++        if not isinstance(self.scope, SyntheticExecution):
++            raise ValueError("synthetic node requires a designated fixture deployment")
++        return self.scope
++
++    @property
++    def scenario(self) -> SyntheticScenario:
++        if not isinstance(self.source, WorkerSource):
++            raise ValueError("synthetic node requires a designated fixture source")
++        return self.source.scenario
++
++
++def _profile_plan(scope: VerifiedExecutionScope, ref: ProfileContentRef) -> ProfilePlan:
++    profile = scope.resolve(ref, ProfileDefinition)
+     rule_sets = []
+     for set_ref in profile.rule_set_refs:
+-        rule_set = synthetic.resolve(set_ref, RuleSetDefinition)
++        rule_set = scope.resolve(set_ref, RuleSetDefinition)
+         rules = []
+         for rule_ref in rule_set.rule_refs:
+-            rule = synthetic.resolve(rule_ref, RuleDefinition)
++            rule = scope.resolve(rule_ref, RuleDefinition)
+             rules.append(
+                 BoundRule(
+                     rule_ref=rule_ref,
+                     definition=rule,
+-                    rule_policy=synthetic.resolve(
+-                        rule.rule_policy_ref, RulePolicyArtifact
+-                    ),
+-                    evidence_policy=synthetic.resolve(
++                    rule_policy=scope.resolve(rule.rule_policy_ref, RulePolicyArtifact),
++                    evidence_policy=scope.resolve(
+                         rule.evidence_policy_ref, EvidencePolicyArtifact
+                     ),
+                 )
+             )
+         rule_sets.append(
+             BoundRuleSet(rule_set_ref=set_ref, definition=rule_set, rules=tuple(rules))
+         )
+     return ProfilePlan(
+@@ -116,27 +139,36 @@
+ async def open_execution(
+     locked: LockedExecution,
+     scope: IdempotencyScope,
+     manager: ReleaseManager,
+     store: LocalBundleStore,
+     host: WorkerHost,
+     limits: BundleLimits,
+     at: datetime,
++    *,
++    historical: HistoricalCapabilities | None = None,
++    require_historical: bool = False,
+ ) -> OpenExecution:
+     task, execution = locked.task, locked.execution
+-    capabilities = await host.capabilities(scope)
++    if historical is None and require_historical:
++        raise ValueError(
++            "gateway execution requires a durable historical capability snapshot"
++        )
++    capabilities = (
++        await host.capabilities(scope) if historical is None else historical.snapshot
++    )
+     resolved = await to_thread(
+         resolve_execution_pins,
+         manager,
+         store,
+         task,
+         scope=scope,
+         host=capabilities,
+-        validation_at=at,
++        validation_at=at if historical is None else historical.validation_at,
+         limits=limits,
+     )
+     if (resolved.pins, resolved.policy_ref) != (
+         execution.pins,
+         locked.execution_policy_ref,
+     ):
+         raise ValueError("worker cannot open a different historical Execution pin")
+     activation = await to_thread(manager.get_task_activation, task)
+@@ -147,70 +179,80 @@
+     )
+     if (
+         release is None
+         or release.bundle_ref != activation.bundle_ref
+         or release.approval_receipt is None
+     ):
+         raise ValueError("worker requires the exact approved historical Release")
+     source = await host.worker_source(scope, task)
+-    deployment = {
+-        deployment
+-        for row in resolved.model_deployments
+-        for deployment in row.deployments
+-        if deployment.deployment_id == source.fixture_deployment_id
+-    }
+-    if len(deployment) != 1:
+-        raise ValueError(
+-            "worker requires one vetted synthetic deployment for this scope"
+-        )
+-    synthetic = await to_thread(
+-        SyntheticExecution,
+-        task,
+-        execution.execution_id,
+-        execution.pins,
+-        source.media,
+-        resolved.files,
+-        next(iter(deployment)),
+-        limits.max_file_bytes,
+-        limits.max_json_depth,
+-    )
++    bound: VerifiedExecutionScope
++    if isinstance(source, WorkerSource):
++        deployment = {
++            deployment
++            for row in resolved.model_deployments
++            for deployment in row.deployments
++            if deployment.deployment_id == source.fixture_deployment_id
++        }
++        if len(deployment) != 1:
++            raise ValueError("synthetic worker requires one vetted fixture deployment")
++        bound = await to_thread(
++            SyntheticExecution,
++            task,
++            execution.execution_id,
++            execution.pins,
++            source.media,
++            resolved.files,
++            next(iter(deployment)),
++            limits.max_file_bytes,
++            limits.max_json_depth,
++        )
++    else:
++        bound = await to_thread(
++            VerifiedExecutionScope,
++            task,
++            execution.execution_id,
++            execution.pins,
++            source.media,
++            resolved.files,
++            limits.max_file_bytes,
++            limits.max_json_depth,
++        )
+     if (
+-        reference_identity(synthetic.execution_config_ref)
++        reference_identity(bound.execution_config_ref)
+         != reference_identity(resolved.policy_ref)
+         or source.device.record_id != task.context.device_id
+         or source.camera.record_id != task.context.camera_id
+     ):
+         raise ValueError(
+             "worker requires exact Task registry and configuration references"
+         )
+     region_refs = tuple(
+         RegionContentRef.model_validate(entry.ref.model_dump())
+-        for entry in synthetic.catalogue.of_kind(ArtifactKind.REGION)
++        for entry in bound.catalogue.of_kind(ArtifactKind.REGION)
+         if entry.ref.artifact_id == task.context.region_id
+     )
+     if len(region_refs) != 1:
+         raise ValueError("worker requires one exact pinned Region")
+     (region_ref,) = region_refs
+     profiles = tuple(
+-        _profile_plan(
+-            synthetic, ProfileContentRef.model_validate(entry.ref.model_dump())
+-        )
+-        for entry in synthetic.catalogue.of_kind(ArtifactKind.PROFILE)
+-    )
+-    cases = source.scenario.objects
++        _profile_plan(bound, ProfileContentRef.model_validate(entry.ref.model_dump()))
++        for entry in bound.catalogue.of_kind(ArtifactKind.PROFILE)
++    )
++    cases = source.scenario.objects if isinstance(source, WorkerSource) else ()
+     if len({(case.profile_ref, case.object_index) for case in cases}) != len(
+         cases
+     ) or any(
+         case.object_index < 0
+         or case.profile_ref not in {plan.rules.profile_ref for plan in profiles}
+         for case in cases
+     ):
+         raise ValueError("synthetic Object cases must name unique Profile indices")
+     return OpenExecution(
+-        synthetic,
++        bound,
+         resolved,
+         release,
+         source,
+         region_ref,
+-        synthetic.resolve(region_ref, RegionDefinition),
++        bound.resolve(region_ref, RegionDefinition),
+         profiles,
+-    )
++        historical,
++    )
+--- a/src/jimu_runtime/workflow/intake.py
++++ b/src/jimu_runtime/workflow/intake.py
+@@ -1,11 +1,12 @@
+ """Durable Task intake across PostgreSQL and the WP-02 Release ledger."""
+ 
+ from asyncio import to_thread
++from collections.abc import Awaitable, Callable
+ from dataclasses import dataclass
+ from datetime import UTC, datetime
+ from typing import Annotated, Protocol, cast
+ 
+ from pydantic import StringConstraints, TypeAdapter, ValidationError
+ from sqlalchemy import text
+ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+ 
+@@ -19,34 +20,46 @@
+ from jimu_runtime.domain.primitives import RecordId
+ from jimu_runtime.domain.runtime.executions import ExecutionRecord, NodeId, NodeRun
+ from jimu_runtime.domain.runtime.intake import (
+     AcceptedTask,
+     IdempotencyScope,
+     TaskSubmission,
+ )
+ from jimu_runtime.domain.runtime.media import FinalizedAsset, MediaAsset, MediaRef
++from jimu_runtime.gateway.routing import DeploymentOwnership
+ from jimu_runtime.workflow import repository
+ from jimu_runtime.workflow.pins import (
+     ExecutionPinError,
+     ResolvedExecutionPins,
+     resolve_execution_pins,
+ )
+ from jimu_runtime.workflow.scheduling import SchedulingLimits
++from jimu_runtime.workflow.worker_capabilities import (
++    HistoricalCapabilities,
++    ToolOwnershipPin,
++)
+ 
+ type IdentityComponent = Annotated[
+     str,
+     StringConstraints(
+         strict=True, min_length=1, max_length=1024, pattern=r"^[^\x00]+$"
+     ),
+ ]
+ 
+ 
+ _REQUEST_ID = TypeAdapter[str](RecordId)
+ _MAX_PENDING_PAGE_SIZE = 64
++
++type HistoricalOwnershipSource = Callable[
++    [IdempotencyScope, CapabilitySnapshot], Awaitable[tuple[DeploymentOwnership, ...]]
++]
++type HistoricalToolOwnershipSource = Callable[
++    [IdempotencyScope, ResolvedExecutionPins], Awaitable[tuple[ToolOwnershipPin, ...]]
++]
+ 
+ 
+ class IntakeIdentity(ContractModel):
+     """The exact authenticated identity as recovered from the host registry."""
+ 
+     issuer: IdentityComponent
+     subject: IdentityComponent
+ 
+@@ -192,26 +205,30 @@
+         engine: AsyncEngine,
+         release_manager: ReleaseManager,
+         bundle_store: LocalBundleStore,
+         *,
+         host: IntakeHost,
+         bundle_limits: BundleLimits,
+         scheduling_limits: SchedulingLimits,
+         max_submission_bytes: int,
++        historical_ownership: HistoricalOwnershipSource | None = None,
++        historical_tool_ownership: HistoricalToolOwnershipSource | None = None,
+     ) -> None:
+         if type(max_submission_bytes) is not int or max_submission_bytes <= 0:
+             raise ValueError("max_submission_bytes must be a positive integer")
+         self._engine = engine
+         self._releases = release_manager
+         self._store = bundle_store
+         self._host = host
+         self._bundle_limits = bundle_limits
+         self._scheduling_limits = SchedulingLimits.model_validate(scheduling_limits)
+         self._max_submission_bytes = max_submission_bytes
++        self._historical_ownership = historical_ownership
++        self._historical_tool_ownership = historical_tool_ownership
+ 
+     async def submit(
+         self, submission: TaskSubmission, *, principal: object
+     ) -> IntakeResult:
+         """Accept a new request or return the authorized original acceptance."""
+         submission = TaskSubmission.model_validate(submission)
+         try:
+             payload_size = len(submission.stable_json().encode("utf-8"))
+@@ -414,28 +431,38 @@
+             ) from None
+         _check_accepted(task, submission)
+ 
+         original = await self._original_result(intent, task)
+         if original is not None:
+             return original
+ 
+         capabilities = await self._host.capabilities(scope)
++        ownership = (
++            ()
++            if self._historical_ownership is None
++            else await self._historical_ownership(scope, capabilities)
++        )
+         async with self._engine.connect() as connection:
+             validation_at = await _database_now(connection)
+         resolved = await to_thread(
+             resolve_execution_pins,
+             self._releases,
+             self._store,
+             task,
+             scope=scope,
+             host=capabilities,
+             validation_at=validation_at,
+             limits=self._bundle_limits,
+         )
++        tool_ownership = (
++            ()
++            if self._historical_tool_ownership is None
++            else await self._historical_tool_ownership(scope, resolved)
++        )
+         async with self._engine.begin() as connection:
+             # The Release ledger supplies accepted_at. PostgreSQL establishes
+             # the Execution clock and when its first job becomes claimable.
+             created_at = await _database_now(connection)
+             execution, root = _initial_records(task, resolved, created_at)
+             job = repository.NewJob(
+                 job_id=f"job.{root.node_run_id}",
+                 ready_at=created_at,
+@@ -446,10 +473,16 @@
+                 scope,
+                 intent,
+                 task,
+                 execution,
+                 resolved.policy_ref,
+                 self._scheduling_limits,
+                 root,
+                 job,
++                historical_capabilities=HistoricalCapabilities(
++                    validation_at=validation_at,
++                    snapshot=capabilities,
++                    ownership=ownership,
++                    tool_ownership=tool_ownership,
++                ),
+             )
+         return IntakeResult(task=result.task, execution=result.execution)
+--- /dev/null
++++ b/src/jimu_runtime/workflow/migrations/005_execution_capabilities.sql
+@@ -0,0 +1,13 @@
++CREATE TABLE jimu_workflow.execution_capabilities (
++    project_id text NOT NULL,
++    client_id text NOT NULL,
++    execution_id text NOT NULL,
++    input_digest jimu_workflow.digest NOT NULL,
++    record_digest jimu_workflow.digest NOT NULL,
++    record json NOT NULL,
++    PRIMARY KEY (project_id, client_id, execution_id),
++    FOREIGN KEY (project_id, client_id, execution_id)
++        REFERENCES jimu_workflow.executions (project_id, client_id, execution_id)
++);
++
++GRANT SELECT, INSERT ON jimu_workflow.execution_capabilities TO jimu_workflow_app;

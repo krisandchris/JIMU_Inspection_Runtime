@@ -1,0 +1,159 @@
+2026-11-18T03:42:43Z
+PYTHONPATH=. uv run --locked python planning/implementation_evidence/WP-03/independent/probe_wp03.py
+{"check": "postgres", "first": [1, 2], "image_id": "sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae", "repeat": [], "version": "16.14 (Debian 16.14-1.pgdg13+1)"}
+{"check": "app_permission_rejected", "sql": "CREATE TABLE jimu_workflow.independent_denied (x integer)", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "UPDATE jimu_workflow.schema_migrations SET script_sha256=script_sha256", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "UPDATE jimu_workflow.execution_events SET event_number=event_number", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "DELETE FROM jimu_workflow.attempts WHERE false", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "TRUNCATE jimu_workflow.produced_outputs", "sqlstate": "42501"}
+{"bundle_digest": "e9ce8868075927aa405689f9afba6207832fa7ffb2dfb54e5a3d32e1cafc6551", "check": "admission_and_duplicate_intake", "execution_id": "execution.c17a078b8456703828a41526af6eeddada2f1a879bfe35c6523356531f3dce29", "mode": "full"}
+{"after": "2026-11-18T03:42:52.822189+00:00", "before": "2026-11-18T03:42:51.898485+00:00", "check": "heartbeat_and_expired_fence", "contender_backend": 73}
+{"a_pid": 3078320, "b_pid": 3078325, "check": "takeover_and_late_audit", "rows": [[1, 1, "probe-a", "superseded", "fixture-request-a"], [2, 2, "probe-b", "succeeded", null]]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 72, "pid": 3078320}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 73, "pid": 3078325}
+{"check": "mock_returned_before_worker_crash", "worker_marker": {"attempt": "10bac2a156cc471faa41e1edae9e8c03", "external_request_ids": ["synthetic.request.78d508de58c1a4c6738766003d4675ed15eb4fbf14117ef09d8f392f0daf06ce", "synthetic.request.1a01eea4b3e3ddf1c15b350f1f1db1ae060d3a09f9cfad707a9b59fb4f85e87b"], "invocations": ["synthetic.model.be2f918490de2e5517b60579be5274556900e89659df65857887b94c4b8626a5", "synthetic.model.ca374e4027bd7b9fffd7e71cb1b72094d34cf31d1db9c1d7dfa2b999f588c371"], "label": "mock_returned", "pid": 3078325}}
+{"attempt": "running", "check": "n06_draft_before_authority", "draft_count": 1, "finalization_count": 0, "n06_authority": 0, "node": "running", "terminal_attempt": null}
+{"check": "all_n06_drafts_before_authority", "drafts": 3, "finalizations": 0, "n06_authority": 0}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 74, "pid": 3078349}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py", line 642, in execute
+    result = self.await_(self._cursor.execute(query, params, **kw))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/psycopg/cursor_async.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.SyntaxError: syntax error at or near "current_time"
+LINE 2:         WITH current_time AS (SELECT pg_catalog.clock_timest...
+                     ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1051, in <module>
+    asyncio.run(child() if sys.argv[1:] == ["child"] else independent())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 296, in child
+    poll = await worker.run_next(scope, owner=owner, lease_ms=5_000)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workflow/worker.py", line 206, in run_next
+    candidates = await runnable_executions(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workflow/worker_poll.py", line 15, in runnable_executions
+    result = await connection.execute(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 659, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py", line 642, in execute
+    result = self.await_(self._cursor.execute(query, params, **kw))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/psycopg/cursor_async.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.SyntaxError) syntax error at or near "current_time"
+LINE 2:         WITH current_time AS (SELECT pg_catalog.clock_timest...
+                     ^
+[SQL: 
+        WITH current_time AS (SELECT pg_catalog.clock_timestamp() AS observed)
+        SELECT e.execution_id
+        FROM jimu_workflow.executions e CROSS JOIN current_time t
+        WHERE e.project_id = %(project_id)s AND e.client_id = %(client_id)s
+          AND e.status IN ('initialized','running')
+          AND (CAST(%(after)s AS text) IS NULL OR e.execution_id > %(after)s)
+          AND (
+            e.cancel_requested_at IS NOT NULL
+            OR EXISTS (
+                SELECT 1 FROM jimu_workflow.jobs j
+                WHERE (j.project_id, j.client_id, j.execution_id) =
+                      (e.project_id, e.client_id, e.execution_id)
+                  AND (
+                    (j.status = 'ready' AND j.ready_at <= t.observed)
+                    OR (j.status = 'leased' AND
+                        (j.lease_until <= t.observed OR j.attempt_deadline <= t.observed))
+                  )
+            )
+            OR (
+                e.status = 'running'
+                AND NOT EXISTS (
+                    SELECT 1 FROM jimu_workflow.jobs j
+                    WHERE (j.project_id, j.client_id, j.execution_id) =
+                          (e.project_id, e.client_id, e.execution_id)
+                      AND j.status IN ('ready', 'leased')
+                )
+            )
+          )
+        ORDER BY e.execution_id
+        LIMIT %(limit)s
+        ]
+[SQL parameters hidden due to hide_parameters=True]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1051, in <module>
+    asyncio.run(child() if sys.argv[1:] == ["child"] else independent())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1037, in independent
+    await crash_publish(full, replacement, orphan)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 883, in crash_publish
+    scope_poll = await restart.ask("poll")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 336, in ask
+    result = await reply(self.process)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 357, in reply
+    raise RuntimeError(
+RuntimeError: worker exited without a result, exit=1
+2026-11-18T03:43:01Z
+exit=1

@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "geometry_resource_id": "synthetic-boundary",
+  "version": "1.0.0",
+  "coordinate_system": {
+    "vocabulary_ref": {
+      "artifact_kind": "vocabulary",
+      "artifact_id": "coordinate-system",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "member": "synthetic-survey-plane"
+  },
+  "units": {
+    "vocabulary_ref": {
+      "artifact_kind": "vocabulary",
+      "artifact_id": "unit-coordinate",
+      "version": "1.0.0",
+      "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "member": "synthetic-unit"
+  },
+  "geometry": {
+    "kind": "polygon",
+    "vertices": [
+      {
+        "x": -5,
+        "y": -3.5
+      },
+      {
+        "x": 9,
+        "y": -3.5
+      },
+      {
+        "x": 4.25,
+        "y": 7
+      }
+    ]
+  },
+  "provenance": {
+    "source_asset_ref": {
+      "artifact_kind": "static_asset",
+      "artifact_id": "synthetic-boundary-source",
+      "version": "1.0.0",
+      "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  }
+}

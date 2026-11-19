@@ -1,0 +1,1450 @@
+--- /dev/null
++++ b/src/jimu_runtime/evaluation/history.py
+@@ -0,0 +1,676 @@
++"""Authorized read-only export of scoped historical samples for offline scoring."""
++
++from asyncio import to_thread
++from collections.abc import Iterable
++from dataclasses import dataclass, replace
++from typing import Literal, Self
++
++from pydantic import model_validator
++from sqlalchemy import text
++from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
++
++from jimu_runtime.bundle.archive import BundleLimits
++from jimu_runtime.bundle.releases import ReleaseManager
++from jimu_runtime.bundle.store import LocalBundleStore
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.enums import RuntimeRecordKind
++from jimu_runtime.domain.primitives import Digest, RecordId, Version
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.domain.runtime.evidence import EvidenceAsset
++from jimu_runtime.domain.runtime.executions import PinnedRuntimeInput
++from jimu_runtime.domain.runtime.facts import EvidenceRef
++from jimu_runtime.domain.runtime.intake import AcceptedTask, IdempotencyScope
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.runtime.replay import ReplayExecutionSource
++from jimu_runtime.domain.runtime.tool_executions import ToolExecution
++from jimu_runtime.evaluation.contracts import (
++    DatasetManifest,
++    DatasetSample,
++    Entries,
++    EvaluationCatalogue,
++    ExecutionCohort,
++    ExecutionEvidence,
++    ModelAttempts,
++    PredictionSnapshot,
++    ProfilePrediction,
++    SamplePrediction,
++    Samples,
++    SampleSource,
++    TrialSource,
++    canonical_digest,
++    require_unique,
++)
++from jimu_runtime.evaluation.history_projection import (
++    EvaluationHistoryError,
++    catalogue_from_bundle,
++    project_profiles,
++)
++from jimu_runtime.gateway.journal_records import (
++    RESULT_ADAPTER,
++    DispatchIntent,
++    ModelDispatchResult,
++    ToolDispatchResult,
++    ToolDispatchTarget,
++)
++from jimu_runtime.inspection.media import LocalMediaStore
++from jimu_runtime.inspection.media.retention import LocalEvidenceLifecycle
++from jimu_runtime.inspection.media.retention_models import (
++    EvidenceAccessGrant,
++    EvidenceLocator,
++)
++from jimu_runtime.inspection.media.types import MediaError
++from jimu_runtime.replay.artifact_journal import read_journal_witnesses
++from jimu_runtime.replay.artifact_source import HistoricalSource, load_historical_source
++from jimu_runtime.workflow import repository as repo
++from jimu_runtime.workflow.pins import resolve_execution_pins
++from jimu_runtime.workflow.worker_capabilities import read_historical_capabilities
++from jimu_runtime.workflow.worker_records import (
++    DecisionMessage,
++    GroundingMessage,
++    NodeMessage,
++    ObservationMessage,
++    ToolMessage,
++)
++from jimu_runtime.workflow.worker_state import load_records
++
++_MAX_DISPATCHES = 4096
++_MAX_EVIDENCE = 1024
++_MAX_EVIDENCE_BYTES = 128 * 1024 * 1024
++_K = RuntimeRecordKind
++
++
++class HistorySelection(ContractModel):
++    sample_id: RecordId
++    source: ReplayExecutionSource
++
++
++class HistoryExportRequest(ContractModel):
++    """Trusted host selection. The host authorizes scope and actor before calling."""
++
++    scope: IdempotencyScope
++    actor: ActorRef
++    prediction_id: RecordId
++    source_id: RecordId
++    version: Version
++    selections: Samples[HistorySelection]
++
++
++class RetainedResponse(ContractModel):
++    late: bool
++    role: Literal["raw", "normalized"]
++    digest: Digest
++
++
++class DispatchAudit(ContractModel):
++    dispatch_id: RecordId
++    node_run_id: RecordId
++    attempt_id: RecordId
++    intent_digest: Digest
++    on_time_digest: Digest | None
++    late_digest: Digest | None
++    retained_responses: Entries[RetainedResponse]
++    send_admitted: bool
++    fence_qualified: bool | None
++
++
++class SampleHistoryAudit(ContractModel):
++    schema_version: Literal["1.0.0"]
++    scope: IdempotencyScope
++    sample_id: RecordId
++    execution_id: RecordId
++    finalization_digest: Digest
++    catalogue_digest: Digest
++    artifacts: ModelAttempts[PinnedRuntimeInput]
++    dispatches: ModelAttempts[DispatchAudit]
++    evidence: Entries[ExecutionEvidence]
++
++
++class HistoricalTrialExport(ContractModel):
++    """Portable historical export with independently pinned per-sample audit witnesses."""
++
++    schema_version: Literal["1.0.0"]
++    catalogue: EvaluationCatalogue
++    predictions: PredictionSnapshot
++    source: TrialSource
++    history: Samples[SampleHistoryAudit]
++
++    @model_validator(mode="after")
++    def verify_witnesses(self) -> Self:
++        sources = self.source.reconcile(self.predictions)
++        require_unique(
++            (row.sample_id for row in self.history), "historical witness sample"
++        )
++        if (
++            {row.sample_id for row in self.history} != sources.keys()
++            or self.catalogue.bundle_digest != self.predictions.cohort.bundle_digest
++        ):
++            raise ValueError("historical export must cover the exact trial and Bundle")
++        executions = {
++            row.sample_id: row.execution.execution_id
++            for row in self.predictions.entries
++        }
++        catalogue_digest = canonical_digest(self.catalogue)
++        for witness in self.history:
++            row = sources[witness.sample_id]
++            if (
++                witness.scope,
++                witness.execution_id,
++                witness.evidence,
++                witness.catalogue_digest,
++                canonical_digest(witness),
++            ) != (
++                self.source.scope,
++                executions[witness.sample_id],
++                row.evidence,
++                catalogue_digest,
++                row.history_digest,
++            ):
++                raise ValueError(
++                    "historical witness differs from the independently pinned sample"
++                )
++        return self
++
++
++@dataclass(frozen=True, slots=True)
++class _ExportedSample:
++    catalogue: EvaluationCatalogue
++    prediction: SamplePrediction
++    source: SampleSource
++    audit: SampleHistoryAudit
++
++
++def _scope(scope: IdempotencyScope, execution_id: str) -> dict[str, str]:
++    return {
++        "project": scope.project_id,
++        "client": scope.client_id,
++        "execution": execution_id,
++    }
++
++
++async def _dispatches(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    history: HistoricalSource,
++) -> tuple[HistoricalSource, tuple[DispatchAudit, ...]]:
++    rows = await connection.execute(
++        text("""
++            WITH chosen AS (
++                SELECT project_id, client_id, execution_id, dispatch_id, node_run_id,
++                       attempt_id, send_admitted, record
++                FROM jimu_workflow.dispatch_intents
++                WHERE (project_id, client_id, execution_id) = (:project, :client, :execution)
++                ORDER BY dispatch_id COLLATE "C" LIMIT :limit
++            )
++            SELECT i.dispatch_id, i.node_run_id, i.attempt_id, i.send_admitted,
++                i.record::text AS intent_body, r.record::text AS on_time_body,
++                r.fence_qualified, l.record::text AS late_body
++            FROM chosen i
++                LEFT JOIN jimu_workflow.dispatch_results r
++                    ON (i.project_id, i.client_id, i.execution_id, i.dispatch_id)
++                    = (r.project_id, r.client_id, r.execution_id, r.dispatch_id) AND NOT r.late
++                LEFT JOIN jimu_workflow.dispatch_results l
++                    ON (i.project_id, i.client_id, i.execution_id, i.dispatch_id)
++                    = (l.project_id, l.client_id, l.execution_id, l.dispatch_id) AND l.late
++            ORDER BY i.dispatch_id COLLATE "C"
++        """),
++        {**_scope(scope, history.execution.execution_id), "limit": _MAX_DISPATCHES + 1},
++    )
++    records = rows.all()
++    if len(records) > _MAX_DISPATCHES:
++        raise EvaluationHistoryError("evaluation_dispatch_limit")
++    models = {row.model_invocation_id: row for row in history.models}
++    tools = {row.tool_execution_id: row for row in history.tools}
++    if len(records) == 0:
++        if models or tools:
++            raise EvaluationHistoryError("evaluation_dispatch_inventory_missing")
++        return history, ()
++    audits = []
++    witnessed_ids: set[str] = set()
++    for row in records:
++        intent = DispatchIntent.model_validate_json(row.intent_body)
++        on_time = (
++            None
++            if row.on_time_body is None
++            else RESULT_ADAPTER.validate_json(row.on_time_body)
++        )
++        late = (
++            None
++            if row.late_body is None
++            else RESULT_ADAPTER.validate_json(row.late_body)
++        )
++        tool = isinstance(intent.target, ToolDispatchTarget)
++        if (
++            intent.dispatch_id != row.dispatch_id
++            or intent.stable_json() != row.intent_body
++            or (on_time is None and not row.send_admitted)
++            or (
++                on_time is not None
++                and (
++                    on_time.stable_json() != row.on_time_body
++                    or isinstance(on_time, ToolDispatchResult) != tool
++                    or (on_time.boundary != "not_dispatched" and not row.send_admitted)
++                )
++            )
++            or (
++                late is not None
++                and (
++                    late.stable_json() != row.late_body
++                    or isinstance(late, ToolDispatchResult) != tool
++                    or not row.send_admitted
++                    or late.boundary != "acknowledged"
++                    or (on_time is not None and on_time.boundary == "not_dispatched")
++                )
++            )
++        ):
++            raise EvaluationHistoryError("evaluation_dispatch_record_mismatch")
++        normalized: ModelInvocation | ToolExecution | None = None
++        if isinstance(on_time, ToolDispatchResult):
++            normalized = on_time.execution
++        elif isinstance(on_time, ModelDispatchResult):
++            normalized = on_time.invocation
++        if (
++            row.send_admitted
++            and normalized is None
++            and (on_time is None or on_time.boundary != "not_dispatched")
++        ):
++            # The journal has a physical admission whose outcome cannot populate v1 metrics.
++            raise EvaluationHistoryError("evaluation_dispatch_unsettled")
++        if normalized is not None:
++            if (
++                normalized.execution_id,
++                normalized.node_run_ref.record_id,
++                normalized.attempt_ref.record_id,
++            ) != (history.execution.execution_id, row.node_run_id, row.attempt_id):
++                raise EvaluationHistoryError("evaluation_dispatch_attempt_mismatch")
++            if isinstance(normalized, ToolExecution):
++                if normalized.tool_execution_id != row.dispatch_id:
++                    raise EvaluationHistoryError("evaluation_dispatch_id_mismatch")
++                tools.setdefault(row.dispatch_id, normalized)
++            else:
++                if normalized.model_invocation_id != row.dispatch_id:
++                    raise EvaluationHistoryError("evaluation_dispatch_id_mismatch")
++                models.setdefault(row.dispatch_id, normalized)
++            witnessed_ids.add(row.dispatch_id)
++        retained = tuple(
++            RetainedResponse(late=is_late, role=role, digest=digest)
++            for is_late, result in ((False, on_time), (True, late))
++            if isinstance(result, ModelDispatchResult)
++            for role, digest in _retained(result)
++        )
++        audits.append(
++            DispatchAudit(
++                dispatch_id=row.dispatch_id,
++                node_run_id=row.node_run_id,
++                attempt_id=row.attempt_id,
++                intent_digest=canonical_digest(intent),
++                on_time_digest=None if on_time is None else canonical_digest(on_time),
++                late_digest=None if late is None else canonical_digest(late),
++                send_admitted=row.send_admitted,
++                fence_qualified=row.fence_qualified,
++                retained_responses=retained,
++            )
++        )
++    if witnessed_ids != set(models) | set(tools):
++        raise EvaluationHistoryError("evaluation_dispatch_inventory_unreconciled")
++    complete = replace(
++        history,
++        models=tuple(models[key] for key in sorted(models)),
++        tools=tuple(tools[key] for key in sorted(tools)),
++    )
++    # Compare normalized selected results against the same scoped raw journal, including
++    # Tool authority transformations, configured targets and request identity.
++    await read_journal_witnesses(connection, scope, complete)
++    return complete, tuple(audits)
++
++
++def _retained(
++    result: ModelDispatchResult,
++) -> tuple[tuple[Literal["raw", "normalized"], str], ...]:
++    raw = (
++        result.response_digest
++        if result.response_bytes_omission_reason is None
++        and result.response_evidence_error is None
++        else None
++    )
++    normalized = result.normalized_response_digest
++    result_set: list[tuple[Literal["raw", "normalized"], str]] = []
++    if raw is not None:
++        result_set.append(("raw", raw))
++    if normalized is not None:
++        result_set.append(("normalized", normalized))
++    return tuple(result_set)
++
++
++async def _verify_responses(
++    lifecycle: LocalEvidenceLifecycle,
++    grant: EvidenceAccessGrant,
++    execution_id: str,
++    dispatches: tuple[DispatchAudit, ...],
++) -> None:
++    remaining = _MAX_EVIDENCE_BYTES
++    for dispatch in dispatches:
++        for row in dispatch.retained_responses:
++            if remaining == 0:
++                raise EvaluationHistoryError("evaluation_model_evidence_bytes_limit")
++            read = await lifecycle.read_model_audit(
++                grant,
++                execution_id,
++                dispatch.dispatch_id,
++                late=row.late,
++                role=row.role,
++                expected_digest=row.digest,
++                max_bytes=remaining,
++            )
++            if read.status != "available" or read.content is None:
++                raise EvaluationHistoryError(f"evaluation_model_evidence_{read.status}")
++            remaining -= len(read.content)
++
++
++async def _locators(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    execution_id: str,
++) -> tuple[EvidenceLocator, ...]:
++    rows = await connection.execute(
++        text("""
++            SELECT node_run_id, attempt_id, output_key, output_digest
++            FROM jimu_workflow.produced_outputs
++            WHERE (project_id, client_id, execution_id) = (:project, :client, :execution)
++                AND output_kind = 'evidence'
++            ORDER BY output_key COLLATE "C", node_run_id COLLATE "C", attempt_id COLLATE "C"
++            LIMIT :limit
++        """),
++        {**_scope(scope, execution_id), "limit": _MAX_EVIDENCE + 1},
++    )
++    records = rows.all()
++    if len(records) > _MAX_EVIDENCE:
++        raise EvaluationHistoryError("evaluation_evidence_limit")
++    result = []
++    for row in records:
++        kind, _, evidence_id = row.output_key.partition(".")
++        if kind != "evidence" or not evidence_id:
++            raise EvaluationHistoryError("evaluation_evidence_key_mismatch")
++        result.append(
++            EvidenceLocator(
++                execution_id=execution_id,
++                node_run_id=row.node_run_id,
++                attempt_id=row.attempt_id,
++                evidence_id=evidence_id,
++                output_digest=row.output_digest,
++            )
++        )
++    return tuple(result)
++
++
++async def _verify_evidence(
++    lifecycle: LocalEvidenceLifecycle,
++    grant: EvidenceAccessGrant,
++    locators: tuple[EvidenceLocator, ...],
++    known: dict[str, EvidenceAsset],
++) -> tuple[ExecutionEvidence, ...]:
++    assets: dict[str, EvidenceAsset] = {}
++    total = 0
++    for locator in locators:
++        if total >= _MAX_EVIDENCE_BYTES:
++            raise EvaluationHistoryError("evaluation_evidence_bytes_limit")
++        read = await lifecycle.read_evidence(
++            grant, locator, max_bytes=_MAX_EVIDENCE_BYTES - total
++        )
++        if read.status != "available" or read.asset is None or read.content is None:
++            raise EvaluationHistoryError(f"evaluation_evidence_{read.status}")
++        asset = read.asset
++        expected = known.get(asset.evidence_id)
++        if (expected is not None and expected != asset) or assets.setdefault(
++            asset.evidence_id, asset
++        ) != asset:
++            raise EvaluationHistoryError("evaluation_evidence_identity_mismatch")
++        total += asset.byte_size
++        if total > _MAX_EVIDENCE_BYTES:
++            raise EvaluationHistoryError("evaluation_evidence_bytes_limit")
++    if known.keys() - assets.keys():
++        raise EvaluationHistoryError("evaluation_evidence_missing")
++    return tuple(
++        ExecutionEvidence(
++            ref=EvidenceRef(record_kind=_K.EVIDENCE, record_id=key),
++            digest=canonical_digest(assets[key]),
++        )
++        for key in sorted(assets)
++    )
++
++
++def _required_assets(messages: Iterable[NodeMessage]) -> dict[str, EvidenceAsset]:
++    assets: dict[str, EvidenceAsset] = {}
++    for message in messages:
++        if isinstance(
++            message,
++            (GroundingMessage, ObservationMessage, ToolMessage, DecisionMessage),
++        ):
++            for asset in message.evidence:
++                if assets.setdefault(asset.evidence_id, asset) != asset:
++                    raise EvaluationHistoryError(
++                        "evaluation_evidence_identity_mismatch"
++                    )
++    return assets
++
++
++def _sample_prediction(
++    sample: DatasetSample,
++    task: AcceptedTask,
++    history: HistoricalSource,
++    profiles: tuple[ProfilePrediction, ...],
++) -> SamplePrediction:
++    coverage = history.finalization.coverage
++    return SamplePrediction(
++        sample_id=sample.sample_id,
++        task=task,
++        execution=history.execution,
++        model_invocations=history.models,
++        tool_executions=history.tools,
++        discovery=coverage.discovery_outcome,
++        profiles=profiles,
++        decision=coverage.summary_result,
++        decision_records=history.finalization.decisions,
++        auto_cleared=None,
++    )
++
++
++class HistoricalEvaluationExporter:
++    """Read the selected holdout from a trusted authorized inspection host."""
++
++    def __init__(
++        self,
++        engine: AsyncEngine,
++        releases: ReleaseManager,
++        store: LocalBundleStore,
++        media: LocalMediaStore,
++        evidence: LocalEvidenceLifecycle,
++        limits: BundleLimits,
++    ) -> None:
++        self._engine = engine
++        self._releases = releases
++        self._store = store
++        self._media = media
++        self._evidence = evidence
++        self._limits = limits
++
++    async def export(
++        self,
++        dataset: DatasetManifest,
++        request: HistoryExportRequest,
++    ) -> HistoricalTrialExport:
++        dataset = DatasetManifest.model_validate(dataset)
++        request = HistoryExportRequest.model_validate(request)
++        scope = request.scope
++        if dataset.scope != scope:
++            raise EvaluationHistoryError("evaluation_scope_mismatch")
++        require_unique(
++            (row.sample_id for row in request.selections), "evaluation sample selection"
++        )
++        require_unique(
++            (row.source.execution_ref for row in request.selections),
++            "evaluation execution selection",
++        )
++        samples = {
++            row.sample_id: row for row in dataset.samples if row.split == "holdout"
++        }
++        if samples.keys() != {row.sample_id for row in request.selections}:
++            raise EvaluationHistoryError("evaluation_selection_must_exhaust_holdout")
++        # All database witnesses in the trial come from a single read snapshot.
++        exported = []
++        async with self._engine.connect() as raw:
++            connection = await raw.execution_options(isolation_level="REPEATABLE READ")
++            async with connection.begin():
++                await connection.execute(text("SET TRANSACTION READ ONLY"))
++                for row in sorted(request.selections, key=lambda item: item.sample_id):
++                    try:
++                        exported.append(
++                            await self._sample(
++                                connection,
++                                scope,
++                                request.actor,
++                                samples[row.sample_id],
++                                row.source,
++                            )
++                        )
++                    except EvaluationHistoryError:
++                        raise
++                    except ValueError as exc:
++                        code = getattr(exc, "code", "record_validation")
++                        raise EvaluationHistoryError(
++                            f"evaluation_history_{code}"
++                        ) from exc
++        first = exported[0]
++        catalogue = first.catalogue
++        if any(row.catalogue != catalogue for row in exported):
++            raise EvaluationHistoryError("evaluation_mixed_bundle_catalogues")
++        predictions = PredictionSnapshot(
++            schema_version="1.0.0",
++            record_id=request.prediction_id,
++            version=request.version,
++            scope=scope,
++            dataset=dataset.pin(),
++            split="holdout",
++            cohort=ExecutionCohort.from_execution(first.prediction.execution.pins),
++            producer=request.actor,
++            entries=tuple(row.prediction for row in exported),
++        )
++        source = TrialSource(
++            schema_version="1.0.0",
++            record_id=request.source_id,
++            version=request.version,
++            dataset=dataset.pin(),
++            predictions=predictions.pin(),
++            scope=scope,
++            rows=tuple(row.source for row in exported),
++        )
++        return HistoricalTrialExport(
++            schema_version="1.0.0",
++            catalogue=catalogue,
++            predictions=predictions,
++            source=source,
++            history=tuple(row.audit for row in exported),
++        )
++
++    async def _sample(
++        self,
++        connection: AsyncConnection,
++        scope: IdempotencyScope,
++        actor: ActorRef,
++        sample: DatasetSample,
++        source: ReplayExecutionSource,
++    ) -> _ExportedSample:
++        eid = source.execution_ref.record_id
++        locked = await repo.get_execution(connection, scope, eid)
++        if locked is None:
++            raise EvaluationHistoryError("evaluation_execution_unavailable")
++        history = await load_historical_source(connection, scope, source)
++        history, dispatches = await _dispatches(connection, scope, history)
++        historical = await read_historical_capabilities(
++            connection, scope, history.execution
++        )
++        if historical is None:
++            raise EvaluationHistoryError("evaluation_historical_capabilities_missing")
++        resolved = await to_thread(
++            resolve_execution_pins,
++            self._releases,
++            self._store,
++            locked.task,
++            scope=scope,
++            host=historical.snapshot,
++            validation_at=historical.validation_at,
++            limits=self._limits,
++        )
++        if (resolved.pins, resolved.policy_ref) != (
++            history.execution.pins,
++            locked.execution_policy_ref,
++        ):
++            raise EvaluationHistoryError("evaluation_runtime_input_pin_mismatch")
++        catalogue = catalogue_from_bundle(
++            resolved.catalogue, resolved.pins.bundle_digest
++        )
++        try:
++            media = await self._media.verified_task_original(scope, locked.task)
++        except MediaError as exc:
++            raise EvaluationHistoryError(
++                "evaluation_original_media_unavailable"
++            ) from exc
++        if (media.asset.media_ref.sha256, media.asset.dimensions) != (
++            sample.image_sha256,
++            sample.image_dimensions,
++        ):
++            raise EvaluationHistoryError("evaluation_dataset_image_mismatch")
++        data = await load_records(connection, scope, locked)
++        inputs = data.inputs()
++        if (
++            inputs.context is not None
++            and inputs.context.inputs.media_asset != media.asset
++        ):
++            raise EvaluationHistoryError("evaluation_context_media_mismatch")
++        grounding = inputs.grounding
++        objects = () if grounding is None else grounding.objects
++        coverage = history.finalization.coverage
++        decisions = history.finalization.decisions
++        profiles = project_profiles(
++            catalogue, media.asset, coverage, objects, history.facts, decisions
++        )
++        grant = EvidenceAccessGrant(
++            scope=scope, actor=actor, task_id=locked.task.task_id
++        )
++        await _verify_responses(self._evidence, grant, eid, dispatches)
++        evidence = await _verify_evidence(
++            self._evidence,
++            grant,
++            await _locators(connection, scope, eid),
++            _required_assets(data.messages.values()),
++        )
++        refs = {row.ref for row in evidence}
++        if (
++            not {ref for row in (*objects, *history.facts) for ref in row.evidence_refs}
++            | {ref for row in decisions for ref in row.explanation.evidence_refs}
++            <= refs
++        ):
++            raise EvaluationHistoryError("evaluation_required_evidence_missing")
++        prediction = _sample_prediction(sample, locked.task, history, profiles)
++        audit = SampleHistoryAudit(
++            schema_version="1.0.0",
++            scope=scope,
++            sample_id=sample.sample_id,
++            execution_id=eid,
++            finalization_digest=canonical_digest(history.finalization),
++            catalogue_digest=canonical_digest(catalogue),
++            artifacts=history.artifacts,
++            dispatches=dispatches,
++            evidence=evidence,
++        )
++        sample_source = SampleSource(
++            sample_id=sample.sample_id,
++            task_digest=canonical_digest(locked.task),
++            execution_digest=canonical_digest(history.execution),
++            execution_input_digest=resolved.pins.input_digest,
++            model_digests=tuple(canonical_digest(row) for row in history.models),
++            tool_digests=tuple(canonical_digest(row) for row in history.tools),
++            decision_digests=tuple(canonical_digest(row) for row in decisions),
++            evidence=evidence,
++            history_digest=canonical_digest(audit),
++        )
++        return _ExportedSample(catalogue, prediction, sample_source, audit)
+--- /dev/null
++++ b/src/jimu_runtime/evaluation/history_projection.py
+@@ -0,0 +1,273 @@
++"""Project scoring inputs from validated Bundle and terminal workflow records."""
++
++from jimu_runtime.bundle.catalogue import ArtifactCatalogue
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.domain.definition_support import reference_identity
++from jimu_runtime.domain.definitions.capabilities import (
++    ProfileDefinition,
++    QuestionDefinition,
++)
++from jimu_runtime.domain.definitions.tools import ToolPlanDefinition
++from jimu_runtime.domain.enums import ArtifactKind
++from jimu_runtime.domain.fact_schemas.models import FactSchemaDefinition
++from jimu_runtime.domain.fact_selectors import FactSchemaContentRef
++from jimu_runtime.domain.producers import ProducerCatalogue, ToolStepProducer
++from jimu_runtime.domain.rules.definitions import RuleDefinition, RuleSetDefinition
++from jimu_runtime.domain.runtime.coverage import ExecutionCoverage
++from jimu_runtime.domain.runtime.decisions import (
++    DecisionRecord,
++    EvaluatedRuleOutcome,
++    RulePath,
++)
++from jimu_runtime.domain.runtime.facts import (
++    FactRecord,
++    KnownFact,
++    ProfileContentRef,
++    QuestionFactSource,
++    ToolFactSource,
++)
++from jimu_runtime.domain.runtime.media import MediaAsset
++from jimu_runtime.domain.runtime.perception import ObjectRecord
++from jimu_runtime.evaluation.contracts import (
++    EvaluationCatalogue,
++    FactBinding,
++    GeometryPrediction,
++    PredictedObject,
++    ProfileBinding,
++    ProfilePrediction,
++    QuestionBinding,
++    QuestionPrediction,
++    RuleBinding,
++    RulePrediction,
++    canonical_digest,
++)
++
++
++class EvaluationHistoryError(ValueError):
++    """Stable diagnostic for an unavailable or inadmissible historical source."""
++
++    def __init__(self, code: str) -> None:
++        self.code = code
++        super().__init__(code)
++
++
++def _fact_binding(
++    artifacts: ArtifactCatalogue, ref: FactSchemaContentRef
++) -> FactBinding:
++    artifact = artifacts.resolve(ref)
++    definition = require_definition(artifacts, ref, FactSchemaDefinition)
++    # The canonical authored value can omit defaults that validation materializes.
++    raw = (
++        None
++        if canonical_digest(definition) == ref.digest
++        else artifact.canonical_bytes.decode("utf-8")
++    )
++    return FactBinding(ref=ref, definition=definition, canonical_source=raw)
++
++
++def _profile_binding(
++    artifacts: ArtifactCatalogue,
++    profile_ref: ProfileContentRef,
++    definitions: tuple[ProducerCatalogue, ...],
++) -> ProfileBinding:
++    profile = require_definition(artifacts, profile_ref, ProfileDefinition)
++    questions = []
++    for ref in profile.question_refs:
++        question = require_definition(artifacts, ref, QuestionDefinition)
++        questions.append(
++            QuestionBinding(
++                question_ref=ref,
++                fact=_fact_binding(artifacts, question.primary_fact_schema_ref),
++            )
++        )
++    plan = require_definition(artifacts, profile.tool_plan_ref, ToolPlanDefinition)
++    steps = {(row.step_id, row.tool_ref): row for row in plan.steps}
++    geometry: dict[FactSchemaContentRef, FactBinding] = {}
++    for catalogue in definitions:
++        for fact in catalogue.declarations:
++            producer = fact.producer
++            if (
++                (
++                    fact.profile_ref is None
++                    or reference_identity(fact.profile_ref)
++                    != reference_identity(profile_ref)
++                )
++                or not isinstance(producer, ToolStepProducer)
++                or producer.tool_plan_ref != profile.tool_plan_ref
++            ):
++                continue
++            step = steps.get((producer.step_id, producer.tool_ref))
++            if step is None or not any(
++                (row.output_name, row.target_fact_key)
++                == (fact.output_name, fact.fact_key)
++                for row in step.fact_output_mappings
++            ):
++                raise EvaluationHistoryError("evaluation_geometry_binding_mismatch")
++            if fact.fact_schema_ref not in geometry:
++                geometry[fact.fact_schema_ref] = _fact_binding(
++                    artifacts, fact.fact_schema_ref
++                )
++    rules = []
++    for set_ref in profile.rule_set_refs:
++        rule_set = require_definition(artifacts, set_ref, RuleSetDefinition)
++        for rule_ref in rule_set.rule_refs:
++            rule = require_definition(artifacts, rule_ref, RuleDefinition)
++            rules.append(
++                RuleBinding(
++                    path=RulePath(rule_set_ref=set_ref, rule_ref=rule_ref),
++                    category=rule.violation_category,
++                )
++            )
++    return ProfileBinding(
++        profile_ref=profile_ref,
++        questions=tuple(questions),
++        geometry=tuple(geometry.values()),
++        rules=tuple(rules),
++    )
++
++
++def catalogue_from_bundle(
++    artifacts: ArtifactCatalogue, bundle_digest: str
++) -> EvaluationCatalogue:
++    """Read the complete scoring catalogue from an already verified exact Bundle."""
++    producers = tuple(
++        require_definition(artifacts, item.ref, ProducerCatalogue)
++        for item in artifacts.of_kind(ArtifactKind.FACT_PRODUCER_CATALOG)
++    )
++    return EvaluationCatalogue(
++        schema_version="1.0.0",
++        bundle_digest=bundle_digest,
++        profiles=tuple(
++            _profile_binding(
++                artifacts,
++                ProfileContentRef.model_validate(item.ref.model_dump()),
++                producers,
++            )
++            for item in sorted(
++                artifacts.of_kind(ArtifactKind.PROFILE),
++                key=lambda item: item.ref.artifact_id,
++            )
++        ),
++    )
++
++
++def _rules(decision: DecisionRecord | None) -> tuple[RulePrediction, ...]:
++    if decision is None:
++        return ()
++    return (
++        *(
++            RulePrediction(
++                path=row.rule,
++                status=row.result.outcome,
++                predicate=row.result.predicate.truth
++                if isinstance(row.result, EvaluatedRuleOutcome)
++                else None,
++            )
++            for row in decision.rule_evaluations
++        ),
++        *(
++            RulePrediction(path=path, status="not_evaluated")
++            for path in decision.explanation.not_evaluated_rules
++        ),
++    )
++
++
++def _object(
++    media: MediaAsset,
++    obj: ObjectRecord,
++    binding: ProfileBinding,
++    facts: tuple[FactRecord, ...],
++    decision: DecisionRecord | None,
++) -> PredictedObject:
++    if (
++        obj.source_media_ref != media.media_ref
++        or obj.coordinate_system.dimensions != media.dimensions
++    ):
++        raise EvaluationHistoryError("evaluation_object_image_mismatch")
++    expected = {row.question_ref: row.fact.ref for row in binding.questions}
++    geometry_refs = {row.ref for row in binding.geometry}
++    questions: dict[str, QuestionPrediction] = {}
++    geometry: dict[FactSchemaContentRef, GeometryPrediction] = {}
++    for row in facts:
++        if (row.profile_ref, row.execution_id, row.object_id) != (
++            obj.profile_ref,
++            obj.execution_id,
++            obj.object_id,
++        ):
++            raise EvaluationHistoryError("evaluation_fact_owner_mismatch")
++        producer = row.source
++        value = row.value if isinstance(row, KnownFact) else None
++        if isinstance(producer, QuestionFactSource):
++            if (
++                producer.question_ref not in obj.effective_question_refs
++                or expected.get(producer.question_ref) != row.fact_schema_ref
++            ):
++                raise EvaluationHistoryError("evaluation_question_fact_mismatch")
++            key = producer.question_ref.artifact_id
++            if key in questions:
++                raise EvaluationHistoryError("evaluation_question_fact_ambiguous")
++            questions[key] = QuestionPrediction(
++                question_ref=producer.question_ref, status=row.status, value=value
++            )
++        elif isinstance(producer, ToolFactSource):
++            if row.fact_schema_ref not in geometry_refs:
++                raise EvaluationHistoryError("evaluation_tool_fact_mismatch")
++            if row.fact_schema_ref in geometry:
++                raise EvaluationHistoryError("evaluation_geometry_fact_ambiguous")
++            geometry[row.fact_schema_ref] = GeometryPrediction(
++                fact_schema_ref=row.fact_schema_ref, status=row.status, value=value
++            )
++    return PredictedObject(
++        object_id=obj.object_id,
++        box=obj.bbox,
++        questions=tuple(questions.values()),
++        geometry=tuple(geometry.values()),
++        rules=_rules(decision),
++    )
++
++
++def project_profiles(
++    catalogue: EvaluationCatalogue,
++    media: MediaAsset,
++    coverage: ExecutionCoverage,
++    objects: tuple[ObjectRecord, ...],
++    facts: tuple[FactRecord, ...],
++    decisions: tuple[DecisionRecord, ...],
++) -> tuple[ProfilePrediction, ...]:
++    bindings = {row.profile_ref: row for row in catalogue.profiles}
++    outcomes = {row.profile_ref: row for row in coverage.profiles}
++    object_map = {row.object_id: row for row in objects}
++    decision_map = {row.object_ref.record_id: row for row in decisions}
++    grouped: dict[str, list[FactRecord]] = {}
++    for fact in facts:
++        if fact.object_id is None or fact.object_id not in object_map:
++            raise EvaluationHistoryError("evaluation_fact_without_grounded_object")
++        grouped.setdefault(fact.object_id, []).append(fact)
++    result = []
++    for ref in coverage.hit_profile_refs:
++        profile = outcomes.get(ref)
++        binding = bindings.get(ref)
++        if binding is None or profile is None:
++            raise EvaluationHistoryError("evaluation_coverage_profile_mismatch")
++        projected = []
++        for item in profile.object_refs:
++            obj = object_map.get(item.record_id)
++            if obj is None or obj.profile_ref != ref:
++                raise EvaluationHistoryError("evaluation_coverage_object_mismatch")
++            projected.append(
++                _object(
++                    media,
++                    obj,
++                    binding,
++                    tuple(grouped.get(obj.object_id, ())),
++                    decision_map.get(obj.object_id),
++                )
++            )
++        result.append(
++            ProfilePrediction(
++                profile_ref=ref,
++                grounding=profile.grounding_outcome,
++                objects=tuple(projected),
++            )
++        )
++    return tuple(result)
+--- /dev/null
++++ b/tests/contract/test_wp06_eval_history.py
+@@ -0,0 +1,492 @@
++"""Re-score a signed, persisted inspection without calling its models or tools."""
++
++import asyncio
++import json
++from collections import Counter
++from pathlib import Path
++
++import pytest
++from fixtures.wp06.evaluation_sample import reviewed, synthetic_inputs
++from fixtures.wp06.evaluation_sample import score as score_fixture
++from pydantic import ValidationError
++from sqlalchemy import text
++
++from examples.nonmotor_vehicle_illegal_parking.compilable.lifecycle import ACTOR
++from examples.nonmotor_vehicle_illegal_parking.compilable.scene import LIMITS
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.domain.definitions.tools import ToolDefinition
++from jimu_runtime.domain.enums import ArtifactKind, DecisionResult, RuntimeRecordKind
++from jimu_runtime.domain.runtime.media import BBoxXYXY
++from jimu_runtime.domain.runtime.replay import ExecutionRef, ReplayExecutionSource
++from jimu_runtime.domain.values import EnumValue
++from jimu_runtime.evaluation import (
++    DatasetManifest,
++    ScoringProtocol,
++    TruthSnapshot,
++    score,
++)
++from jimu_runtime.evaluation.contracts import (
++    DatasetSample,
++    LabeledObject,
++    QuestionLabel,
++    SampleLabels,
++    canonical_digest,
++)
++from jimu_runtime.evaluation.history import (
++    EvaluationHistoryError,
++    HistoricalEvaluationExporter,
++    HistoryExportRequest,
++    HistorySelection,
++)
++from jimu_runtime.evaluation.scoring import Ratio
++from jimu_runtime.gateway.bridge_tools import ToolExecutionAdapter
++from jimu_runtime.inspection.geometry import synthetic_cpu_implementations
++from jimu_runtime.inspection.geometry.node import GeometryNodeAdapter
++from jimu_runtime.inspection.media.retention import LocalEvidenceLifecycle
++from jimu_runtime.tools.executor import ToolExecutor
++from jimu_runtime.tools.registry import ToolWorkerRegistry
++from jimu_runtime.tools.step_attempts import StepAttemptStore
++from jimu_runtime.workflow import repository
++from jimu_runtime.workflow.worker import WorkerStep
++from jimu_runtime.workflow.worker_inspection import (
++    VerifiedMediaWorkerHost,
++    inspection_worker,
++)
++from tests.fixtures.wp04 import http_support
++from tests.fixtures.wp05.perception import perception_fixture
++
++loopback_only = http_support.loopback_only
++_BOX = (40.0, 23.0, 52.0, 33.0)
++
++
++async def _table_counts(engine, scope, eid):
++    counts = {}
++    tables = (
++        "executions",
++        "jobs",
++        "dispatch_intents",
++        "dispatch_results",
++        "produced_outputs",
++    )
++    async with engine.connect() as connection:
++        for table in tables:
++            counts[table] = await connection.scalar(
++                text(f"""
++                    SELECT count(*) FROM jimu_workflow.{table}
++                    WHERE (project_id, client_id, execution_id) = (:p, :c, :e)
++                """),
++                {"p": scope.project_id, "c": scope.client_id, "e": eid},
++            )
++    return counts
++
++
++@pytest.mark.parametrize("scenario", ["violation", "partial", "no_hits"])
++def test_scoring_export_reopens_the_verified_history(
++    tmp_path: Path, loopback_only, scenario
++):
++    with_target = scenario != "no_hits"
++
++    async def run():
++        calls: Counter[str] = Counter()
++
++        async def peer(reader, writer):
++            request = await http_support.read_request(reader)
++            body = json.loads(request.body)
++            schema = body["response_format"]["json_schema"]["schema"]
++            name = schema["$id"].split(":")[-2]
++            calls[name] += 1
++            answers = {
++                "vehicle_type": "electric_bicycle",
++                "parking_state": "parked",
++                "parking_position": "over_boundary",
++            }
++            if name == "object_observation-result" and (
++                calls[name] == 1 or scenario == "partial"
++            ):
++                answers["object_id"] = "outside.claimed.object"
++            reply = {
++                "profile_discovery-result": {
++                    "profile_hits": ["nonmotor_vehicle"] if with_target else []
++                },
++                "object_grounding-result": {"boxes": [{"xyxy": _BOX}]},
++                "object_observation-result": answers,
++                "candidate_prediction-result": {"categories": []},
++            }[name]
++            raw = http_support.chat_body(model=body["model"], content=json.dumps(reply))
++            writer.write(
++                http_support.response(
++                    raw,
++                    headers=(
++                        (b"X-Request-ID", f"historical-{sum(calls.values())}".encode()),
++                        (b"X-Jimu-Deployment-Version", b"1.0.0"),
++                        (b"X-Jimu-Model-Version", b"1.0.0"),
++                    ),
++                )
++            )
++            await writer.drain()
++
++        async with http_support.http_peer(loopback_only, peer) as url:
++            async with perception_fixture(tmp_path, url, with_media=True) as fixture:
++                accepted = fixture.accepted
++                scope, eid = (
++                    accepted.task.idempotency_scope,
++                    accepted.execution.execution_id,
++                )
++                media = fixture.media_store
++                assert media is not None
++                catalogue = fixture.scene.execution.catalogue
++                tools = ToolWorkerRegistry(
++                    synthetic_cpu_implementations(
++                        fixture.resources,
++                        "cpu",
++                        "inspection-tools",
++                        tuple(
++                            require_definition(catalogue, row.ref, ToolDefinition)
++                            for row in catalogue.of_kind(ArtifactKind.TOOL)
++                        ),
++                        fixture.tool_proofs,
++                        synthetic_image_digests=frozenset(
++                            {accepted.task.media_ref.sha256}
++                        ),
++                    )
++                )
++                adapter = GeometryNodeAdapter(
++                    media,
++                    ToolExecutionAdapter(
++                        ToolExecutor(tools),
++                        StepAttemptStore(fixture.application, actor=ACTOR),
++                        fixture.journal,
++                        fixture.host.capabilities,
++                    ),
++                )
++                tool_calls = 0
++
++                async def execute_tools(*args):
++                    nonlocal tool_calls
++                    tool_calls += 1
++                    return await adapter.execute(*args)
++
++                async def capture_registry(request_scope, task):
++                    source = await fixture.host.worker_source(request_scope, task)
++                    return source.device, source.camera
++
++                worker = inspection_worker(
++                    fixture.application,
++                    fixture.releases,
++                    fixture.store,
++                    host=VerifiedMediaWorkerHost(
++                        media, fixture.host.capabilities, capture_registry
++                    ),
++                    bundle_limits=LIMITS,
++                    media=media,
++                    gateway=fixture.gateway,
++                    execute_tools=execute_tools,
++                    model_resource_scope_id="model",
++                )
++                for index in range(24):
++                    step = await worker.run_once(
++                        scope, eid, owner=f"eval-{index}", lease_ms=10000
++                    )
++                    if step is WorkerStep.FINALIZED:
++                        break
++                    if step is WorkerStep.RETRY_SCHEDULED:
++                        await asyncio.sleep(0.025)
++                else:
++                    raise AssertionError("signed inspection did not finalize")
++                async with fixture.application.connect() as connection:
++                    locked = await repository.get_execution(connection, scope, eid)
++                assert locked is not None
++                execution = locked.execution
++                original = await media.verified_task_original(scope, locked.task)
++                dataset = DatasetManifest(
++                    schema_version="1.0.0",
++                    record_id="signed-scene-dataset",
++                    version="1.0.0",
++                    scope=scope,
++                    samples=(
++                        DatasetSample(
++                            sample_id="scene-a",
++                            image_sha256=original.asset.media_ref.sha256,
++                            image_dimensions=original.asset.dimensions,
++                            dedup_group="synthetic-scene",
++                            split="holdout",
++                        ),
++                    ),
++                )
++                request = HistoryExportRequest(
++                    scope=scope,
++                    actor=ACTOR,
++                    prediction_id="signed-scene-predictions",
++                    source_id="signed-scene-source",
++                    version="1.0.0",
++                    selections=(
++                        HistorySelection(
++                            sample_id="scene-a",
++                            source=ReplayExecutionSource(
++                                execution_ref=ExecutionRef(
++                                    record_kind=RuntimeRecordKind.EXECUTION,
++                                    record_id=eid,
++                                ),
++                                task_id=locked.task.task_id,
++                                pins=execution.pins,
++                            ),
++                        ),
++                    ),
++                )
++                evidence = LocalEvidenceLifecycle(media, lambda *_: None)
++                exporter = HistoricalEvaluationExporter(
++                    fixture.application,
++                    fixture.releases,
++                    fixture.store,
++                    media,
++                    evidence,
++                    LIMITS,
++                )
++                calls_before = calls.copy()
++                tool_calls_before = tool_calls
++                db_before = await _table_counts(fixture.application, scope, eid)
++                frozen = await exporter.export(dataset, request)
++                assert frozen == await exporter.export(dataset, request)
++                serialized = tmp_path / "historical-evaluation-export.json"
++                serialized.write_text(frozen.model_dump_json(), encoding="utf-8")
++                restored = type(frozen).model_validate_json(serialized.read_bytes())
++                assert (
++                    restored == frozen and restored.source.pin() == frozen.source.pin()
++                )
++                edited = json.loads(frozen.model_dump_json())
++                edited["history"][0]["finalization_digest"] = "1" * 64
++                with pytest.raises(ValidationError, match="historical witness"):
++                    type(frozen).model_validate_json(json.dumps(edited))
++                edited = json.loads(frozen.model_dump_json())
++                edited["catalogue"]["profiles"] = []
++                with pytest.raises(ValidationError, match="historical witness"):
++                    type(frozen).model_validate_json(json.dumps(edited))
++                assert calls == calls_before
++                assert tool_calls == tool_calls_before
++                assert db_before == await _table_counts(fixture.application, scope, eid)
++                (prediction,) = frozen.predictions.entries
++                assert prediction.auto_cleared is None
++                (profile,) = frozen.catalogue.profiles
++                protocol = ScoringProtocol(
++                    schema_version="1.0.0",
++                    protocol_id="signed-parking-test",
++                    version="1.0.0",
++                    catalogue=frozen.catalogue,
++                    iou_threshold_basis_points=5000,
++                    matching="greedy_iou_then_truth_id_then_prediction_id",
++                )
++                objects = ()
++                if with_target:
++                    parked = next(
++                        row
++                        for row in profile.questions
++                        if row.question_ref.artifact_id == "parking_state"
++                    )
++                    objects = (
++                        LabeledObject(
++                            label_id="gold-obj",
++                            profile_ref=profile.profile_ref,
++                            box=BBoxXYXY(xyxy=_BOX),
++                            questions=(
++                                QuestionLabel(
++                                    question_ref=parked.question_ref,
++                                    value=EnumValue(kind="enum", value="parked"),
++                                ),
++                            ),
++                            geometry=(),
++                            rules=(),
++                        ),
++                    )
++                # Independent fixture labels and boxes. The admitted catalogue only addresses labels.
++                labels = SampleLabels(
++                    present_profiles=(profile.profile_ref,) if with_target else (),
++                    objects=objects,
++                    task_violation=with_target,
++                    complete_grounding_profiles=(profile.profile_ref,),
++                )
++                truth = TruthSnapshot(
++                    schema_version="1.0.0",
++                    record_id="signed-gold-truth",
++                    version="1.0.0",
++                    dataset=dataset.pin(),
++                    scope=scope,
++                    split="holdout",
++                    prior=None,
++                    catalogue_digest=canonical_digest(protocol.catalogue),
++                    entries=(
++                        reviewed(
++                            dataset, "scene-a", labels, catalogue=protocol.catalogue
++                        ),
++                    ),
++                )
++
++                def run_score():
++                    return score(
++                        dataset,
++                        truth,
++                        frozen.predictions,
++                        protocol,
++                        source=frozen.source,
++                        expected_source=frozen.source.pin(),
++                        expected_truth=truth.pin(),
++                        expected_protocol=protocol.pin(),
++                    )
++
++                report = run_score()
++                assert report.pin() == run_score().pin()
++                assert frozen.source.rows[0].history_digest == canonical_digest(
++                    frozen.history[0]
++                )
++                assert (
++                    report.summary.automatic_release_observation_coverage
++                    == Ratio.of(0, 1)
++                )
++                assert report.summary.automatic_release_coverage == Ratio.of(0, 0)
++                assert report.summary.automatic_release_risk == Ratio.of(0, 0)
++                assert report.summary.automatic_release_unobserved == 1
++                if with_target:
++                    assert report.summary.erroneous_release_rate is None
++                    assert (
++                        report.summary.labeled_violations_without_release_observation
++                        == 1
++                    )
++                    assert prediction.decision is (
++                        DecisionResult.UNCERTAIN
++                        if scenario == "partial"
++                        else DecisionResult.VIOLATION
++                    )
++                    assert calls_before["object_observation-result"] == 2
++                    assert (
++                        sum(
++                            row.node_id == "N04" for row in prediction.model_invocations
++                        )
++                        == 2
++                    )
++                    assert len(prediction.tool_executions) == 3
++                    assert report.summary.task_violation_recall == Ratio.of(
++                        int(scenario == "violation"), 1
++                    )
++                    metric = next(
++                        row
++                        for row in report.summary.questions
++                        if row.question_ref == parked.question_ref
++                    )
++                    if scenario == "partial":
++                        assert metric.comparison.coverage == Ratio.of(0, 1)
++                        assert metric.comparison.accuracy == Ratio.of(0, 0)
++                    else:
++                        assert metric.comparison.accuracy == Ratio.of(1, 1)
++                else:
++                    assert prediction.decision is DecisionResult.UNCERTAIN
++                    assert report.summary.no_hits_labeled_target_miss == Ratio.of(0, 1)
++                    assert not prediction.tool_executions
++
++                other = scope.model_copy(update={"client_id": "different-client"})
++                with pytest.raises(
++                    EvaluationHistoryError, match="execution_unavailable"
++                ):
++                    await exporter.export(
++                        dataset.model_copy(update={"scope": other}),
++                        request.model_copy(update={"scope": other}),
++                    )
++                if scenario == "violation":
++                    mismatched = request.selections[0]
++                    pinned = mismatched.source
++                    pinned = pinned.model_copy(
++                        update={
++                            "pins": pinned.pins.model_copy(
++                                update={"input_digest": "a" * 64}
++                            )
++                        }
++                    )
++                    with pytest.raises(
++                        EvaluationHistoryError, match="execution_pin_mismatch"
++                    ):
++                        await exporter.export(
++                            dataset,
++                            request.model_copy(
++                                update={
++                                    "selections": (
++                                        mismatched.model_copy(
++                                            update={"source": pinned}
++                                        ),
++                                    )
++                                }
++                            ),
++                        )
++                    original_path = (
++                        tmp_path / "media" / original.asset.storage.object_key
++                    )
++                    backup = original_path.with_suffix(".held")
++                    original_path.replace(backup)
++                    try:
++                        with pytest.raises(
++                            EvaluationHistoryError, match="original_media_unavailable"
++                        ):
++                            await exporter.export(dataset, request)
++                    finally:
++                        backup.replace(original_path)
++
++                    geometry = next(
++                        row
++                        for row in prediction.tool_executions
++                        if row.invocation_origin.step_id == "wheel_boundary_geometry"
++                    )
++                    sidecar = await media.read_tool_sidecar(
++                        scope, eid, geometry.tool_execution_id, "geometry"
++                    )
++                    geometry_path = (
++                        tmp_path / "media" / sidecar.asset.storage.object_key
++                    )
++                    held = geometry_path.with_suffix(".held")
++                    geometry_path.replace(held)
++                    try:
++                        with pytest.raises(
++                            EvaluationHistoryError, match="evaluation_evidence_missing"
++                        ):
++                            await exporter.export(dataset, request)
++                        same_size = held.read_bytes()
++                        geometry_path.write_bytes(
++                            bytes([same_size[0] ^ 1]) + same_size[1:]
++                        )
++                        geometry_path.chmod(0o600)
++                        with pytest.raises(
++                            EvaluationHistoryError, match="evaluation_evidence_corrupt"
++                        ):
++                            await exporter.export(dataset, request)
++                    finally:
++                        held.replace(geometry_path)
++                assert calls == calls_before
++                assert tool_calls == tool_calls_before
++                assert db_before == await _table_counts(fixture.application, scope, eid)
++
++    asyncio.run(run())
++
++
++def test_unobserved_clearance_is_distinct_from_negative_clearance_and_legacy_is_stable():
++    dataset, truth, predictions, protocol = synthetic_inputs()
++    frozen = score_fixture(
++        dataset, truth, predictions, protocol, expected_protocol=protocol.pin()
++    )
++    assert (
++        frozen.pin().digest
++        == "ac816e6d05c97cef855d57bab3e22a9e196a3da9c4e3a52de6682c5a22ff2767"
++    )
++    assert (
++        type(frozen).model_validate_json(frozen.model_dump_json()).pin() == frozen.pin()
++    )
++    changed = predictions.entries[0].model_copy(update={"auto_cleared": None})
++    mixed = predictions.model_copy(
++        update={"entries": (changed, *predictions.entries[1:])}
++    )
++    report = score_fixture(
++        dataset, truth, mixed, protocol, expected_protocol=protocol.pin()
++    )
++    rates = report.summary
++    assert rates.erroneous_release_rate is None
++    assert rates.confirmed_erroneous_releases == 1
++    assert rates.labeled_violations_without_release_observation == 1
++    assert rates.automatic_release_risk == Ratio.of(1, 2)
++    assert rates.automatic_release_coverage == Ratio.of(3, 6)
++    assert rates.automatic_release_observation_coverage == Ratio.of(6, 7)
++    assert rates.automatic_release_unobserved == 1

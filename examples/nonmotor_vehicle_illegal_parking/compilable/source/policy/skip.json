@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "skip",
+  "policy": {
+    "policy_kind": "tool_skip",
+    "condition_ast": true,
+    "on_false": "skip_with_reason",
+    "on_unknown": "block",
+    "on_missing_input": "block"
+  }
+}

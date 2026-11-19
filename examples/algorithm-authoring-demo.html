@@ -1,0 +1,723 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>算法创作与能力中心 · 积木 JIMU</title><style>
+:root{color-scheme:light;--paper:#f3f5f1;--ink:#1c3029;--green:#184d3c;--mint:#e6f3de;--muted:#53685e;--line:#ccd7cd;--surface:#fff;--accent:#d4ec9c;--mono:"IBM Plex Mono",Consolas,monospace}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.65 "Inter","Noto Sans CJK SC","Microsoft YaHei",sans-serif}button,input,select,textarea{font:inherit;color:inherit}button,summary,select{cursor:pointer}button,.btn{border:1px solid var(--line);border-radius:7px;padding:7px 12px;background:#fff;font-weight:600}button:hover:enabled{border-color:#477e64;background:#f1f6ee}button.primary,.primary{color:#fff;background:var(--green);border-color:var(--green)}button.primary:hover:enabled{background:#286448}button:disabled{opacity:.48;cursor:default}button:focus-visible,summary:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #b67625;outline-offset:3px}h1,h2,h3,p{margin:0}h1{font-size:clamp(27px,2.7vw,40px);letter-spacing:-.04em;line-height:1.25}h2{font-size:19px;letter-spacing:-.025em}h3{font-size:15px}.row,.actions,.head,.bar,.branding,.steps,.tabs,.navbtn{display:flex;gap:9px;align-items:center}.actions,.row,.tabs,.steps{flex-wrap:wrap}.head{justify-content:space-between;align-items:flex-start}.stack{display:grid;gap:10px}.small,.muted{font-size:13px;color:var(--muted)}.mono,code,.code,.eyebrow{font-family:var(--mono);overflow-wrap:anywhere}.code,pre{white-space:pre-wrap;background:#f0f4f1;padding:11px;border-radius:6px;overflow-wrap:anywhere}svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex-shrink:0}.layout{display:grid;grid-template-columns:202px minmax(0,1fr);min-height:100vh}.side{display:flex;flex-direction:column;background:#fcfdfa;border-right:1px solid var(--line);padding:23px 14px;gap:26px}.branding{gap:10px;padding:0 5px;line-height:1.28}.branding strong{font:750 23px/1.2 Inter,Arial,sans-serif;letter-spacing:.015em}.branding small{display:block;color:var(--muted);font-size:11px}.logo,.avatar{display:inline-grid;place-items:center;background:var(--green);color:#eaf6cc;border-radius:10px}.logo{width:36px;height:36px}.logo svg{width:24px;height:24px}.eyebrow{font-size:11px;color:var(--muted);letter-spacing:.09em}.navlist{display:grid;gap:4px}.navlist>small{margin:0 9px 5px}.navbtn{width:100%;border:0;background:transparent;justify-content:flex-start;color:#4f6258;position:relative}.navbtn[aria-current=page]{background:#e6eee4;color:var(--green)}.navbtn[aria-current=page]:before{content:"";position:absolute;left:0;height:50%;border-left:3px solid var(--green)}.sidefoot{margin-top:auto;color:var(--muted);font-size:12px}.bar{height:53px;border-bottom:1px solid var(--line);padding:0 clamp(13px,2.1vw,36px);background:#fff;justify-content:space-between;font-size:13px;color:var(--muted)}.state:before{content:"";display:inline-block;background:#78935d;width:7px;height:7px;border-radius:50%;margin-right:6px}.wrap{max-width:1600px;margin:auto;padding:22px clamp(14px,2.2vw,39px) 35px;min-width:0}.banner{position:relative;overflow:hidden;isolation:isolate;color:#f1f9eb;background:#193f32;border:1px solid #2c5544;border-radius:12px;padding:21px clamp(16px,2vw,30px);display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}.banner:before{position:absolute;content:"";z-index:-1;inset:0 0 0 52%;opacity:.22;background:repeating-linear-gradient(122deg,transparent 0 18px,#9cba8c 18px 19px,transparent 19px 40px);mask-image:linear-gradient(to right,transparent,black)}.banner .eyebrow{color:#b9d3b9}.banner p{color:#d7e6d8;font-size:13px;margin-top:7px}.banner .actions button{background:#244d40;border-color:#608071;color:white}.banner .actions .new{background:var(--accent);color:#23402b;border-color:var(--accent)}.columns{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1.25fr);gap:15px;align-items:start}.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:17px 19px;min-width:0}.panel+.panel{margin-top:13px}.ico{border:1px solid var(--line);background:#f1f6ed;border-radius:7px;color:var(--green);padding:6px;line-height:1}.count,.pill,.tag{display:inline-block;border-radius:5px;background:#f0f3ed;padding:2px 8px;font-size:12px;color:#475d4d}.pill.warn{background:#fcf0d8;color:#845520}.pill.good{background:#e0f3e3;color:#1d6541}.pill.dark{background:#335542;color:#e2f6d1}.note,.box{border:1px solid var(--line);padding:11px 13px;border-radius:7px;background:#f7f9f4}.note{border-left:3px solid #809a67}.req{margin:16px 0 13px;padding:13px;border-radius:8px;background:#eef4e9}.req h3{color:#39573c;margin-bottom:4px}.conversation{max-height:300px;overflow:auto;margin-bottom:15px;display:grid;gap:12px}.message{border-left:2px solid #d4dfce;padding-left:10px}.message b{font-size:12px;color:#54755d}.message p{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}.composer,.field{display:grid;gap:5px}.composer{border-top:1px solid var(--line);padding-top:12px}.field,form label{font-size:13px;font-weight:650}.field input,.field select,.field textarea,dialog input:not([type=checkbox]),dialog select,dialog textarea,.composer textarea{width:100%;border:1px solid #aab9ae;border-radius:6px;padding:8px 10px;background:white;min-width:0;font-size:15px;font-weight:400}.composer textarea,dialog textarea{resize:vertical;min-height:70px}.taskrow,.assetrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #e2e8df}.taskrow>div,.assetrow>div{min-width:0}.taskrow b,.assetrow b{font-size:14px}.taskrow p,.assetrow p{font-size:13px;color:var(--muted)}.taskrow .actions button,.assetrow .actions button{font-size:12px;white-space:nowrap;padding:6px 9px}.taskhead{margin-bottom:10px}.gategrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.gate{background:#f5f7f2;border:1px solid #dbe3d8;border-radius:7px;padding:10px}.gate b,.gate small{display:block}.gate small{font-size:12px;color:var(--muted);margin:4px 0}.splithead{background:#edf3e8;border-left:3px solid var(--green);padding:8px 11px;margin:11px 0}.soft{background:#f0f5ec}.mobiletabs{display:none}.toolbar{margin:15px 0;display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap}.tabs button,.mobiletabs button{background:transparent;border-color:transparent}.tabs button[aria-pressed=true],.mobiletabs button[aria-pressed=true]{background:#dcebd9;color:#1b4936}.liblayout{display:grid;grid-template-columns:205px minmax(0,1fr);align-items:start;gap:14px}.subjects{display:grid;gap:8px;margin:12px 0}.subjects button{text-align:left}.subjects button[aria-pressed=true]{background:#e6efe2;color:var(--green);border-color:#b4c8b0}.librow{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;border-top:1px solid var(--line);padding:13px 0}.librow small{color:var(--muted)}.titletext{overflow-wrap:anywhere}.back{margin:10px 0}.bottom{margin-top:14px;font-size:12px;color:var(--muted)}dialog{color:var(--ink);border:1px solid var(--line);border-radius:12px;width:min(590px,94vw);max-height:89dvh;padding:22px;box-shadow:0 20px 70px #142a2633}dialog:modal,dialog::backdrop{overscroll-behavior:contain}dialog::backdrop{background:#13291e66;overflow:hidden}dialog form{display:grid;gap:12px}dialog h2{margin-bottom:10px}dialog .actions{margin-top:14px;justify-content:flex-end}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);border-radius:8px;color:white;background:#244a39;padding:8px 14px;box-shadow:0 4px 20px #1d35252a;z-index:10}.toast:empty{display:none}[hidden]{display:none!important}#screen{min-width:0}.tick{font-size:15px;color:#47744d}
+@media(max-width:1120px){.layout{grid-template-columns:155px minmax(0,1fr)}.panel{padding:15px}.columns{grid-template-columns:minmax(230px,.75fr) minmax(0,1.15fr)}.side{padding-inline:10px}}
+@media(max-width:870px){.layout{display:block}.side{flex-direction:row;padding:9px 14px;border-bottom:1px solid var(--line);align-items:center;justify-content:space-between}.sidefoot,.navlist>small,.branding small{display:none}.navlist{display:flex}.logo{width:28px;height:28px}.branding strong{font-size:18px}.navbtn{width:auto;font-size:13px}.columns{grid-template-columns:minmax(210px,.8fr) minmax(0,1.2fr)}}
+@media(max-width:670px){.columns,.liblayout{display:block}.mobiletabs{display:flex;background:white;border:1px solid var(--line);border-radius:7px;margin:0 0 10px;padding:3px}.mobiletabs button{flex:1}.columns[data-pane=tasks] .chatcol,.columns[data-pane=chat] .taskcol{display:none}.banner{align-items:flex-start;flex-direction:column}.banner .actions{flex-wrap:wrap}.wrap{padding:13px 10px 26px}.subjects{display:flex;flex-wrap:wrap}.liblayout>.panel+.panel{margin-top:10px}.taskrow,.assetrow{flex-wrap:wrap;gap:5px}.taskrow .actions{margin-left:auto}.state,.bar{font-size:11px}.bar{height:40px}.navbtn svg{display:none}.branding{gap:5px}.branding strong{font-size:15px}dialog{padding:15px}.gategrid{gap:6px}.side{gap:6px}}
+.detailsbox{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}.detailsbox h3{margin-bottom:8px}.composer .actions{justify-content:flex-end}.taskrow .actions{justify-content:flex-end}.box>p{margin:4px 0}.dialog-body .field+.field{margin-top:8px}</style></head><body><div class="layout"><aside class="side"><div class="branding"><span class="logo" id="logo"></span><div><strong>积木 JIMU</strong><small>统一巡检算法平台</small></div></div><nav class="navlist" aria-label="研发与资产"><small class="eyebrow">研发与资产</small><button class="navbtn" data-action="work">算法工作台</button><button class="navbtn" data-action="library">主体能力中心</button></nav><div class="sidefoot">巡检算法研发工作区<br>交互原型 · 本地数据</div></aside><main><div class="bar"><span>研发工作空间　/　<b id="crumb"></b></span><span class="state" id="localstate">浏览器本地保存</span></div><div class="wrap" id="screen"></div></main></div><dialog id="modal" aria-labelledby="modal-title"></dialog><div class="toast" id="toast" role="status"></div><script>
+
+'use strict';
+const KEY="jimu.authoring-prototype.v1";
+const $=id=>document.getElementById(id);
+const H=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
+const paths={logo:'M5 7l7-4 7 4-7 4z M5 12l7 4 7-4 M5 17l7 4 7-4',chat:'M4 5h16v11H9l-5 4z M8 9h8 M8 12h5',library:'M3 5h5v14H3z M10 5h4v14h-4z M16 6l3-1 3 13-3 1z',work:'M3 5h7v7H3z M14 5h7v7h-7z M3 15h7v5H3z M14 15h7v5h-7z',check:'M4 6h10 M17 6l1.5 2L22 3 M4 12h10 M4 18h13',link:'M8 14l7-7 M6 10l-2 2a4 4 0 005.5 6l3-3 M13 7l2-2a4 4 0 015.5 6l-2 2'};
+const icon=key=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+paths[key]+'"/></svg>';
+const btn=(action,text,id='',cls='')=>'<button type="button" class="btn '+cls+'" data-action="'+H(action)+'" data-id="'+H(id)+'">'+H(text)+'</button>';
+// Local examples of registered algorithm interfaces. These contracts are data only.
+const algorithmApis=[
+ {ref:'point_in_region@1',route:'POST /geometry/v1/point-in-region',input:'原图坐标中的框底边中点',output:'inside'},
+ {ref:'box_overlaps_region@1',route:'POST /geometry/v1/box-overlaps-region',input:'原图坐标中的目标框',output:'overlaps'}
+];
+const regionInputs=['context.work_zone','context.inspection_region'];
+function apiFor(v){return algorithmApis.find(api=>api.ref===v?.invocation?.apiRef)}
+function hasInvocation(v){return Boolean(apiFor(v)&&regionInputs.includes(v.invocation.regionRef))}
+// Versioned examples for the offline editor. Each entry describes one primary Fact.
+const questionSchemas=[
+ {ref:'yes_no@1',name:'布尔值',kind:'bool',description:'只接受布尔值 true 或 false。'},
+ {ref:'gauge_band@1',name:'压力表色带',kind:'enum',members:['red','green','yellow'],description:'只接受 red、green、yellow 三个字符串。'},
+ {ref:'clothing@1',name:'穿着观察记录',kind:'record',fields:['vest_worn','helmet_worn'],description:'必填布尔字段 vest_worn 和 helmet_worn；禁止额外字段。'}
+];
+function schemaFor(output){return questionSchemas.find(s=>s.ref===output?.schemaRef)}
+function validOutput(output){return Boolean(schemaFor(output)&&/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(output.factKey||''))}
+function questionOutputFields(output){
+ return `<fieldset class="stack box"><legend>Question 输出约束</legend>
+ <label class="field">主 Fact 标识（必填）<input required name="factKey" maxlength="64" pattern="[A-Za-z_][A-Za-z0-9_]*" spellcheck="false" placeholder="例如 vest_worn" value="${H(output?.factKey)}"></label>
+ <label class="field">输出 Schema（必选）<select required name="schemaRef"><option value="">选择已登记的 Schema</option>${questionSchemas.map(s=>`<option value="${s.ref}" ${s.ref===output?.schemaRef?'selected':''}>${s.name} · ${s.ref}</option>`).join('')}</select></label>
+ <div data-output-preview></div>
+ <p class="small">每个观察组产生一个主 Fact。看不清时返回 unknown 并填写 reason.code（如 insufficient_visibility），省略 value。单项格式错误记录为 error。</p></fieldset>`;
+}
+function sampleValue(s){
+ if(s.kind==='record')return Object.fromEntries(s.fields.map(k=>[k,{kind:'bool',value:true}]));
+ return s.kind==='bool'?false:s.members[0];
+}
+function exactKeys(value,keys){
+ return value!==null&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===keys.length&&keys.every(k=>Object.hasOwn(value,k));
+}
+function checkOutputFragment(item,schema){
+ if(item?.status==='unknown'){
+  if(!exactKeys(item,['status','reason'])||!exactKeys(item.reason,['code'])||typeof item.reason.code!=='string'||!item.reason.code.trim())return 'unknown 必须提供 reason.code 并省略 value。例如 {"status":"unknown","reason":{"code":"insufficient_visibility"}}。';
+  return '有效 · 观察结果未知，保留原因。';
+ }
+ if(item?.status!=='known'||!exactKeys(item,['status','value']))return '此模型回答示例接受 known 和 unknown。known 只能包含 status 与 value。';
+ const typed=item.value;
+ if(!exactKeys(typed,['kind','value'])||typed.kind!==schema.kind)return '值的类型标签或字段与所选 Schema 不符。';
+ const v=typed.value;
+ const bool=b=>exactKeys(b,['kind','value'])&&b.kind==='bool'&&typeof b.value==='boolean';
+ const valid=schema.kind==='bool'?bool(typed):schema.kind==='enum'?schema.members.includes(v):
+  exactKeys(v,schema.fields)&&schema.fields.every(k=>bool(v[k]));
+ return valid?'有效 · 符合该 Question 的主 Fact 约束。':'值无效。'+schema.description;
+}
+function wireOutputPreview(form){
+ const selector=form.elements.schemaRef;
+ if(!selector)return;
+ function refresh(){
+  const s=schemaFor({schemaRef:selector.value}), panel=form.querySelector('[data-output-preview]');
+  panel.replaceChildren();
+  if(!s)return;
+  const text=document.createElement('p');text.textContent=s.description;panel.append(text);
+  const sample={status:'known',value:{kind:s.kind,value:sampleValue(s)}};
+  const details=document.createElement('details');
+  details.innerHTML='<summary>试验输出约束</summary><label class="field">返回片段（仅状态、值或原因）<textarea rows="6" maxlength="4000"></textarea></label><div class="actions"><button type="button">校验片段</button></div><p role="status"></p>';
+  const input=details.querySelector('textarea'), feedback=details.querySelector('[role=status]');
+  input.value=JSON.stringify(sample,null,2);
+  details.querySelector('button').onclick=()=>{
+   try{feedback.textContent=checkOutputFragment(JSON.parse(input.value),s)}
+   catch{feedback.textContent='无效 JSON，请检查引号、括号与逗号。'}
+  };
+  input.oninput=()=>{feedback.textContent=''};panel.append(details);
+ }
+ selector.addEventListener('change',refresh);refresh();
+}
+function questionSummary(v){
+ const s=schemaFor(v.output);
+ return validOutput(v.output)?v.output.factKey+' · '+s.ref+' · '+s.description:'待补主 Fact 标识和输出 Schema';
+}
+function allowedAnswers(schema){return schema.kind==='enum'?schema.members:[true,false]}
+function bindingMatchesOutput(c){
+ const output=version(c.q)?.output,s=schemaFor(output),b=c.binding;
+ return validOutput(output)&&b?.qFact===output.factKey&&allowedAnswers(s).includes(b.qExpected)&&
+   (s.kind!=='record'||s.fields.includes(b.qField));
+}
+
+function capabilityContent(type,v){
+ if(type==='Question')return (v.prompt||v.body||'提示词待补')+' ｜ 输出：'+questionSummary(v);
+ if(!hasInvocation(v))return '算法接口待绑定'+(v.body?' · 历史说明：'+v.body:'');
+ const api=apiFor(v);
+ return api.ref+' · '+api.route+'；输入：N03 '+api.input+'、'+v.invocation.regionRef+'；返回：'+api.output+' (Boolean)';
+}
+function invocationFields(v){
+ const call=v?.invocation;
+ return '<label class="field"><span>N05 · 已登记算法接口（本地示例）</span><select name="apiRef" required><option value="">选择接口</option>'+
+ algorithmApis.map(a=>`<option value="${a.ref}" ${a.ref===call?.apiRef?'selected':''}>${a.ref} · ${a.input} → ${a.output}</option>`).join('')+
+ '</select></label><label class="field"><span>区域参数来源</span><select name="regionRef" required><option value="">选择上下文字段</option>'+
+ regionInputs.map(r=>`<option ${r===call?.regionRef?'selected':''}>${r}</option>`).join('')+
+ '</select></label><p class="small">目标几何取自当前 N03 观察组。返回结果关联同一 object_ref，供 N06 引用。</p>';
+}
+function versionPayload(type,value){
+ return type==='Question'?{prompt:value.prompt,output:{factKey:value.factKey,schemaRef:value.schemaRef}}:{invocation:{apiRef:value.apiRef,regionRef:value.regionRef}};
+}
+// Versioned response fragments for the local authoring preview. Runtime owns invocation and execution records.
+const promptContracts={
+ discovery:{node:'N02',label:'整图发现',purpose:'profile_discovery',schema:'profile_hits@1',variable:'subject',source:'profile_metadata',path:'subject',inputs:'原图、合格 Profile 清单及允许读取的上下文。固定模型模式从登记槽位解码。',shape:'hits 列出本次合格 Profile 的精确引用和模型分数，每个 Profile 至多一次。',failure:'空命中留下发现覆盖缺口；越权引用、框或决策字段触发诊断。调用失败不派发定位。'},
+ optional:{node:'N02',label:'可选问题建议',purpose:'profile_discovery',schema:'optional_proposal@1',variable:'optional_questions',source:'question_metadata',path:'optional_question_refs',inputs:'本次已命中 Profile、必查列表与策略允许模型建议的可选 Question 清单。',shape:'只建议该 Profile 已登记的可选 Question。必查项由平台加入有效集合。',failure:'无效建议按已配置策略保留全部可选项或阻塞该 Profile。通常复用发现调用。'},
+ grounding:{node:'N03',label:'目标定位',purpose:'object_grounding',schema:'original_xyxy@1',variable:'subject',source:'profile_metadata',path:'subject',inputs:'原图、来自 N02 的一个已命中 Profile、图像尺寸。',shape:'boxes 为原图像素 XYXY 数组；原点在左上角，每个框面积为正且位于图内。',failure:'合法空数组记录 no_target。调用失败、无效框和部分覆盖单独留痕。分组、生成红框和 object_ref 由 N03 完成。'},
+ batch:{node:'N04',label:'联合观察',purpose:'object_observation',schema:'observation_batch@1',variable:'questions',source:'question_metadata',path:'effective_question_refs',inputs:'同一观察组的红框图、原图坐标、精确版本的有效 Question 清单，各题仅使用获准上下文。',shape:'一次请求覆盖一个观察组的全部有效 Question。逐题关联 question_ref、主 Fact 和该题的输出 Schema。',failure:'缺题、重题或错版本留下诊断；仅在封装与归属可信时保留其他有效题。整批无法解析时不生成 Fact。'},
+ candidate:{node:'N06',label:'可选候选预测',purpose:'candidate_prediction',schema:'category_candidates@1',variable:null,inputs:'所属 RuleSet 在当前作用域登记的类别、允许使用的已验证证据。',shape:'candidates 仅列出已登记类别及模型分数。',failure:'关闭、空候选或调用失败均继续全扫适用的 mandatory Rules。最终判定由规则生成。'}
+};
+const scoreOk=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=1;
+function promptFixture(){
+ const c=check(), v=version(c.q);
+ const questions=c.q&&validOutput(v?.output)?[{ref:c.q.id+'@'+c.q.v,output:v.output,prompt:v.prompt||v.body}]:[{ref:'inspection_question@1',prompt:'观察红框中的主体是否出现指定现象。',output:{factKey:'observed',schemaRef:'yes_no@1'}}];
+ return {profile:(c.profile?.id||'sample_profile')+'@'+(c.profile?.v||1),subject:c.subject,category:c.category||'样例类别',questions,optional:'optional_question@1',width:640,height:480};
+}
+function responseExample(key,f){
+ switch(key){
+ case 'discovery':return {hits:[{profile_ref:f.profile,score:0.82}]};
+ case 'optional':return {profile_ref:f.profile,optional_question_refs:[f.optional]};
+ case 'grounding':return {profile_ref:f.profile,boxes:[[20,40,300,400]]};
+ case 'candidate':return {candidates:[{category:f.category,score:0.74}]};
+ case 'batch':return {results:f.questions.map(q=>{const s=schemaFor(q.output);return {question_ref:q.ref,fact_key:q.output.factKey,schema_ref:s.ref,status:'known',value:{kind:s.kind,value:sampleValue(s)}}})};
+ }
+}
+function responseIssue(key,item,f){
+ const unique=xs=>new Set(xs).size===xs.length;
+ if(key==='grounding'){
+  if(!exactKeys(item,['profile_ref','boxes'])||item.profile_ref!==f.profile||!Array.isArray(item.boxes))return '需要当前 Profile 和 boxes 数组。';
+  const valid=b=>Array.isArray(b)&&b.length===4&&b.every(Number.isFinite)&&0<=b[0]&&b[0]<b[2]&&b[2]<=f.width&&0<=b[1]&&b[1]<b[3]&&b[3]<=f.height;
+  return item.boxes.every(valid)?'':'框越界、面积非正或坐标类型不符。';
+ }
+ if(key==='optional'){
+  if(!exactKeys(item,['profile_ref','optional_question_refs'])||item.profile_ref!==f.profile)return '建议必须属于当前命中 Profile。';
+  const refs=item.optional_question_refs;
+  return Array.isArray(refs)&&refs.every(r=>r===f.optional)&&unique(refs)?'':'只允许本次可选清单中的精确引用，每题至多一次。';
+ }
+ if(key==='batch'){
+  if(!exactKeys(item,['results'])||!Array.isArray(item.results))return '联合返回必须包含 results 数组。';
+  const seen=new Set();
+  for(const r of item.results){
+   const q=f.questions.find(x=>x.ref===r?.question_ref);
+   if(!q||seen.has(q.ref)||r.fact_key!==q.output.factKey||r.schema_ref!==q.output.schemaRef)return 'Question 引用、主 Fact 或 Schema 不匹配，或 Question 重复。';
+   seen.add(q.ref);
+   const {question_ref,fact_key,schema_ref,...result}=r;
+   const message=checkOutputFragment(result,schemaFor(q.output));
+   if(!message.startsWith('有效 ·'))return q.ref+'：'+message;
+  }
+  return seen.size===f.questions.length?'':'有效 Question 集合中有题目缺失。';
+ }
+ const discover=key==='discovery', list=discover?'hits':'candidates', id=discover?'profile_ref':'category', allowed=discover?f.profile:f.category;
+ if(!exactKeys(item,[list])||!Array.isArray(item[list]))return '字段或数组类型与所选契约不符。';
+ return item[list].every(r=>exactKeys(r,[id,'score'])&&r[id]===allowed&&scoreOk(r.score))&&unique(item[list].map(r=>r[id]))?'':'引用越界、重复、含额外字段，或样例分数超出 0–1。';
+}
+function promptScope(key,f){
+ if(key==='batch')return '有效 Question：'+f.questions.map(q=>q.ref+' / '+q.output.factKey+' / '+q.output.schemaRef).join('，');
+ if(key==='candidate')return '登记类别：'+f.category;
+ if(key==='optional')return 'Profile：'+f.profile+'；可选：'+f.optional+'；必查：'+f.questions.map(q=>q.ref).join('，');
+ return 'Profile：'+f.profile+(key==='grounding'?'；原图 '+f.width+' × '+f.height+' px':'');
+}
+function contractBox(key,scope={}){
+ const d=promptContracts[key],f={...promptFixture(),...scope};
+ const variable=d.variable?`正文可引用 {{${d.variable}}}，来源 ${d.source}.${d.path}。本示例使用时必须有值。`:'固定正文，无文本占位符。';
+ return `<fieldset class="stack box" data-purpose="${key}" data-lab-scope="${H(JSON.stringify(f))}"><legend>${d.node} · 返回约束</legend><strong>${H(d.schema)}</strong><small>模板用途 · ${H(d.purpose)}</small>
+ <p>${H(d.inputs)}</p><small>${H(variable)}</small><p>${H(d.shape)}</p><small>${H(d.failure)}</small>
+ <details><summary>预览本次样例提示词</summary><pre data-rendered></pre></details><details><summary>试验返回样例</summary><p class="small">本地校验上下文 · ${H(promptScope(key,f))}</p>
+ <label class="field">响应 JSON 片段<textarea data-contract-json rows="6" maxlength="12000">${H(JSON.stringify(responseExample(key,f),null,2))}</textarea></label>
+ <button type="button" data-probe="${key}">校验片段</button><p role="status"></p></details></fieldset>`;
+}
+function probeResponse(button){
+ const details=button.closest('details'),result=details.querySelector('[role=status]');
+ try{
+  const key=button.dataset.probe,item=JSON.parse(details.querySelector('textarea').value);
+  const issue=responseIssue(key,item,JSON.parse(details.closest('fieldset').dataset.labScope));
+  if(issue){result.textContent='无效 · '+issue;return}
+  let outcome='符合该响应契约';
+  if(key==='discovery'&&!item.hits.length)outcome='no_hits，记录发现覆盖缺口';
+  if(key==='grounding'&&!item.boxes.length)outcome='no_target，保留空定位记录';
+  if(key==='candidate'&&!item.candidates.length)outcome='空候选，仍检查全部适用的必查规则';
+  if(key==='optional'&&!item.optional_question_refs.length)outcome='未建议可选问题，必查问题继续执行';
+  result.textContent='有效 · '+outcome;
+ }catch{result.textContent='无效 JSON，请检查括号、引号和逗号。'}
+}
+function wireTemplatePreviews(form){
+ for(const box of form.querySelectorAll('[data-purpose]')){
+  const key=box.dataset.purpose,d=promptContracts[key],f=JSON.parse(box.dataset.labScope);
+  const field=form.elements.namedItem(({discovery:'fragment',grounding:'target'})[key]||'template');
+  const samples={subject:f.subject,questions:f.questions.map(q=>q.ref+' · '+q.prompt+' → '+q.output.factKey+' / '+q.output.schemaRef).join('\n'),optional_questions:f.optional};
+  function refresh(){
+   const sample=d.variable?samples[d.variable]:null;
+   const value=d.variable?field.value.split('{{'+d.variable+'}}').join(sample):field.value;
+   box.querySelector('[data-rendered]').textContent=/\{\{|\}\}/.test(value)?'未渲染 · 含未登记占位符':value||'请输入模板正文';
+  }
+  field.addEventListener('input',refresh);refresh();
+ }
+}
+function validTemplate(field,key){
+ const d=promptContracts[key],marker=d.variable?'{{'+d.variable+'}}':null;
+ const rest=marker?field.value.split(marker).join(''):field.value;
+ if(!rest.includes('{{')&&!rest.includes('}}'))return true;
+ field.setCustomValidity('仅允许登记的占位符：'+(marker||'此模板无变量')+'。');field.reportValidity();return false;
+}
+
+function discoveryPrompt(p){return p?.discoveryPrompt??(p?.mode==='prompt'?p.discovery:'')}
+function groundingPrompt(p){return p?.groundingPrompt??p?.target??''}
+function profileReady(p){return Boolean(discoveryPrompt(p)?.trim()&&groundingPrompt(p).trim()&&p.discoverySchema===promptContracts.discovery.schema&&p.groundingSchema===promptContracts.grounding.schema)}
+function seed(){
+ return {profiles:initialProfiles(),current:'dress',page:'work',returnTo:null,assets:[
+  {id:'zone',type:'Tool',subject:'人员',versions:[{v:1,name:'作业区域相交核验',invocation:{apiRef:'point_in_region@1',regionRef:'context.work_zone'},formal:true}]},
+  {id:'helmet',type:'Question',subject:'人员',versions:[{v:1,name:'安全帽佩戴观察',prompt:'观察红框中的人员是否佩戴安全帽。',output:{factKey:'helmet_worn',schemaRef:'yes_no@1'},formal:true}]},
+  {id:'gauge',type:'Question',subject:'消防设施',versions:[{v:1,name:'灭火器压力表读数',prompt:'观察压力表指针所在的色带，输出对应颜色。',output:{factKey:'gauge_band',schemaRef:'gauge_band@1'},formal:true}]}],
+ checks:[{id:'dress',name:'作业区反光衣检查',subject:'人员',category:'未穿反光衣',goal:'检查作业区内的人员是否穿着反光衣，画面遮挡时保留不确定。',needsTool:true,q:null,t:null,binding:false,history:[],messages:[{role:'需求人员',text:'我们要检查作业区内的人员是否穿反光衣。区域外的人员不纳入这项检查。'},{role:'草稿记录',text:'已登记检查目标。需要补充反光衣观察问题，作业区域可以复用能力库里的几何核验工具。'}]},
+ {id:'helmet-check',profile:{id:'person',v:1},name:'作业区安全帽检查',subject:'人员',category:'未戴安全帽',goal:'核对作业区域内可见人员的安全帽佩戴情况。',needsTool:true,q:{id:'helmet',v:1},t:{id:'zone',v:1},binding:{qFact:'helmet_worn',qExpected:false,tExpected:true,toolFact:'in_work_zone'},history:[],messages:[]}]};
+}
+function initialProfiles(){
+ return [{id:'person',subject:'人员',v:1,discoverySchema:'profile_hits@1',groundingSchema:'original_xyxy@1',discoveryPrompt:'观察整张图，判断是否出现人员。出现时返回人员主体命中。',
+   groundingPrompt:'定位图中可见的每个人，输出各人员在原图中的边界框。',group:'single'}];
+}
+function profilesFor(subject){return S.profiles.filter(p=>p.subject===subject).sort((a,b)=>b.v-a.v)}
+function pinnedProfile(c){
+ return S.profiles.find(p=>p.subject===c.subject&&p.id===c.profile?.id&&p.v===c.profile?.v);
+}
+function profileSummary(p){
+ if(!p)return '<p class="note">N02 发现与 N03 定位待绑定。可先保存业务草稿，再在主体能力中心补齐。</p>';
+ const discovery=discoveryPrompt(p)||'缺少发现提示词，请补充新版本。';
+ return '<div class="box"><b>N02 · 整图发现提示词（JEV）</b><p>'+H(discovery)+'</p><small>命中后路由已启用 Check 的问题。本例使用 all_declared。</small></div>'+
+ '<div class="box"><b>N03 · 定位提示词（Grounding）</b><p>'+H(groundingPrompt(p))+'</p><small>'+ (p.group==='nearby'?'同类邻近目标合框':'每个实例独立成框')+'。每组输出原图坐标、红框图和共用的 object_ref，交给 N04 与已配置的 N05。</small></div>'+
+ '<p class="note">返回约束 · N02 '+H(p.discoverySchema||'待补')+' / N03 '+H(p.groundingSchema||'待补')+'</p>';
+}
+function profilePicker(subject,ref){
+ const profiles=profilesFor(subject);
+ return '<label class="field"><span>主体分析配置 · 绑定精确版本</span><select name="profileVersion"><option value="">暂留待办</option>'+
+ profiles.map(p=>'<option value="'+p.v+'" '+(ref?.id===p.id&&ref?.v===p.v?'selected':'')+'>'+H(subject)+' Profile · v'+p.v+'</option>').join('')+'</select></label><div class="stack" data-profile-preview></div>';
+}
+function wireProfilePicker(form,subject,ref){
+ const area=form.querySelector('[data-profile-picker]');
+ area.innerHTML=profilePicker(subject,ref);
+ const select=area.querySelector('select');
+ const preview=()=>area.querySelector('[data-profile-preview]').innerHTML=profileSummary(profilesFor(subject).find(p=>String(p.v)===select.value));
+ select.addEventListener('change',preview);preview();
+}
+function applyProfile(c,ref){
+ if(c.profile && (c.profile.id!==ref?.id || c.profile.v!==ref?.v))c.binding=false;
+ c.profile=ref;
+}
+function chosenProfile(subject,v){
+ const p=profilesFor(subject).find(p=>String(p.v)===v);
+ return p?{id:p.id,v:p.v}:null;
+}
+
+let S=seed(),persist=true;
+try{const raw=localStorage.getItem(KEY);if(raw){const saved=JSON.parse(raw);if(saved.checks?.some(c=>c.id===saved.current)&&saved.assets&&['work','library'].includes(saved.page))S=saved}}
+catch{persist=false}
+S.profiles ??= initialProfiles();
+let pane='tasks',libSubject=check().subject,libFilter='全部',focusId=null,timer;
+function check(){return S.checks.find(c=>c.id===S.current)}
+function asset(id){return S.assets.find(a=>a.id===id)}
+function version(ref){return ref&&asset(ref.id)?.versions.find(v=>v.v===ref.v)}
+function refFor(c,type){return type==='Question'?c.q:c.t}
+function readiness(c){
+ const business=Boolean(c.name.trim()&&c.goal.trim()&&c.category.trim()&&version(c.q)?.formal&&validOutput(version(c.q)?.output)&&(!c.needsTool||version(c.t)?.formal));
+ return {business,runtime:Boolean(business&&profileReady(pinnedProfile(c))&&(!c.needsTool||hasInvocation(version(c.t)))&&bindingMatchesOutput(c)&&(!c.needsTool||c.binding?.toolFact))};
+}
+function signature(c){return JSON.stringify([c.name,c.subject,c.category,c.goal,c.needsTool,c.q,c.needsTool?c.t:null])}
+function toast(text){clearTimeout(timer);$('toast').textContent=text;timer=setTimeout(()=>$('toast').textContent='',3300)}
+function todos(c){
+ const rows=[];
+ if(!profileReady(pinnedProfile(c))) rows.push({title:'待绑定 N02 发现与 N03 定位',desc:'选择含 JEV、Grounding 提示词及各自返回约束的配置版本。',actions:btn('profile-bind','选择主体配置','','primary')});
+ if(!c.goal.trim()||!c.category.trim())rows.push({title:'待补检查目标与违规类别',desc:'说明要检查的现象，以及命中后应输出的违规类别。',actions:btn('edit-check','补充业务定义','','primary')});
+ for(const [type,ref,needed,key] of [['Question',c.q,true,'q'],['Tool',c.t,c.needsTool,'t']]){
+  if(!needed)continue;
+  if(!ref)rows.push({title:'待补'+(key==='q'?'观察问题':'工具证据'),desc:key==='q'?'选择同主体的 Question，或为本次检查创建新的问题。':'选择 N05 调用的算法接口，可复用主体库中的 Tool。',actions:key==='q'?btn('create-q','新建 Question','','primary')+btn('pick-q','复用已有'):btn('pick-t','复用 Tool','','primary')+btn('create-t','新建工具')});
+  else if(key==='q'&&!validOutput(version(ref)?.output))rows.push({title:'待补 Question 输出约束',desc:'创建补齐主 Fact 和 Schema 的新版本，或选择已有问题。',actions:btn('maintain-q','维护输出约束')+btn('pick-q','更换问题')});
+  else if(key==='t'&&!hasInvocation(version(ref)))rows.push({title:'待补 Tool 算法接口',desc:'为这个工具创建含接口调用的新版本，或更换已绑定接口的工具。',actions:btn('maintain-t','维护接口')+btn('pick-t','更换工具')});
+  else if(!version(ref)?.formal)rows.push({title:'待确认'+type+'版本',desc:(version(ref)?.name||type)+' 已挂入当前 Check，仍为库内草稿。',actions:btn('confirm-'+key,'确认正式版本','','primary')});
+ }
+ if(!bindingMatchesOutput(c) || (c.needsTool&&!c.binding.toolFact))rows.push({title:'待补运行绑定',desc:readiness(c).business?'选择符合 Question 输出 Schema 的命中值，并预览规则。':'能力正式版本确定后，可补充 Fact 和规则绑定。',actions:readiness(c).business?btn('bind','配置绑定','','primary'):'<span class="tag">等待能力确认</span>'});
+ return rows;
+}
+function referenceRow(c,type){
+ const q=type==='Question',key=q?'q':'t',ref=refFor(c,type),v=version(ref);
+ if(!q&&!c.needsTool)return '<div class="assetrow"><b>Tool</b><span class="tag">本项无需工具</span></div>';
+ if(!v)return '<div class="assetrow"><b>'+(q?'N04 · Question 观察提示词':'N05 · Tool 算法接口')+'</b><span class="muted">尚未绑定</span></div>';
+ const latest=asset(ref.id).versions.filter(x=>x.formal).at(-1);
+ return '<div class="assetrow"><div><b>'+H(v.name)+'</b> <span class="tag">'+(q?'N04 提示词':'N05 接口')+' · v'+ref.v+' '+(v.formal?'正式':'草稿')+'</span><p>'+H(capabilityContent(type,v))+'</p></div><div class="actions">'+btn('maintain-'+key,'维护能力')+btn('pick-'+key,'更换引用')+(latest&&latest.v>ref.v?btn('adopt-'+key,'比较 v'+latest.v):'')+btn('focus','讨论',ref.id)+'</div></div>';
+}
+function gates(c){
+ const g=readiness(c),published=c.history.some(x=>x.signature===signature(c));
+ return '<div class="gategrid"><div class="gate"><b>业务发布</b><small>'+(published?'✓ 此修订已发布':g.business?'可确认发布业务修订':'待补必需能力版本')+'</small>'+btn(published?'history':'publish',published?'查看修订':'预检与发布')+'</div><div class="gate"><b>运行就绪</b><small>'+(g.runtime?'✓ 本地绑定检查通过':!profileReady(pinnedProfile(c))?'N02 / N03 提示词待绑定':c.needsTool&&!hasInvocation(version(c.t))?'N05 算法接口待绑定':'Fact 或能力绑定待补')+'</small>'+btn(!profileReady(pinnedProfile(c))?'profile-bind':c.needsTool&&!hasInvocation(version(c.t))?(c.t?'maintain-t':'pick-t'):'bind',!profileReady(pinnedProfile(c))?'补主体提示词':c.needsTool&&!hasInvocation(version(c.t))?'补算法接口':g.runtime?'查看绑定':'检查运行绑定')+'</div></div>';
+}
+function renderWork(){
+ const c=check(),items=todos(c),focus=focusId&&asset(focusId);
+ return '<header class="banner"><div><div class="eyebrow">算法工作台 / 当前草稿</div><h1 class="titletext">'+H(c.name)+'</h1><p>'+H(c.subject)+'　/　'+H(c.category)+'</p></div><div class="actions">'+btn('choose','切换算法')+btn('new-check','＋ 新建算法','','new')+'</div></header><nav class="mobiletabs" aria-label="工作区面板"><button data-action="tasks" aria-pressed="'+(pane==='tasks')+'">草稿与待办 · '+items.length+'</button><button data-action="chat" aria-pressed="'+(pane==='chat')+'">需求沟通</button></nav><div class="columns" data-pane="'+pane+'"><div class="chatcol"><section class="panel"><div class="head"><div class="row"><span class="ico">'+icon('chat')+'</span><h2>需求沟通</h2></div><span class="pill">本地记录</span></div><div class="req"><h3>当前检查目标</h3><p>'+H(c.goal)+'</p></div><div class="conversation">'+c.messages.map(m=>'<div class="message"><b>'+H(m.role)+'</b><p>'+H(m.text)+'</p></div>').join('')+'</div><form id="composer" class="composer"><label for="memo">补充需求说明'+(focus?' · '+H(focus.versions.at(-1).name):'')+'</label><textarea id="memo" name="memo" maxlength="1000" required placeholder="补充适用范围、边界情况或能力要求…"></textarea><div class="actions">'+(focus?btn('unfocus','清除讨论范围'):'')+''+btn('from-note','用说明新建算法')+'<button class="primary" type="submit">保存沟通记录</button></div></form></section></div><div class="taskcol"><section class="panel"><div class="head taskhead"><div class="row"><span class="ico">'+icon('check')+'</span><h2>当前要完成的事项</h2></div><span class="pill '+(items.length?'warn':'good')+'">'+(items.length?items.length+' 项待办':'✓ 已补齐')+'</span></div>'+items.map(i=>'<div class="taskrow"><div><b>'+i.title+'</b><p>'+H(i.desc)+'</p></div><div class="actions">'+i.actions+'</div></div>').join('')+(!items.length?'<p class="note">证据能力与运行绑定均已补齐，可核对下方两项状态。</p>':'')+'</section><section class="panel"><div class="head"><h2>Check 与证据依赖</h2>'+btn('edit-check','编辑检查项')+'</div><div class="splithead"><b>'+H(c.category)+'</b><div class="small">'+H(c.goal)+'</div></div>'+'<div class="assetrow"><div><b>N02 / N03 · 发现与定位提示词</b><p>'+(pinnedProfile(c)?H(c.subject)+' Profile · v'+c.profile.v:'待绑定发现与定位配置')+'</p></div>'+btn('profile-bind','查看与选择')+'</div>'+referenceRow(c,'Question')+referenceRow(c,'Tool')+'<div class="actions">'+btn('contracts','预览 N04 联合返回','batch')+btn('contracts','查看 N06 候选契约','candidate')+'</div></section><section class="panel"><div class="head" style="margin-bottom:10px"><h2>发布与运行准备</h2>'+(c.history.length?btn('history','历史修订 · '+c.history.length):'')+'</div>'+gates(c)+'</section></div></div>';
+}
+function consumers(a){return S.checks.filter(c=>refFor(c,a.type)?.id===a.id)}
+function renderLibrary(){
+ const list=S.assets.filter(a=>a.subject===libSubject&&(libFilter==='全部'||a.type===libFilter));
+ const origin=S.returnTo&&S.checks.find(c=>c.id===S.returnTo.check);
+ return '<header class="banner"><div><div class="eyebrow">研发与资产 / 能力中心</div><h1>主体能力中心</h1><p>按主体维护 N02 发现提示词、N03 定位提示词、Question 观察提示词与 Tool 算法接口。</p></div><div class="actions">'+btn('contracts','联合与辅助提示词')+btn('lib-q','＋ 新建 Question','','new')+btn('lib-t','＋ 新建 Tool')+'</div></header>'+(origin?'<div class="note back"><div class="head"><span>来自 <b>'+H(origin.name)+'</b><br><small>维护能力后可返回原 Check，比较并决定是否升级。</small></span>'+btn('return','返回原 Check')+'</div></div>':'')+'<div class="liblayout"><aside class="panel"><h2>主体目录</h2><div class="subjects">'+['人员','消防设施'].map(s=>'<button data-action="subject" data-id="'+s+'" aria-pressed="'+(s===libSubject)+'">'+s+'　'+S.assets.filter(a=>a.subject===s).length+'</button>').join('')+'</div></aside><section class="panel"><div class="head"><h2>'+H(libSubject)+'的能力条目</h2><span class="count">'+list.length+' 项</span></div><nav class="toolbar tabs" aria-label="能力类型"><div>'+['全部','Question','Tool'].map(t=>'<button data-action="filter" data-id="'+t+'" aria-pressed="'+(libFilter===t)+'">'+t+'</button>').join('')+'</div></nav>'+list.map(a=>{const latest=a.versions.at(-1),use=consumers(a);return '<div class="librow"><div><span class="tag">'+a.type+'</span> <b>'+H(latest.name)+'</b> <small>v'+latest.v+' · '+(latest.formal?'正式':'草稿')+'</small><div class="small">引用位置　'+(use.length?use.map(c=>H(c.name)+' v'+refFor(c,a.type).v).join('、'):'暂无 Check 引用')+'</div></div>'+btn('asset','详情与版本',a.id)+'</div>'}).join('')+(!list.length?'<p class="note">当前没有此类条目，可在上方新建独立能力。</p>':'')+'<div class="detailsbox"><div class="head"><h3>N02 / N03 · 发现与定位提示词</h3>'+btn('profile-edit',profilesFor(libSubject).length?'维护新版本':'创建配置')+'</div>'+ (profilesFor(libSubject).length?'<details><summary>'+H(libSubject)+' · 最新 v'+profilesFor(libSubject)[0].v+'</summary>'+profileSummary(profilesFor(libSubject)[0])+'</details>':'<p class="small">尚未定义主体发现与定位。</p>')+'</div><div class="detailsbox"><h3>该主体的 Check</h3><div class="actions">'+S.checks.filter(c=>c.subject===libSubject).map(c=>btn('open-check',c.name,c.id)).join('')+btn('new-check','＋ 新建 Check')+'</div></div></section></div>';
+}
+function draw(){
+ if(persist)try{localStorage.setItem(KEY,JSON.stringify(S))}catch{persist=false}
+ $('localstate').textContent=persist?'浏览器本地保存':'当前仅保存在会话';
+ const isWork=S.page==='work';$('crumb').textContent=isWork?'算法工作台':'主体能力中心';
+ document.querySelectorAll('.navbtn').forEach(b=>{if(b.dataset.action===S.page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+ $('screen').innerHTML=(isWork?renderWork():renderLibrary())+'<p class="bottom">交互 Demo · 使用本地样例，可新建和确认模拟版本。发布记录与绑定校验仅保存在此浏览器。</p>';
+}
+function navigate(action,id){
+ const c=check();
+ if(action==='from-note'){const memo=$('memo');if(!memo.value.trim()){memo.reportValidity();return}const text=memo.value.trim();openAction('new-check');const goal=$('modal').querySelector('[name=goal]');goal.value=text;return}
+ if(action==='work'||action==='library'){S.page=action;if(action==='work')S.returnTo=null;libSubject=c.subject;draw();return}
+ if(action==='tasks'||action==='chat'){pane=action;draw();return}
+ if(action==='subject'||action==='filter'){if(action==='subject')libSubject=id;else libFilter=id;draw();return}
+ if(action==='open-check'){S.current=id;S.page='work';S.returnTo=null;focusId=null;pane='tasks';draw();return}
+ if(action==='return'){focusId=null;if(S.returnTo)S.current=S.returnTo.check;S.returnTo=null;S.page='work';pane='tasks';draw();return}
+ if(action==='focus'||action==='unfocus'){focusId=action==='focus'?id:null;pane='chat';draw();$('memo').focus();return}
+ if(action.startsWith('maintain-')){const ref=action.endsWith('-q')?c.q:c.t;if(!ref)return;S.returnTo={check:c.id,asset:ref.id};S.page='library';libSubject=c.subject;libFilter='全部';draw();openAction('asset',ref.id);return}
+ openAction(action,id);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b&&!b.closest('dialog'))navigate(b.dataset.action,b.dataset.id)});
+document.addEventListener('submit',e=>{if(e.target.id!=='composer')return;e.preventDefault();const text=$('memo').value.trim();if(!text)return;const target=asset(focusId);check().messages.push({role:target?'需求人员 · '+target.versions.at(-1).name:'需求人员',text});draw();toast('已保存到当前算法的沟通记录')});
+$('logo').innerHTML=icon('logo');for(const b of document.querySelectorAll('.navbtn'))b.insertAdjacentHTML('afterbegin',icon(b.dataset.action==='work'?'work':'library'));
+
+function openAction(action, id) {
+  const modal = document.querySelector('#modal');
+  const c = check();
+  const type = action.endsWith('-t') ? 'Tool' : 'Question';
+  const key = type === 'Tool' ? 't' : 'q';
+  const kind = type === 'Tool' ? '工具' : '问题';
+  const field = (label, name, value = '', options = {}) => {
+    const { area, required = true, placeholder = '', autofocus = false, max = 160 } = options;
+    const attrs = `name="${name}" maxlength="${max}" placeholder="${H(placeholder)}" ${required ? 'required' : ''} ${autofocus ? 'autofocus' : ''}`;
+    return `<label class="field"><span>${label}</span>${area ? `<textarea ${attrs} rows="4">${H(value)}</textarea>` : `<input ${attrs} value="${H(value)}">`}</label>`;
+  };
+  const subjectField = (value) => `<label class="field"><span>检测主体</span><select name="subject" required>${['人员', '消防设施'].map(subject => `<option ${subject === value ? 'selected' : ''}>${subject}</option>`).join('')}</select></label>`;
+  const control = (label, cls = 'soft', value = '') => `<button class="btn ${cls}" type="button" data-modal-action="${H(value)}">${H(label)}</button>`;
+  const close = () => modal.close();
+  const render = (title, body, primary, handler, buttons = {}, cancel = '取消') => {
+    modal.innerHTML = `<form class="dialog-form" aria-labelledby="modal-title"><header class="modal-head dialog-head head"><h2 id="modal-title">${H(title)}</h2><button class="btn soft" type="button" data-modal-action="close" aria-label="关闭对话框">×</button></header><div class="modal-body dialog-body stack">${body}</div><footer class="modal-footer dialog-footer actions">${cancel ? control(cancel, 'soft', 'cancel') : ''}${primary ? `<button class="btn primary" type="submit">${H(primary)}</button>` : ''}</footer></form>`;
+    const form = modal.querySelector('form');
+    form.onsubmit = (event) => {
+      event.preventDefault();
+      if (!handler) return;
+      const value = Object.fromEntries(new FormData(form));
+      handler(value, form);
+    };
+    form.addEventListener('input', (event) => event.target.setCustomValidity?.(''));
+    form.onclick = (event) => {
+      const probe=event.target.closest('[data-probe]');
+      if(probe){probeResponse(probe);return}
+      const button = event.target.closest('[data-modal-action]');
+      if (!button) return;
+      const selected = button.dataset.modalAction;
+      if (selected === 'close') close();
+      else if (selected === 'cancel' && !buttons.cancel) close();
+      else buttons[selected]?.();
+    };
+    if (!modal.open) modal.showModal();
+    else (form.querySelector('[autofocus]') || form.querySelector('input,select,textarea,button')).focus();
+    wireOutputPreview(form);wireTemplatePreviews(form);
+    return form;
+  };
+  const apply = (message) => {
+    close();
+    draw();
+    toast(message);
+  };
+  const complete = (value, form, labels) => {
+    for (const [name, label] of Object.entries(labels)) {
+      value[name] = value[name]?.trim();
+      if (!value[name]) {
+        const input = form.elements.namedItem(name);
+        input.setCustomValidity(`请输入${label}`);
+        input.reportValidity();
+        return false;
+      }
+    }
+    return true;
+  };
+  const uid = (prefix) => `${prefix}-${globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)}`;
+  const look = (ref) => ref ? version(ref) : null;
+  const format = (ref) => {
+    const v = look(ref);
+    return v ? `${v.name} · v${v.v}` : '尚未关联';
+  };
+  const shortDate = (time) => {
+    const date = new Date(time);
+    return Number.isNaN(date.getTime()) ? String(time ?? '') : date.toLocaleString('zh-CN', { hour12: false });
+  };
+  const linked = (target) => S.checks.find(item => item.id === target);
+  const setRef = (target, refKey, next) => {
+    const previous = target[refKey];
+    if (previous?.id === next?.id && previous?.v === next?.v) return;
+    target[refKey] = next;
+    target.binding = false;
+  };
+  const goBack = (target, message = '已返回检查项') => {
+    S.current = target.id;
+    S.page = 'work';
+    S.returnTo = null;
+    focusId = null;
+    pane = 'tasks';
+    apply(message);
+  };
+  const info = (title, message) => render(title, `<p class="note">${H(message)}</p>`, '', null, {}, '知道了');
+
+  if(action==='contracts'){
+    const choices=['optional','batch','candidate'];
+    const key=choices.includes(id)?id:'batch',d=promptContracts[key];
+    const defaults={
+      optional:'在已命中主体的可选问题清单 {{optional_questions}} 中提出本图需要检查的问题。',
+      batch:'依据本观察组的标记图，逐项回答 {{questions}}，每个问题返回与自身约束一致的结果。',
+      candidate:'依据本次登记的类别清单及已验证的证据，按可能性提出候选类别。'
+    };
+    const history=S.templateVersions?.[key]||[],latest=history.at(-1);
+    const buttons=Object.fromEntries(choices.map(k=>[k,()=>openAction('contracts',k)]));
+    const owner=key==='optional'?'N02 · model_advisory 的提案片段，可与发现共用一次调用。默认 all_declared 直接保留全部问题。':
+      key==='batch'?'N04 · 公共请求模板。联合响应 Schema 由本次有效 Question 版本和各题输出约束组合。':
+      'N06 · 可供 RuleSet 显式选用的候选模板。保存模板不会启用预测。';
+    const body=`<nav class="actions" aria-label="模板用途">${choices.map(k=>control(promptContracts[k].label,k===key?'primary':'soft',k)).join('')}</nav>
+       <p class="small">${owner}</p>${field('模板正文','template',latest?.text||defaults[key],{area:true,max:1600})}
+       ${contractBox(key)}<details><summary>版本记录 · ${history.length+1}</summary><p>v1 · ${H(defaults[key])}</p>${history.map(v=>'<p>v'+v.v+' · '+H(v.text)+'</p>').join('')}</details>`;
+    render(d.node+' · '+d.label+' · v'+(latest?.v||1),body,'保存模板新版本',(value,form)=>{
+      if(!complete(value,form,{template:'模板正文'})||!validTemplate(form.elements.template,key))return;
+      if(value.template===(latest?.text||defaults[key])){apply('当前版本已保存');return}
+      S.templateVersions??={};
+      S.templateVersions[key]??=[];
+      S.templateVersions[key].push({v:(latest?.v||1)+1,purpose:d.purpose,schemaRef:d.schema,text:value.template});
+      apply('模板新版本已保存 · '+d.schema);
+    },buttons);
+    return;
+  }
+
+  if(action==='profile-bind'){
+    const picker=render('绑定主体分析配置','<div data-profile-picker class="stack"></div>', '保存到当前 Check', value=>{
+      applyProfile(c,chosenProfile(c.subject,value.profileVersion));
+      apply(c.profile?'已绑定指定的主体配置版本':'已保留为待办');
+    },{edit:()=>openAction('profile-edit','check')});
+    wireProfilePicker(picker,c.subject,c.profile);
+    picker.querySelector('.dialog-body').insertAdjacentHTML('beforeend',control('为该主体维护新版本','soft','edit'));
+    return;
+  }
+  if(action==='profile-edit'){
+    const fromCheck=id==='check';
+    const subject=fromCheck?c.subject:libSubject;
+    const latest=profilesFor(subject)[0], nextVersion=(latest?.v||0)+1;
+    const profileId=latest?.id||uid('profile');
+    const scope={subject,profile:profileId+'@'+nextVersion};
+    const form=render('维护'+subject+'主体配置 · v'+nextVersion,`
+      <div class="box">${field('N02 · 整图发现提示词（JEV）','fragment',discoveryPrompt(latest),{area:true,max:1200,autofocus:true,placeholder:'看整张图：出现哪些主体时，需要继续检查？'})}</div>
+      ${contractBox('discovery',scope)}
+      <div class="box">${field('N03 · 定位提示词（Grounding）','target',groundingPrompt(latest),{area:true,max:1200,placeholder:'在原图上定位哪些目标？'})}
+      <label class="field"><span>默认观察单位</span><select name="group"><option value="single">单个实例，一个红框</option><option value="nearby">同类邻近目标合并，一个观察组一个红框</option></select></label>
+      <p class="small">邻近距离、阈值及其校准版本在具体设备来源的配置中锁定。</p></div>
+      ${contractBox('grounding',scope)}
+      <p class="note">保存会创建新的可复用版本。每个 Check 单独选择采用的版本。</p>`, '保存配置新版本',(value,f)=>{
+        if(!complete(value,f,{fragment:'N02 发现提示词',target:'N03 定位提示词'})||
+            !validTemplate(f.elements.fragment,'discovery')||!validTemplate(f.elements.target,'grounding'))return;
+        const p={id:profileId,subject,v:nextVersion,discoverySchema:promptContracts.discovery.schema,groundingSchema:promptContracts.grounding.schema,discoveryPrompt:value.fragment,groundingPrompt:value.target,group:value.group};
+        S.profiles.push(p);
+        if(fromCheck){draw();openAction('profile-bind');toast('新版本已保存，请选择要采用的版本')}
+        else apply('主体配置新版本已保存');
+      });
+    form.elements.group.value=latest?.group||'single';
+    return;
+  }
+
+  if (action === 'new-check' || action === 'edit-check') {
+    const existing = action === 'edit-check' ? c : null;
+    const form=render(existing ? '编辑检查项' : '新建检查项', `
+      ${field('检查项名称', 'name', existing?.name, { autofocus: true, placeholder: '例如：现场人员是否佩戴工牌' })}
+      ${existing ? `<div class="field"><span>检测主体</span><strong>${H(existing.subject)}</strong></div>` : subjectField(S.page === 'library' ? libSubject : c.subject)}
+      <div class="stack" data-profile-picker></div>
+      ${field('命中时输出的违规类别', 'category', existing?.category, { required: false, placeholder: '例如：未佩戴工牌' })}
+      ${field('检查目标', 'goal', existing?.goal, { area: true, required: false, max: 1200, placeholder: '说明要核查的现象和判断依据' })}
+      <label class="row"><input type="checkbox" name="needsTool" ${existing?.needsTool ? 'checked' : ''}> 此检查项需要工具提供证据</label>
+    `, existing ? '保存检查项' : '创建检查项', (value, form) => {
+      if (!complete(value, form, { name: '检查项名称' })) return;
+      const next = {
+        name: value.name, goal: value.goal.trim(), category: value.category.trim(),
+        needsTool: Boolean(value.needsTool), profile:chosenProfile(existing?.subject||value.subject,value.profileVersion),
+      };
+      if (existing) {
+        if (existing.needsTool !== next.needsTool) existing.binding = false;
+        if (!next.needsTool) existing.t = null;
+        applyProfile(existing,next.profile);
+        Object.assign(existing, next);
+      } else {
+        const created = { id: uid('check'), ...next, subject: value.subject, q: null, t: null, binding: false, history: [], messages: [] };
+        S.checks.push(created);
+        S.current = created.id;
+        S.page = 'work';
+        S.returnTo = null;
+        focusId = null;
+        pane = 'tasks';
+      }
+      apply(existing ? '检查项已保存' : '检查项已创建');
+    });
+    wireProfilePicker(form,existing?.subject||form.elements.subject.value,existing?.profile);
+    form.elements.subject?.addEventListener('change',()=>wireProfilePicker(form,form.elements.subject.value,null));
+    return;
+  }
+
+  if (['create-q', 'create-t', 'lib-q', 'lib-t'].includes(action)) {
+    const independent = action.startsWith('lib-');
+    if (!independent && key === 't' && !c.needsTool) return info('添加工具', '请先把此检查项设为需要工具。');
+
+    const sample = !independent && c.id === 'dress' && key === 'q';
+    render(`新建${kind}${independent ? '' : '草稿'}`, `
+      ${independent ? subjectField(libSubject) : `<p class="note">检测主体 · ${H(c.subject)}　当前检查项 · ${H(c.name)}</p>`}
+      ${field(`${kind}名称`, 'name', sample ? '反光衣穿着观察' : '', { autofocus: true })}
+      ${key==='t'?invocationFields():field('N04 · Question 观察提示词','prompt',sample?'观察红框内的人员是否穿着反光衣。无法辨认时记录为未知。':'',{area:true,max:2400,placeholder:'说明模型应在标记图的红框内观察什么。'})}
+      ${key==='q'?questionOutputFields(sample?{factKey:'vest_worn',schemaRef:'yes_no@1'}:null):''}
+      ${independent ? '<p class="note">保存后，匹配此检测主体的检查项可以选择该正式版本。</p>' : ''}
+    `, independent ? '保存正式版本' : '保存草稿并关联', (value, form) => {
+      if (!complete(value, form, { name: kind + '名称', ...(key==='q'?{prompt:'观察提示词'}:{apiRef:'算法接口',regionRef:'区域参数来源'}) })) return;
+      const created = {
+        id: uid(key), type, subject: independent ? value.subject : c.subject,
+        versions: [{ v: 1, name: value.name, ...versionPayload(type,value), formal: independent }],
+      };
+      S.assets.push(created);
+      if (independent) {
+        libSubject = created.subject;
+        libFilter = type;
+      } else {
+        setRef(c, key, { id: created.id, v: 1 });
+      }
+      apply(independent ? `${kind} v1 已创建` : `${kind}草稿已关联`);
+    });
+    return;
+  }
+
+  if (action === 'pick-q' || action === 'pick-t') {
+    if (key === 't' && !c.needsTool) return info('选择工具', '请先把此检查项设为需要工具。');
+    const available = S.assets.flatMap(item => item.type === type && item.subject === c.subject
+      ? [...item.versions].reverse().filter(v => v.formal).map(v => ({ item, v })) : []);
+    if (!available.length) return info(`选择${kind}`, `${c.subject}下暂无可复用的正式${kind}版本。`);
+    const buttons = {};
+    const cards = available.map(({ item, v }, index) => {
+      const selected = c[key]?.id === item.id && c[key]?.v === v.v;
+      buttons[`pick-${index}`] = () => {
+        setRef(c, key, { id: item.id, v: v.v });
+        apply(`已关联${kind} v${v.v}`);
+      };
+      return `<article class="box"><div class="row"><strong>${H(v.name)}</strong><span class="pill">v${H(v.v)}</span></div><p class="muted">${H(capabilityContent(type,v))}</p>${selected ? '<span class="tag">当前关联</span>' : control('采用此版本', 'soft', `pick-${index}`)}</article>`;
+    }).join('');
+    render(`复用${kind}`, `<p class="note">检测主体 · ${H(c.subject)}　选择一个正式版本关联到当前检查项。</p>${cards}`, '', null, buttons, '关闭');
+    return;
+  }
+
+  if (action === 'confirm-q' || action === 'confirm-t') {
+    const v = look(c[key]);
+    if (!v) return info(`确认${kind}`, `请先创建${kind}草稿。`);
+    if(key==='q'&&!validOutput(v.output))return info('Question 输出约束待补','请维护主 Fact 标识和输出 Schema 后采用新版本。');
+    if (v.formal) return info(`确认${kind}`, `此${kind}已是正式版本。`);
+    render(`确认${kind}为正式版本`, `
+      <div class="box"><strong>${H(v.name)} · v${H(v.v)}</strong><p>${H(capabilityContent(type,v))}</p></div>
+      <p class="note">确认后，此版本可被同一检测主体下的其他检查项复用。后续修改需创建新版本。</p>
+    `, '确认正式版本', () => {
+      v.formal = true;
+      apply(`${kind} v${v.v} 已确认`);
+    });
+    return;
+  }
+
+  if (action === 'asset' || action === 'edit-asset') {
+    const item = asset(id);
+    if (!item) return info('能力资产', '该能力资产不可用。');
+    const itemKey = item.type === 'Tool' ? 't' : 'q';
+    const itemName = item.type === 'Tool' ? '工具' : '问题';
+    const formal = item.versions.filter(v => v.formal);
+    const latest = [...item.versions].sort((a, b) => b.v - a.v)[0];
+    const latestFormal = [...formal].sort((a, b) => b.v - a.v)[0];
+    const origin = S.returnTo?.asset === item.id ? linked(S.returnTo.check) : null;
+    const eligible = origin?.subject === item.subject && (itemKey === 'q' || origin.needsTool);
+    if (action === 'edit-asset') {
+      if (!latestFormal && !(itemKey==='q'&&!validOutput(latest.output)) && !(itemKey==='t'&&!hasInvocation(latest))) return info('创建新版本', '请先回到检查项确认草稿。');
+      render(`创建${itemName}新版本`, `
+        <p class="note">当前最新版 v${H(latest.v)}。保存会创建正式版本 v${H(latest.v + 1)}。</p>
+        ${field(`${itemName}名称`, 'name', latest.name, { autofocus: true })}
+        ${itemKey==='t'?invocationFields(latest):field('N04 · Question 观察提示词','prompt',(latest.prompt||latest.body||''),{area:true,max:2400})}
+        ${itemKey==='q'?questionOutputFields(latest.output):''}
+      `, '保存新版本', (value, form) => {
+        if (!complete(value, form, { name: itemName + '名称', ...(itemKey==='q'?{prompt:'观察提示词'}:{apiRef:'算法接口',regionRef:'区域参数来源'}) })) return;
+        item.versions.push({ v: latest.v + 1, name: value.name, ...versionPayload(item.type,value), formal: true });
+        draw();
+        toast(`已创建 ${itemName} v${latest.v + 1}`);
+        openAction('asset', item.id);
+      }, { cancel: () => openAction('asset', item.id) });
+      return;
+    }
+    const versions = [...item.versions].sort((a, b) => b.v - a.v).map(v => `
+      <article class="box"><div class="row"><strong>${H(v.name)} · v${H(v.v)}</strong><span class="pill">${v.formal ? '正式版' : '草稿'}</span></div><p>${H(capabilityContent(item.type,v))}</p></article>`).join('');
+    const consumers = S.checks.filter(target => target[itemKey]?.id === item.id);
+    const needsReview = eligible && latestFormal && (origin[itemKey]?.id !== item.id || origin[itemKey]?.v !== latestFormal.v);
+    render(latest.name, `
+      <p class="note">${H(item.subject)} · ${H(item.type)}</p>
+      ${origin ? `<div class="box"><strong>来自检查项 · ${H(origin.name)}</strong><p>当前关联 · ${H(format(origin[itemKey]))}</p><div class="row">${needsReview ? control('对比版本并选择是否采用', 'primary', 'compare') : ''}${control('保留当前关联并返回', 'soft', 'return')}</div></div>` : ''}
+      <div class="row"><strong>版本记录</strong>${(latestFormal || (itemKey==='q'&&!validOutput(latest.output)) || (itemKey==='t'&&!hasInvocation(latest))) ? control('创建新版本', 'soft', 'edit') : ''}</div>
+      ${versions}
+      <div class="box"><strong>引用检查项</strong>${consumers.length ? `<ul>${consumers.map(target => `<li>${H(target.name)} · v${H(target[itemKey].v)}</li>`).join('')}</ul>` : '<p class="muted">暂无检查项引用</p>'}</div>
+    `, '', null, {
+      edit: () => openAction('edit-asset', item.id),
+      compare: () => openAction(`adopt-${itemKey}`, item.id),
+      return: () => goBack(origin),
+    }, '关闭');
+    return;
+  }
+
+  if (action === 'adopt-q' || action === 'adopt-t') {
+    const item = asset(id || S.returnTo?.asset || c[key]?.id);
+    const origin = S.returnTo?.asset === item?.id ? linked(S.returnTo?.check) : c;
+    if (!origin || !item || item.type !== type || item.subject !== origin.subject || (key === 't' && !origin.needsTool)) {
+      return info('采用版本', '该资产不适用于当前检查项。');
+    }
+    const previous = look(origin[key]);
+    const next = [...item.versions].filter(v => v.formal).sort((a, b) => b.v - a.v)[0];
+    if (!next) return info('采用版本', '该资产暂无正式版本。');
+    if (origin[key]?.id === item.id && origin[key]?.v === next.v) return info('采用版本', '当前检查项已使用该正式版本。');
+    const card = (label, v) => `<article class="box"><span class="pill">${label}</span>${v ? `<p><strong>${H(v.name)} · v${H(v.v)}</strong></p><p>${H(capabilityContent(type,v))}</p>` : '<p>尚未关联</p>'}</article>`;
+    render(`对比${kind}版本`, `
+      <p class="note">采用目标 · ${H(origin.name)}。采用后需要重新确认工程绑定。</p>
+      ${card('当前版本', previous)}
+      ${card('待采用版本', next)}
+      ${S.returnTo?.asset === item.id ? control('保留当前版本并返回检查项', 'soft', 'return') : ''}
+    `, `采用 v${next.v} 并返回检查项`, () => {
+      setRef(origin, key, { id: item.id, v: next.v });
+      goBack(origin, `已采用${kind} v${next.v}`);
+    }, { return: () => goBack(origin) });
+    return;
+  }
+
+  if (action === 'bind') {
+    const output=version(c.q)?.output, schema=schemaFor(output);
+    if(!validOutput(output))return info('Question 输出约束待补','请在 Question 中补齐主 Fact 标识和输出 Schema，再配置规则。');
+    if (!readiness(c).business) return info('配置工程绑定', '请先补齐检查目标、违规类别、有输出约束的正式 Question 和所有必需的 Tool。');
+    const valid = /^[A-Za-z_][A-Za-z0-9_]*$/;
+    const expected = (name, selected) => `<label class="field"><span>命中违规时，该 Fact 应为</span><select name="${name}"><option value="true" ${selected ? 'selected' : ''}>true · 是</option><option value="false" ${selected ? '' : 'selected'}>false · 否</option></select></label>`;
+    const form = render('配置工程绑定', `
+      <div class="box"><strong>N04 · Question</strong><p>${H(format(c.q))}</p>
+      <label class="field">主 Fact（继承自 Question）<input name="qFact" readonly value="${H(output.factKey)}"></label><p class="small">${H(schema.ref)} · ${H(schema.description)}</p>
+      ${schema.kind==='record'?`<label class="field">读取的记录字段<select name="qField">${schema.fields.map(f=>`<option ${f===c.binding?.qField?'selected':''}>${H(f)}</option>`).join('')}</select></label>`:''}
+      ${schema.kind==='enum'?`<label class="field">命中违规时的枚举值<select name="qExpected">${schema.members.map(m=>`<option ${m===c.binding?.qExpected?'selected':''}>${H(m)}</option>`).join('')}</select></label>`:expected('qExpected',c.binding?.qExpected??false)}</div>
+      ${c.needsTool ? `<div class="box"><strong>N05 · Tool</strong><p>${H(format(c.t))}</p>${field('Boolean Fact 标识', 'toolFact', c.binding?.toolFact || 'tool_result', { max: 64 })}${expected('tExpected', c.binding?.tExpected ?? true)}</div>` : ''}
+      <div class="box"><strong>N06 · 规则预览</strong><div class="code" data-rule-preview></div><p class="muted">只在所需 Fact 均为已知且满足条件时命中。</p></div>
+    `, '保存工程绑定', (value, currentForm) => {
+      for (const name of c.needsTool ? ['qFact', 'toolFact'] : ['qFact']) {
+        if (valid.test(value[name]) && (name !== 'toolFact' || value[name] !== value.qFact)) continue;
+        const input = currentForm.elements.namedItem(name);
+        input.setCustomValidity(name === 'toolFact' && value[name] === value.qFact
+          ? '工具 Fact 标识必须与问题 Fact 标识不同。' : '请输入有效标识，首字符为字母或下划线。');
+        input.reportValidity();
+        return;
+      }
+      c.binding = { qFact: output.factKey, qField: value.qField || null, qExpected: schema.kind==='enum'?value.qExpected:value.qExpected === 'true', tExpected: c.needsTool ? value.tExpected === 'true' : null, toolFact: c.needsTool ? value.toolFact : null };
+      apply('工程绑定已保存');
+    });
+    const update = () => {
+      const qFact=output.factKey+(form.elements.qField?'.'+form.elements.qField.value:'');
+      const literal=schema.kind==='enum'?JSON.stringify(form.elements.qExpected.value):form.elements.qExpected.value;
+      const toolFact = form.elements.namedItem('toolFact')?.value || 'Tool Fact';
+      form.querySelector('[data-rule-preview]').textContent = `${qFact} == ${literal}${c.needsTool ? ' AND ' + toolFact + ' == ' + form.elements.namedItem('tExpected').value : ''}`;
+    };
+    form.addEventListener('input', () => {
+      form.elements.namedItem('toolFact')?.setCustomValidity('');
+      update();
+    });
+    update();
+    return;
+  }
+
+  if (action === 'publish') {
+    if (!readiness(c).business) return info('发布业务版本', '请先补齐检查目标、违规类别、有输出约束的正式 Question 和所有必需的 Tool。');
+    const currentSignature = signature(c);
+    if (c.history.at(-1)?.signature === currentSignature) return info('发布业务版本', '当前业务内容已发布。');
+    const previous = c.history.at(-1);
+    const revision = (previous?.revision || 0) + 1;
+    render('发布业务版本', `
+      <article class="box"><strong>${H(c.name)} · v${H(revision)}</strong>
+      <p>Question · ${H(format(c.q))}</p>
+      ${c.needsTool ? `<p>Tool · ${H(format(c.t))}</p>` : ''}</article>
+      <p class="note">发布会保存当前业务内容及其资产引用。工程绑定 · ${readiness(c).runtime ? '已配置' : '待配置'}。</p>
+    `, '确认发布', () => {
+      c.history.push({
+        revision, signature: currentSignature, time: new Date().toISOString(),
+        snapshot: { name: c.name, goal: c.goal, category: c.category, q: { ...c.q }, t: c.needsTool ? { ...c.t } : null },
+      });
+      apply(`业务版本 v${revision} 已发布`);
+    });
+    return;
+  }
+
+  if (action === 'history') {
+    const entries = [...c.history].reverse().map(item => {
+      const snapshot = item.snapshot;
+      return `<article class="box"><div class="row"><strong>业务版本 v${H(item.revision)}</strong><span class="muted">${H(shortDate(item.time))}</span></div>
+        <p><strong>${H(snapshot.name)}</strong>${snapshot.category ? ` · ${H(snapshot.category)}` : ''}</p>
+        ${snapshot.goal ? `<p>${H(snapshot.goal)}</p>` : ''}<p>Question · ${H(format(snapshot.q))}</p>
+        ${snapshot.t ? `<p>Tool · ${H(format(snapshot.t))}</p>` : ''}</article>`;
+    }).join('');
+    render('发布记录', entries || '<p class="note">当前检查项暂无已发布业务版本。</p>', '', null, {}, '关闭');
+    return;
+  }
+
+  if (action === 'choose') {
+    const buttons = {};
+    const rows = S.checks.map((target, index) => {
+      buttons[`check-${index}`] = () => {
+        goBack(target, '已切换检查项');
+      };
+      return `<article class="box"><div class="row"><strong>${H(target.name)}</strong><span class="pill">${H(target.subject)}</span>${target.id === c?.id ? '<span class="tag">当前检查项</span>' : control('打开', 'soft', `check-${index}`)}</div></article>`;
+    }).join('');
+    render('切换检查项', rows || '<p class="note">暂无检查项。</p>', '', null, buttons, '关闭');
+  }
+}
+
+draw();
+</script></body></html>

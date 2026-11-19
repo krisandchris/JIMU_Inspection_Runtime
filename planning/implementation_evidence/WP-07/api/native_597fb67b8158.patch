@@ -1,0 +1,2423 @@
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -15,6 +15,9 @@
+   "psycopg[binary]>=3.3.5,<3.3.6",
+   "httpx>=0.28.1,<0.29",
+   "pillow>=12.3.0,<12.4",
++  "fastapi>=0.141.1,<0.142",
++  "starlette>=1.6.0,<1.7",
++  "uvicorn>=0.52.4,<0.53",
+ ]
+ 
+ [dependency-groups]
+@@ -28,6 +31,7 @@
+ 
+ [tool.uv]
+ required-version = ">=0.9.15,<0.10"
++constraint-dependencies = ["click>=8.5.0,<8.5.1", "annotated-doc>=0.0.4,<0.0.5"]
+ 
+ [[tool.uv.index]]
+ name = "jimu-pypi"
+--- /dev/null
++++ b/src/jimu_runtime/api/__init__.py
+@@ -0,0 +1 @@
++"""Locally composed HTTP control-plane adapters."""
+--- /dev/null
++++ b/src/jimu_runtime/api/admin_routes.py
+@@ -0,0 +1,209 @@
++"""Administrative routes with both host ACL and ReleaseManager authorization."""
++
++from asyncio import to_thread
++from collections.abc import Callable
++from typing import Annotated
++
++from fastapi import APIRouter, Depends, Query, Request
++
++from jimu_runtime.api.auth import Access, Action, Resource
++from jimu_runtime.api.boundary import ApiError, HttpBoundary, read_body, read_json
++from jimu_runtime.api.contracts import ActivateRelease, ApproveRelease, RegisterRelease
++from jimu_runtime.api.ports import Administration
++from jimu_runtime.api.route_support import request_schema, required_key
++from jimu_runtime.bundle.admission import admit_bundle
++from jimu_runtime.bundle.releases import ReleaseOperationError
++from jimu_runtime.bundle.store import StoredAdmission
++from jimu_runtime.domain.primitives import RecordId
++from jimu_runtime.domain.runtime.releases import ActivationRecord, ReleaseRecord
++
++_EXPECTED_RELEASE_ERRORS = frozenset(
++    (
++        "accepted_admission_required",
++        "release_id_conflict",
++        "release_scope_already_approved",
++        "release_scope_not_approved",
++        "stale_activation_predecessor",
++        "release_already_active",
++        "activation_id_conflict",
++        "release_operation_conflict",
++        "operation_key_conflict",
++    )
++)
++
++
++async def _release_call[T](operation: Callable[..., T], **arguments: object) -> T:
++    try:
++        return await to_thread(operation, **arguments)
++    except ReleaseOperationError as error:
++        if error.code == "release_not_found":
++            raise ApiError(404, "resource_not_found") from None
++        if error.code == "unauthorized_release_action":
++            raise ApiError(403, "access_denied") from None
++        if error.code in _EXPECTED_RELEASE_ERRORS:
++            raise ApiError(409, error.code) from None
++        raise
++
++
++def mount_administration(
++    router: APIRouter,
++    boundary: HttpBoundary,
++    admin: Administration,
++) -> None:
++    authenticated = Depends(boundary.access)
++
++    @router.post(
++        "/bundles",
++        openapi_extra={
++            "requestBody": {
++                "required": True,
++                "content": {
++                    "application/zip": {
++                        "schema": {"type": "string", "format": "binary"}
++                    }
++                },
++            }
++        },
++    )
++    async def submit_bundle(
++        request: Request, access: Access = authenticated
++    ) -> StoredAdmission:
++        operation = required_key(request, record_id=True)
++        await boundary.require(
++            access,
++            Resource(
++                action=Action.BUNDLE_ADMIT, scope=access.scope, resource_id=operation
++            ),
++        )
++        raw = await read_body(
++            request,
++            media_type="application/zip",
++            limit=admin.bundle_limits.max_archive_bytes,
++        )
++        environment = await admin.admission_environment(access.identity, access.scope)
++        return await to_thread(
++            admit_bundle,
++            raw,
++            operation_id=operation,
++            actor=access.identity.actor,
++            limits=admin.bundle_limits,
++            environment=environment,
++            store=admin.bundles,
++        )
++
++    @router.get("/bundles/{bundle_id}")
++    async def get_bundle(
++        bundle_id: RecordId,
++        receipt_id: Annotated[RecordId, Query()],
++        access: Access = authenticated,
++    ) -> StoredAdmission:
++        await boundary.require(
++            access,
++            Resource(
++                action=Action.BUNDLE_READ,
++                scope=access.scope,
++                resource_id=bundle_id,
++                related_id=receipt_id,
++            ),
++            conceal=True,
++        )
++        record = await to_thread(admin.bundles.get_receipt, receipt_id)
++        if (
++            record is None
++            or record.receipt is None
++            or record.receipt.bundle_id != bundle_id
++        ):
++            raise ApiError(404, "resource_not_found")
++        return record
++
++    @router.post("/releases", openapi_extra=request_schema(RegisterRelease))
++    async def register_release(
++        request: Request, access: Access = authenticated
++    ) -> ReleaseRecord:
++        payload = await read_json(request, RegisterRelease, boundary.limits.json_bytes)
++        await boundary.require(
++            access,
++            Resource(
++                action=Action.RELEASE_REGISTER,
++                scope=access.scope,
++                resource_id=payload.release_id,
++                related_id=payload.admission_receipt_id,
++            ),
++        )
++        return await _release_call(
++            admin.releases.register_release,
++            operation_key=payload.operation_key,
++            release_id=payload.release_id,
++            admission_receipt_id=payload.admission_receipt_id,
++            principal=access.identity.principal,
++        )
++
++    @router.get("/releases/{release_id}")
++    async def get_release(
++        release_id: RecordId, access: Access = authenticated
++    ) -> ReleaseRecord:
++        await boundary.require(
++            access,
++            Resource(
++                action=Action.RELEASE_READ, scope=access.scope, resource_id=release_id
++            ),
++            conceal=True,
++        )
++        release = await to_thread(admin.releases.get_release, release_id)
++        if release is None:
++            raise ApiError(404, "resource_not_found")
++        return release
++
++    @router.post(
++        "/releases/{release_id}/approve", openapi_extra=request_schema(ApproveRelease)
++    )
++    async def approve_release(
++        release_id: RecordId,
++        request: Request,
++        access: Access = authenticated,
++    ) -> ReleaseRecord:
++        payload = await read_json(request, ApproveRelease, boundary.limits.json_bytes)
++        await boundary.require(
++            access,
++            Resource(
++                action=Action.RELEASE_APPROVE,
++                scope=access.scope,
++                resource_id=release_id,
++                activation_scope=payload.scope,
++            ),
++        )
++        return await _release_call(
++            admin.releases.approve_release,
++            operation_key=payload.operation_key,
++            release_id=release_id,
++            scope=payload.scope,
++            principal=access.identity.principal,
++        )
++
++    @router.post(
++        "/releases/{release_id}/activate", openapi_extra=request_schema(ActivateRelease)
++    )
++    async def activate_release(
++        release_id: RecordId,
++        request: Request,
++        access: Access = authenticated,
++    ) -> ActivationRecord:
++        payload = await read_json(request, ActivateRelease, boundary.limits.json_bytes)
++        await boundary.require(
++            access,
++            Resource(
++                action=Action.RELEASE_ACTIVATE,
++                scope=access.scope,
++                resource_id=release_id,
++                activation_scope=payload.scope,
++            ),
++        )
++        return await _release_call(
++            admin.releases.activate,
++            operation_key=payload.operation_key,
++            release_id=release_id,
++            scope=payload.scope,
++            activation_id=payload.activation_id,
++            expected_previous_activation_id=payload.expected_previous_activation_id,
++            principal=access.identity.principal,
++        )
+--- /dev/null
++++ b/src/jimu_runtime/api/app.py
+@@ -0,0 +1,145 @@
++"""Compose only the local candidate routes with explicit trusted services."""
++
++from typing import Any
++
++from fastapi import APIRouter, FastAPI
++from pydantic import TypeAdapter
++from sqlalchemy.ext.asyncio import AsyncEngine
++
++from jimu_runtime.api.admin_routes import mount_administration
++from jimu_runtime.api.auth import ApiAuthority
++from jimu_runtime.api.boundary import ApiLimits, HttpBoundary, SafeRoute
++from jimu_runtime.api.contracts import (
++    ActivateRelease,
++    ApproveRelease,
++    ErrorResponse,
++    RegisterRelease,
++)
++from jimu_runtime.api.evidence_routes import mount_evidence
++from jimu_runtime.api.inference_routes import mount_inference, mount_replays
++from jimu_runtime.api.ports import (
++    Administration,
++    ArtifactReplayPort,
++    EvidencePort,
++    InferenceReplayPort,
++)
++from jimu_runtime.api.records import RuntimeRecords
++from jimu_runtime.api.route_support import Routing
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_support import ShortText
++from jimu_runtime.domain.primitives import RecordId
++from jimu_runtime.domain.runtime.intake import TaskSubmission
++from jimu_runtime.domain.runtime.replay import (
++    ArtifactReplayRequest,
++    InferenceReplayRequest,
++)
++from jimu_runtime.workflow.intake import IntakeService
++from jimu_runtime.workflow.jobs import DurableJobs
++
++_ERRORS = {
++    400: "Ambiguous or invalid transport metadata",
++    401: "Authentication required",
++    403: "Action denied",
++    404: "Resource unavailable",
++    409: "State or identity conflict",
++    410: "Evidence expired",
++    413: "Byte budget exceeded",
++    415: "Unsupported content type",
++    422: "Invalid request contract",
++    500: "Runtime request failed",
++    503: "Runtime temporarily unavailable",
++}
++
++DEFAULT_LIMITS = ApiLimits()
++
++
++def create_app(
++    engine: AsyncEngine,
++    intake: IntakeService,
++    *,
++    authority: ApiAuthority,
++    administration: Administration | None = None,
++    artifact_replay: ArtifactReplayPort | None = None,
++    inference_replay: InferenceReplayPort | None = None,
++    evidence: EvidencePort | None = None,
++    limits: ApiLimits = DEFAULT_LIMITS,
++) -> FastAPI:
++    """Return an ASGI app. The host owns service lifecycle, bind address and credentials."""
++    app = LocalApi(
++        title="JIMU Inspection Runtime",
++        version="1.0.0",
++        openapi_url=None,
++        docs_url=None,
++        redoc_url=None,
++        redirect_slashes=False,
++    )
++    router = APIRouter(
++        prefix="/api/v1",
++        route_class=SafeRoute,
++        responses={
++            status: {"description": detail, "model": ErrorResponse}
++            for status, detail in _ERRORS.items()
++        },
++    )
++    boundary = HttpBoundary(authority, limits)
++    routes = Routing(boundary, RuntimeRecords(engine))
++    mount_inference(router, routes, intake, DurableJobs(engine))
++    mount_replays(router, routes, artifact=artifact_replay, inference=inference_replay)
++    schemas: list[type[ContractModel]] = [TaskSubmission]
++    if administration is not None:
++        mount_administration(router, boundary, administration)
++        schemas.extend((RegisterRelease, ApproveRelease, ActivateRelease))
++    if artifact_replay is not None:
++        schemas.append(ArtifactReplayRequest)
++    if inference_replay is not None:
++        schemas.append(InferenceReplayRequest)
++    if evidence is not None:
++        mount_evidence(router, routes, evidence)
++    app.include_router(router)
++    app.input_models = tuple(schemas)
++    return app
++
++
++class LocalApi(FastAPI):
++    input_models: tuple[type[ContractModel], ...] = ()
++
++    def openapi(self) -> dict[str, Any]:
++        if self.openapi_schema is not None:
++            return self.openapi_schema
++        schema = super().openapi()
++        components = schema.setdefault("components", {})
++        components.setdefault("securitySchemes", {})["RuntimeBearer"] = {
++            "type": "http",
++            "scheme": "bearer",
++        }
++        model_schemas = components.setdefault("schemas", {})
++        for model in self.input_models:
++            generated = model.model_json_schema(
++                ref_template="#/components/schemas/JimuInput_{model}"
++            )
++            for name, definition in generated.pop("$defs", {}).items():
++                key = f"JimuInput_{name}"
++                if key in model_schemas and model_schemas[key] != definition:
++                    raise ValueError(f"conflicting OpenAPI input component: {key}")
++                model_schemas[key] = definition
++            model_schemas[f"JimuInput_{model.__name__}"] = generated
++        identifier = TypeAdapter[str](RecordId).json_schema()
++        replay_key = TypeAdapter[str](ShortText).json_schema()
++        for path, operations in schema["paths"].items():
++            for method, operation in operations.items():
++                headers = {"X-Jimu-Project": identifier, "X-Jimu-Client": identifier}
++                if method == "post" and path.endswith("/bundles"):
++                    headers["Idempotency-Key"] = identifier
++                if method == "post" and path.endswith("-replay"):
++                    headers["Idempotency-Key"] = replay_key
++                for name, header_schema in headers.items():
++                    operation.setdefault("parameters", []).append(
++                        {
++                            "name": name,
++                            "in": "header",
++                            "required": True,
++                            "schema": header_schema,
++                        }
++                    )
++                operation["security"] = [{"RuntimeBearer": []}]
++        return schema
+--- /dev/null
++++ b/src/jimu_runtime/api/auth.py
+@@ -0,0 +1,62 @@
++"""Authentication and resource authorization supplied by the trusted host."""
++
++from dataclasses import dataclass, field
++from enum import StrEnum
++from typing import Protocol
++
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.releases import ActivationScope
++
++
++class Action(StrEnum):
++    ACCESS_SCOPE = "access_scope"
++    TASK_SUBMIT = "task_submit"
++    TASK_READ = "task_read"
++    TASK_CANCEL = "task_cancel"
++    TASK_RESULT = "task_result"
++    EXECUTION_READ = "execution_read"
++    EXECUTION_TRACE = "execution_trace"
++    ARTIFACT_REPLAY = "artifact_replay"
++    INFERENCE_REPLAY = "inference_replay"
++    EVIDENCE_READ = "evidence_read"
++    EVIDENCE_NORMALIZED = "evidence_normalized"
++    EVIDENCE_RAW = "evidence_raw"
++    EVIDENCE_LATE = "evidence_late"
++    BUNDLE_ADMIT = "bundle_admit"
++    BUNDLE_READ = "bundle_read"
++    RELEASE_REGISTER = "release_register"
++    RELEASE_READ = "release_read"
++    RELEASE_APPROVE = "release_approve"
++    RELEASE_ACTIVATE = "release_activate"
++
++
++@dataclass(frozen=True, slots=True)
++class Identity:
++    principal: object = field(repr=False)
++    actor: ActorRef
++
++
++@dataclass(frozen=True, slots=True, kw_only=True)
++class Resource:
++    action: Action
++    scope: IdempotencyScope
++    task_id: str | None = None
++    execution_id: str | None = None
++    resource_id: str | None = None
++    related_id: str | None = None
++    activation_scope: ActivationScope | None = None
++
++
++class ApiAuthority(Protocol):
++    async def authenticate(self, credential: str) -> Identity | None:
++        """Authenticate the bearer against the host's trusted identity registry."""
++
++    async def allows(self, identity: Identity, resource: Resource) -> bool:
++        """Authoritatively check this action on this exact scoped resource."""
++
++
++@dataclass(frozen=True, slots=True)
++class Access:
++    identity: Identity
++    scope: IdempotencyScope
+--- /dev/null
++++ b/src/jimu_runtime/api/boundary.py
+@@ -0,0 +1,239 @@
++"""HTTP authentication, safe error handling and bounded bodies."""
++
++import json
++import logging
++from collections.abc import Callable, Coroutine
++from dataclasses import dataclass
++from re import fullmatch
++from typing import Any, cast
++from uuid import uuid4
++
++from fastapi import Request, Response
++from fastapi.exceptions import RequestValidationError
++from fastapi.responses import JSONResponse
++from fastapi.routing import APIRoute
++from pydantic import ValidationError
++from sqlalchemy.exc import SQLAlchemyError
++from starlette.requests import ClientDisconnect
++
++from jimu_runtime.api.auth import Access, Action, ApiAuthority, Resource
++from jimu_runtime.api.contracts import ErrorResponse
++from jimu_runtime.bundle.store import StoreBusy, StoreConflict
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.inspection.media.types import MediaError
++from jimu_runtime.workflow.intake import IntakeAuthorizationError, IntakeError
++
++_LOGGER = logging.getLogger(__name__)
++
++
++class ApiError(Exception):
++    def __init__(self, status: int, code: str) -> None:
++        self.status = status
++        self.code = code
++        super().__init__(code)
++
++
++@dataclass(frozen=True, slots=True)
++class ApiLimits:
++    json_bytes: int = 256 * 1024
++    trace_bytes: int = 256 * 1024
++    evidence_bytes: int = 4 * 1024 * 1024
++
++    def __post_init__(self) -> None:
++        if any(
++            type(bound) is not int or not 512 <= bound <= 128 * 1024 * 1024
++            for bound in (self.json_bytes, self.trace_bytes, self.evidence_bytes)
++        ):
++            raise ValueError("invalid API byte limit")
++
++
++def _error(request_id: str, status: int, code: str) -> JSONResponse:
++    headers = {"WWW-Authenticate": "Bearer"} if status == 401 else None
++    return JSONResponse(
++        ErrorResponse(code=code, request_id=request_id).model_dump(),
++        status_code=status,
++        headers=headers,
++    )
++
++
++def single_header(request: Request, name: str) -> str | None:
++    values = request.headers.getlist(name)
++    if len(values) > 1:
++        raise ApiError(400, "ambiguous_request_header")
++    return values[0] if values else None
++
++
++class SafeRoute(APIRoute):
++    """Keep credentials, payloads, resource IDs and exception details out of audit logs."""
++
++    def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
++        handler = super().get_route_handler()
++
++        async def safe(request: Request) -> Response:
++            request_id = uuid4().hex
++            code = "ok"
++            try:
++                if any(
++                    len(request.query_params.getlist(key)) != 1
++                    for key in request.query_params
++                ):
++                    raise ApiError(400, "ambiguous_query_parameter")
++                response = await handler(request)
++            except ApiError as error:
++                code = error.code
++                response = _error(request_id, error.status, code)
++            except RequestValidationError:
++                code = "invalid_request"
++                response = _error(request_id, 422, code)
++            except IntakeAuthorizationError:
++                code = "access_denied"
++                response = _error(request_id, 403, code)
++            except IntakeError as error:
++                if error.code == "intake_submission_too_large":
++                    code = "request_too_large"
++                    response = _error(request_id, 413, code)
++                else:
++                    code = "intake_pending" if error.retryable else "intake_rejected"
++                    response = _error(request_id, 503 if error.retryable else 409, code)
++            except MediaError as error:
++                if str(error) in {
++                    "original_media_unavailable",
++                    "original_media_identity_conflict",
++                }:
++                    code = "original_media_unavailable"
++                    response = _error(request_id, 409, code)
++                else:
++                    code = "runtime_media_failed"
++                    response = _error(request_id, 500, code)
++            except StoreConflict:
++                code = "operation_conflict"
++                response = _error(request_id, 409, code)
++            except (StoreBusy, SQLAlchemyError):
++                code = "runtime_unavailable"
++                response = _error(request_id, 503, code)
++            except ClientDisconnect:
++                code = "request_interrupted"
++                response = _error(request_id, 400, code)
++            except Exception:
++                code = "runtime_request_failed"
++                response = _error(request_id, 500, code)
++            response.headers["Cache-Control"] = "no-store"
++            response.headers["X-Content-Type-Options"] = "nosniff"
++            response.headers["X-Request-ID"] = request_id
++            _LOGGER.info(
++                "runtime_api_request",
++                extra={
++                    "request_id": request_id,
++                    "route_name": self.name,
++                    "http_status": response.status_code,
++                    "outcome_code": code,
++                },
++            )
++            return response
++
++        return safe
++
++
++class HttpBoundary:
++    def __init__(self, authority: ApiAuthority, limits: ApiLimits) -> None:
++        self.authority = authority
++        self.limits = limits
++
++    async def access(self, request: Request) -> Access:
++        header = single_header(request, "authorization")
++        if header is None or len(header) > 8192:
++            raise ApiError(401, "authentication_required")
++        matched = fullmatch(r"(?i:Bearer) ([A-Za-z0-9._~+/-]+={0,2})", header)
++        if matched is None:
++            raise ApiError(401, "authentication_required")
++        identity = await self.authority.authenticate(matched[1])
++        if identity is None:
++            raise ApiError(401, "authentication_required")
++        ActorRef.model_validate(identity.actor)
++        project = single_header(request, "x-jimu-project")
++        client = single_header(request, "x-jimu-client")
++        try:
++            scope = IdempotencyScope.model_validate(
++                {"project_id": project, "client_id": client}
++            )
++        except ValidationError:
++            raise ApiError(422, "invalid_scope") from None
++        access = Access(identity, scope)
++        await self.require(access, Resource(action=Action.ACCESS_SCOPE, scope=scope))
++        return access
++
++    async def require(
++        self, access: Access, resource: Resource, *, conceal: bool = False
++    ) -> None:
++        if (
++            resource.scope != access.scope
++            or await self.authority.allows(access.identity, resource) is not True
++        ):
++            raise (
++                ApiError(404, "resource_not_found")
++                if conceal
++                else ApiError(403, "access_denied")
++            )
++
++
++def _unique_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
++    body: dict[str, object] = {}
++    for key, value in pairs:
++        if key in body:
++            raise ValueError("duplicate JSON key")
++        body[key] = value
++    return body
++
++
++def _nonfinite(_value: str) -> object:
++    raise ValueError("nonfinite JSON value")
++
++
++async def read_body(request: Request, *, media_type: str, limit: int) -> bytes:
++    content_type = single_header(request, "content-type")
++    if (
++        content_type is None
++        or content_type.split(";", 1)[0].strip().lower() != media_type
++    ):
++        raise ApiError(415, "unsupported_content_type")
++    encoding = single_header(request, "content-encoding")
++    if encoding not in (None, "identity"):
++        raise ApiError(415, "unsupported_content_encoding")
++    length = single_header(request, "content-length")
++    if length is not None:
++        if fullmatch(r"[0-9]{1,12}", length) is None:
++            raise ApiError(400, "invalid_content_length")
++        if int(length) > limit:
++            raise ApiError(413, "request_too_large")
++    data = bytearray()
++    async for chunk in request.stream():
++        if len(chunk) > limit - len(data):
++            raise ApiError(413, "request_too_large")
++        data.extend(chunk)
++    if length is not None and len(data) != int(length):
++        raise ApiError(400, "invalid_content_length")
++    return bytes(data)
++
++
++async def read_json[T: ContractModel](
++    request: Request, model: type[T], limit: int
++) -> T:
++    raw = await read_body(request, media_type="application/json", limit=limit)
++    try:
++        decoded = raw.decode("utf-8")
++        checked = cast(
++            object,
++            json.loads(
++                decoded, object_pairs_hook=_unique_pairs, parse_constant=_nonfinite
++            ),
++        )
++        if not isinstance(checked, dict):
++            raise ValueError("expected a JSON object")
++    except (ValueError, RecursionError):
++        raise ApiError(422, "invalid_json") from None
++    try:
++        return model.model_validate_json(raw)
++    except ValidationError:
++        raise ApiError(422, "invalid_request") from None
+--- /dev/null
++++ b/src/jimu_runtime/api/contracts.py
+@@ -0,0 +1,65 @@
++"""Wire DTOs for the versioned Runtime API."""
++
++from typing import Annotated, Literal
++
++from pydantic import Field
++
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_support import UTCDateTime
++from jimu_runtime.domain.enums import TaskStatus
++from jimu_runtime.domain.primitives import Digest, RecordId
++from jimu_runtime.domain.runtime.executions import ExecutionEvent, ExecutionRecord
++from jimu_runtime.domain.runtime.intake import AcceptedTask
++from jimu_runtime.domain.runtime.releases import ActivationScope
++
++
++class TaskView(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    task: AcceptedTask
++    task_status: TaskStatus
++    execution: ExecutionRecord
++    cancel_requested_at: UTCDateTime | None
++
++
++class CancellationReceipt(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    execution_id: RecordId
++    cancellation_requested: Literal[True] = True
++
++
++class TracePage(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    execution_id: RecordId
++    events: tuple[ExecutionEvent, ...]
++    next_after_event_number: Annotated[int, Field(ge=1)] | None
++
++
++class RegisterRelease(ContractModel):
++    schema_version: Literal["1.0.0"]
++    operation_key: RecordId
++    release_id: RecordId
++    admission_receipt_id: RecordId
++
++
++class ApproveRelease(ContractModel):
++    schema_version: Literal["1.0.0"]
++    operation_key: RecordId
++    scope: ActivationScope
++
++
++class ActivateRelease(ApproveRelease):
++    activation_id: RecordId
++    expected_previous_activation_id: RecordId | None
++
++
++class EvidenceCoordinates(ContractModel):
++    execution_id: RecordId
++    node_run_id: RecordId
++    attempt_id: RecordId
++    evidence_id: RecordId
++    output_digest: Digest
++
++
++class ErrorResponse(ContractModel):
++    code: str
++    request_id: RecordId
+--- /dev/null
++++ b/src/jimu_runtime/api/evidence_routes.py
+@@ -0,0 +1,114 @@
++"""Read exact evidence with proof and independent material permissions."""
++
++from typing import Annotated, Literal
++
++from fastapi import APIRouter, Depends, Query, Response
++from pydantic import TypeAdapter
++
++from jimu_runtime.api.auth import Access, Action, Resource
++from jimu_runtime.api.boundary import ApiError
++from jimu_runtime.api.contracts import EvidenceCoordinates
++from jimu_runtime.api.ports import EvidencePort
++from jimu_runtime.api.route_support import Routing
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.primitives import Digest, RecordId
++from jimu_runtime.domain.runtime.evidence import EvidenceMimeType
++
++_MIME = TypeAdapter[str](EvidenceMimeType)
++
++
++def mount_evidence(router: APIRouter, routes: Routing, reader: EvidencePort) -> None:
++    authenticated = Depends(routes.boundary.access)
++
++    @router.get(
++        "/evidence/{evidence_id}",
++        response_class=Response,
++        responses={
++            200: {
++                "content": {
++                    "application/octet-stream": {
++                        "schema": {"type": "string", "format": "binary"}
++                    }
++                }
++            }
++        },
++    )
++    async def read_evidence(
++        evidence_id: RecordId,
++        execution_id: Annotated[RecordId, Query()],
++        digest: Annotated[Digest, Query()],
++        representation: Literal["evidence", "normalized", "raw"] = "evidence",
++        node_run_id: Annotated[RecordId | None, Query()] = None,
++        attempt_id: Annotated[RecordId | None, Query()] = None,
++        late: bool = False,
++        access: Access = authenticated,
++    ) -> Response:
++        action = {
++            "evidence": Action.EVIDENCE_READ,
++            "normalized": Action.EVIDENCE_NORMALIZED,
++            "raw": Action.EVIDENCE_RAW,
++        }[representation]
++        owner = await routes.execution(
++            access, execution_id, action, resource_id=evidence_id
++        )
++        if representation == "evidence":
++            if node_run_id is None or attempt_id is None or late:
++                raise ApiError(422, "invalid_evidence_locator")
++            material = await reader.read_asset(
++                access.identity,
++                access.scope,
++                owner.task.task_id,
++                EvidenceCoordinates(
++                    execution_id=execution_id,
++                    node_run_id=node_run_id,
++                    attempt_id=attempt_id,
++                    evidence_id=evidence_id,
++                    output_digest=digest,
++                ),
++            )
++        else:
++            if node_run_id is not None or attempt_id is not None:
++                raise ApiError(422, "invalid_evidence_locator")
++            if late:
++                await routes.boundary.require(
++                    access,
++                    Resource(
++                        action=Action.EVIDENCE_LATE,
++                        scope=access.scope,
++                        task_id=owner.task.task_id,
++                        execution_id=execution_id,
++                        resource_id=evidence_id,
++                    ),
++                    conceal=True,
++                )
++            material = await reader.read_audit(
++                access.identity,
++                access.scope,
++                owner.task.task_id,
++                execution_id,
++                evidence_id,
++                late=late,
++                role=representation,
++            )
++        if material.status == "denied":
++            raise ApiError(404, "resource_not_found")
++        if material.status in {"expired", "disposition_pending"}:
++            raise ApiError(410, "evidence_expired")
++        if material.status in {"missing", "not_retained", "unmanaged"}:
++            raise ApiError(404, "evidence_unavailable")
++        if (
++            material.status != ("late" if late else "available")
++            or material.content is None
++            or material.mime_type is None
++        ):
++            raise ApiError(500, "evidence_verification_failed")
++        if len(material.content) > routes.boundary.limits.evidence_bytes:
++            raise ApiError(413, "evidence_response_too_large")
++        if representation != "evidence" and sha256_digest(material.content) != digest:
++            raise ApiError(404, "resource_not_found")
++        media_type = _MIME.validate_python(material.mime_type)
++        return Response(
++            material.content,
++            media_type=media_type,
++            headers={"Content-Disposition": "attachment"},
++        )
+--- /dev/null
++++ b/src/jimu_runtime/api/inference_routes.py
+@@ -0,0 +1,222 @@
++"""Task and Execution routes backed by durable intake and scheduling."""
++
++from typing import Annotated
++
++from fastapi import APIRouter, Depends, Query, Request, Response
++
++from jimu_runtime.api.auth import Access, Action, Resource
++from jimu_runtime.api.boundary import ApiError, read_json
++from jimu_runtime.api.contracts import CancellationReceipt, TaskView, TracePage
++from jimu_runtime.api.ports import ArtifactReplayPort, InferenceReplayPort
++from jimu_runtime.api.route_support import Routing, request_schema, required_key
++from jimu_runtime.domain.enums import ExecutionStatus
++from jimu_runtime.domain.primitives import RecordId
++from jimu_runtime.domain.runtime.executions import ExecutionRecord
++from jimu_runtime.domain.runtime.intake import TaskSubmission
++from jimu_runtime.domain.runtime.replay import (
++    ArtifactReplayRequest,
++    ArtifactReplayRun,
++    InferenceReplayRequest,
++    InferenceReplayRun,
++)
++from jimu_runtime.workflow.engine import ExecutionFinalization
++from jimu_runtime.workflow.intake import IntakeService
++from jimu_runtime.workflow.jobs import DurableJobs
++
++_ACTIVE = frozenset((ExecutionStatus.INITIALIZED, ExecutionStatus.RUNNING))
++_REPLAY_CONFLICTS = frozenset(
++    (
++        "artifact_replay_idempotency_conflict",
++        "artifact_replay_input_digest_mismatch",
++        "artifact_replay_input_missing",
++        "artifact_source_execution_pin_mismatch",
++        "artifact_source_execution_unsettled",
++        "artifact_scoring_protocol_unavailable",
++        "inference_replay_key_conflict",
++        "inference_replay_source_pin_mismatch",
++        "inference_replay_target_pins_unsupported",
++        "inference_replay_source_context_pending",
++        "inference_replay_historical_capabilities_missing",
++    )
++)
++
++
++def _replay_error(error: ValueError | RuntimeError) -> None:
++    code = getattr(error, "code", None)
++    if isinstance(code, str) and code in _REPLAY_CONFLICTS:
++        raise ApiError(409, code) from None
++    if code == "artifact_replay_invalid_idempotency_key":
++        raise ApiError(422, "invalid_idempotency_key") from None
++
++
++def mount_inference(
++    router: APIRouter,
++    routes: Routing,
++    intake: IntakeService,
++    jobs: DurableJobs,
++) -> None:
++    authenticated = Depends(routes.boundary.access)
++
++    @router.post(
++        "/inference/tasks",
++        status_code=202,
++        openapi_extra=request_schema(TaskSubmission),
++    )
++    async def submit_task(request: Request, access: Access = authenticated) -> TaskView:
++        submission = await read_json(
++            request, TaskSubmission, routes.boundary.limits.json_bytes
++        )
++        if submission.idempotency_scope != access.scope:
++            raise ApiError(403, "access_denied")
++        await routes.boundary.require(
++            access,
++            Resource(
++                action=Action.TASK_SUBMIT,
++                scope=access.scope,
++                resource_id=submission.request_id,
++                related_id=submission.context.device_id,
++            ),
++        )
++        result = await intake.submit(submission, principal=access.identity.principal)
++        selected = await routes.records.primary(access.scope, result.task.task_id)
++        if (
++            selected is None
++            or selected.task != result.task
++            or selected.execution.execution_id != result.execution.execution_id
++        ):
++            raise ApiError(500, "intake_receipt_mismatch")
++        return selected
++
++    @router.get("/inference/tasks/{task_id}")
++    async def get_task(task_id: RecordId, access: Access = authenticated) -> TaskView:
++        return await routes.task(access, task_id, Action.TASK_READ)
++
++    @router.post("/inference/tasks/{task_id}/cancel", status_code=202)
++    async def cancel_task(
++        task_id: RecordId, access: Access = authenticated
++    ) -> CancellationReceipt:
++        selected = await routes.task(access, task_id, Action.TASK_CANCEL)
++        execution_id = selected.execution.execution_id
++        if not await jobs.request_cancel(access.scope, execution_id):
++            raise ApiError(409, "execution_not_cancellable")
++        return CancellationReceipt(execution_id=execution_id)
++
++    @router.get("/inference/tasks/{task_id}/result")
++    async def get_result(
++        task_id: RecordId, access: Access = authenticated
++    ) -> ExecutionFinalization:
++        selected = await routes.task(access, task_id, Action.TASK_RESULT)
++        final = await routes.records.finalization(access.scope, selected)
++        if final is not None:
++            return final
++        if selected.execution.status in _ACTIVE:
++            raise ApiError(409, "result_pending")
++        raise ApiError(404, "result_unavailable")
++
++    @router.get("/executions/{execution_id}")
++    async def get_execution(
++        execution_id: RecordId, access: Access = authenticated
++    ) -> ExecutionRecord:
++        return (
++            await routes.execution(access, execution_id, Action.EXECUTION_READ)
++        ).execution
++
++    @router.get("/executions/{execution_id}/trace", response_model=TracePage)
++    async def get_trace(
++        execution_id: RecordId,
++        after_event_number: Annotated[int, Query(ge=0, le=9223372036854775807)] = 0,
++        limit: Annotated[int, Query(ge=1, le=100)] = 25,
++        access: Access = authenticated,
++    ) -> Response:
++        selected = await routes.execution(access, execution_id, Action.EXECUTION_TRACE)
++        page = await routes.records.trace(
++            access.scope,
++            selected.execution,
++            after=after_event_number,
++            limit=limit,
++            byte_limit=routes.boundary.limits.trace_bytes,
++        )
++        return Response(page.model_dump_json(), media_type="application/json")
++
++
++def mount_replays(
++    router: APIRouter,
++    routes: Routing,
++    *,
++    artifact: ArtifactReplayPort | None,
++    inference: InferenceReplayPort | None,
++) -> None:
++    authenticated = Depends(routes.boundary.access)
++
++    if artifact is not None:
++        scorer = artifact
++
++        @router.post(
++            "/executions/{execution_id}/artifact-replay",
++            openapi_extra=request_schema(ArtifactReplayRequest),
++        )
++        async def artifact_replay(
++            execution_id: RecordId,
++            request: Request,
++            access: Access = authenticated,
++        ) -> ArtifactReplayRun:
++            selected = await routes.execution(
++                access, execution_id, Action.ARTIFACT_REPLAY
++            )
++            key = required_key(request)
++            payload = await read_json(
++                request, ArtifactReplayRequest, routes.boundary.limits.json_bytes
++            )
++            _check_replay_source(payload, selected.execution)
++            try:
++                result = await scorer.run(access.scope, key, payload)
++            except (ValueError, RuntimeError) as error:
++                _replay_error(error)
++                raise
++            if result.request != payload:
++                raise ApiError(500, "replay_receipt_mismatch")
++            return result
++
++    if inference is not None:
++        runner = inference
++
++        @router.post(
++            "/executions/{execution_id}/inference-replay",
++            status_code=202,
++            openapi_extra=request_schema(InferenceReplayRequest),
++        )
++        async def inference_replay(
++            execution_id: RecordId,
++            request: Request,
++            access: Access = authenticated,
++        ) -> InferenceReplayRun:
++            selected = await routes.execution(
++                access, execution_id, Action.INFERENCE_REPLAY
++            )
++            key = required_key(request)
++            payload = await read_json(
++                request, InferenceReplayRequest, routes.boundary.limits.json_bytes
++            )
++            _check_replay_source(payload, selected.execution)
++            try:
++                result = await runner.submit(
++                    access.scope,
++                    payload,
++                    idempotency_key=key,
++                    principal=access.identity.principal,
++                )
++            except (ValueError, RuntimeError) as error:
++                _replay_error(error)
++                raise
++            if result.request != payload:
++                raise ApiError(500, "replay_receipt_mismatch")
++            return result
++
++
++def _check_replay_source(
++    request: ArtifactReplayRequest | InferenceReplayRequest, execution: ExecutionRecord
++) -> None:
++    try:
++        request.source.validate_execution(execution)
++    except ValueError:
++        raise ApiError(409, "replay_source_mismatch") from None
+--- /dev/null
++++ b/src/jimu_runtime/api/lifecycle.py
+@@ -0,0 +1,100 @@
++"""Adapt the WP-06 evidence lifecycle to the HTTP material port."""
++
++from collections.abc import Callable
++from typing import Literal, Protocol
++
++from jimu_runtime.api.auth import Identity
++from jimu_runtime.api.contracts import EvidenceCoordinates
++from jimu_runtime.api.ports import EvidenceMaterial
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.domain.runtime.evidence import EvidenceAsset
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++
++
++class AssetRead(Protocol):
++    @property
++    def status(self) -> str: ...
++
++    @property
++    def asset(self) -> EvidenceAsset | None: ...
++
++    @property
++    def content(self) -> bytes | None: ...
++
++
++class AuditRead(Protocol):
++    @property
++    def status(self) -> str: ...
++
++    @property
++    def content(self) -> bytes | None: ...
++
++
++class LifecycleReader[Grant, Locator](Protocol):
++    async def read_evidence(self, grant: Grant, locator: Locator) -> AssetRead: ...
++
++    async def read_model_audit(
++        self,
++        grant: Grant,
++        execution_id: str,
++        dispatch_id: str,
++        *,
++        late: bool,
++        role: Literal["raw", "normalized"],
++    ) -> AuditRead: ...
++
++
++class LifecycleEvidence[Grant, Locator]:
++    """Build lifecycle grants from authenticated host context, never wire data."""
++
++    def __init__(
++        self,
++        service: LifecycleReader[Grant, Locator],
++        grant: Callable[[IdempotencyScope, ActorRef, str], Grant],
++        locator: Callable[[EvidenceCoordinates], Locator],
++    ) -> None:
++        self._service = service
++        self._grant = grant
++        self._locator = locator
++
++    async def read_asset(
++        self,
++        identity: Identity,
++        scope: IdempotencyScope,
++        task_id: str,
++        locator: EvidenceCoordinates,
++    ) -> EvidenceMaterial:
++        read = await self._service.read_evidence(
++            self._grant(scope, identity.actor, task_id), self._locator(locator)
++        )
++        return EvidenceMaterial(
++            status=read.status,
++            mime_type=None if read.asset is None else read.asset.mime_type,
++            content=read.content,
++        )
++
++    async def read_audit(
++        self,
++        identity: Identity,
++        scope: IdempotencyScope,
++        task_id: str,
++        execution_id: str,
++        dispatch_id: str,
++        *,
++        late: bool,
++        role: Literal["raw", "normalized"],
++    ) -> EvidenceMaterial:
++        read = await self._service.read_model_audit(
++            self._grant(scope, identity.actor, task_id),
++            execution_id,
++            dispatch_id,
++            late=late,
++            role=role,
++        )
++        return EvidenceMaterial(
++            status=read.status,
++            mime_type="application/octet-stream"
++            if role == "raw"
++            else "application/json",
++            content=read.content,
++        )
+--- /dev/null
++++ b/src/jimu_runtime/api/ports.py
+@@ -0,0 +1,78 @@
++"""Narrow interfaces bound to separately composed bundle, replay and evidence services."""
++
++from collections.abc import Awaitable, Callable
++from dataclasses import dataclass, field
++from typing import Literal, Protocol
++
++from jimu_runtime.api.auth import Identity
++from jimu_runtime.api.contracts import EvidenceCoordinates
++from jimu_runtime.bundle.admission import AdmissionEnvironment
++from jimu_runtime.bundle.archive import BundleLimits
++from jimu_runtime.bundle.releases import ReleaseManager
++from jimu_runtime.bundle.store import LocalBundleStore
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.replay import (
++    ArtifactReplayRequest,
++    ArtifactReplayRun,
++    InferenceReplayRequest,
++    InferenceReplayRun,
++)
++
++
++@dataclass(frozen=True, slots=True)
++class Administration:
++    bundles: LocalBundleStore
++    releases: ReleaseManager
++    bundle_limits: BundleLimits
++    admission_environment: Callable[
++        [Identity, IdempotencyScope], Awaitable[AdmissionEnvironment]
++    ]
++
++
++class InferenceReplayPort(Protocol):
++    async def submit(
++        self,
++        scope: IdempotencyScope,
++        request: InferenceReplayRequest,
++        *,
++        idempotency_key: str,
++        principal: object,
++    ) -> InferenceReplayRun: ...
++
++
++class ArtifactReplayPort(Protocol):
++    async def run(
++        self,
++        scope: IdempotencyScope,
++        idempotency_key: str,
++        request: ArtifactReplayRequest,
++    ) -> ArtifactReplayRun: ...
++
++
++@dataclass(frozen=True, slots=True)
++class EvidenceMaterial:
++    status: str
++    mime_type: str | None = None
++    content: bytes | None = field(default=None, repr=False)
++
++
++class EvidencePort(Protocol):
++    async def read_asset(
++        self,
++        identity: Identity,
++        scope: IdempotencyScope,
++        task_id: str,
++        locator: EvidenceCoordinates,
++    ) -> EvidenceMaterial: ...
++
++    async def read_audit(
++        self,
++        identity: Identity,
++        scope: IdempotencyScope,
++        task_id: str,
++        execution_id: str,
++        dispatch_id: str,
++        *,
++        late: bool,
++        role: Literal["raw", "normalized"],
++    ) -> EvidenceMaterial: ...
+--- /dev/null
++++ b/src/jimu_runtime/api/records.py
+@@ -0,0 +1,145 @@
++"""Read the primary Task and page the append-only Execution trace."""
++
++from sqlalchemy import text
++from sqlalchemy.ext.asyncio import AsyncEngine
++
++from jimu_runtime.api.boundary import ApiError
++from jimu_runtime.api.contracts import TaskView, TracePage
++from jimu_runtime.domain.runtime.executions import (
++    ExecutionEvent,
++    ExecutionRecord,
++    TaskTransitionEvent,
++)
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.workflow import repository
++from jimu_runtime.workflow.engine import ExecutionFinalization
++
++
++class RuntimeRecords:
++    def __init__(self, engine: AsyncEngine) -> None:
++        self._engine = engine
++
++    async def primary(self, scope: IdempotencyScope, task_id: str) -> TaskView | None:
++        async with self._engine.connect() as connection:
++            execution_id = (
++                await connection.execute(
++                    text("""
++                        SELECT execution_id FROM jimu_workflow.intake_intents
++                        WHERE project_id = :project_id AND client_id = :client_id
++                          AND task_id = :task_id AND status = 'accepted'
++                        LIMIT 2
++                    """),
++                    {**scope.model_dump(), "task_id": task_id},
++                )
++            ).scalar_one_or_none()
++            if execution_id is None:
++                return None
++            row = await repository.get_execution(connection, scope, execution_id)
++        if row is None or row.task.task_id != task_id:
++            raise ApiError(500, "primary_execution_mismatch")
++        return TaskView(
++            task=row.task,
++            task_status=row.task_status,
++            execution=row.execution,
++            cancel_requested_at=row.cancel_requested_at,
++        )
++
++    async def execution(
++        self, scope: IdempotencyScope, execution_id: str
++    ) -> repository.LockedExecution | None:
++        async with self._engine.connect() as connection:
++            return await repository.get_execution(connection, scope, execution_id)
++
++    async def finalization(
++        self, scope: IdempotencyScope, selected: TaskView
++    ) -> ExecutionFinalization | None:
++        execution = selected.execution
++        async with self._engine.connect() as connection:
++            record = await repository.read_finalization(
++                connection, scope, execution.execution_id, ExecutionFinalization
++            )
++        if record is not None and (
++            record.execution_id,
++            record.coverage.release_id,
++            record.coverage.bundle_digest,
++        ) != (
++            execution.execution_id,
++            execution.pins.release_id,
++            execution.pins.bundle_digest,
++        ):
++            raise ApiError(500, "finalization_scope_mismatch")
++        return record
++
++    async def trace(
++        self,
++        scope: IdempotencyScope,
++        execution: ExecutionRecord,
++        *,
++        after: int,
++        limit: int,
++        byte_limit: int,
++    ) -> TracePage:
++        execution_id = execution.execution_id
++        async with self._engine.connect() as connection:
++            rows = (
++                await connection.execute(
++                    text("""
++                        WITH page AS (
++                            SELECT event_number, event_id, recorded_at, record
++                            FROM jimu_workflow.execution_events
++                            WHERE project_id = :project_id AND client_id = :client_id
++                              AND execution_id = :execution_id AND event_number > :after
++                            ORDER BY event_number
++                            LIMIT :limit
++                        )
++                        SELECT event_number, event_id, recorded_at,
++                            CASE WHEN SUM(octet_length(record::text)) OVER (
++                                ORDER BY event_number ROWS UNBOUNDED PRECEDING
++                            ) <= :bytes THEN record::text END AS body
++                        FROM page
++                        ORDER BY event_number
++                    """),
++                    {
++                        **scope.model_dump(),
++                        "execution_id": execution_id,
++                        "after": after,
++                        "limit": limit + 1,
++                        "bytes": byte_limit,
++                    },
++                )
++            ).all()
++        page = TracePage(
++            execution_id=execution_id, events=(), next_after_event_number=None
++        )
++        for index, row in enumerate(rows[:limit]):
++            if row.body is None:
++                if not page.events:
++                    raise ApiError(413, "trace_event_too_large")
++                break
++            event = ExecutionEvent.model_validate_json(row.body)
++            if (
++                event.execution_id != execution_id
++                or event.event_number != row.event_number
++                or event.event_number != after + index + 1
++                or event.execution_event_id != row.event_id
++                or event.recorded_at != row.recorded_at
++                or event.trace.trace_id != execution.trace.trace_id
++                or (
++                    isinstance(event.payload, TaskTransitionEvent)
++                    and event.payload.task_id != execution.task_id
++                )
++            ):
++                raise ApiError(500, "trace_event_scope_mismatch")
++            candidate = TracePage(
++                execution_id=execution_id,
++                events=(*page.events, event),
++                next_after_event_number=event.event_number
++                if index + 1 < len(rows)
++                else None,
++            )
++            if len(candidate.model_dump_json().encode("utf-8")) > byte_limit:
++                if not page.events:
++                    raise ApiError(413, "trace_event_too_large")
++                break
++            page = candidate
++        return page
+--- /dev/null
++++ b/src/jimu_runtime/api/route_support.py
+@@ -0,0 +1,92 @@
++"""Shared route validation and durable ownership checks."""
++
++from dataclasses import dataclass
++
++from fastapi import Request
++from pydantic import TypeAdapter, ValidationError
++
++from jimu_runtime.api.auth import Access, Action, Resource
++from jimu_runtime.api.boundary import ApiError, HttpBoundary, single_header
++from jimu_runtime.api.contracts import TaskView
++from jimu_runtime.api.records import RuntimeRecords
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_support import ShortText
++from jimu_runtime.domain.primitives import RecordId
++from jimu_runtime.workflow.repository import LockedExecution
++
++_KEY = TypeAdapter[str](ShortText)
++_ID = TypeAdapter[str](RecordId)
++
++
++@dataclass(frozen=True, slots=True)
++class Routing:
++    boundary: HttpBoundary
++    records: RuntimeRecords
++
++    async def task(self, access: Access, task_id: str, action: Action) -> TaskView:
++        selected = await self.records.primary(access.scope, task_id)
++        if selected is None:
++            raise ApiError(404, "resource_not_found")
++        await self.boundary.require(
++            access,
++            Resource(
++                action=action,
++                scope=access.scope,
++                task_id=task_id,
++                execution_id=selected.execution.execution_id,
++            ),
++            conceal=True,
++        )
++        return selected
++
++    async def execution(
++        self,
++        access: Access,
++        execution_id: str,
++        action: Action,
++        *,
++        resource_id: str | None = None,
++    ) -> LockedExecution:
++        selected = await self.records.execution(access.scope, execution_id)
++        if selected is None:
++            raise ApiError(404, "resource_not_found")
++        await self.boundary.require(
++            access,
++            Resource(
++                action=action,
++                scope=access.scope,
++                task_id=selected.task.task_id,
++                execution_id=execution_id,
++                resource_id=resource_id,
++            ),
++            conceal=True,
++        )
++        return selected
++
++
++def required_key(request: Request, *, record_id: bool = False) -> str:
++    value = single_header(request, "idempotency-key")
++    if value is None:
++        raise ApiError(422, "idempotency_key_required")
++    try:
++        parsed = (_ID if record_id else _KEY).validate_python(value)
++    except ValidationError:
++        raise ApiError(422, "invalid_idempotency_key") from None
++    if "\x00" in parsed:
++        raise ApiError(422, "invalid_idempotency_key")
++    return parsed
++
++
++def request_schema(model: type[ContractModel]) -> dict[str, object]:
++    return {
++        "requestBody": {
++            "required": True,
++            "content": {
++                "application/json": {
++                    "schema": {
++                        "$ref": f"#/components/schemas/JimuInput_{model.__name__}"
++                    }
++                }
++            },
++        }
++    }
+--- /dev/null
++++ b/tests/contract/test_wp07_api_admin.py
+@@ -0,0 +1,208 @@
++"""Authorize signed ZIP admission and separate Release operations against SQLite."""
++
++import asyncio
++import secrets
++from pathlib import Path
++from unittest.mock import Mock
++
++import httpx
++from sqlalchemy.ext.asyncio import AsyncEngine
++
++from jimu_runtime.api.app import create_app
++from jimu_runtime.api.auth import Action, Identity, Resource
++from jimu_runtime.api.ports import Administration
++from jimu_runtime.bundle.store import LocalBundleStore
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.workflow.intake import IntakeService
++from tests.fixtures.wp02.admission.support import LIMITS, build_scenario, sign_bundle
++from tests.fixtures.wp02.releases.support import GLOBAL, FixtureHost, submission
++
++
++def test_bundle_release_permissions_and_exact_activation_scope(tmp_path: Path) -> None:
++    fixture = FixtureHost()
++    store = LocalBundleStore(tmp_path / "releases")
++    manager = fixture.manager(store)
++    bundle = build_scenario(tmp_path)
++    signed = sign_bundle(
++        tmp_path, bundle.archive_bytes, bundle.bundle_ref.bundle_digest
++    )
++    scope = submission().idempotency_scope
++
++    def credential(name, principal):
++        return secrets.token_urlsafe(32), Identity(
++            principal,
++            ActorRef(
++                actor_kind="human", actor_id=name, identity_registry_id="test-roles"
++            ),
++        )
++
++    registrar = credential("registrar", fixture.registrar)
++    approver = credential("approver", fixture.approver)
++    controller = credential("controller", fixture.controller)
++    edge = credential("task-client", fixture.task_client)
++    identities = dict((registrar, approver, controller, edge))
++    seen: list[Resource] = []
++
++    class Authority:
++        async def authenticate(self, token):
++            return identities.get(token)
++
++        async def allows(self, identity, target):
++            seen.append(target)
++            if target.scope != scope:
++                return False
++            if target.action is Action.ACCESS_SCOPE:
++                return True
++            if identity == registrar[1]:
++                # Approve is intentionally passed through the API ACL to verify the
++                # existing ReleaseManager's independent rejection at the ledger.
++                return target.action in {
++                    Action.BUNDLE_ADMIT,
++                    Action.BUNDLE_READ,
++                    Action.RELEASE_REGISTER,
++                    Action.RELEASE_READ,
++                    Action.RELEASE_APPROVE,
++                }
++            if target.action is Action.RELEASE_APPROVE and identity == approver[1]:
++                return target.activation_scope == GLOBAL
++            if target.action is Action.RELEASE_ACTIVATE and identity == controller[1]:
++                return target.activation_scope == GLOBAL
++            return False
++
++    async def environment(identity, requested_scope):
++        assert (identity, requested_scope) == (registrar[1], scope)
++        return signed.environment
++
++    async def run() -> None:
++        app = create_app(
++            Mock(spec=AsyncEngine),
++            Mock(spec=IntakeService),
++            authority=Authority(),
++            administration=Administration(store, manager, LIMITS, environment),
++        )
++        schema = app.openapi()
++        assert "/api/v1/releases/{release_id}/approve" in schema["paths"]
++        assert "/api/v1/releases/{release_id}/accept" not in schema["paths"]
++        assert "/api/v1/releases/{release_id}/deprecate" not in schema["paths"]
++        assert "/api/v1/bundles/{bundle_id}/validate" not in schema["paths"]
++
++        def headers(token: str) -> dict[str, str]:
++            return {
++                "Authorization": "Bearer " + token,
++                "X-Jimu-Project": scope.project_id,
++                "X-Jimu-Client": scope.client_id,
++            }
++
++        async with httpx.AsyncClient(
++            base_url="http://127.0.0.1/api/v1/",
++            transport=httpx.ASGITransport(app=app),
++        ) as client:
++            operation = {
++                "Content-Type": "application/zip",
++                "Idempotency-Key": "api-zip-1",
++            }
++            denied = await client.post(
++                "bundles",
++                headers={**headers(edge[0]), **operation},
++                content=signed.archive,
++            )
++            assert denied.status_code == 403
++            assert store.get_admission("api-zip-1") is None
++            admitted = await client.post(
++                "bundles",
++                headers={**headers(registrar[0]), **operation},
++                content=signed.archive,
++            )
++            assert admitted.status_code == 200, admitted.text
++            persisted = store.get_admission("api-zip-1")
++            assert persisted is not None and persisted.accepted
++            assert persisted.receipt is not None
++            receipt, bundle_id = (
++                persisted.receipt.receipt_id,
++                persisted.receipt.bundle_id,
++            )
++            lookup = await client.get(
++                f"bundles/{bundle_id}",
++                headers=headers(registrar[0]),
++                params={"receipt_id": receipt},
++            )
++            assert lookup.json() == admitted.json()
++            wrong_bundle = await client.get(
++                "bundles/other",
++                headers=headers(registrar[0]),
++                params={"receipt_id": receipt},
++            )
++            assert wrong_bundle.status_code == 404
++            revoked = await client.get(
++                f"bundles/{bundle_id}",
++                headers=headers(edge[0]),
++                params={"receipt_id": receipt},
++            )
++            assert revoked.status_code == 404
++
++            register = await client.post(
++                "releases",
++                headers=headers(registrar[0]),
++                json={
++                    "schema_version": "1.0.0",
++                    "operation_key": "api-register",
++                    "release_id": "api-release",
++                    "admission_receipt_id": receipt,
++                },
++            )
++            assert register.status_code == 200, register.text
++            result = await client.get(
++                "releases/api-release", headers=headers(registrar[0])
++            )
++            assert result.json() == register.json()
++
++            body = {
++                "schema_version": "1.0.0",
++                "operation_key": "api-approval",
++                "scope": {"scope": "global"},
++            }
++            path = "releases/api-release/approve"
++            assert (
++                await client.post(path, headers=headers(registrar[0]), json=body)
++            ).status_code == 403
++            assert (
++                await client.post(
++                    path,
++                    headers=headers(approver[0]),
++                    json={
++                        **body,
++                        "scope": {"scope": "device", "device_id": "other"},
++                    },
++                )
++            ).status_code == 403
++            approved = await client.post(path, headers=headers(approver[0]), json=body)
++            assert approved.status_code == 200, approved.text
++            assert any(target.activation_scope == GLOBAL for target in seen)
++
++            body = {
++                **body,
++                "operation_key": "api-activate",
++                "activation_id": "api-active",
++                "expected_previous_activation_id": None,
++            }
++            activated = await client.post(
++                "releases/api-release/activate",
++                headers=headers(controller[0]),
++                json=body,
++            )
++            assert activated.status_code == 200, activated.text
++            active = manager.active_activation(GLOBAL)
++            assert active is not None and active.activation_id == "api-active"
++            stale = await client.post(
++                "releases/api-release/activate",
++                headers=headers(controller[0]),
++                json={
++                    **body,
++                    "operation_key": "api-stale",
++                    "activation_id": "api-other",
++                },
++            )
++            assert stale.status_code == 409, stale.text
++            assert manager.active_activation(GLOBAL) == active
++
++    asyncio.run(run())
+--- /dev/null
++++ b/tests/contract/test_wp07_api_runtime.py
+@@ -0,0 +1,220 @@
++"""Exercise the local ASGI adapter over isolated PostgreSQL and the real Worker."""
++
++import asyncio
++import secrets
++from pathlib import Path
++
++import httpx
++
++from jimu_runtime.api.app import create_app
++from jimu_runtime.api.auth import Action, Identity, Resource
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.workflow import repository
++from jimu_runtime.workflow.intake import IntakeService
++from jimu_runtime.workflow.worker import WorkerStep
++from tests.fixtures.wp03.intake.support import migrated_application
++from tests.fixtures.wp03.worker.support import (
++    LIMITS,
++    SCHEDULING,
++    accepted_worker,
++    open_worker_fixture,
++    worker_submission,
++)
++
++_ACTOR = ActorRef(
++    actor_kind="service",
++    actor_id="fixture.edge",
++    identity_registry_id="fixture.registry",
++)
++
++
++def test_real_intake_primary_task_cancellation_result_and_trace(tmp_path: Path) -> None:
++    async def run() -> None:
++        async with migrated_application() as engine:
++            worker, original, host = await accepted_worker(engine, tmp_path)
++            store, manager, _ = open_worker_fixture(tmp_path, host)
++            intake = IntakeService(
++                engine,
++                manager,
++                store,
++                host=host,
++                bundle_limits=LIMITS,
++                scheduling_limits=SCHEDULING,
++                max_submission_bytes=64 * 1024,
++            )
++            submitted = worker_submission("api-second-task")
++            scope = submitted.idempotency_scope
++            token = secrets.token_urlsafe(32)
++            authorized: list[Resource] = []
++            second_scope = scope.model_copy(
++                update={"client_id": "allowed.other.client"}
++            )
++            grant = {
++                Action.ACCESS_SCOPE,
++                Action.TASK_SUBMIT,
++                Action.TASK_READ,
++                Action.TASK_CANCEL,
++                Action.TASK_RESULT,
++                Action.EXECUTION_READ,
++                Action.EXECUTION_TRACE,
++            }
++
++            class Authority:
++                async def authenticate(self, credential):
++                    if credential == token:
++                        return Identity(host.release_host.task_client, _ACTOR)
++                    return None
++
++                async def allows(self, identity, resource):
++                    authorized.append(resource)
++                    return (
++                        identity.actor == _ACTOR
++                        and resource.scope in (scope, second_scope)
++                        and resource.action in grant
++                    )
++
++            app = create_app(engine, intake, authority=Authority())
++            schema = app.openapi()
++            task_input = schema["paths"]["/api/v1/inference/tasks"]["post"][
++                "requestBody"
++            ]
++            assert task_input["content"]["application/json"]["schema"] == {
++                "$ref": "#/components/schemas/JimuInput_TaskSubmission"
++            }
++            assert (
++                schema["components"]["schemas"]["JimuInput_TaskSubmission"][
++                    "additionalProperties"
++                ]
++                is False
++            )
++            assert (
++                len(
++                    app.openapi()["paths"]["/api/v1/inference/tasks"]["post"][
++                        "parameters"
++                    ]
++                )
++                == 2
++            )
++            assert (
++                "/api/v1/executions/{execution_id}/artifact-replay"
++                not in schema["paths"]
++            )
++
++            transport = httpx.ASGITransport(app=app)
++            headers = {
++                "Authorization": "Bearer " + token,
++                "X-Jimu-Project": scope.project_id,
++                "X-Jimu-Client": scope.client_id,
++                "Content-Type": "application/json",
++            }
++            async with httpx.AsyncClient(
++                transport=transport,
++                base_url="http://127.0.0.1/api/v1/",
++                headers=headers,
++            ) as client:
++                unauthorized = await client.get(
++                    "inference/tasks/" + original.task.task_id,
++                    headers={"Authorization": "Bearer " + secrets.token_urlsafe(32)},
++                )
++                assert unauthorized.status_code == 401
++                assert unauthorized.headers["www-authenticate"] == "Bearer"
++                assert not authorized
++
++                endpoint = "inference/tasks"
++                raw = submitted.stable_json()
++                response, retry = await asyncio.gather(
++                    client.post(endpoint, content=raw),
++                    client.post(endpoint, content=raw),
++                )
++                assert response.status_code == retry.status_code == 202, response.text
++                assert response.json() == retry.json()
++                accepted = response.json()
++                task_id = accepted["task"]["task_id"]
++                execution_id = accepted["execution"]["execution_id"]
++                assert accepted["task_status"] == "queued"
++                assert accepted["execution"]["status"] == "initialized"
++
++                resource = f"inference/tasks/{task_id}"
++                for header in ("X-Jimu-Client", "X-Jimu-Project"):
++                    blocked = await client.get(resource, headers={header: "another"})
++                    assert blocked.status_code == 403
++                assert (
++                    await client.get(
++                        resource, headers={"X-Jimu-Client": second_scope.client_id}
++                    )
++                ).status_code == 404
++                assert (await client.get(resource)).json() == accepted
++                assert (await client.get(resource + "/result")).json()[
++                    "code"
++                ] == "result_pending"
++                assert (await client.get(f"executions/{execution_id}")).json()[
++                    "task_id"
++                ] == task_id
++                assert (
++                    await client.get(f"executions/{execution_id}/trace?limit=101")
++                ).status_code == 422
++
++                grant.remove(Action.TASK_RESULT)
++                assert (await client.get(resource + "/result")).status_code == 404
++                grant.add(Action.TASK_RESULT)
++                for offset in range(20):
++                    step = await worker.run_once(
++                        scope,
++                        execution_id,
++                        owner=f"api-fixture-{offset}",
++                        lease_ms=10000,
++                    )
++                    if step is WorkerStep.FINALIZED:
++                        break
++                assert step is WorkerStep.FINALIZED
++                result = await client.get(resource + "/result")
++                assert result.status_code == 200, result.text
++                assert result.json()["execution_id"] == execution_id
++                assert result.json()["decisions"]
++                assert (await client.post(resource + "/cancel")).status_code == 409
++
++                events: list[int] = []
++                after = 0
++                while True:
++                    page = await client.get(
++                        f"executions/{execution_id}/trace",
++                        params={"after_event_number": after, "limit": 2},
++                    )
++                    assert page.status_code == 200, page.text
++                    response_page = page.json()
++                    assert response_page["execution_id"] == execution_id
++                    events.extend(
++                        row["event_number"] for row in response_page["events"]
++                    )
++                    cursor = response_page["next_after_event_number"]
++                    if cursor is None:
++                        break
++                    assert cursor > after
++                    after = cursor
++                async with engine.connect() as connection:
++                    recorded = await repository.list_events(
++                        connection, scope, execution_id
++                    )
++                assert events == [record.event_number for record in recorded]
++                assert len(events) > 4
++
++                original_uri = f"inference/tasks/{original.task.task_id}"
++                assert (await client.post(original_uri + "/cancel")).json()[
++                    "execution_id"
++                ] == original.execution.execution_id
++                assert (
++                    await worker.run_once(
++                        scope,
++                        original.execution.execution_id,
++                        owner="api-cancel",
++                        lease_ms=10000,
++                    )
++                    is WorkerStep.CANCELLED
++                )
++                cancelled = (await client.get(original_uri)).json()
++                assert cancelled["task_status"] == "cancelled"
++                assert (await client.get(original_uri + "/result")).json()[
++                    "code"
++                ] == "result_unavailable"
++
++    asyncio.run(run())
+--- /dev/null
++++ b/tests/contract/test_wp07_api_wp06.py
+@@ -0,0 +1,363 @@
++"""Bind HTTP replay and evidence routes to the actual WP-06 lifecycle services."""
++
++import asyncio
++import json
++import secrets
++from collections import Counter
++from pathlib import Path
++
++import httpx
++from sqlalchemy import text
++
++from examples.nonmotor_vehicle_illegal_parking.compilable.lifecycle import ACTOR
++from examples.nonmotor_vehicle_illegal_parking.compilable.scene import LIMITS
++from jimu_runtime.api.app import create_app
++from jimu_runtime.api.auth import Action, Identity
++from jimu_runtime.api.lifecycle import LifecycleEvidence
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.domain.definitions.tools import ToolDefinition
++from jimu_runtime.domain.enums import ArtifactKind
++from jimu_runtime.domain.runtime.replay import (
++    ExecutionRef,
++    InferenceReplayRequest,
++    ReplayExecutionSource,
++)
++from jimu_runtime.gateway.bridge_tools import ToolExecutionAdapter
++from jimu_runtime.inspection.geometry import synthetic_cpu_implementations
++from jimu_runtime.inspection.geometry.node import GeometryNodeAdapter
++from jimu_runtime.tools.executor import ToolExecutor
++from jimu_runtime.tools.registry import ToolWorkerRegistry
++from jimu_runtime.tools.step_attempts import StepAttemptStore
++from jimu_runtime.workflow.intake import (
++    IntakeAuthorizationError,
++    IntakeIdentity,
++    IntakeService,
++)
++from jimu_runtime.workflow.worker import WorkerStep
++from jimu_runtime.workflow.worker_inspection import (
++    VerifiedMediaWorkerHost,
++    inspection_worker,
++)
++from tests.fixtures.wp04 import http_support
++from tests.fixtures.wp05.perception import _LIMITS, IMAGE, perception_fixture
++
++loopback_only = http_support.loopback_only
++
++
++def test_exact_evidence_and_both_replay_routes(
++    tmp_path: Path, loopback_only: set[int]
++) -> None:
++    from jimu_runtime.inspection.media.retention import LocalEvidenceLifecycle
++    from jimu_runtime.inspection.media.retention_models import (
++        EvidenceAccessGrant,
++        EvidenceLocator,
++    )
++    from jimu_runtime.replay.artifact import ArtifactReplayService
++    from jimu_runtime.replay.inference import InferenceReplayService
++
++    replies = {
++        "profile_discovery-result": {"profile_hits": ["nonmotor_vehicle"]},
++        "object_grounding-result": {"boxes": [{"xyxy": [40, 23, 52, 33]}]},
++        "object_observation-result": {
++            "vehicle_type": "electric_bicycle",
++            "parking_state": "parked",
++            "parking_position": "over_boundary",
++        },
++        "candidate_prediction-result": {"categories": []},
++    }
++    calls: Counter[str] = Counter()
++
++    async def peer(reader, writer):
++        received = await http_support.read_request(reader)
++        body = json.loads(received.body)
++        kind = body["response_format"]["json_schema"]["schema"]["$id"].split(":")[-2]
++        calls[kind] += 1
++        raw = http_support.chat_body(
++            model=body["model"], content=json.dumps(replies[kind])
++        )
++        writer.write(
++            http_support.response(
++                raw,
++                headers=(
++                    (b"X-Request-ID", f"api-fixture-{calls.total()}".encode()),
++                    (b"X-Jimu-Deployment-Version", b"1.0.0"),
++                    (b"X-Jimu-Model-Version", b"1.0.0"),
++                ),
++            )
++        )
++        await writer.drain()
++
++    async def run() -> None:
++        async with http_support.http_peer(loopback_only, peer) as url:
++            async with perception_fixture(tmp_path, url, with_media=True) as fixture:
++                task, execution = fixture.accepted.task, fixture.accepted.execution
++                scope, eid = task.idempotency_scope, execution.execution_id
++                app_db = fixture.application
++                media = fixture.media_store
++                assert media is not None
++                catalogue = fixture.scene.execution.catalogue
++                definitions = tuple(
++                    require_definition(catalogue, item.ref, ToolDefinition)
++                    for item in catalogue.of_kind(ArtifactKind.TOOL)
++                )
++                registry = ToolWorkerRegistry(
++                    synthetic_cpu_implementations(
++                        fixture.resources,
++                        "cpu",
++                        "inspection-tools",
++                        definitions,
++                        fixture.tool_proofs,
++                        synthetic_image_digests=frozenset({task.media_ref.sha256}),
++                    )
++                )
++                tools = GeometryNodeAdapter(
++                    media,
++                    ToolExecutionAdapter(
++                        ToolExecutor(registry),
++                        StepAttemptStore(app_db, actor=ACTOR),
++                        fixture.journal,
++                        fixture.host.capabilities,
++                    ),
++                )
++
++                async def capture(request_scope, accepted_task):
++                    source = await fixture.host.worker_source(
++                        request_scope, accepted_task
++                    )
++                    return source.device, source.camera
++
++                worker = inspection_worker(
++                    app_db,
++                    fixture.releases,
++                    fixture.store,
++                    host=VerifiedMediaWorkerHost(
++                        media, fixture.host.capabilities, capture
++                    ),
++                    bundle_limits=LIMITS,
++                    media=media,
++                    gateway=fixture.gateway,
++                    execute_tools=tools.execute,
++                    model_resource_scope_id="model",
++                )
++                for i in range(20):
++                    step = await worker.run_once(
++                        scope, eid, owner=f"api-wp06-{i}", lease_ms=10000
++                    )
++                    if step is WorkerStep.FINALIZED:
++                        break
++                assert step is WorkerStep.FINALIZED
++                assert calls == dict.fromkeys(replies, 1)
++
++                source = ReplayExecutionSource(
++                    execution_ref=ExecutionRef(record_kind="execution", record_id=eid),
++                    task_id=task.task_id,
++                    pins=execution.pins,
++                )
++                artifact = ArtifactReplayService(app_db)
++                artifact_request = await artifact.prepare_request(scope, source)
++                inference_request = InferenceReplayRequest(
++                    schema_version="1.0.0",
++                    kind="inference",
++                    source=source,
++                    target_pins=source.pins,
++                )
++                principal = fixture.host.principal
++                token = secrets.token_urlsafe(32)
++                grant = {
++                    Action.ACCESS_SCOPE,
++                    Action.TASK_READ,
++                    Action.TASK_CANCEL,
++                    Action.ARTIFACT_REPLAY,
++                    Action.INFERENCE_REPLAY,
++                    Action.EVIDENCE_READ,
++                    Action.EVIDENCE_NORMALIZED,
++                    Action.EXECUTION_READ,
++                }
++
++                class Authority:
++                    async def authenticate(self, credential):
++                        return (
++                            Identity(principal, ACTOR) if credential == token else None
++                        )
++
++                    async def allows(self, identity, target):
++                        return (
++                            identity.principal is principal
++                            and target.scope == scope
++                            and target.action in grant
++                            and target.task_id in (None, task.task_id)
++                        )
++
++                class ReplayHost:
++                    async def authorize_inference_replay(
++                        self, authenticated, request_scope, request, original
++                    ):
++                        if (
++                            authenticated is not principal
++                            or request_scope != scope
++                            or original != task
++                        ):
++                            raise IntakeAuthorizationError()
++                        return IntakeIdentity(
++                            issuer="https://fixture.invalid/replay",
++                            subject=ACTOR.actor_id,
++                        )
++
++                    async def verified_original(self, request_scope, ref):
++                        return await media.verified_original(request_scope, ref)
++
++                async def no_disposition(_task, _policy):
++                    raise AssertionError("HTTP read cannot perform a disposition")
++
++                evidence = LifecycleEvidence(
++                    LocalEvidenceLifecycle(media, no_disposition),
++                    lambda selected_scope, actor, task_id: EvidenceAccessGrant(
++                        scope=selected_scope,
++                        actor=actor,
++                        task_id=task_id,
++                    ),
++                    lambda locator: EvidenceLocator.model_validate(
++                        locator.model_dump()
++                    ),
++                )
++                intake = IntakeService(
++                    app_db,
++                    fixture.releases,
++                    fixture.store,
++                    host=fixture.host,
++                    bundle_limits=LIMITS,
++                    scheduling_limits=_LIMITS,
++                    max_submission_bytes=65536,
++                )
++                api = create_app(
++                    app_db,
++                    intake,
++                    authority=Authority(),
++                    artifact_replay=artifact,
++                    inference_replay=InferenceReplayService(
++                        app_db,
++                        fixture.releases,
++                        fixture.store,
++                        host=ReplayHost(),
++                        bundle_limits=LIMITS,
++                    ),
++                    evidence=evidence,
++                )
++                assert api.openapi()["paths"]["/api/v1/evidence/{evidence_id}"]["get"][
++                    "security"
++                ] == [
++                    {"RuntimeBearer": []},
++                ]
++                async with app_db.connect() as conn:
++                    original = (
++                        await conn.execute(
++                            text("""
++                        SELECT node_run_id, attempt_id, output_digest, record->>'evidence_id' AS evidence_id
++                        FROM jimu_workflow.produced_outputs
++                        WHERE project_id = :project_id AND client_id = :client_id
++                          AND execution_id = :eid AND output_kind = 'evidence'
++                          AND record->>'evidence_type' = 'original_image'
++                        LIMIT 1
++                    """),
++                            {**scope.model_dump(), "eid": eid},
++                        )
++                    ).one()
++                    journal = (
++                        await conn.execute(
++                            text("""
++                        SELECT dispatch_id, record->>'response_digest' AS raw_digest,
++                            record->>'normalized_response_digest' AS normalized_digest
++                        FROM jimu_workflow.dispatch_results
++                        WHERE project_id = :project_id AND client_id = :client_id
++                          AND execution_id = :eid
++                          AND NOT late AND record->>'normalized_response_digest' IS NOT NULL
++                        LIMIT 1
++                    """),
++                            {**scope.model_dump(), "eid": eid},
++                        )
++                    ).one()
++                headers = {
++                    "Authorization": "Bearer " + token,
++                    "X-Jimu-Project": scope.project_id,
++                    "X-Jimu-Client": scope.client_id,
++                    "Content-Type": "application/json",
++                }
++                async with httpx.AsyncClient(
++                    base_url="http://127.0.0.1/api/v1/",
++                    transport=httpx.ASGITransport(app=api),
++                    headers=headers,
++                ) as client:
++                    locator = {
++                        "node_run_id": original.node_run_id,
++                        "attempt_id": original.attempt_id,
++                        "execution_id": eid,
++                        "digest": original.output_digest,
++                    }
++                    verified = await client.get(
++                        f"evidence/{original.evidence_id}", params=locator
++                    )
++                    assert verified.status_code == 200, verified.text
++                    assert verified.content == IMAGE
++                    assert verified.headers["content-disposition"] == "attachment"
++
++                    audit = f"evidence/{journal.dispatch_id}"
++                    normalized = await client.get(
++                        audit,
++                        params={
++                            "execution_id": eid,
++                            "representation": "normalized",
++                            "digest": journal.normalized_digest,
++                        },
++                    )
++                    assert normalized.status_code == 200, normalized.text
++                    raw = {
++                        "execution_id": eid,
++                        "representation": "raw",
++                        "digest": journal.raw_digest,
++                    }
++                    assert (await client.get(audit, params=raw)).status_code == 404
++                    grant.add(Action.EVIDENCE_RAW)
++                    allowed = await client.get(audit, params=raw)
++                    assert allowed.status_code == 200, allowed.text
++                    assert allowed.headers["content-type"] == "application/octet-stream"
++                    assert (
++                        await client.get(audit, params={**raw, "digest": "0" * 64})
++                    ).status_code == 404
++                    assert (
++                        await client.get(audit, params={**raw, "late": True})
++                    ).status_code == 404
++
++                    grant.remove(Action.ARTIFACT_REPLAY)
++                    forbidden = await client.post(
++                        f"executions/{eid}/artifact-replay",
++                        content=artifact_request.stable_json(),
++                        headers={"Idempotency-Key": "artifact-fixture"},
++                    )
++                    assert forbidden.status_code == 404
++                    grant.add(Action.ARTIFACT_REPLAY)
++                    rescored = await client.post(
++                        f"executions/{eid}/artifact-replay",
++                        content=artifact_request.stable_json(),
++                        headers={"Idempotency-Key": "artifact-fixture"},
++                    )
++                    assert rescored.status_code == 200, rescored.text
++                    assert rescored.json()["kind"] == "artifact"
++                    assert calls == dict.fromkeys(replies, 1)
++                    replayed = await client.post(
++                        f"executions/{eid}/inference-replay",
++                        content=inference_request.stable_json(),
++                        headers={"Idempotency-Key": "inference-fixture"},
++                    )
++                    assert replayed.status_code == 202, replayed.text
++                    target = replayed.json()["target_execution_ref"]["record_id"]
++                    assert target != eid
++                    assert (await client.get(f"executions/{target}")).json()[
++                        "status"
++                    ] == "initialized"
++                    task_uri = f"inference/tasks/{task.task_id}"
++                    assert (await client.post(task_uri + "/cancel")).status_code == 409
++                    assert (await client.get(task_uri)).json()["execution"][
++                        "execution_id"
++                    ] == eid
++
++    asyncio.run(run())
+--- /dev/null
++++ b/tests/negative/test_wp07_api_boundary.py
+@@ -0,0 +1,92 @@
++"""API byte bounds, strict JSON and redaction at the ASGI request boundary."""
++
++import asyncio
++import logging
++import secrets
++from unittest.mock import AsyncMock, Mock
++
++import httpx
++import pytest
++from sqlalchemy.ext.asyncio import AsyncEngine
++
++from jimu_runtime.api.app import create_app
++from jimu_runtime.api.auth import Identity
++from jimu_runtime.api.boundary import ApiLimits
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.workflow.intake import IntakeService
++
++
++def test_boundary_rejects_oversize_ambiguity_and_invalid_json_before_intake(
++    caplog: pytest.LogCaptureFixture,
++) -> None:
++    async def run() -> None:
++        token = secrets.token_urlsafe(32)
++        sentinel = "redact-this-payload"
++        actor = ActorRef(
++            actor_kind="human", actor_id="tester", identity_registry_id="test"
++        )
++        scope_gate = AsyncMock(return_value=True)
++        authority = Mock(
++            authenticate=AsyncMock(
++                side_effect=lambda credential: Identity(object(), actor)
++                if credential == token
++                else None
++            ),
++            allows=scope_gate,
++        )
++        intake = Mock(spec=IntakeService)
++        app = create_app(
++            Mock(spec=AsyncEngine),
++            intake,
++            authority=authority,
++            limits=ApiLimits(json_bytes=512),
++        )
++        async with httpx.AsyncClient(
++            base_url="http://127.0.0.1", transport=httpx.ASGITransport(app=app)
++        ) as client:
++            endpoint = "/api/v1/inference/tasks"
++            good_headers = [
++                ("Authorization", "Bearer " + token),
++                ("X-Jimu-Project", "project"),
++                ("X-Jimu-Client", "client"),
++                ("Content-Type", "application/json"),
++            ]
++            cases = [
++                ({}, sentinel, 401),
++                (good_headers + [good_headers[0]], sentinel, 400),
++                (good_headers + [("X-Jimu-Client", "other")], sentinel, 400),
++                (good_headers, '{"a": {"x": 0, "x": "' + sentinel + '"}}', 422),
++                (good_headers, '{"a": NaN}', 422),
++                (good_headers, '{"a": "' + sentinel + '"}', 422),
++                (good_headers, "x" * 513, 413),
++                (good_headers + [("Content-Encoding", "gzip")], sentinel, 415),
++            ]
++            for headers, body, expected in cases:
++                response = await client.post(endpoint, headers=headers, content=body)
++                assert response.status_code == expected, response.text
++                assert sentinel not in response.text
++                assert token not in response.text
++                assert response.headers["cache-control"] == "no-store"
++                assert response.json()["request_id"] == response.headers["x-request-id"]
++
++            async def chunked():
++                yield b"x" * 300
++                yield b"x" * 300
++
++            response = await client.post(
++                endpoint, headers=good_headers, content=chunked()
++            )
++            assert response.status_code == 413
++
++            response = await client.post(
++                endpoint + "?limit=1&limit=2", headers=good_headers
++            )
++            assert response.status_code == 400
++            intake.submit.assert_not_awaited()
++            assert sentinel not in caplog.text
++            assert token not in caplog.text
++            assert all("resource_id" not in row.__dict__ for row in caplog.records)
++            assert any(row.message == "runtime_api_request" for row in caplog.records)
++
++    with caplog.at_level(logging.INFO, logger="jimu_runtime.api.boundary"):
++        asyncio.run(run())

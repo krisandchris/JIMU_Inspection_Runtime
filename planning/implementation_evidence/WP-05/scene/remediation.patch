@@ -1,0 +1,1156 @@
+--- a/examples/nonmotor_vehicle_illegal_parking/compilable/README.md
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/README.md
+@@ -7,13 +7,13 @@
+ PYTHONPATH="$SCENE_PARENT" python -m pytest -q "$SCENE_PARENT/compilable/test_scene.py"
+ ```
+ 
+-`scene.load_source()` 加载本目录的版本化源文件。`source/index.json` 声明归档路径和本地宿主能力。定义中的 `$pin` 显式转换为 `ReferenceSlot`，由 Runtime 编译器绑定实际摘要。`source/tool_output_schema/` 定义场景 payload 和证据槽，公共 ToolResult 信封由 Pydantic 合同生成。停车区源文件按原始字节传给 `SourceAssetBytes`。编译器生成 Fact value schemas 和 Producer Catalogue。
++`scene.load_source()` 加载本目录的版本化源文件。`source/index.json` 声明归档路径和本地宿主能力。定义中的 `$pin` 显式转换为 `ReferenceSlot`，由 Runtime 编译器绑定实际摘要。源记录用内容寻址的 origin ID 固定原始文件摘要、文件路径与槽声明，编译器仍按既有契约验证对应输入字节的摘要。能力、信任策略与信任配置的 pin 分别根据实际配置内容生成。`source/tool_output_schema/` 定义场景 payload 和证据槽，公共 ToolResult 信封由 Pydantic 合同生成。停车区源文件按原始字节传给 `SourceAssetBytes`。编译器生成 Fact value schemas 和 Producer Catalogue。
+ 
+-命令在临时目录签发隔离 Ed25519 密钥，对 Bundle 逻辑根生成 detached signature，经官方接口验签和准入，注册 Release 并在合成 Region 批准、激活。随后受理附有样图摘要的本地 Task，用新打开的账本以及 WP-04 `resolve_execution_pins` 恢复该 Task 的配置。unsigned ZIP 和逻辑根在相同锁定环境下可复现。临时签名及账本随进程退出清理，私钥在签名后立即移除。宿主能力、时间和身份均为隔离示例设置。此入口验证准入及历史配置解析。Worker 节点执行、真实 Provider 和市政业务口径属于独立验收。
++命令在临时目录签发隔离 Ed25519 密钥，对 Bundle 逻辑根生成 detached signature，经官方接口验签和准入，注册 Release 并在合成 Region 批准、激活。随后受理附有样图摘要的本地 Task，再签发、准入和激活具有不同 Release ID 与 Bundle 摘要的下一版本。用新打开的账本及 WP-04 `resolve_execution_pins` 恢复该 Task 后核对原 Release 和 Bundle 摘要。unsigned ZIP 和逻辑根在相同锁定环境下可复现。临时签名及账本随进程退出清理，私钥在签名后立即移除。宿主能力、时间和身份均为隔离示例设置。此入口验证准入及历史配置解析。Worker 节点执行、真实 Provider 和市政业务口径属于独立验收。
+ 
+ ## v1 输入与输出
+ 
+-[`assets/model-wire.v1.json`](assets/model-wire.v1.json) 给出可用于编写本地 adapter 测试的响应示例。根对象是示例目录，实际每次响应使用其中对应角色的对象。N02 只返回注册 Profile ID。N03 以独立模型能力返回原图 `BBoxXYXY`。N04 的配置输入为 `image: {media_id, sha256}` 与 `bbox: {xyxy: [x_min, y_min, x_max, y_max]}`。联合响应的三个 slot 都采用原生字符串。运行时通过调用上下文绑定 Object，对每个 known 值生成 `{"kind":"enum","value":"…"}` 后按其精确 Question Fact Schema 校验。slot 合法返回 `insufficient_visibility` 时按 UnknownPolicy 生成带原因、无值的 `unknown` Fact。缺槽和非允许 token 进入各自的错误状态。额外字段使整个响应失去关联资格。
++[`assets/model-wire.v1.json`](assets/model-wire.v1.json) 给出可用于编写本地 adapter 测试的响应示例。根对象是示例目录，实际每次响应使用其中对应角色的对象。N02 只返回注册 Profile ID。N03 以独立模型能力返回原图 `BBoxXYXY`。N04 的配置输入为 `image: {media_id, sha256}` 与 `bbox: {xyxy: [x_min, y_min, x_max, y_max]}`。联合响应的三个 slot 都采用原生字符串。运行时通过调用上下文绑定 Object，对每个 known 值生成 `{"kind":"enum","value":"…"}` 后按其精确 Question Fact Schema 校验。slot 合法返回 `insufficient_visibility` 时按 UnknownPolicy 生成带原因、无值的 `unknown` Fact。缺槽和非允许 token 进入各自的错误状态。额外字段使整个响应失去关联资格。N06 的候选响应是 `{"categories":[{"category_id":"nonmotor_vehicle_illegal_parking","score":1.25}]}` 或 `{"categories":[]}`。每项保留模型实际返回的有限浮点值。校验使用 `CandidateCategory` 检查分数类型，分数可为负数或大于 1。
+ 
+ | 工具步骤 | 输入字段 | ToolResult payload 的具名字段 | 成功证据槽 |
+ |---|---|---|---|
+--- a/examples/nonmotor_vehicle_illegal_parking/compilable/__main__.py
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/__main__.py
+@@ -15,6 +15,8 @@
+                 {
+                     "bundle": result.bundle.bundle_ref.model_dump(mode="json"),
+                     "release_id": result.release.release_id,
++                    "current_release_id": result.current_activation.release_ref.record_id,
++                    "current_bundle_digest": result.current_activation.bundle_ref.bundle_digest,
+                     "task_id": result.task.task_id,
+                     "admitted_activated_reopened": True,
+                 },
+--- a/examples/nonmotor_vehicle_illegal_parking/compilable/assets/model-wire.v1.json
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/assets/model-wire.v1.json
+@@ -1,10 +1,21 @@
+ {
+   "schema_version": "1.0.0",
+   "profile_discovery": {
+-    "profile_hits": ["nonmotor_vehicle"]
++    "profile_hits": [
++      "nonmotor_vehicle"
++    ]
+   },
+   "object_grounding": {
+-    "boxes": [{"xyxy": [40, 23, 52, 33]}]
++    "boxes": [
++      {
++        "xyxy": [
++          40,
++          23,
++          52,
++          33
++        ]
++      }
++    ]
+   },
+   "object_observation": {
+     "vehicle_type": "electric_bicycle",
+@@ -18,5 +29,13 @@
+   },
+   "candidate_prediction": {
+     "categories": []
++  },
++  "candidate_prediction_scored": {
++    "categories": [
++      {
++        "category_id": "nonmotor_vehicle_illegal_parking",
++        "score": 1.25
++      }
++    ]
+   }
+ }
+--- a/examples/nonmotor_vehicle_illegal_parking/compilable/lifecycle.py
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/lifecycle.py
+@@ -1,6 +1,6 @@
+ """Exercise the production compiler, local admission and historical pin reopen."""
+ 
+-from dataclasses import dataclass
++from dataclasses import dataclass, replace
+ from datetime import datetime
+ from pathlib import Path
+ 
+@@ -8,6 +8,7 @@
+ from jimu_runtime.bundle.archive import read_bundle
+ from jimu_runtime.bundle.catalogue import build_catalogue
+ from jimu_runtime.bundle.compiler import (
++    BundleCompileInput,
+     CompiledBundle,
+     CompileEnvironment,
+     attach_signature_refs,
+@@ -29,6 +30,7 @@
+ from jimu_runtime.domain.runtime.intake import AcceptedTask, TaskSubmission
+ from jimu_runtime.domain.runtime.releases import (
+     ActivationRecord,
++    AdmissionReceipt,
+     RegionActivationScope,
+     ReleaseRecord,
+ )
+@@ -57,6 +59,7 @@
+ PROJECT = "synthetic.nonmotor.parking"
+ CLIENT = "synthetic.edge"
+ RELEASE_ID = "synthetic.parking.release"
++NEXT_RELEASE_ID = "synthetic.parking.release.next"
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+@@ -65,6 +68,7 @@
+     signed_archive: bytes
+     release: ReleaseRecord
+     activation: ActivationRecord
++    current_activation: ActivationRecord
+     task: AcceptedTask
+     execution: ResolvedExecutionPins
+ 
+@@ -103,36 +107,49 @@
+     source = load_source()
+     host = capability_snapshot(source)
+     compile_environment = CompileEnvironment(
+-        capabilities=host, trust=LocalEd25519(directory), validation_at=AT
+-    )
+-    result = compile_bundle(source, limits=LIMITS, environment=compile_environment)
+-    bundle = result.bundle
+-    if bundle is None:
+-        raise RuntimeError(f"Scene compilation failed: {result.errors}")
+-
+-    verifier, signature = sign_bundle(directory, bundle.bundle_ref.bundle_digest)
+-    signed = attach_signature_refs(bundle.archive_bytes, (signature,), limits=LIMITS)
+-    files = read_bundle(signed, LIMITS)
+-    verification = verify_bundle_trust(
+-        files.manifest, bundle.bundle_ref.bundle_digest, verifier, validation_at=AT
+-    )
+-    if len(verification.signatures) != 1:
+-        raise RuntimeError("Expected one authenticated detached signature")
++        capabilities=host,
++        trust=LocalEd25519(directory).as_trust_source(),
++        validation_at=AT,
++    )
+     store_dir = directory / "releases"
+     store = LocalBundleStore(store_dir)
+-    admitted = admit_bundle(
+-        signed,
+-        operation_id="admit.synthetic.scene",
+-        actor=ACTOR,
+-        limits=LIMITS,
+-        environment=AdmissionEnvironment(
+-            runtime_identity=ACTOR, capabilities=host, trust=verifier, validation_at=AT
+-        ),
+-        store=store,
+-    )
+-    if not admitted.accepted or admitted.receipt is None:
+-        raise RuntimeError(f"Scene admission failed: {admitted}")
+-
++
++    def admit(
++        candidate: BundleCompileInput, suffix: str
++    ) -> tuple[CompiledBundle, bytes, AdmissionReceipt]:
++        result = compile_bundle(
++            candidate, limits=LIMITS, environment=compile_environment
++        )
++        bundle = result.bundle
++        if bundle is None:
++            raise RuntimeError(f"Scene compilation failed: {result.errors}")
++        verifier, signature = sign_bundle(directory, bundle.bundle_ref.bundle_digest)
++        signed = attach_signature_refs(
++            bundle.archive_bytes, (signature,), limits=LIMITS
++        )
++        files = read_bundle(signed, LIMITS)
++        trust = verifier.as_trust_source()
++        verification = verify_bundle_trust(
++            files.manifest, bundle.bundle_ref.bundle_digest, trust, validation_at=AT
++        )
++        if len(verification.signatures) != 1:
++            raise RuntimeError("Expected one authenticated detached signature")
++        admitted = admit_bundle(
++            signed,
++            operation_id=f"admit.synthetic.scene.{suffix}",
++            actor=ACTOR,
++            limits=LIMITS,
++            environment=AdmissionEnvironment(
++                runtime_identity=ACTOR, capabilities=host, trust=trust, validation_at=AT
++            ),
++            store=store,
++        )
++        if not admitted.accepted or admitted.receipt is None:
++            raise RuntimeError(f"Scene admission failed: {admitted}")
++        return bundle, signed, admitted.receipt
++
++    bundle, signed, receipt = admit(source, "initial")
++    files = read_bundle(signed, LIMITS)
+     catalogue = build_catalogue(files.manifest, files.payloads, **JSON_LIMITS)
+     (region_ref,) = (
+         item.ref
+@@ -148,7 +165,10 @@
+     def authorize(
+         caller: object, action: ReleaseAction, target: ReleaseTarget
+     ) -> ActorRef | None:
+-        if caller is not principal or target.release_id != RELEASE_ID:
++        if caller is not principal or target.release_id not in (
++            RELEASE_ID,
++            NEXT_RELEASE_ID,
++        ):
+             return None
+         if action is ReleaseAction.REGISTER and target.scope.scope == "global":
+             return ACTOR
+@@ -201,7 +221,7 @@
+     releases.register_release(
+         operation_key="register.synthetic.scene",
+         release_id=RELEASE_ID,
+-        admission_receipt_id=admitted.receipt.receipt_id,
++        admission_receipt_id=receipt.receipt_id,
+         principal=principal,
+     )
+     release = releases.approve_release(
+@@ -220,11 +240,45 @@
+     )
+     task = releases.accept_task(submission, principal=principal)
+ 
++    next_source = replace(
++        source, metadata=replace(source.metadata, bundle_version="1.0.1")
++    )
++    next_bundle, _, next_receipt = admit(next_source, "next")
++    releases.register_release(
++        operation_key="register.synthetic.scene.next",
++        release_id=NEXT_RELEASE_ID,
++        admission_receipt_id=next_receipt.receipt_id,
++        principal=principal,
++    )
++    releases.approve_release(
++        operation_key="approve.synthetic.scene.next",
++        release_id=NEXT_RELEASE_ID,
++        scope=SCOPE,
++        principal=principal,
++    )
++    next_activation = releases.activate(
++        operation_key="activate.synthetic.scene.next",
++        release_id=NEXT_RELEASE_ID,
++        activation_id="synthetic.parking.activation.next",
++        scope=SCOPE,
++        expected_previous_activation_id=activated.activation_id,
++        principal=principal,
++    )
++
+     reopened_store = LocalBundleStore(store_dir)
+     reopened_manager = manager(reopened_store)
+     reopened_task = reopened_manager.get_task(task.task_id)
+-    if reopened_task != task or reopened_manager.active_activation(SCOPE) != activated:
+-        raise RuntimeError("The reopened local ledger disagrees with accepted state")
++    current = reopened_manager.active_activation(SCOPE)
++    if (
++        reopened_task != task
++        or reopened_manager.get_task_activation(reopened_task) != activated
++        or current != next_activation
++        or current.bundle_ref != next_bundle.bundle_ref
++        or current.bundle_ref.bundle_digest == task.bundle_digest
++    ):
++        raise RuntimeError(
++            "The reopened ledger must keep distinct historical and current Releases"
++        )
+     execution = resolve_execution_pins(
+         reopened_manager,
+         reopened_store,
+@@ -234,4 +288,12 @@
+         validation_at=AT,
+         limits=LIMITS,
+     )
+-    return ReopenedScene(bundle, signed, release, activated, task, execution)
++    if (
++        execution.pins.release_id != task.release_id
++        or execution.pins.bundle_digest != task.bundle_digest
++        or execution.files.manifest.integrity.root_digest != task.bundle_digest
++    ):
++        raise RuntimeError(
++            "The reopened execution must keep its historical Release pin"
++        )
++    return ReopenedScene(bundle, signed, release, activated, current, task, execution)
+--- a/examples/nonmotor_vehicle_illegal_parking/compilable/local_trust.py
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/local_trust.py
+@@ -2,13 +2,15 @@
+ 
+ import shutil
+ import subprocess
+-from dataclasses import dataclass
++from dataclasses import dataclass, field
+ from datetime import datetime
+ from pathlib import Path
+ from tempfile import TemporaryDirectory
++from typing import cast
+ 
+ from jimu_runtime.bundle.integrity import sha256_digest
+ from jimu_runtime.bundle.trust import (
++    SignatureBackend,
+     SignatureEvidence,
+     SignatureProof,
+     SigningKeyGrant,
+@@ -19,10 +21,11 @@
+     TrustPin,
+     TrustPolicy,
+     TrustSnapshot,
++    TrustSource,
+ )
+ from jimu_runtime.domain.runtime.bundle_manifest import DetachedSignatureRef
+ 
+-from .scene import AT, END, SOURCE, START, VERSION
++from .scene import AT, END, SOURCE, START, VERSION, configuration_pin
+ 
+ PROFILE = "jimu-wp02-test-nonmotor-ed25519-v1"
+ REGISTRY = "synthetic.scene.signatures"
+@@ -64,14 +67,18 @@
+     )
+ 
+ 
+-@dataclass(slots=True)
++# These declarations are intentionally read-only. The host protocols only read them.
++@dataclass(frozen=True, slots=True)
+ class LocalEd25519:
+     directory: Path
+     grant: SigningKeyGrant | None = None
+     public_der: bytes = b""
+     signature: SignatureEvidence | None = None
+-    environment: TrustEnvironment = "isolated_test"
+-    profile_id: str = PROFILE
++    environment: TrustEnvironment = field(init=False, default="isolated_test")
++    profile_id: str = field(init=False, default=PROFILE)
++
++    def as_trust_source(self) -> TrustSource:
++        return cast(TrustSource, self)
+ 
+     def resolve(
+         self, ref: DetachedSignatureRef, *, max_bytes: int
+@@ -87,6 +94,10 @@
+     def verify(
+         self, evidence: SignatureEvidence, key: SigningKeyGrant, root_digest: str
+     ) -> SignatureProof:
++        if sha256_digest(evidence.payload) != evidence.ref.sha256:
++            raise TrustError(
++                "trust.scene_signature_digest", "Detached signature digest mismatch"
++            )
+         if (
+             _pin(key.pin.identity, self.public_der) != key.pin
+             or evidence.key_pin != key.pin
+@@ -127,7 +138,7 @@
+         if not START <= validation_at < END:
+             return None
+         policy = TrustPolicy(
+-            pin=_pin("synthetic.scene.policy", PROFILE.encode()),
++            pin=_pin("synthetic.scene.policy", b""),
+             environment=self.environment,
+             profile_id=self.profile_id,
+             minimum_distinct_signers=1,
+@@ -137,13 +148,16 @@
+             ),
+         )
+         configuration = TrustConfiguration(
+-            pin=_pin("synthetic.scene.trust", self.public_der or PROFILE.encode()),
+-            policy=policy,
++            pin=_pin("synthetic.scene.trust", b""),
++            policy=policy.model_copy(update={"pin": configuration_pin(policy)}),
+             valid_from=START,
+             valid_until=END,
+             keys=() if self.grant is None else (self.grant,),
+         )
+-        return TrustSnapshot(configuration, self)
++        return TrustSnapshot(
++            configuration.model_copy(update={"pin": configuration_pin(configuration)}),
++            cast(SignatureBackend, self),
++        )
+ 
+ 
+ def sign_bundle(
+--- a/examples/nonmotor_vehicle_illegal_parking/compilable/scene.py
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/scene.py
+@@ -4,12 +4,12 @@
+ from dataclasses import replace
+ from datetime import UTC, datetime
+ from pathlib import Path
+-from typing import TypedDict
++from typing import NotRequired, TypedDict, cast
+ 
+ from pydantic import TypeAdapter
+ 
+ from jimu_runtime.bundle.archive import BundleLimits
+-from jimu_runtime.bundle.artifacts import DRAFT_2020_12
++from jimu_runtime.bundle.artifacts import DRAFT_2020_12, ArtifactIdentity
+ from jimu_runtime.bundle.capabilities import CapabilitySnapshot
+ from jimu_runtime.bundle.compiler import (
+     BundleBuildMetadata,
+@@ -19,7 +19,13 @@
+     SourceAssetBytes,
+     SourceIdentity,
+ )
+-from jimu_runtime.bundle.integrity import JSONLocation, canonical_json, sha256_digest
++from jimu_runtime.bundle.integrity import (
++    JSONLocation,
++    canonical_json,
++    canonicalize_json,
++    sha256_digest,
++)
++from jimu_runtime.bundle.trust import TrustConfiguration, TrustPin, TrustPolicy
+ from jimu_runtime.domain.definition_support import ExternalCapabilityRequirement
+ from jimu_runtime.domain.enums import ArtifactKind
+ from jimu_runtime.domain.fact_schemas.canonicalization import JSONValue
+@@ -72,7 +78,7 @@
+                 or len(target) != 3
+                 or not all(isinstance(item, str) for item in target)
+                 or set(value) - {"$pin", "schema_ref"}
+-                or value.get("schema_ref", False) not in (True, False)
++                or type(value.get("schema_ref", False)) is not bool
+             ):
+                 raise ValueError(f"Invalid scene pin: {path}")
+             kind, identifier, version = target
+@@ -148,10 +154,36 @@
+     }
+ 
+ 
+-def _index() -> dict[str, object]:
+-    document: dict[str, object] = json.loads(
+-        (DIRECTORY / "source" / "index.json").read_bytes()
+-    )
++def _scene_bytes(subdirectory: str, location: str) -> bytes:
++    fragment = Path(location)
++    root = (DIRECTORY / subdirectory).resolve(strict=True)
++    if (
++        fragment.is_absolute()
++        or ".." in fragment.parts
++        or root != DIRECTORY / subdirectory
++    ):
++        raise ValueError(
++            f"Scene file is outside its {subdirectory} directory: {location}"
++        )
++    resolved = (root / fragment).resolve(strict=True)
++    if not resolved.is_relative_to(root) or not resolved.is_file():
++        raise ValueError(
++            f"Scene file is outside its {subdirectory} directory: {location}"
++        )
++    return resolved.read_bytes()
++
++
++def _scene_json(raw: bytes, location: str) -> JSONValue:
++    # Validate original bytes before expanding ToolResult or replacing pin slots.
++    return cast(
++        JSONValue, json.loads(canonicalize_json(raw, path=location, **JSON_LIMITS))
++    )
++
++
++def _index() -> dict[str, JSONValue]:
++    document = _scene_json(_scene_bytes("source", "index.json"), "source/index.json")
++    if not isinstance(document, dict):
++        raise ValueError("Scene index requires an object")
+     if document["schema_version"] != VERSION:
+         raise ValueError("Unsupported scene source version")
+     return document
+@@ -165,25 +197,52 @@
+ def _source_artifact(index_row: dict[str, str]) -> SourceArtifact:
+     kind = ArtifactKind(index_row["kind"])
+     identifier = index_row["id"]
+-    raw = (DIRECTORY / "source" / index_row["file"]).read_bytes()
++    raw = _scene_bytes("source", index_row["file"])
+     slots: list[ReferenceSlot] = []
+-    value = json.loads(raw)
++    value = _scene_json(raw, index_row["file"])
++    if not isinstance(value, dict):
++        raise ValueError("Scene source artifact requires an object")
+     if kind is ArtifactKind.TOOL_OUTPUT_SCHEMA:
+-        value = _output_contract(identifier, value["payload"], value["evidence_slots"])
+-        raw = canonical_json(value, path=index_row["path"], **JSON_LIMITS)
++        names = TypeAdapter(list[str]).validate_python(
++            value["evidence_slots"], strict=True
++        )
++        compiled_bytes = canonical_json(
++            _output_contract(identifier, value["payload"], names),
++            path=index_row["path"],
++            **JSON_LIMITS,
++        )
+     else:
+         value = _extract_slots(value, slots)
+-        if slots:
+-            raw = canonical_json(value, path=index_row["path"], **JSON_LIMITS)
++        compiled_bytes = (
++            canonical_json(value, path=index_row["path"], **JSON_LIMITS)
++            if slots
++            else raw
++        )
++    # The compiler compares SourceArtifactRef.digest to the null-slot input.
++    # Content-address the origin separately to bind the authored bytes and slot targets.
++    origin_material: JSONValue = {
++        "format": "jimu.synthetic-scene-source.v1",
++        "artifact": [kind.value, identifier, VERSION],
++        "source_path": index_row["file"],
++        "bundle_path": index_row["path"],
++        "raw_sha256": sha256_digest(raw),
++        "slots": [
++            {
++                "location": list(slot.location),
++                "target": [slot.target[0].value, slot.target[1], slot.target[2]],
++                "schema_ref": slot.schema_ref,
++            }
++            for slot in slots
++        ],
++    }
++    digest = sha256_digest(canonical_json(origin_material, **JSON_LIMITS))
+     return SourceArtifact(
+         kind=kind,
+         artifact_id=identifier,
+         version=VERSION,
+         path=index_row["path"],
+-        content=raw,
+-        origin=SourceIdentity(
+-            artifact_id=f"{kind.value}:{identifier}", version=VERSION
+-        ),
++        content=compiled_bytes,
++        origin=SourceIdentity(artifact_id=f"scene-source.{digest}", version=VERSION),
+         reference_slots=tuple(slots),
+     )
+ 
+@@ -234,7 +293,7 @@
+             assets=tuple(
+                 SourceAssetBytes(
+                     path=row["path"],
+-                    content=(DIRECTORY / row["file"]).read_bytes(),
++                    content=_scene_bytes("assets", row["file"]),
+                     origin=SourceIdentity(
+                         artifact_id=f"asset-bytes:{row['id']}", version=VERSION
+                     ),
+@@ -245,53 +304,86 @@
+     )
+ 
+ 
++class _SchemaIdentity(TypedDict):
++    kind: str
++    id: str
++    version: str
++
++
++class _ProtocolRow(TypedDict):
++    input_schema: _SchemaIdentity
++    output_schema: _SchemaIdentity
++    role: NotRequired[str]
++
++
+ def capability_snapshot(source: BundleCompileInput) -> CapabilitySnapshot:
+     """Host capability declarations for the local compile/admission demonstration."""
+     index = _index()
+-    schema_sources = {
+-        item.artifact_id: item
+-        for item in source.artifacts
+-        if item.kind
+-        in (
++    schema_sources: dict[ArtifactIdentity, SourceArtifact] = {}
++    for item in source.artifacts:
++        if item.kind not in (
+             ArtifactKind.RESPONSE_SCHEMA,
+             ArtifactKind.TOOL_INPUT_SCHEMA,
+             ArtifactKind.TOOL_OUTPUT_SCHEMA,
+-        )
+-    }
+-    roles = _rows(index["model_roles"])
+-    tool_protocols = _rows(index["tool_protocols"])
++        ):
++            continue
++        if item.identity in schema_sources:
++            raise ValueError(f"Duplicate capability schema identity: {item.identity}")
++        schema_sources[item.identity] = item
++    protocols = TypeAdapter(list[_ProtocolRow])
++    roles = protocols.validate_python(index["model_roles"], strict=True)
++    tool_protocols = protocols.validate_python(index["tool_protocols"], strict=True)
+     requirements = source.metadata.required_capabilities
+     current = {"valid_from": START, "valid_until": END, "revoked_at": None}
+ 
+-    def schema_ref(identifier: str) -> dict[str, str]:
+-        item = schema_sources[identifier]
++    def schema_ref(declaration: _SchemaIdentity, kind: ArtifactKind) -> dict[str, str]:
++        identity = (
++            ArtifactKind(declaration["kind"]),
++            declaration["id"],
++            declaration["version"],
++        )
++        if identity[0] is not kind or identity not in schema_sources:
++            raise ValueError(f"Unknown or wrongly typed capability schema: {identity}")
++        item = schema_sources[identity]
+         return {
+             "artifact_kind": item.kind.value,
+-            "artifact_id": identifier,
++            "artifact_id": item.artifact_id,
+             "version": item.version,
+             "digest": sha256_digest(
+-                canonical_json(json.loads(item.content), **JSON_LIMITS)
++                canonicalize_json(item.content, path=item.path, **JSON_LIMITS)
+             ),
+             "schema_dialect": DRAFT_2020_12,
+         }
+ 
+-    def contract(row: dict[str, str]) -> dict[str, object]:
++    def model_contract(row: _ProtocolRow) -> dict[str, object]:
+         return {
+-            "input_schema_ref": schema_ref(row["input_schema"]),
+-            "output_schema_ref": schema_ref(row["output_schema"]),
++            "input_schema_ref": schema_ref(
++                row["input_schema"], ArtifactKind.RESPONSE_SCHEMA
++            ),
++            "output_schema_ref": schema_ref(
++                row["output_schema"], ArtifactKind.RESPONSE_SCHEMA
++            ),
++        }
++
++    def tool_contract(row: _ProtocolRow) -> dict[str, object]:
++        return {
++            "input_schema_ref": schema_ref(
++                row["input_schema"], ArtifactKind.TOOL_INPUT_SCHEMA
++            ),
++            "output_schema_ref": schema_ref(
++                row["output_schema"], ArtifactKind.TOOL_OUTPUT_SCHEMA
++            ),
+         }
+ 
+     model_requirement = next(
+         row for row in requirements if row.family.value == "model_deployment"
+     )
+-    return CapabilitySnapshot.model_validate(
++    provisional = CapabilitySnapshot.model_validate(
+         {
+             "pin": {
+                 "identity": "synthetic.scene.capabilities",
+                 "version": VERSION,
+-                "sha256": sha256_digest(
+-                    (DIRECTORY / "source" / "index.json").read_bytes()
+-                ),
++                "sha256": "0" * 64,
+             },
+             "runtime_version": VERSION,
+             "bundle_schema_versions": (VERSION,),
+@@ -314,21 +406,48 @@
+                     "identity": index["deployment"],
+                     "supported_features": model_requirement.required_features,
+                     "contracts": tuple(
+-                        {"capability": row["role"], **contract(row)} for row in roles
++                        {"capability": row["role"], **model_contract(row)}
++                        for row in roles
+                     ),
+                     **current,
+                 },
+             ),
+             "model_reviews": (),
+             "supported_workflow_versions": (VERSION,),
+-            "runtime_protocols": tuple(
+-                {
+-                    "role": row.get("role", "tool_execution"),
+-                    **contract(row),
+-                    "protocol_version": VERSION,
+-                    **current,
+-                }
+-                for row in (*roles, *tool_protocols)
+-            ),
+-        }
+-    )
++            "runtime_protocols": (
++                *(
++                    {
++                        "role": row["role"],
++                        **model_contract(row),
++                        "protocol_version": VERSION,
++                        **current,
++                    }
++                    for row in roles
++                ),
++                *(
++                    {
++                        "role": "tool_execution",
++                        **tool_contract(row),
++                        "protocol_version": VERSION,
++                        **current,
++                    }
++                    for row in tool_protocols
++                ),
++            ),
++        }
++    )
++    return provisional.model_copy(update={"pin": configuration_pin(provisional)})
++
++
++def configuration_pin(
++    configuration: CapabilitySnapshot | TrustConfiguration | TrustPolicy,
++) -> TrustPin:
++    """Address the normalized configuration body without its self-referential pin."""
++    content = canonical_json(
++        configuration.model_dump(mode="json", exclude={"pin"}), **JSON_LIMITS
++    )
++    return TrustPin(
++        identity=configuration.pin.identity,
++        version=configuration.pin.version,
++        sha256=sha256_digest(content),
++    )
+--- a/examples/nonmotor_vehicle_illegal_parking/compilable/source/index.json
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/source/index.json
+@@ -462,7 +462,7 @@
+     {
+       "id": "synthetic-parking-area-source",
+       "path": "resources/assets/data/parking-area.json",
+-      "file": "assets/parking-area.json"
++      "file": "parking-area.json"
+     }
+   ],
+   "capabilities": [
+@@ -534,37 +534,93 @@
+   "model_roles": [
+     {
+       "role": "profile_discovery",
+-      "input_schema": "model-input",
+-      "output_schema": "profile_discovery-result"
++      "input_schema": {
++        "kind": "response_schema",
++        "id": "model-input",
++        "version": "1.0.0"
++      },
++      "output_schema": {
++        "kind": "response_schema",
++        "id": "profile_discovery-result",
++        "version": "1.0.0"
++      }
+     },
+     {
+       "role": "object_grounding",
+-      "input_schema": "model-input",
+-      "output_schema": "object_grounding-result"
++      "input_schema": {
++        "kind": "response_schema",
++        "id": "model-input",
++        "version": "1.0.0"
++      },
++      "output_schema": {
++        "kind": "response_schema",
++        "id": "object_grounding-result",
++        "version": "1.0.0"
++      }
+     },
+     {
+       "role": "object_observation",
+-      "input_schema": "object_observation-input",
+-      "output_schema": "object_observation-result"
++      "input_schema": {
++        "kind": "response_schema",
++        "id": "object_observation-input",
++        "version": "1.0.0"
++      },
++      "output_schema": {
++        "kind": "response_schema",
++        "id": "object_observation-result",
++        "version": "1.0.0"
++      }
+     },
+     {
+       "role": "candidate_prediction",
+-      "input_schema": "model-input",
+-      "output_schema": "candidate_prediction-result"
++      "input_schema": {
++        "kind": "response_schema",
++        "id": "model-input",
++        "version": "1.0.0"
++      },
++      "output_schema": {
++        "kind": "response_schema",
++        "id": "candidate_prediction-result",
++        "version": "1.0.0"
++      }
+     }
+   ],
+   "tool_protocols": [
+     {
+-      "input_schema": "wheel_segmentation-input",
+-      "output_schema": "wheel_segmentation-result"
+-    },
+-    {
+-      "input_schema": "tactile_paving_segmentation-input",
+-      "output_schema": "tactile_paving_segmentation-result"
+-    },
+-    {
+-      "input_schema": "wheel_boundary_geometry-input",
+-      "output_schema": "wheel_boundary_geometry-result"
++      "input_schema": {
++        "kind": "tool_input_schema",
++        "id": "wheel_segmentation-input",
++        "version": "1.0.0"
++      },
++      "output_schema": {
++        "kind": "tool_output_schema",
++        "id": "wheel_segmentation-result",
++        "version": "1.0.0"
++      }
++    },
++    {
++      "input_schema": {
++        "kind": "tool_input_schema",
++        "id": "tactile_paving_segmentation-input",
++        "version": "1.0.0"
++      },
++      "output_schema": {
++        "kind": "tool_output_schema",
++        "id": "tactile_paving_segmentation-result",
++        "version": "1.0.0"
++      }
++    },
++    {
++      "input_schema": {
++        "kind": "tool_input_schema",
++        "id": "wheel_boundary_geometry-input",
++        "version": "1.0.0"
++      },
++      "output_schema": {
++        "kind": "tool_output_schema",
++        "id": "wheel_boundary_geometry-result",
++        "version": "1.0.0"
++      }
+     }
+   ]
+ }
+--- a/examples/nonmotor_vehicle_illegal_parking/compilable/source/prompt_template/candidate_prediction.json
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/source/prompt_template/candidate_prediction.json
+@@ -3,7 +3,7 @@
+   "version": "1.0.0",
+   "prompt_template_id": "candidate_prediction",
+   "purpose": "candidate_prediction",
+-  "template_text": "Return suggested violation category IDs. The deterministic mandatory scan evaluates rules independently.",
++  "template_text": "Return suggested violation categories as objects with category_id and your actual finite floating-point score. Return an empty array when there is no suggestion. The deterministic mandatory scan evaluates rules independently of candidates.",
+   "variables": [],
+   "response_schema_ref": {
+     "$pin": [
+--- a/examples/nonmotor_vehicle_illegal_parking/compilable/source/response_schema/candidate_prediction-result.json
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/source/response_schema/candidate_prediction-result.json
+@@ -6,9 +6,23 @@
+     "categories": {
+       "type": "array",
+       "items": {
+-        "type": "string",
+-        "minLength": 1,
+-        "maxLength": 128
++        "type": "object",
++        "properties": {
++          "category_id": {
++            "type": "string",
++            "enum": [
++              "nonmotor_vehicle_illegal_parking"
++            ]
++          },
++          "score": {
++            "type": "number"
++          }
++        },
++        "required": [
++          "category_id",
++          "score"
++        ],
++        "additionalProperties": false
+       },
+       "minItems": 0,
+       "maxItems": 16
+--- a/examples/nonmotor_vehicle_illegal_parking/compilable/test_scene.py
++++ b/examples/nonmotor_vehicle_illegal_parking/compilable/test_scene.py
+@@ -2,8 +2,9 @@
+ 
+ import json
+ from collections.abc import Callable
+-from dataclasses import replace
++from dataclasses import FrozenInstanceError, replace
+ from pathlib import Path
++from shutil import copytree
+ 
+ import pytest
+ 
+@@ -15,7 +16,11 @@
+     attach_signature_refs,
+     compile_bundle,
+ )
+-from jimu_runtime.bundle.integrity import canonical_json, sha256_digest
++from jimu_runtime.bundle.integrity import (
++    BundleIntegrityError,
++    canonical_json,
++    sha256_digest,
++)
+ from jimu_runtime.bundle.schema_validation import (
+     OfflineSchemaError,
+     compile_offline_response_schema,
+@@ -31,6 +36,7 @@
+ from jimu_runtime.domain.producers import ProducerCatalogue
+ from jimu_runtime.domain.references import SchemaRef
+ from jimu_runtime.domain.rules.definitions import RuleDefinition, RuleSetDefinition
++from jimu_runtime.domain.runtime.decisions import CandidateCategory
+ from jimu_runtime.domain.schema_types import ToolResultSchemaDescriptor
+ from jimu_runtime.domain.tool_mappings import ContextInput, StepOutputInput
+ from jimu_runtime.domain.validation.schema_descriptors import (
+@@ -38,8 +44,9 @@
+     tool_output_omission_path,
+     validate_independent_tool_outputs,
+ )
+-from jimu_runtime.gateway.http_wire import ChatContract, WireError
+-
++from jimu_runtime.gateway.http_wire import ChatContract, WireError, strict_json
++
++from . import scene as scene_loader
+ from .lifecycle import ReopenedScene, exercise_lifecycle
+ from .local_trust import LocalEd25519, sign_bundle
+ from .scene import (
+@@ -53,6 +60,7 @@
+     RULE,
+     STEPS,
+     capability_snapshot,
++    configuration_pin,
+     load_source,
+     with_source_provenance,
+ )
+@@ -74,7 +82,7 @@
+         limits=LIMITS,
+         environment=CompileEnvironment(
+             capabilities=capability_snapshot(host_source or source),
+-            trust=LocalEd25519(tmp_path),
++            trust=LocalEd25519(tmp_path).as_trust_source(),
+             validation_at=AT,
+         ),
+     )
+@@ -108,6 +116,16 @@
+     assert scene.execution.pins.bundle_digest == scene.bundle.bundle_ref.bundle_digest
+     assert scene.task.release_id == scene.release.release_id
+     assert scene.activation.bundle_ref == scene.release.bundle_ref
++    assert scene.current_activation.release_ref.record_id != scene.task.release_id
++    assert scene.current_activation.bundle_ref.bundle_digest != scene.task.bundle_digest
++    assert scene.execution.pins.release_id == scene.task.release_id
++    assert (
++        scene.execution.files.manifest.integrity.root_digest == scene.task.bundle_digest
++    )
++    assert (
++        scene.execution.files.manifest.bundle_version
++        == scene.bundle.bundle_ref.bundle_version
++    )
+     assert scene.execution.policy.node_order == (
+         "N01",
+         "N02",
+@@ -252,7 +270,11 @@
+             assert "unknown" not in fact.value.type_definition.members
+ 
+ 
+-def test_empty_candidate_response_keeps_rule_policy_mandatory(
++class _CandidateResponse(ContractModel):
++    categories: list[CandidateCategory]
++
++
++def test_candidate_responses_keep_actual_scores_and_rule_policy(
+     scene: ReopenedScene,
+ ) -> None:
+     catalogue = scene.execution.catalogue
+@@ -261,8 +283,45 @@
+     binding = catalogue.resolve(ruleset.candidate_binding_ref).value
+     response = catalogue.resolve(binding.output_schema_ref)
+     examples = json.loads((DIRECTORY / "assets" / "model-wire.v1.json").read_bytes())
+-    validator = compile_offline_response_schema(json.loads(response.canonical_bytes))
+-    assert validator.validate(examples["candidate_prediction"]) == ((), ())
++    wire = ChatContract(
++        input_schema_ref=binding.input_schema_ref,
++        output_schema_ref=binding.output_schema_ref,
++        response_model=_CandidateResponse,
++        response_schema=response.canonical_bytes,
++    )
++    empty = examples["candidate_prediction"]
++    assert wire.validate_response_content(json.dumps(empty), empty) == ((), ())
++    scored = examples["candidate_prediction_scored"]
++    scored_content = json.dumps(scored)
++    assert wire.validate_response_content(
++        scored_content, strict_json(scored_content, exact_numbers=True)
++    ) == ((), ())
++    parsed = _CandidateResponse.model_validate_json(scored_content)
++    assert parsed.categories[0].score == 1.25
++    integral_float = '{"categories":[{"category_id":"nonmotor_vehicle_illegal_parking","score":1.0}]}'
++    assert wire.validate_response_content(
++        integral_float, strict_json(integral_float, exact_numbers=True)
++    ) == ((), ())
++    assert (
++        type(_CandidateResponse.model_validate_json(integral_float).categories[0].score)
++        is float
++    )
++    negative = {"categories": [{"category_id": RULE, "score": -2.5}]}
++    assert wire.validate_response_content(json.dumps(negative), negative) == ((), ())
++    for bad in (
++        {"category_id": RULE},
++        {"category_id": RULE, "score": "1.25"},
++        {"category_id": RULE, "score": True},
++        {"category_id": RULE, "score": 1},
++        {"category_id": RULE, "score": 1.25, "extra": 1},
++        {"category_id": "unregistered", "score": 1.25},
++    ):
++        document = {"categories": [bad]}
++        with pytest.raises(WireError):
++            wire.validate_response_content(json.dumps(document), document)
++    with pytest.raises(WireError, match="http_json_nonfinite"):
++        strict_json(b'{"categories":[{"score":NaN}]}')
++
+     (rule_ref,) = ruleset.rule_refs
+     rule = catalogue.resolve(rule_ref).value
+     policy = catalogue.resolve(rule.rule_policy_ref).value
+@@ -381,8 +440,161 @@
+         verify_bundle_trust(
+             files.manifest,
+             scene.bundle.bundle_ref.bundle_digest,
+-            verifier,
++            verifier.as_trust_source(),
+             validation_at=AT,
+         )
+     assert rejected.value.issue.code == "trust.scene_signature_invalid"
+     assert not list(tmp_path.rglob("private.pem"))
++
++
++@pytest.fixture
++def local_scene_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
++    copytree(DIRECTORY / "source", tmp_path / "source")
++    copytree(DIRECTORY / "assets", tmp_path / "assets")
++    monkeypatch.setattr(scene_loader, "DIRECTORY", tmp_path)
++    return tmp_path
++
++
++def test_source_provenance_distinguishes_reference_slot_targets(
++    local_scene_dir: Path,
++) -> None:
++    before = load_source()
++    authored = local_scene_dir / "source" / "profile" / f"{PROFILE}.json"
++    original = authored.read_bytes()
++    altered = original.replace(b'"profile_discovery"', b'"object_grounding"', 1)
++    assert altered != original
++    authored.write_bytes(altered)
++    after = load_source()
++    old = next(item for item in before.artifacts if item.kind is ArtifactKind.PROFILE)
++    new = next(item for item in after.artifacts if item.kind is ArtifactKind.PROFILE)
++    assert new.content == old.content
++    assert new.reference_slots != old.reference_slots
++    assert new.origin.artifact_id != old.origin.artifact_id
++    proof = next(
++        row
++        for row in after.metadata.source.artifacts
++        if row.artifact_id == new.origin.artifact_id
++    )
++    assert proof.digest == sha256_digest(new.content)
++
++
++@pytest.mark.parametrize(
++    "location",
++    ["source/index.json", "source/tool_output_schema/wheel_segmentation-result.json"],
++)
++def test_duplicate_source_json_is_rejected_before_normalizing(
++    local_scene_dir: Path, location: str
++) -> None:
++    target = local_scene_dir / location
++    original = target.read_text()
++    target.write_text(original.replace("{", '{"duplicated":0,"duplicated":1,', 1))
++    with pytest.raises(BundleIntegrityError) as error:
++        load_source()
++    assert error.value.code == "duplicate_json_key"
++
++
++def test_reference_schema_type_requires_a_boolean(local_scene_dir: Path) -> None:
++    target = local_scene_dir / "source" / "model_binding" / "object_observation.json"
++    body = json.loads(target.read_bytes())
++    body["input_schema_ref"]["schema_ref"] = 1
++    target.write_text(json.dumps(body))
++    with pytest.raises(ValueError, match="Invalid scene pin"):
++        load_source()
++
++
++@pytest.mark.parametrize("row_kind", ["artifacts", "raw_assets"])
++@pytest.mark.parametrize("escape_kind", ["absolute", "parent", "symlink"])
++def test_source_paths_stay_inside_their_root(
++    local_scene_dir: Path, row_kind: str, escape_kind: str
++) -> None:
++    root = local_scene_dir / ("source" if row_kind == "artifacts" else "assets")
++    exterior = local_scene_dir / "outside.json"
++    exterior.write_text("{}")
++    if escape_kind == "absolute":
++        escaped = str(exterior)
++    elif escape_kind == "parent":
++        escaped = "../outside.json"
++    else:
++        escaped = "outside-link.json"
++        (root / escaped).symlink_to(exterior)
++    source_index = local_scene_dir / "source" / "index.json"
++    entries = json.loads(source_index.read_bytes())
++    entries[row_kind][0]["file"] = escaped
++    source_index.write_text(json.dumps(entries))
++    with pytest.raises(ValueError, match="outside its"):
++        load_source()
++
++
++def test_capability_pin_covers_schema_and_uses_exact_schema_identity() -> None:
++    source = load_source()
++    original = capability_snapshot(source)
++
++    def change_response(body: dict[str, JSONValue]) -> None:
++        body["description"] = "Changed response description"
++
++    changed = _edited(
++        source,
++        ArtifactKind.RESPONSE_SCHEMA,
++        "candidate_prediction-result",
++        change_response,
++    )
++    revised = capability_snapshot(changed)
++    assert revised.pin != original.pin
++    assert revised.pin == configuration_pin(revised)
++    tool_artifact = next(
++        item for item in source.artifacts if item.kind == ArtifactKind.TOOL_INPUT_SCHEMA
++    )
++    model_artifact = next(
++        item for item in source.artifacts if item.artifact_id == "model-input"
++    )
++    same_id_other_kind = replace(tool_artifact, artifact_id=model_artifact.artifact_id)
++    extra = replace(source, artifacts=(*source.artifacts, same_id_other_kind))
++    assert capability_snapshot(extra) == original
++    duplicated = replace(source, artifacts=(*source.artifacts, model_artifact))
++    with pytest.raises(ValueError, match="Duplicate capability schema identity"):
++        capability_snapshot(duplicated)
++
++
++def test_capability_schema_role_cannot_swap_reference_kind(
++    local_scene_dir: Path,
++) -> None:
++    index = local_scene_dir / "source" / "index.json"
++    body = json.loads(index.read_bytes())
++    body["tool_protocols"][0]["input_schema"]["kind"] = "response_schema"
++    index.write_text(json.dumps(body))
++    with pytest.raises(ValueError, match="wrongly typed capability schema"):
++        capability_snapshot(load_source())
++
++
++def test_trust_pins_bind_grants_and_the_ephemeral_domain_is_fixed(
++    scene: ReopenedScene, tmp_path: Path
++) -> None:
++    verifier, _ = sign_bundle(tmp_path, scene.task.bundle_digest)
++    with_grant = verifier.snapshot_at(AT)
++    without_grant = replace(verifier, grant=None).snapshot_at(AT)
++    assert with_grant is not None and without_grant is not None
++    assert with_grant.configuration.pin != without_grant.configuration.pin
++    assert with_grant.configuration.pin == configuration_pin(with_grant.configuration)
++    policy = with_grant.configuration.policy
++    assert policy.pin == configuration_pin(policy)
++    assert policy.pin != configuration_pin(
++        policy.model_copy(update={"minimum_distinct_signers": 2})
++    )
++    with pytest.raises(TypeError):
++        LocalEd25519(tmp_path, environment="production")
++    with pytest.raises(FrozenInstanceError):
++        verifier.profile_id = "different-profile"
++
++
++def test_verifier_rejects_mismatched_detached_digest_directly(
++    scene: ReopenedScene, tmp_path: Path
++) -> None:
++    verifier, reference = sign_bundle(tmp_path, scene.task.bundle_digest)
++    evidence = verifier.resolve(reference, max_bytes=64)
++    assert evidence is not None and verifier.grant is not None
++    bad = evidence.model_copy(
++        update={"ref": reference.model_copy(update={"sha256": "0" * 64})}
++    )
++    with pytest.raises(TrustError) as rejected:
++        verifier.verify(bad, verifier.grant, scene.task.bundle_digest)
++    assert rejected.value.issue.code == "trust.scene_signature_digest"

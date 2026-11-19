@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "question_id": "parking_position",
+  "objective": "Parking position",
+  "prompt_template_ref": {
+    "$pin": [
+      "prompt_template",
+      "parking_position",
+      "1.0.0"
+    ]
+  },
+  "facet_refs": [
+    {
+      "$pin": [
+        "facet",
+        "parking-observations",
+        "1.0.0"
+      ]
+    }
+  ],
+  "context_allowlist": [],
+  "primary_fact_key": "parking_position",
+  "primary_fact_schema_ref": {
+    "$pin": [
+      "fact_schema",
+      "parking_position",
+      "1.0.0"
+    ]
+  },
+  "evidence_policy_ref": {
+    "$pin": [
+      "policy",
+      "question-evidence",
+      "1.0.0"
+    ]
+  },
+  "unknown_policy_ref": {
+    "$pin": [
+      "policy",
+      "unknown",
+      "1.0.0"
+    ]
+  },
+  "validation_policy_ref": {
+    "$pin": [
+      "policy",
+      "question-validation",
+      "1.0.0"
+    ]
+  }
+}

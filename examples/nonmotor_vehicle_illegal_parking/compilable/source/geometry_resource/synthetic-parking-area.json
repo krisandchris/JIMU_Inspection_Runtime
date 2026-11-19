@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "geometry_resource_id": "synthetic-parking-area",
+  "coordinate_system": {
+    "vocabulary_ref": {
+      "$pin": [
+        "vocabulary",
+        "image-frame",
+        "1.0.0"
+      ]
+    },
+    "member": "original_image"
+  },
+  "units": {
+    "vocabulary_ref": {
+      "$pin": [
+        "vocabulary",
+        "geometry-unit",
+        "1.0.0"
+      ]
+    },
+    "member": "pixel"
+  },
+  "geometry": {
+    "kind": "polygon",
+    "vertices": [
+      {
+        "x": 8,
+        "y": 8
+      },
+      {
+        "x": 40,
+        "y": 8
+      },
+      {
+        "x": 40,
+        "y": 40
+      },
+      {
+        "x": 8,
+        "y": 40
+      }
+    ]
+  },
+  "provenance": {
+    "source_asset_ref": {
+      "$pin": [
+        "static_asset",
+        "synthetic-parking-area-source",
+        "1.0.0"
+      ]
+    }
+  }
+}

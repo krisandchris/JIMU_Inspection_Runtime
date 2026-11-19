@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "included_by_policy",
+    "excluded_by_policy",
+    "metadata_unknown",
+    "metadata_invalid",
+    "ancestor_excluded",
+    "ancestor_unresolved"
+  ],
+  "title": "ApplicabilityReason",
+  "type": "string"
+}

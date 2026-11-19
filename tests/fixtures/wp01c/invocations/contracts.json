@@ -1,0 +1,3542 @@
+{
+  "models": {
+    "observation": {
+      "schema_version": "1.0.0",
+      "model_invocation_id": "model-1",
+      "execution_id": "execution-1",
+      "node_id": "N04",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n04"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-1"
+      },
+      "configured_provider": {
+        "binding_ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "provider_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "primary_deployment_id": "remote-deployment",
+        "provider_id": "provider",
+        "provider_kind": "remote",
+        "logical_model_id": "logical"
+      },
+      "actual_provider": {
+        "provider_id": "provider",
+        "deployment_id": "remote-deployment",
+        "provider_kind": "remote",
+        "model_id": "synthetic-model",
+        "deployment_version": "1.0.0",
+        "model_version": "1.0.0",
+        "version_resolution": "reported",
+        "version_evidence": "req-1"
+      },
+      "route_trace": {
+        "routing_mode": "remote_primary",
+        "route_kind": "primary",
+        "selected_deployment_id": "remote-deployment",
+        "fallback_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "purposes": [
+        "object_observation"
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "synthetic.profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "contract_snapshot": {
+        "configured_output_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "effective_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "artifact_kind": "question",
+            "artifact_id": "vehicle-type",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "compiler_version": "1.0.0",
+        "response_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "response_schema_evidence_ref": {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      },
+      "outcome": {
+        "status": "succeeded",
+        "response_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "provider_request_id": "req-1",
+      "request_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 0
+      },
+      "evidence_refs": [
+        {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      ],
+      "trace_id": "trace-1"
+    },
+    "discovery": {
+      "schema_version": "1.0.0",
+      "model_invocation_id": "discovery-1",
+      "execution_id": "execution-1",
+      "node_id": "N02",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n02"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-1"
+      },
+      "configured_provider": {
+        "binding_ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "discovery",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "provider_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "primary_deployment_id": "remote-deployment",
+        "provider_id": "provider",
+        "provider_kind": "remote",
+        "logical_model_id": "logical"
+      },
+      "actual_provider": {
+        "provider_id": "provider",
+        "deployment_id": "remote-deployment",
+        "provider_kind": "remote",
+        "model_id": "synthetic-model",
+        "deployment_version": "1.0.0",
+        "model_version": "1.0.0",
+        "version_resolution": "reported",
+        "version_evidence": "req-1"
+      },
+      "route_trace": {
+        "routing_mode": "remote_primary",
+        "route_kind": "primary",
+        "selected_deployment_id": "remote-deployment",
+        "fallback_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "purposes": [
+        "profile_discovery"
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "synthetic.profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "outcome": {
+        "status": "succeeded",
+        "response_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "provider_request_id": "req-1",
+      "request_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 0
+      },
+      "evidence_refs": [],
+      "trace_id": "trace-1"
+    },
+    "shared": {
+      "schema_version": "1.0.0",
+      "model_invocation_id": "discovery-1",
+      "execution_id": "execution-1",
+      "node_id": "N02",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n02"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-1"
+      },
+      "configured_provider": {
+        "binding_ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "discovery",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "provider_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "primary_deployment_id": "remote-deployment",
+        "provider_id": "provider",
+        "provider_kind": "remote",
+        "logical_model_id": "logical"
+      },
+      "actual_provider": {
+        "provider_id": "provider",
+        "deployment_id": "remote-deployment",
+        "provider_kind": "remote",
+        "model_id": "synthetic-model",
+        "deployment_version": "1.0.0",
+        "model_version": "1.0.0",
+        "version_resolution": "reported",
+        "version_evidence": "req-1"
+      },
+      "route_trace": {
+        "routing_mode": "remote_primary",
+        "route_kind": "primary",
+        "selected_deployment_id": "remote-deployment",
+        "fallback_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "purposes": [
+        "profile_discovery",
+        "optional_question_proposal"
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "synthetic.profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "outcome": {
+        "status": "succeeded",
+        "response_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "provider_request_id": "req-1",
+      "request_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 0
+      },
+      "evidence_refs": [],
+      "trace_id": "trace-1"
+    },
+    "additional": {
+      "schema_version": "1.0.0",
+      "model_invocation_id": "proposal-1",
+      "execution_id": "execution-1",
+      "node_id": "N02",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n02"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-2"
+      },
+      "configured_provider": {
+        "binding_ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "additional",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "provider_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "primary_deployment_id": "remote-deployment",
+        "provider_id": "provider",
+        "provider_kind": "remote",
+        "logical_model_id": "logical"
+      },
+      "actual_provider": {
+        "provider_id": "provider",
+        "deployment_id": "remote-deployment",
+        "provider_kind": "remote",
+        "model_id": "synthetic-model",
+        "deployment_version": "1.0.0",
+        "model_version": "1.0.0",
+        "version_resolution": "reported",
+        "version_evidence": "req-1"
+      },
+      "route_trace": {
+        "routing_mode": "remote_primary",
+        "route_kind": "primary",
+        "selected_deployment_id": "remote-deployment",
+        "fallback_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "purposes": [
+        "optional_question_proposal"
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "synthetic.profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "outcome": {
+        "status": "succeeded",
+        "response_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "provider_request_id": "req-1",
+      "request_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "started_at": "2026-04-01T12:00:01Z",
+      "completed_at": "2026-04-01T12:00:02Z",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 0
+      },
+      "evidence_refs": [],
+      "trace_id": "trace-1",
+      "source_discovery_invocation_ref": {
+        "record_kind": "model_invocation",
+        "record_id": "discovery-1"
+      }
+    },
+    "failure": {
+      "schema_version": "1.0.0",
+      "model_invocation_id": "model-1",
+      "execution_id": "execution-1",
+      "node_id": "N04",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n04"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-1"
+      },
+      "configured_provider": {
+        "binding_ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "provider_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "primary_deployment_id": "remote-deployment",
+        "provider_id": "provider",
+        "provider_kind": "remote",
+        "logical_model_id": "logical"
+      },
+      "actual_provider": {
+        "provider_id": "provider",
+        "deployment_id": "remote-deployment",
+        "provider_kind": "remote",
+        "model_id": "synthetic-model",
+        "deployment_version": "1.0.0",
+        "model_version": "1.0.0",
+        "version_resolution": "reported",
+        "version_evidence": "req-1"
+      },
+      "route_trace": {
+        "routing_mode": "remote_primary",
+        "route_kind": "primary",
+        "selected_deployment_id": "remote-deployment",
+        "fallback_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "purposes": [
+        "object_observation"
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "synthetic.profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "contract_snapshot": {
+        "configured_output_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "effective_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "artifact_kind": "question",
+            "artifact_id": "vehicle-type",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "compiler_version": "1.0.0",
+        "response_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "response_schema_evidence_ref": {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      },
+      "outcome": {
+        "status": "failed",
+        "error": {
+          "error_class": "timeout",
+          "code": "provider-timeout",
+          "diagnostic_refs": []
+        }
+      },
+      "provider_request_id": "req-1",
+      "request_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 0
+      },
+      "evidence_refs": [
+        {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      ],
+      "trace_id": "trace-1"
+    },
+    "fallback": {
+      "schema_version": "1.0.0",
+      "model_invocation_id": "model-2",
+      "execution_id": "execution-1",
+      "node_id": "N04",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n04"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-2"
+      },
+      "configured_provider": {
+        "binding_ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "provider_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "primary_deployment_id": "remote-deployment",
+        "provider_id": "provider",
+        "provider_kind": "remote",
+        "logical_model_id": "logical"
+      },
+      "actual_provider": {
+        "provider_id": "provider",
+        "deployment_id": "local-deployment",
+        "provider_kind": "local",
+        "model_id": "synthetic-model",
+        "deployment_version": "1.0.0",
+        "model_version": "1.0.0",
+        "version_resolution": "reported",
+        "version_evidence": "req-2"
+      },
+      "route_trace": {
+        "routing_mode": "remote_primary",
+        "route_kind": "fallback",
+        "selected_deployment_id": "local-deployment",
+        "fallback_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "from_deployment_id": "remote-deployment",
+        "to_deployment_id": "local-deployment",
+        "trigger_error": "timeout",
+        "trigger_invocation_ref": {
+          "record_kind": "model_invocation",
+          "record_id": "model-1"
+        },
+        "evaluation_refs": [
+          {
+            "report_id": "report",
+            "version": "1.0.0",
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "review_registry_id": "trusted-registry"
+          }
+        ]
+      },
+      "purposes": [
+        "object_observation"
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "synthetic.profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "contract_snapshot": {
+        "configured_output_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "effective_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "artifact_kind": "question",
+            "artifact_id": "vehicle-type",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "compiler_version": "1.0.0",
+        "response_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "response_schema_evidence_ref": {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      },
+      "outcome": {
+        "status": "succeeded",
+        "response_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "provider_request_id": "req-2",
+      "request_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "started_at": "2026-04-01T12:00:01Z",
+      "completed_at": "2026-04-01T12:00:02Z",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 0
+      },
+      "evidence_refs": [
+        {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      ],
+      "trace_id": "trace-1"
+    },
+    "undispatched": {
+      "schema_version": "1.0.0",
+      "model_invocation_id": "model-1",
+      "execution_id": "execution-1",
+      "node_id": "N04",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n04"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-1"
+      },
+      "configured_provider": {
+        "binding_ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "provider_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "primary_deployment_id": "remote-deployment",
+        "provider_id": "provider",
+        "provider_kind": "remote",
+        "logical_model_id": "logical"
+      },
+      "route_trace": {
+        "routing_mode": "remote_primary",
+        "route_kind": "primary",
+        "selected_deployment_id": "remote-deployment",
+        "fallback_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "purposes": [
+        "object_observation"
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "synthetic.profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "contract_snapshot": {
+        "configured_output_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "effective_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "artifact_kind": "question",
+            "artifact_id": "vehicle-type",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "compiler_version": "1.0.0",
+        "response_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "response_schema_evidence_ref": {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      },
+      "outcome": {
+        "status": "not_dispatched",
+        "error": {
+          "error_class": "timeout",
+          "code": "provider-timeout",
+          "diagnostic_refs": []
+        }
+      },
+      "request_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "evidence_refs": [
+        {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      ],
+      "trace_id": "trace-1"
+    },
+    "unavailable": {
+      "schema_version": "1.0.0",
+      "model_invocation_id": "model-1",
+      "execution_id": "execution-1",
+      "node_id": "N04",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n04"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-1"
+      },
+      "configured_provider": {
+        "binding_ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "provider_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "primary_deployment_id": "remote-deployment",
+        "provider_id": "provider",
+        "provider_kind": "remote",
+        "logical_model_id": "logical"
+      },
+      "actual_provider": {
+        "provider_id": "provider",
+        "deployment_id": "remote-deployment",
+        "provider_kind": "remote",
+        "model_id": "synthetic-model",
+        "version_resolution": "unavailable",
+        "version_unavailable_reason": "Synthetic provider omitted its version metadata"
+      },
+      "route_trace": {
+        "routing_mode": "remote_primary",
+        "route_kind": "primary",
+        "selected_deployment_id": "remote-deployment",
+        "fallback_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "purposes": [
+        "object_observation"
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "synthetic.profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "contract_snapshot": {
+        "configured_output_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "effective_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "artifact_kind": "question",
+            "artifact_id": "vehicle-type",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "compiler_version": "1.0.0",
+        "response_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "response_schema_evidence_ref": {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      },
+      "outcome": {
+        "status": "succeeded",
+        "response_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "provider_request_id": "req-1",
+      "request_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 0
+      },
+      "evidence_refs": [
+        {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      ],
+      "trace_id": "trace-1"
+    },
+    "local": {
+      "schema_version": "1.0.0",
+      "model_invocation_id": "model-1",
+      "execution_id": "execution-1",
+      "node_id": "N04",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n04"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-1"
+      },
+      "configured_provider": {
+        "binding_ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "provider_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "primary_deployment_id": "local-deployment",
+        "provider_id": "provider",
+        "provider_kind": "local",
+        "logical_model_id": "logical"
+      },
+      "actual_provider": {
+        "provider_id": "provider",
+        "deployment_id": "local-deployment",
+        "provider_kind": "local",
+        "model_id": "synthetic-model",
+        "deployment_version": "1.0.0",
+        "model_version": "1.0.0",
+        "version_resolution": "reported",
+        "version_evidence": "req-1"
+      },
+      "route_trace": {
+        "routing_mode": "local_primary_exception",
+        "route_kind": "primary",
+        "selected_deployment_id": "local-deployment",
+        "fallback_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "local_primary_exception": {
+          "exception_id": "exception",
+          "version": "1.0.0",
+          "approval_ref": {
+            "report_id": "report",
+            "version": "1.0.0",
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "review_registry_id": "trusted-registry"
+          }
+        }
+      },
+      "purposes": [
+        "object_observation"
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "synthetic.profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "contract_snapshot": {
+        "configured_output_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "effective_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "artifact_kind": "question",
+            "artifact_id": "vehicle-type",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "compiler_version": "1.0.0",
+        "response_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "response_schema_evidence_ref": {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      },
+      "outcome": {
+        "status": "succeeded",
+        "response_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "provider_request_id": "req-1",
+      "request_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 0
+      },
+      "evidence_refs": [
+        {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      ],
+      "trace_id": "trace-1"
+    },
+    "registry_verified": {
+      "schema_version": "1.0.0",
+      "model_invocation_id": "model-1",
+      "execution_id": "execution-1",
+      "node_id": "N04",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n04"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-1"
+      },
+      "configured_provider": {
+        "binding_ref": {
+          "artifact_kind": "model_binding",
+          "artifact_id": "binding",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "provider_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "provider",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "primary_deployment_id": "remote-deployment",
+        "provider_id": "provider",
+        "provider_kind": "remote",
+        "logical_model_id": "logical"
+      },
+      "actual_provider": {
+        "provider_id": "provider",
+        "deployment_id": "remote-deployment",
+        "provider_kind": "remote",
+        "model_id": "synthetic-model",
+        "deployment_version": "1.0.0",
+        "model_version": "1.0.0",
+        "version_resolution": "registry_verified",
+        "version_evidence": {
+          "report_id": "report",
+          "version": "1.0.0",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "review_registry_id": "trusted-registry"
+        }
+      },
+      "route_trace": {
+        "routing_mode": "remote_primary",
+        "route_kind": "primary",
+        "selected_deployment_id": "remote-deployment",
+        "fallback_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "fallback",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "purposes": [
+        "object_observation"
+      ],
+      "profile_refs": [
+        {
+          "artifact_kind": "profile",
+          "artifact_id": "synthetic.profile",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "contract_snapshot": {
+        "configured_output_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "effective_question_refs": [
+          {
+            "artifact_kind": "question",
+            "artifact_id": "question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "artifact_kind": "question",
+            "artifact_id": "vehicle-type",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "compiler_version": "1.0.0",
+        "response_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "response_schema_evidence_ref": {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      },
+      "outcome": {
+        "status": "succeeded",
+        "response_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "request_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 0
+      },
+      "evidence_refs": [
+        {
+          "record_kind": "evidence",
+          "record_id": "joint-schema"
+        }
+      ],
+      "trace_id": "trace-1"
+    }
+  },
+  "selections": {
+    "all": {
+      "schema_version": "1.0.0",
+      "selection_id": "selection-1",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "configured_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "mandatory_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "proposed_optional_question_refs": [],
+      "selected_optional_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "effective_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "excluded_question_reasons": [],
+      "context_snapshot_ref": {
+        "record_kind": "context_snapshot",
+        "record_id": "snapshot"
+      },
+      "context_snapshot_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "node_run_id": "n02",
+      "attempt_id": "attempt-1",
+      "discovery_model_invocation_ref": {
+        "record_kind": "model_invocation",
+        "record_id": "discovery-1"
+      },
+      "validation_issues": [],
+      "fallback_applied": false,
+      "created_at": "2026-04-01T12:00:03Z",
+      "method": "all_declared"
+    },
+    "context": {
+      "schema_version": "1.0.0",
+      "selection_id": "selection-1",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "configured_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "mandatory_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "proposed_optional_question_refs": [],
+      "selected_optional_question_refs": [],
+      "effective_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "excluded_question_reasons": [
+        {
+          "question_ref": {
+            "artifact_kind": "question",
+            "artifact_id": "vehicle-type",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "reason_code": "context-false"
+        }
+      ],
+      "context_snapshot_ref": {
+        "record_kind": "context_snapshot",
+        "record_id": "snapshot"
+      },
+      "context_snapshot_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "node_run_id": "n02",
+      "attempt_id": "attempt-1",
+      "discovery_model_invocation_ref": {
+        "record_kind": "model_invocation",
+        "record_id": "discovery-1"
+      },
+      "validation_issues": [],
+      "fallback_applied": false,
+      "created_at": "2026-04-01T12:00:03Z",
+      "method": "context_rules",
+      "context_selection_rules": [
+        {
+          "question_ref": {
+            "artifact_kind": "question",
+            "artifact_id": "vehicle-type",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "applicability_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "applicability",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      ]
+    },
+    "shared": {
+      "schema_version": "1.0.0",
+      "selection_id": "selection-1",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "configured_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "mandatory_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "proposed_optional_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "selected_optional_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "effective_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "excluded_question_reasons": [],
+      "context_snapshot_ref": {
+        "record_kind": "context_snapshot",
+        "record_id": "snapshot"
+      },
+      "context_snapshot_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "node_run_id": "n02",
+      "attempt_id": "attempt-1",
+      "discovery_model_invocation_ref": {
+        "record_kind": "model_invocation",
+        "record_id": "discovery-1"
+      },
+      "validation_issues": [],
+      "fallback_applied": false,
+      "created_at": "2026-04-01T12:00:03Z",
+      "method": "model_advisory",
+      "model_invocation_ref": {
+        "record_kind": "model_invocation",
+        "record_id": "discovery-1"
+      },
+      "selection_invocation_mode": "shared_n02"
+    },
+    "additional": {
+      "schema_version": "1.0.0",
+      "selection_id": "selection-1",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "configured_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "mandatory_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "proposed_optional_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "selected_optional_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "effective_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "excluded_question_reasons": [],
+      "context_snapshot_ref": {
+        "record_kind": "context_snapshot",
+        "record_id": "snapshot"
+      },
+      "context_snapshot_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "node_run_id": "n02",
+      "attempt_id": "attempt-1",
+      "discovery_model_invocation_ref": {
+        "record_kind": "model_invocation",
+        "record_id": "discovery-1"
+      },
+      "validation_issues": [],
+      "fallback_applied": false,
+      "created_at": "2026-04-01T12:00:03Z",
+      "method": "model_advisory",
+      "model_invocation_ref": {
+        "record_kind": "model_invocation",
+        "record_id": "proposal-1"
+      },
+      "selection_invocation_mode": "explicit_additional"
+    },
+    "fallback_context": {
+      "schema_version": "1.0.0",
+      "selection_id": "selection-1",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "configured_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "mandatory_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "proposed_optional_question_refs": [],
+      "selected_optional_question_refs": [],
+      "effective_question_refs": [],
+      "excluded_question_reasons": [
+        {
+          "question_ref": {
+            "artifact_kind": "question",
+            "artifact_id": "question",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "reason_code": "profile-blocked"
+        },
+        {
+          "question_ref": {
+            "artifact_kind": "question",
+            "artifact_id": "vehicle-type",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "reason_code": "profile-blocked"
+        }
+      ],
+      "context_snapshot_ref": {
+        "record_kind": "context_snapshot",
+        "record_id": "snapshot"
+      },
+      "context_snapshot_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "node_run_id": "n02",
+      "attempt_id": "attempt-1",
+      "discovery_model_invocation_ref": {
+        "record_kind": "model_invocation",
+        "record_id": "discovery-1"
+      },
+      "validation_issues": [],
+      "fallback_applied": true,
+      "created_at": "2026-04-01T12:00:03Z",
+      "method": "fallback",
+      "fallback_action": "block_profile",
+      "fallback_evidence": {
+        "triggered_method": "context_rules",
+        "trigger_attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "fallback_reason": "context_unknown",
+        "diagnostic_refs": [
+          {
+            "record_kind": "evidence",
+            "record_id": "issue"
+          }
+        ],
+        "dispatched": false
+      }
+    },
+    "fallback_shared": {
+      "schema_version": "1.0.0",
+      "selection_id": "selection-1",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "configured_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "mandatory_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "proposed_optional_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "unregistered",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "selected_optional_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "effective_question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "excluded_question_reasons": [],
+      "context_snapshot_ref": {
+        "record_kind": "context_snapshot",
+        "record_id": "snapshot"
+      },
+      "context_snapshot_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "node_run_id": "n02",
+      "attempt_id": "attempt-1",
+      "discovery_model_invocation_ref": {
+        "record_kind": "model_invocation",
+        "record_id": "discovery-1"
+      },
+      "validation_issues": [
+        {
+          "code": "invalid-proposal",
+          "path": [],
+          "message": "Synthetic invalid proposal",
+          "related_refs": []
+        }
+      ],
+      "fallback_applied": true,
+      "created_at": "2026-04-01T12:00:03Z",
+      "method": "fallback",
+      "fallback_action": "include_all_optional",
+      "selection_call_policy": {
+        "mode": "shared_n02"
+      },
+      "fallback_evidence": {
+        "triggered_method": "model_advisory",
+        "trigger_attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "fallback_reason": "invalid_proposal",
+        "diagnostic_refs": [
+          {
+            "record_kind": "evidence",
+            "record_id": "issue"
+          }
+        ],
+        "dispatched": true,
+        "trigger_invocation_ref": {
+          "record_kind": "model_invocation",
+          "record_id": "discovery-1"
+        }
+      }
+    }
+  },
+  "tools": {
+    "grounding": {
+      "schema_version": "1.0.0",
+      "tool_execution_id": "tool-ep-1",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "tool_ref": {
+        "artifact_kind": "tool",
+        "artifact_id": "tool",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n03"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-1"
+      },
+      "scope": "execution",
+      "input_refs": [],
+      "output_refs": [],
+      "actual_implementation_version": "1.0.0",
+      "implementation_version_resolution": "resolved",
+      "status": "succeeded",
+      "attempt_result": {
+        "disposition": "returned",
+        "result": {
+          "status": "succeeded",
+          "diagnostics": [],
+          "evidence_refs": [],
+          "evidence": [],
+          "output_states": []
+        }
+      },
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "generated_fact_refs": [],
+      "evidence_refs": [],
+      "trace_id": "trace-1",
+      "invocation_origin": {
+        "kind": "grounding_binding",
+        "node_id": "N03",
+        "grounding_binding": {
+          "kind": "tool",
+          "tool_ref": {
+            "artifact_kind": "tool",
+            "artifact_id": "tool",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      }
+    },
+    "step": {
+      "schema_version": "1.0.0",
+      "tool_execution_id": "tool-ep-2",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "tool_ref": {
+        "artifact_kind": "tool",
+        "artifact_id": "tool",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n05"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-2"
+      },
+      "scope": "object",
+      "input_refs": [],
+      "output_refs": [],
+      "actual_implementation_version": "1.0.0",
+      "implementation_version_resolution": "resolved",
+      "status": "succeeded",
+      "attempt_result": {
+        "disposition": "returned",
+        "result": {
+          "status": "succeeded",
+          "diagnostics": [],
+          "evidence_refs": [],
+          "evidence": [],
+          "output_states": []
+        }
+      },
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "generated_fact_refs": [],
+      "evidence_refs": [],
+      "trace_id": "trace-1",
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "invocation_origin": {
+        "kind": "tool_plan_step",
+        "node_id": "N05",
+        "tool_plan_ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "plan",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "step_id": "one",
+        "producer_declaration_ids": []
+      }
+    },
+    "failure": {
+      "schema_version": "1.0.0",
+      "tool_execution_id": "tool-ep-2",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "tool_ref": {
+        "artifact_kind": "tool",
+        "artifact_id": "tool",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n05"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-2"
+      },
+      "scope": "object",
+      "input_refs": [],
+      "output_refs": [],
+      "implementation_version_resolution": "unavailable",
+      "status": "failed",
+      "attempt_result": {
+        "disposition": "failed",
+        "error": {
+          "error_class": "timeout",
+          "code": "tool-timeout",
+          "diagnostic_refs": []
+        }
+      },
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "generated_fact_refs": [],
+      "evidence_refs": [],
+      "trace_id": "trace-1",
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "invocation_origin": {
+        "kind": "tool_plan_step",
+        "node_id": "N05",
+        "tool_plan_ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "plan",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "step_id": "one",
+        "producer_declaration_ids": []
+      },
+      "implementation_version_unavailable_reason": "Synthetic failure before reporting implementation version"
+    },
+    "undispatched": {
+      "schema_version": "1.0.0",
+      "tool_execution_id": "tool-ep-2",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "tool_ref": {
+        "artifact_kind": "tool",
+        "artifact_id": "tool",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n05"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-2"
+      },
+      "scope": "object",
+      "input_refs": [],
+      "output_refs": [],
+      "implementation_version_resolution": "not_dispatched",
+      "status": "not_dispatched",
+      "attempt_result": {
+        "disposition": "not_dispatched",
+        "error": {
+          "error_class": "timeout",
+          "code": "tool-timeout",
+          "diagnostic_refs": []
+        }
+      },
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "generated_fact_refs": [],
+      "evidence_refs": [],
+      "trace_id": "trace-1",
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "invocation_origin": {
+        "kind": "tool_plan_step",
+        "node_id": "N05",
+        "tool_plan_ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "plan",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "step_id": "one",
+        "producer_declaration_ids": []
+      }
+    },
+    "partial": {
+      "schema_version": "1.0.0",
+      "tool_execution_id": "tool-ep-2",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "tool_ref": {
+        "artifact_kind": "tool",
+        "artifact_id": "tool",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n05"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-2"
+      },
+      "scope": "object",
+      "input_refs": [],
+      "output_refs": [],
+      "actual_implementation_version": "1.0.0",
+      "implementation_version_resolution": "resolved",
+      "status": "partial",
+      "attempt_result": {
+        "disposition": "returned",
+        "result": {
+          "status": "partial",
+          "diagnostics": [],
+          "evidence_refs": [],
+          "evidence": [],
+          "output_states": [
+            {
+              "output_name": "state",
+              "fact_status": "unknown",
+              "evidence_refs": [],
+              "reason": {
+                "reason_code": "occluded",
+                "message": "Synthetic unknown measurement",
+                "diagnostic_refs": []
+              }
+            }
+          ]
+        }
+      },
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "generated_fact_refs": [],
+      "evidence_refs": [],
+      "trace_id": "trace-1",
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "invocation_origin": {
+        "kind": "tool_plan_step",
+        "node_id": "N05",
+        "tool_plan_ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "plan",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "step_id": "one",
+        "producer_declaration_ids": []
+      },
+      "resource_usage": {
+        "cpu_time_ms": 0
+      }
+    },
+    "returned_failure": {
+      "schema_version": "1.0.0",
+      "tool_execution_id": "tool-ep-2",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "tool_ref": {
+        "artifact_kind": "tool",
+        "artifact_id": "tool",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n05"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-2"
+      },
+      "scope": "object",
+      "input_refs": [],
+      "output_refs": [],
+      "actual_implementation_version": "1.0.0",
+      "implementation_version_resolution": "resolved",
+      "status": "failed",
+      "attempt_result": {
+        "disposition": "returned",
+        "result": {
+          "status": "failed",
+          "diagnostics": [],
+          "evidence_refs": [],
+          "evidence": [],
+          "output_states": [],
+          "error": {
+            "error_class": "validation",
+            "code": "invalid-result",
+            "diagnostic_refs": []
+          }
+        }
+      },
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "generated_fact_refs": [],
+      "evidence_refs": [],
+      "trace_id": "trace-1",
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "invocation_origin": {
+        "kind": "tool_plan_step",
+        "node_id": "N05",
+        "tool_plan_ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "plan",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "step_id": "one",
+        "producer_declaration_ids": []
+      }
+    },
+    "authority_step": {
+      "schema_version": "1.0.0",
+      "tool_execution_id": "tool-ep-2",
+      "execution_id": "execution-1",
+      "profile_ref": {
+        "artifact_kind": "profile",
+        "artifact_id": "synthetic.profile",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "tool_ref": {
+        "artifact_kind": "tool",
+        "artifact_id": "tool",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n05"
+      },
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-2"
+      },
+      "scope": "object",
+      "input_refs": [],
+      "output_refs": [],
+      "actual_implementation_version": "1.0.0",
+      "implementation_version_resolution": "resolved",
+      "status": "succeeded",
+      "attempt_result": {
+        "disposition": "returned",
+        "result": {
+          "status": "succeeded",
+          "diagnostics": [],
+          "evidence_refs": [],
+          "evidence": [],
+          "output_states": []
+        }
+      },
+      "started_at": "2026-04-01T12:00:00Z",
+      "completed_at": "2026-04-01T12:00:01Z",
+      "generated_fact_refs": [],
+      "evidence_refs": [],
+      "trace_id": "trace-1",
+      "object_ref": {
+        "record_kind": "object",
+        "record_id": "obj-1"
+      },
+      "invocation_origin": {
+        "kind": "tool_plan_step",
+        "node_id": "N05",
+        "tool_plan_ref": {
+          "artifact_kind": "tool_plan",
+          "artifact_id": "plan",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "step_id": "one",
+        "producer_declaration_ids": []
+      },
+      "authority_observation": {
+        "arrival_qualification": "on_time",
+        "envelope_validation": "trusted",
+        "association_validation": "trusted",
+        "mapped_outputs": []
+      }
+    }
+  },
+  "profile": {
+    "registration_kind": "profile",
+    "ref": {
+      "artifact_kind": "profile",
+      "artifact_id": "synthetic.profile",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "definition": {
+      "schema_version": "1.0.0",
+      "profile_id": "synthetic.profile",
+      "version": "1.0.0",
+      "entity_ref": {
+        "artifact_kind": "entity",
+        "artifact_id": "synthetic",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "discovery_binding_ref": {
+        "artifact_kind": "model_binding",
+        "artifact_id": "discovery",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "grounding_binding": {
+        "kind": "tool",
+        "tool_ref": {
+          "artifact_kind": "tool",
+          "artifact_id": "tool",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "observation_binding_ref": {
+        "artifact_kind": "model_binding",
+        "artifact_id": "observation",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "facet_refs": [],
+      "question_refs": [
+        {
+          "artifact_kind": "question",
+          "artifact_id": "question",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "artifact_kind": "question",
+          "artifact_id": "vehicle-type",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "question_selection_policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "rule_set_refs": [],
+      "tool_plan_ref": {
+        "artifact_kind": "tool_plan",
+        "artifact_id": "plan",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "applicability_policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "applicability",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    }
+  },
+  "model_binding": {
+    "ref": {
+      "artifact_kind": "model_binding",
+      "artifact_id": "binding",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "definition": {
+      "schema_version": "1.0.0",
+      "model_binding_id": "binding",
+      "version": "1.0.0",
+      "capability": "object_observation",
+      "logical_model_id": "logical",
+      "provider_policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "provider",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "resource_requirements_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "resources",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "fallback_policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "fallback",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "input_schema_ref": {
+        "artifact_kind": "response_schema",
+        "artifact_id": "model-input",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "output_schema_ref": {
+        "artifact_kind": "response_schema",
+        "artifact_id": "model-output",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "prompt_template_ref": {
+        "artifact_kind": "prompt_template",
+        "artifact_id": "prompt",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    }
+  },
+  "additional_binding": {
+    "ref": {
+      "artifact_kind": "model_binding",
+      "artifact_id": "additional",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "definition": {
+      "schema_version": "1.0.0",
+      "model_binding_id": "additional",
+      "version": "1.0.0",
+      "capability": "profile_discovery",
+      "logical_model_id": "logical",
+      "provider_policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "provider",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "resource_requirements_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "resources",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "fallback_policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "fallback",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "input_schema_ref": {
+        "artifact_kind": "response_schema",
+        "artifact_id": "model-input",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "output_schema_ref": {
+        "artifact_kind": "response_schema",
+        "artifact_id": "model-output",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "prompt_template_ref": {
+        "artifact_kind": "prompt_template",
+        "artifact_id": "prompt",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    }
+  },
+  "policies": {
+    "question_selection": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "question_selection",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "question_selection",
+          "mode": "all_declared",
+          "mandatory_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_question_refs": [],
+          "optional_source": "all",
+          "fallback": "include_all_optional",
+          "ordering": "profile_order"
+        }
+      }
+    },
+    "unknown": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "unknown",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "unknown",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "unknown",
+          "insufficient_visibility": "unknown",
+          "transport_failure": "no_fact",
+          "envelope_failure": "no_fact",
+          "item_validation_failure": "error",
+          "non_known_value": "forbidden",
+          "reason_required": true
+        }
+      }
+    },
+    "question_validation": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_validation",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "question_validation",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "question_validation",
+          "coercion": "forbid",
+          "extra_fields": "forbid",
+          "association": "exact_question_ref",
+          "missing_item": "error",
+          "invalid_record": "whole_fact_error",
+          "sibling_retention": "trusted_envelope_only"
+        }
+      }
+    },
+    "evidence": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "evidence",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "evidence",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "evidence",
+          "required_evidence_types": [],
+          "allowed_evidence_types": [
+            "original_image"
+          ],
+          "on_missing": "block_result",
+          "original_media_required": true,
+          "retention_class": {
+            "vocabulary_ref": {
+              "artifact_kind": "vocabulary",
+              "artifact_id": "retention",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "member": "synthetic"
+          },
+          "retention_duration_seconds": 100,
+          "access_scope": "task"
+        }
+      }
+    },
+    "execution": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "execution",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "execution",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "tool_execution",
+          "timeout_ms": 100,
+          "max_attempts": 1,
+          "max_concurrency": 1,
+          "input_byte_limit": 100,
+          "retryable_error_classes": [],
+          "whole_step_retry": true
+        }
+      }
+    },
+    "failure": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "failure",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "failure",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "tool_failure",
+          "requirement": "required",
+          "required_descendants": "block",
+          "fact_failure": "error",
+          "optional_continuation": "block"
+        }
+      }
+    },
+    "resources": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "resources",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "resources",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "resource_requirements",
+          "resource_class": "cpu",
+          "max_concurrency": 1,
+          "timeout_ms": 100,
+          "input_byte_limit": 100,
+          "output_byte_limit": 100
+        }
+      }
+    },
+    "provider": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "provider",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "provider",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "provider",
+          "routing_mode": "remote_primary",
+          "primary_deployment_id": "remote-deployment",
+          "deployments": [
+            {
+              "provider_id": "provider",
+              "deployment_id": "remote-deployment",
+              "logical_model_id": "logical",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "structured_output"
+              ]
+            },
+            {
+              "provider_id": "provider",
+              "deployment_id": "local-deployment",
+              "logical_model_id": "logical",
+              "provider_kind": "local",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "structured_output"
+              ]
+            }
+          ],
+          "selection": "primary_then_explicit_fallback"
+        }
+      }
+    },
+    "fallback": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "fallback",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "fallback",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "fallback",
+          "mode": "disabled",
+          "trigger_errors": [],
+          "allowed_transitions": [],
+          "contract_compatibility": "exact"
+        }
+      }
+    },
+    "rule": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "rule",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "rule",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "rule",
+          "mandatory": true,
+          "missing": "unknown",
+          "unknown": "unknown",
+          "error": "unknown",
+          "not_applicable": "unknown",
+          "not_evaluated": "unknown",
+          "required_guard": "block_unavailable",
+          "scan": "all_mandatory",
+          "true_result": "violation",
+          "false_result": "no_violation",
+          "unknown_result": "uncertain"
+        }
+      }
+    },
+    "conflict": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "conflict",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "conflict",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "conflict",
+          "mode": "collect_all",
+          "early_exit": false,
+          "category_dedup": "set",
+          "preserve_rule_refs": true
+        }
+      }
+    },
+    "coverage": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "coverage",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "coverage",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "coverage",
+          "no_hits": "uncertain",
+          "no_target": "uncertain",
+          "partial_without_match": "uncertain",
+          "partial_with_match": "violation",
+          "complete_negative": "all_mandatory_false_with_required_evidence",
+          "absence_strategy": "conservative"
+        }
+      }
+    },
+    "context_provenance": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "context_provenance",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "context_provenance",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "context_provenance",
+          "fields": [
+            {
+              "field_path": [
+                "outer",
+                "leaf"
+              ],
+              "schema_ref": {
+                "artifact_kind": "context_schema",
+                "artifact_id": "context",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+              },
+              "required": true,
+              "time_sensitive": false,
+              "allowed_sources": [
+                "trusted_task_metadata"
+              ]
+            }
+          ],
+          "conflicting_sources": "block",
+          "missing_required": "block",
+          "internal_timezone": "UTC",
+          "naive_time": "reject"
+        }
+      }
+    },
+    "workflow": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "workflow",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "workflow",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "execution",
+          "workflow_version": "1.0.0",
+          "node_order": [
+            "N01",
+            "N02",
+            "N03",
+            "N04",
+            "N05",
+            "N06"
+          ],
+          "coverage_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "coverage",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "context_provenance_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "context_provenance",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "resource_requirements_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "resources",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "artifact_schema_refs": []
+        }
+      }
+    }
+  },
+  "selection_policies": {
+    "all": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "question_selection",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "question_selection",
+          "mode": "all_declared",
+          "mandatory_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "vehicle-type",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_source": "all",
+          "fallback": "include_all_optional",
+          "ordering": "profile_order"
+        }
+      }
+    },
+    "context": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "question_selection",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "question_selection",
+          "mode": "mandatory_plus_optional",
+          "mandatory_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "vehicle-type",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_source": "context_rules",
+          "fallback": "include_all_optional",
+          "ordering": "profile_order",
+          "context_selection_rules": [
+            {
+              "question_ref": {
+                "artifact_kind": "question",
+                "artifact_id": "vehicle-type",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "applicability_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "applicability",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "shared": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "question_selection",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "question_selection",
+          "mode": "mandatory_plus_optional",
+          "mandatory_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "vehicle-type",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_source": "model_advisory",
+          "fallback": "include_all_optional",
+          "ordering": "profile_order",
+          "selection_call_policy": {
+            "mode": "shared_n02"
+          },
+          "proposal_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "proposal",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selection_review_ref": {
+            "report_id": "report",
+            "version": "1.0.0",
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "review_registry_id": "trusted-registry"
+          }
+        }
+      }
+    },
+    "additional": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "question_selection",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "question_selection",
+          "mode": "mandatory_plus_optional",
+          "mandatory_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "vehicle-type",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_source": "model_advisory",
+          "fallback": "include_all_optional",
+          "ordering": "profile_order",
+          "selection_call_policy": {
+            "mode": "explicit_additional",
+            "proposal_binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "additional",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "additional_resource_requirements_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "resources",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "max_additional_invocations_per_execution": 1
+          },
+          "proposal_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "proposal",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selection_review_ref": {
+            "report_id": "report",
+            "version": "1.0.0",
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "review_registry_id": "trusted-registry"
+          }
+        }
+      }
+    },
+    "fallback_context": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "question_selection",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "question_selection",
+          "mode": "mandatory_plus_optional",
+          "mandatory_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "vehicle-type",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_source": "context_rules",
+          "fallback": "block_profile",
+          "ordering": "profile_order",
+          "context_selection_rules": [
+            {
+              "question_ref": {
+                "artifact_kind": "question",
+                "artifact_id": "vehicle-type",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "applicability_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "applicability",
+                "version": "1.0.0",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "fallback_shared": {
+      "ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question_selection",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "artifact": {
+        "schema_version": "1.0.0",
+        "policy_id": "question_selection",
+        "version": "1.0.0",
+        "policy": {
+          "policy_kind": "question_selection",
+          "mode": "mandatory_plus_optional",
+          "mandatory_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "question",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_question_refs": [
+            {
+              "artifact_kind": "question",
+              "artifact_id": "vehicle-type",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "optional_source": "model_advisory",
+          "fallback": "include_all_optional",
+          "ordering": "profile_order",
+          "selection_call_policy": {
+            "mode": "shared_n02"
+          },
+          "proposal_schema_ref": {
+            "artifact_kind": "response_schema",
+            "artifact_id": "proposal",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "selection_review_ref": {
+            "report_id": "report",
+            "version": "1.0.0",
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "review_registry_id": "trusted-registry"
+          }
+        }
+      }
+    }
+  },
+  "evaluated_fallback": {
+    "ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "fallback",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "artifact": {
+      "schema_version": "1.0.0",
+      "policy_id": "fallback",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "fallback",
+        "mode": "explicit_evaluated",
+        "trigger_errors": [
+          "timeout"
+        ],
+        "allowed_transitions": [
+          {
+            "from_deployment_id": "remote-deployment",
+            "to_deployment_id": "local-deployment"
+          }
+        ],
+        "contract_compatibility": "exact",
+        "evaluation_refs": [
+          {
+            "report_id": "report",
+            "version": "1.0.0",
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "review_registry_id": "trusted-registry"
+          }
+        ]
+      }
+    }
+  },
+  "local_provider": {
+    "ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "provider",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "artifact": {
+      "schema_version": "1.0.0",
+      "policy_id": "provider",
+      "version": "1.0.0",
+      "policy": {
+        "policy_kind": "provider",
+        "routing_mode": "local_primary_exception",
+        "primary_deployment_id": "local-deployment",
+        "deployments": [
+          {
+            "provider_id": "provider",
+            "deployment_id": "remote-deployment",
+            "logical_model_id": "logical",
+            "provider_kind": "remote",
+            "actual_version_constraints": {
+              "allowed_deployment_versions": [
+                "1.0.0"
+              ],
+              "allowed_model_versions": [
+                "1.0.0"
+              ]
+            },
+            "required_features": [
+              "structured_output"
+            ]
+          },
+          {
+            "provider_id": "provider",
+            "deployment_id": "local-deployment",
+            "logical_model_id": "logical",
+            "provider_kind": "local",
+            "actual_version_constraints": {
+              "allowed_deployment_versions": [
+                "1.0.0"
+              ],
+              "allowed_model_versions": [
+                "1.0.0"
+              ]
+            },
+            "required_features": [
+              "structured_output"
+            ]
+          }
+        ],
+        "selection": "primary_then_explicit_fallback",
+        "local_primary_exception": {
+          "exception_id": "exception",
+          "version": "1.0.0",
+          "applicable_capabilities": [
+            "object_observation"
+          ],
+          "reason": "privacy_restriction",
+          "rationale": "Synthetic exception fixture",
+          "approval_ref": {
+            "report_id": "report",
+            "version": "1.0.0",
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "review_registry_id": "trusted-registry"
+          },
+          "valid_from": "2026-01-01T00:00:00Z",
+          "valid_until": "2027-01-01T00:00:00Z"
+        }
+      }
+    }
+  },
+  "review": {
+    "report_ref": {
+      "report_id": "report",
+      "version": "1.0.0",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "review_registry_id": "trusted-registry"
+    },
+    "verdict": "approved",
+    "valid_from": "2026-01-01T00:00:00Z",
+    "valid_until": "2027-01-01T00:00:00Z",
+    "assessments": [
+      {
+        "assessment_kind": "fallback_transition",
+        "source": {
+          "provider_id": "provider",
+          "deployment_id": "remote-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "remote",
+          "deployment_version": "1.0.0",
+          "model_version": "1.0.0"
+        },
+        "target": {
+          "provider_id": "provider",
+          "deployment_id": "local-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "local",
+          "deployment_version": "1.0.0",
+          "model_version": "1.0.0"
+        },
+        "capability": "object_observation",
+        "scope": {
+          "scope_kind": "binding",
+          "binding_refs": [
+            {
+              "artifact_kind": "model_binding",
+              "artifact_id": "binding",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ]
+        },
+        "trigger_errors": [
+          "timeout"
+        ],
+        "input_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-input",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "output_schema_ref": {
+          "artifact_kind": "response_schema",
+          "artifact_id": "model-output",
+          "version": "1.0.0",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "contract_compatibility": "exact",
+        "quality_evaluated": true
+      },
+      {
+        "assessment_kind": "local_primary_exception",
+        "exception_id": "exception",
+        "exception_version": "1.0.0",
+        "primary": {
+          "provider_id": "provider",
+          "deployment_id": "local-deployment",
+          "logical_model_id": "logical",
+          "provider_kind": "local",
+          "deployment_version": "1.0.0",
+          "model_version": "1.0.0"
+        },
+        "applicable_capabilities": [
+          "object_observation"
+        ],
+        "scope": {
+          "scope_kind": "binding",
+          "binding_refs": [
+            {
+              "artifact_kind": "model_binding",
+              "artifact_id": "binding",
+              "version": "1.0.0",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ]
+        },
+        "reason": "privacy_restriction"
+      }
+    ]
+  },
+  "attempts": {
+    "N02": [
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "node",
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "n02"
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      },
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-2"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "node",
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "n02"
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      }
+    ],
+    "N03": [
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "node",
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "n03"
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      },
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-2"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "node",
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "n03"
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      }
+    ],
+    "N04": [
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "node",
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "n04"
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      },
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-2"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "node",
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "n04"
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      }
+    ],
+    "N05": [
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "node",
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "n05"
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      },
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-2"
+        },
+        "execution_id": "execution-1",
+        "owner": {
+          "owner_kind": "node",
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "n05"
+          }
+        },
+        "attempt_number": 1,
+        "status": "succeeded"
+      }
+    ]
+  },
+  "nodes": {
+    "N02": {
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n02"
+      },
+      "execution_id": "execution-1",
+      "node_id": "N02",
+      "status": "succeeded"
+    },
+    "N03": {
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n03"
+      },
+      "execution_id": "execution-1",
+      "node_id": "N03",
+      "status": "succeeded"
+    },
+    "N04": {
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n04"
+      },
+      "execution_id": "execution-1",
+      "node_id": "N04",
+      "status": "succeeded"
+    },
+    "N05": {
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "n05"
+      },
+      "execution_id": "execution-1",
+      "node_id": "N05",
+      "status": "succeeded"
+    }
+  },
+  "tool": {
+    "ref": {
+      "artifact_kind": "tool",
+      "artifact_id": "tool",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "definition": {
+      "schema_version": "1.0.0",
+      "tool_id": "tool",
+      "version": "1.0.0",
+      "tool_type": "geometry",
+      "provider_kind": "builtin",
+      "input_schema_ref": {
+        "artifact_kind": "tool_input_schema",
+        "artifact_id": "input",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "output_schema_ref": {
+        "artifact_kind": "tool_output_schema",
+        "artifact_id": "output",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "resource_requirements_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "resources",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "execution_policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "execution",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "evidence_policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "evidence",
+        "version": "1.0.0",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "implementation_requirement": {
+        "family": "tool_implementation",
+        "capability_id": "geometry-worker",
+        "contract_version": "1.0.0",
+        "allowed_implementation_versions": [
+          "1.0.0"
+        ],
+        "required_features": [
+          "geometry_output"
+        ]
+      },
+      "capability_tags": [
+        "geometry"
+      ],
+      "fact_outputs": []
+    }
+  },
+  "tool_plan": {
+    "registration_kind": "tool_plan",
+    "ref": {
+      "artifact_kind": "tool_plan",
+      "artifact_id": "plan",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "definition": {
+      "schema_version": "1.0.0",
+      "tool_plan_id": "plan",
+      "version": "1.0.0",
+      "steps": [
+        {
+          "step_id": "one",
+          "tool_ref": {
+            "artifact_kind": "tool",
+            "artifact_id": "tool",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "depends_on": [],
+          "input_bindings": [
+            {
+              "source": {
+                "source_kind": "image",
+                "selector": {
+                  "schema_ref": {
+                    "artifact_kind": "attribute_schema",
+                    "artifact_id": "image",
+                    "version": "1.0.0",
+                    "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+                  },
+                  "field_path": []
+                }
+              },
+              "target": {
+                "schema_ref": {
+                  "artifact_kind": "tool_input_schema",
+                  "artifact_id": "input",
+                  "version": "1.0.0",
+                  "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+                },
+                "field_path": [
+                  "image"
+                ]
+              },
+              "required": true,
+              "on_missing": "block"
+            }
+          ],
+          "fact_output_mappings": [],
+          "requirement": "required",
+          "failure_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "failure",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "skip_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "skip",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      ]
+    }
+  },
+  "output_schema": {
+    "descriptor_kind": "tool_result",
+    "schema_ref": {
+      "artifact_kind": "tool_output_schema",
+      "artifact_id": "output",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "payload_representation": "typed_value",
+    "payload_type": {
+      "kind": "record",
+      "fields": [
+        {
+          "name": "state",
+          "required": false,
+          "type_definition": {
+            "kind": "enum",
+            "members": [
+              "parked",
+              "moving"
+            ]
+          }
+        }
+      ]
+    },
+    "evidence_fields": [
+      {
+        "name": "mask",
+        "required": false,
+        "multiple": true
+      }
+    ],
+    "output_declarations": []
+  },
+  "object": {
+    "object_ref": {
+      "record_kind": "object",
+      "record_id": "obj-1"
+    },
+    "execution_id": "execution-1",
+    "profile_ref": {
+      "artifact_kind": "profile",
+      "artifact_id": "synthetic.profile",
+      "version": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "producer_catalogue_ref": {
+    "artifact_kind": "fact_producer_catalog",
+    "artifact_id": "catalogue",
+    "version": "1.0.0",
+    "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "producer_catalogue": {
+    "schema_version": "1.0.0",
+    "catalogue_id": "catalogue",
+    "version": "1.0.0",
+    "declarations": []
+  }
+}

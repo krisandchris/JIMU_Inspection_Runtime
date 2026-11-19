@@ -1,0 +1,38 @@
+{
+  "$defs": {
+    "PixelCoordinate": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "number"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "xyxy": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/PixelCoordinate"
+        },
+        {
+          "$ref": "#/$defs/PixelCoordinate"
+        },
+        {
+          "$ref": "#/$defs/PixelCoordinate"
+        },
+        {
+          "$ref": "#/$defs/PixelCoordinate"
+        }
+      ],
+      "title": "Xyxy",
+      "type": "array"
+    }
+  },
+  "required": [
+    "xyxy"
+  ],
+  "title": "BBoxXYXY",
+  "type": "object"
+}

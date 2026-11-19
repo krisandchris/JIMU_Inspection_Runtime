@@ -1,0 +1,102 @@
+.................F.............................                          [100%]
+=================================== FAILURES ===================================
+______ test_runtime_layers_have_a_pure_domain_and_an_acyclic_import_graph ______
+
+    def test_runtime_layers_have_a_pure_domain_and_an_acyclic_import_graph():
+>       assert_acyclic(import_graph(Path("src")))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_dependency_boundaries.py:10: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+source_root = PosixPath('src'), package = 'jimu_runtime'
+
+    def import_graph(source_root: Path, package="jimu_runtime"):
+        """Reject unresolved local imports and forbidden dependencies; return real edges."""
+        trees = {}
+        for path in sorted((source_root / package).rglob("*.py")):
+            module = ".".join(path.relative_to(source_root).with_suffix("").parts)
+            module = module.removesuffix(".__init__")
+            assert module not in trees, f"ambiguous local module: {module}"
+            trees[module] = ast.parse(path.read_text())
+        assert package in trees, f"missing package: {package}"
+        symbols = {name: _bound_names(tree) for name, tree in trees.items()}
+        graph = {name: set() for name in trees}
+    
+        def add_local(owner, dependency):
+            assert dependency in trees, f"unresolved local import: {dependency}"
+            # Track explicit content dependencies, not implicit initializer edges:
+            # a package reexporting A while A imports sibling B is not an A/package
+            # cycle. A self-qualified access to a symbol also adds no synthetic edge.
+            if dependency != owner:
+                graph[owner].add(dependency)
+    
+        for module, tree in trees.items():
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Name):
+                    assert node.id != "Any", "normative contracts may not use unbounded Any"
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                    assert node.func.id not in {"eval", "exec", "__import__"}
+                if isinstance(node, ast.Import):
+                    imports = [(alias.name, None) for alias in node.names]
+                elif isinstance(node, ast.ImportFrom):
+                    assert node.level == 0, (
+                        "unresolved relative imports hide dependency edges"
+                    )
+                    imports = [(node.module or "", node.names)]
+                else:
+                    continue
+                for imported, aliases in imports:
+                    top = imported.split(".")[0]
+                    assert top in sys.stdlib_module_names | {
+                        "pydantic",
+                        "pydantic_core",
+                        package,
+                        "rfc8785",
+                        "jsonschema",
+                        "sqlalchemy",
+                    }, f"forbidden dependency: {imported}"
+                    if top == "rfc8785":
+                        assert module in {
+                            f"{package}.domain.fact_schemas.canonicalization",
+                            f"{package}.domain.fact_schemas.projection",
+                            f"{package}.bundle.integrity",
+                        }, f"rfc8785 import outside canonicalization modules: {module}"
+                    if top == "jsonschema":
+                        assert module == f"{package}.bundle.artifacts", (
+                            f"jsonschema import outside Bundle artifact validation: {module}"
+                        )
+                    if top == "sqlalchemy":
+                        assert module in {
+                            f"{package}.workflow.postgres",
+                            f"{package}.workflow.intake",
+                            f"{package}.workflow.repository",
+                            f"{package}.workflow.jobs",
+                        }, (
+                            f"sqlalchemy import outside PostgreSQL workflow modules: {module}"
+                        )
+                    if top != package:
+                        continue
+                    assert imported in trees, f"unresolved local import: {imported}"
+                    if aliases is None:
+                        add_local(module, imported)
+                    else:
+                        for alias in aliases:
+                            assert alias.name != "*", (
+                                "local star imports hide reexport edges"
+                            )
+                            child = f"{imported}.{alias.name}"
+                            if child in trees:
+                                add_local(module, child)
+                            else:
+>                               assert alias.name in symbols[imported], (
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                    f"unresolved local symbol: {child}"
+                                )
+E                               AssertionError: unresolved local symbol: jimu_runtime.workflow.repository
+
+tests/helpers/boundary_graph.py:108: AssertionError
+----------- generated xml file: /tmp/jimu-wp03-w31.vOfF0s/pytest.xml -----------
+=========================== short test summary info ============================
+FAILED tests/contract/test_dependency_boundaries.py::test_runtime_layers_have_a_pure_domain_and_an_acyclic_import_graph
+1 failed, 46 passed in 8.01s

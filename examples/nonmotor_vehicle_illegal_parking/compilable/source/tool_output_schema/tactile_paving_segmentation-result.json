@@ -1,0 +1,224 @@
+{
+  "payload": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "const": "record"
+      },
+      "value": {
+        "type": "object",
+        "properties": {
+          "tactile_paving_mask": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "record"
+              },
+              "value": {
+                "type": "object",
+                "properties": {
+                  "evidence_id": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "string"
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sha256": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "string"
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 64,
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "source_media_sha256": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "string"
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 64,
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "coordinate_system": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "record"
+                      },
+                      "value": {
+                        "type": "object",
+                        "properties": {
+                          "coordinate_system_id": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "const": "string"
+                              },
+                              "value": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 128
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "value"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "frame": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "const": "enum"
+                              },
+                              "value": {
+                                "type": "string",
+                                "enum": [
+                                  "original_image"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "value"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "dimensions": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "const": "record"
+                              },
+                              "value": {
+                                "type": "object",
+                                "properties": {
+                                  "width": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "const": "integer"
+                                      },
+                                      "value": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 8192
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "value"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "height": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "const": "integer"
+                                      },
+                                      "value": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 8192
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "value"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "width",
+                                  "height"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "value"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "coordinate_system_id",
+                          "frame",
+                          "dimensions"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "evidence_id",
+                  "sha256",
+                  "source_media_sha256",
+                  "coordinate_system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "kind",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "kind",
+      "value"
+    ],
+    "additionalProperties": false
+  },
+  "evidence_slots": [
+    "tactile_paving_mask"
+  ]
+}

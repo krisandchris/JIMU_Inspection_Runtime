@@ -1,0 +1,274 @@
+{
+  "model_deployments": [
+    {
+      "binding_ref": {
+        "artifact_id": "candidate_prediction",
+        "artifact_kind": "model_binding",
+        "digest": "ef0bcdcbc70a8e498edd4c25c900ee1a366c21bc00941538ca2a523169d74a02",
+        "version": "1.0.0"
+      },
+      "deployments": [
+        {
+          "deployment_id": "fixture.remote.parking",
+          "deployment_version": "1.0.0",
+          "logical_model_id": "fixture.parking",
+          "model_version": "1.0.0",
+          "provider_id": "fixture.remote",
+          "provider_kind": "remote"
+        }
+      ]
+    },
+    {
+      "binding_ref": {
+        "artifact_id": "object_grounding",
+        "artifact_kind": "model_binding",
+        "digest": "1c0e7e6ebdeb3baa1de18a6133dd90da60f41d8f69c9ba07bf3c69d318f7acb0",
+        "version": "1.0.0"
+      },
+      "deployments": [
+        {
+          "deployment_id": "fixture.remote.parking",
+          "deployment_version": "1.0.0",
+          "logical_model_id": "fixture.parking",
+          "model_version": "1.0.0",
+          "provider_id": "fixture.remote",
+          "provider_kind": "remote"
+        }
+      ]
+    },
+    {
+      "binding_ref": {
+        "artifact_id": "object_observation",
+        "artifact_kind": "model_binding",
+        "digest": "0631e588e2f08f2868eee265e32cc201791f255966654ac109aa22e7abdd801c",
+        "version": "1.0.0"
+      },
+      "deployments": [
+        {
+          "deployment_id": "fixture.remote.parking",
+          "deployment_version": "1.0.0",
+          "logical_model_id": "fixture.parking",
+          "model_version": "1.0.0",
+          "provider_id": "fixture.remote",
+          "provider_kind": "remote"
+        }
+      ]
+    },
+    {
+      "binding_ref": {
+        "artifact_id": "profile_discovery",
+        "artifact_kind": "model_binding",
+        "digest": "b7968d9ff273341d600853d57c09dc51a6e9a26cf4f6a57a5cff175ead498863",
+        "version": "1.0.0"
+      },
+      "deployments": [
+        {
+          "deployment_id": "fixture.remote.parking",
+          "deployment_version": "1.0.0",
+          "logical_model_id": "fixture.parking",
+          "model_version": "1.0.0",
+          "provider_id": "fixture.remote",
+          "provider_kind": "remote"
+        }
+      ]
+    }
+  ],
+  "pins": {
+    "bundle_digest": "01342a6f02f3b1eec9c794c5ab0f2cf8ab7de3d871f7686715e0c074baca7f88",
+    "input_digest": "6908fea03da7b95250ebee8d1d9fe44769f362a71b52c53f3c4c16450757eaa8",
+    "model_pins": [
+      {
+        "binding_ref": {
+          "artifact_id": "candidate_prediction",
+          "artifact_kind": "model_binding",
+          "digest": "ef0bcdcbc70a8e498edd4c25c900ee1a366c21bc00941538ca2a523169d74a02",
+          "version": "1.0.0"
+        },
+        "deployments": [
+          {
+            "actual_version_constraints": {
+              "allowed_deployment_versions": [
+                "1.0.0"
+              ],
+              "allowed_model_versions": [
+                "1.0.0"
+              ]
+            },
+            "deployment_id": "fixture.remote.parking",
+            "logical_model_id": "fixture.parking",
+            "provider_id": "fixture.remote",
+            "provider_kind": "remote",
+            "required_features": [
+              "rgb_image",
+              "typed_context",
+              "structured_output",
+              "original_xyxy"
+            ]
+          }
+        ],
+        "fallback_policy_ref": {
+          "artifact_id": "fallback",
+          "artifact_kind": "policy",
+          "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce",
+          "version": "1.0.0"
+        },
+        "primary_deployment_id": "fixture.remote.parking",
+        "provider_policy_ref": {
+          "artifact_id": "provider",
+          "artifact_kind": "policy",
+          "digest": "65d59f8c596a77e4bc8c42b9c559e76b792e9ff0438db015c1e0092db9100999",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "binding_ref": {
+          "artifact_id": "object_grounding",
+          "artifact_kind": "model_binding",
+          "digest": "1c0e7e6ebdeb3baa1de18a6133dd90da60f41d8f69c9ba07bf3c69d318f7acb0",
+          "version": "1.0.0"
+        },
+        "deployments": [
+          {
+            "actual_version_constraints": {
+              "allowed_deployment_versions": [
+                "1.0.0"
+              ],
+              "allowed_model_versions": [
+                "1.0.0"
+              ]
+            },
+            "deployment_id": "fixture.remote.parking",
+            "logical_model_id": "fixture.parking",
+            "provider_id": "fixture.remote",
+            "provider_kind": "remote",
+            "required_features": [
+              "rgb_image",
+              "typed_context",
+              "structured_output",
+              "original_xyxy"
+            ]
+          }
+        ],
+        "fallback_policy_ref": {
+          "artifact_id": "fallback",
+          "artifact_kind": "policy",
+          "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce",
+          "version": "1.0.0"
+        },
+        "primary_deployment_id": "fixture.remote.parking",
+        "provider_policy_ref": {
+          "artifact_id": "provider",
+          "artifact_kind": "policy",
+          "digest": "65d59f8c596a77e4bc8c42b9c559e76b792e9ff0438db015c1e0092db9100999",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "binding_ref": {
+          "artifact_id": "object_observation",
+          "artifact_kind": "model_binding",
+          "digest": "0631e588e2f08f2868eee265e32cc201791f255966654ac109aa22e7abdd801c",
+          "version": "1.0.0"
+        },
+        "deployments": [
+          {
+            "actual_version_constraints": {
+              "allowed_deployment_versions": [
+                "1.0.0"
+              ],
+              "allowed_model_versions": [
+                "1.0.0"
+              ]
+            },
+            "deployment_id": "fixture.remote.parking",
+            "logical_model_id": "fixture.parking",
+            "provider_id": "fixture.remote",
+            "provider_kind": "remote",
+            "required_features": [
+              "rgb_image",
+              "typed_context",
+              "structured_output",
+              "original_xyxy"
+            ]
+          }
+        ],
+        "fallback_policy_ref": {
+          "artifact_id": "fallback",
+          "artifact_kind": "policy",
+          "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce",
+          "version": "1.0.0"
+        },
+        "primary_deployment_id": "fixture.remote.parking",
+        "provider_policy_ref": {
+          "artifact_id": "provider",
+          "artifact_kind": "policy",
+          "digest": "65d59f8c596a77e4bc8c42b9c559e76b792e9ff0438db015c1e0092db9100999",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "binding_ref": {
+          "artifact_id": "profile_discovery",
+          "artifact_kind": "model_binding",
+          "digest": "b7968d9ff273341d600853d57c09dc51a6e9a26cf4f6a57a5cff175ead498863",
+          "version": "1.0.0"
+        },
+        "deployments": [
+          {
+            "actual_version_constraints": {
+              "allowed_deployment_versions": [
+                "1.0.0"
+              ],
+              "allowed_model_versions": [
+                "1.0.0"
+              ]
+            },
+            "deployment_id": "fixture.remote.parking",
+            "logical_model_id": "fixture.parking",
+            "provider_id": "fixture.remote",
+            "provider_kind": "remote",
+            "required_features": [
+              "rgb_image",
+              "typed_context",
+              "structured_output",
+              "original_xyxy"
+            ]
+          }
+        ],
+        "fallback_policy_ref": {
+          "artifact_id": "fallback",
+          "artifact_kind": "policy",
+          "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce",
+          "version": "1.0.0"
+        },
+        "primary_deployment_id": "fixture.remote.parking",
+        "provider_policy_ref": {
+          "artifact_id": "provider",
+          "artifact_kind": "policy",
+          "digest": "65d59f8c596a77e4bc8c42b9c559e76b792e9ff0438db015c1e0092db9100999",
+          "version": "1.0.0"
+        }
+      }
+    ],
+    "release_id": "release-1",
+    "runtime_version": "1.0.0",
+    "tool_pins": [
+      {
+        "implementation_version": "1.0.0",
+        "tool_ref": {
+          "artifact_id": "wheel_boundary",
+          "artifact_kind": "tool",
+          "digest": "3354680bde40eaea109ba9784c7d19edf9c4e983bca925bbad5f5bfe1db37b18",
+          "version": "1.0.0"
+        }
+      }
+    ],
+    "workflow_version": "1.0.0"
+  },
+  "policy_ref": {
+    "artifact_id": "workflow",
+    "artifact_kind": "policy",
+    "digest": "43d47c0690f9f97526f236e0589f7b72990c54f6fdbc7ef8e8d37bb3a021727d",
+    "version": "1.0.0"
+  }
+}

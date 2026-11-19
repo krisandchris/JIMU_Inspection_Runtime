@@ -1,0 +1,136 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  9%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 15%]
+........................................................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+........................................................................ [ 36%]
+........................................................................ [ 38%]
+........................................................................ [ 40%]
+........................................................................ [ 42%]
+........................................................................ [ 45%]
+........................................................................ [ 47%]
+........................................................................ [ 49%]
+........................................................................ [ 51%]
+........................................................................ [ 54%]
+........................................................................ [ 56%]
+........................................................................ [ 58%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 65%]
+........................................................................ [ 67%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 97%]
+...........F............................................................ [ 99%]
+....................                                                     [100%]
+=================================== FAILURES ===================================
+_ test_projection_does_not_take_local_alias_target_from_a_different_catalogue __
+
+    def test_projection_does_not_take_local_alias_target_from_a_different_catalogue():
+        fixture = Fixture()
+        fixture.add(
+            CONTEXT,
+            "context_schema",
+            "context",
+            payload("urn:test:context", **{"$ref": "urn:test:attribute"}),
+        )
+        fixture.add(
+            ATTRIBUTE,
+            "attribute_schema",
+            "attribute",
+            payload("urn:test:attribute", type="boolean"),
+        )
+        wrong_index = SchemaIndex.from_catalogue(fixture.catalogue())
+        with pytest.raises(BundleArtifactError, match="schema_reference_index_mismatch"):
+>           build_schema_descriptors(fixture.catalogue(), schema_index=wrong_index)
+
+tests/negative/test_wp02_schema_views_invalid.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/jimu_runtime/bundle/schema_views.py:744: in build_schema_descriptors
+    descriptor = _regular_view(projector, root)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/jimu_runtime/bundle/schema_views.py:355: in _regular_view
+    if projector.typed_shape(root):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/jimu_runtime/bundle/schema_views.py:162: in typed_shape
+    current, data = self.resolve(position)
+                    ^^^^^^^^^^^^^^^^^^^^^^
+src/jimu_runtime/bundle/schema_views.py:146: in resolve
+    target = self.index.resolve_reference(
+src/jimu_runtime/bundle/closure.py:248: in resolve_reference
+    target = self._resolve_reference(source, node_location, reference, keyword)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <jimu_runtime.bundle.closure.SchemaIndex object at 0x7fc429dceba0>
+source = ResolvedArtifact(inventory=ArtifactInventoryEntry(content_ref=ContentRef(artifact_kind=<ArtifactKind.CONTEXT_SCHEMA: '...urn:test:attribute","$schema":"https://json-schema.org/draft/2020-12/schema"}', asset_bytes=None, document_location=())
+node_location = (), reference = 'urn:test:attribute', keyword = '$ref'
+
+    def _resolve_reference(
+        self,
+        source: ResolvedArtifact,
+        node_location: ArtifactLocation,
+        reference: str,
+        keyword: str,
+    ) -> SchemaTarget:
+        local = self._nodes.get(
+            (artifact_identity(source.ref), _path_pointer(node_location))
+        )
+        if local is None or local.target.artifact is not source:
+>           raise BundleArtifactError(
+                "schema_reference_source_missing",
+                "reference source is not an indexed schema node",
+                source.inventory.path,
+                (*source.document_location, *node_location),
+            )
+E           jimu_runtime.bundle.artifacts.BundleArtifactError: schema_reference_source_missing: schemas/context/context.schema.json (): reference source is not an indexed schema node
+
+src/jimu_runtime/bundle/closure.py:262: BundleArtifactError
+
+During handling of the above exception, another exception occurred:
+
+    def test_projection_does_not_take_local_alias_target_from_a_different_catalogue():
+        fixture = Fixture()
+        fixture.add(
+            CONTEXT,
+            "context_schema",
+            "context",
+            payload("urn:test:context", **{"$ref": "urn:test:attribute"}),
+        )
+        fixture.add(
+            ATTRIBUTE,
+            "attribute_schema",
+            "attribute",
+            payload("urn:test:attribute", type="boolean"),
+        )
+        wrong_index = SchemaIndex.from_catalogue(fixture.catalogue())
+>       with pytest.raises(BundleArtifactError, match="schema_reference_index_mismatch"):
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'schema_reference_index_mismatch'
+E        Input: 'schema_reference_source_missing: schemas/context/context.schema.json (): reference source is not an indexed schema node'
+
+tests/negative/test_wp02_schema_views_invalid.py:94: AssertionError
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/independent/frozen_r4hblz8g/pytest.xml -
+=========================== short test summary info ============================
+FAILED tests/negative/test_wp02_schema_views_invalid.py::test_projection_does_not_take_local_alias_target_from_a_different_catalogue
+1 failed, 3187 passed in 280.71s (0:04:40)

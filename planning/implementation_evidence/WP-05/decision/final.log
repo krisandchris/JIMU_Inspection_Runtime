@@ -1,0 +1,956 @@
+Python 3.12.3
+{'pydantic': '2.12.5', 'pytest': '8.4.2', 'ruff': '0.14.14', 'mypy': '1.18.2', 'pillow': '12.3.0', 'psycopg': '3.3.5', 'sqlalchemy': '2.0.52'}
+All checks passed!
+6 files already formatted
+Success: no issues found in 4 source files
+Schema export matches
+............FFF...............F......................................... [ 53%]
+...............................................................          [100%]
+=================================== FAILURES ===================================
+_ test_signed_scene_uses_metadata_truth_gate[eq-False-RuleTruth.TRUE-ApplicabilityReason.INCLUDED_BY_POLICY] _
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-405/test_signed_scene_uses_metadat0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7df3d394f500>
+operator = 'eq', absent = False, expected = <RuleTruth.TRUE: 'true'>
+reason = <ApplicabilityReason.INCLUDED_BY_POLICY: 'included_by_policy'>
+
+    @pytest.mark.parametrize(
+        ("operator", "absent", "expected", "reason"),
+        (
+            ("eq", False, RuleTruth.TRUE, ApplicabilityReason.INCLUDED_BY_POLICY),
+            ("ne", False, RuleTruth.FALSE, ApplicabilityReason.EXCLUDED_BY_POLICY),
+            ("ne", True, RuleTruth.UNKNOWN, ApplicabilityReason.METADATA_UNKNOWN),
+        ),
+    )
+    def test_signed_scene_uses_metadata_truth_gate(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        operator: str,
+        absent: bool,
+        expected: RuleTruth,
+        reason: ApplicabilityReason,
+    ) -> None:
+        source = load_source()
+        policy = next(
+            item for item in source.artifacts if item.artifact_id == "applicability"
+        )
+        content = json.loads(policy.content)
+        selector = {
+            "source": "context_snapshot",
+            "schema_ref": None,
+            "field_path": ["fixture_enabled"],
+        }
+        content["policy"].update(
+            context_allowlist=[selector],
+            condition_ast={
+                "kind": "comparison",
+                "operator": operator,
+                "left": {"kind": "context_ref", "selector": selector},
+                "right": {
+                    "kind": "literal",
+                    "constant": {
+                        "type_definition": {"kind": "bool"},
+                        "value": {"kind": "bool", "value": True},
+                    },
+                },
+            },
+        )
+        target = (ArtifactKind.CONTEXT_SCHEMA, "parking-context", VERSION)
+        revised = replace(
+            policy,
+            content=canonical_bytes(content),
+            reference_slots=(
+                ReferenceSlot(
+                    location=("policy", "context_allowlist", 0, "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+                ReferenceSlot(
+                    location=("policy", "condition_ast", "left", "selector", "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+            ),
+        )
+        context_schema = next(
+            row for row in source.artifacts if row.kind is ArtifactKind.CONTEXT_SCHEMA
+        )
+        schema_doc = json.loads(context_schema.content)
+        schema_doc["properties"]["fixture_enabled"] = {"type": "boolean"}
+        provenance = next(
+            row for row in source.artifacts if row.artifact_id == "context-provenance"
+        )
+        provenance_doc = json.loads(provenance.content)
+        provenance_doc["policy"]["fields"].append(
+            {
+                "field_path": ["fixture_enabled"],
+                "schema_ref": None,
+                "required": False,
+                "time_sensitive": False,
+                "allowed_sources": ["trusted_task_metadata"],
+            }
+        )
+        replacements = {
+            policy.identity: revised,
+            context_schema.identity: replace(
+                context_schema, content=canonical_bytes(schema_doc)
+            ),
+            provenance.identity: replace(
+                provenance,
+                content=canonical_bytes(provenance_doc),
+                reference_slots=(
+                    *provenance.reference_slots,
+                    ReferenceSlot(
+                        location=("policy", "fields", 1, "schema_ref"),
+                        target=target,
+                        schema_ref=True,
+                    ),
+                ),
+            ),
+        }
+        modified = with_source_provenance(
+            replace(
+                source,
+                artifacts=tuple(
+                    replacements.get(row.identity, row) for row in source.artifacts
+                ),
+            )
+        )
+        monkeypatch.setattr(lifecycle, "load_source", lambda: modified)
+        if not absent:
+            submit = lifecycle.local_submission
+    
+            def declare_fixture_flag(media):
+                from jimu_runtime.domain.values import BooleanValue, RecordValue
+    
+                original = submit(media)
+                metadata = RecordValue(
+                    kind="record",
+                    value={"fixture_enabled": BooleanValue(kind="bool", value=True)},
+                )
+                return original.model_copy(
+                    update={
+                        "context": original.context.model_copy(
+                            update={"metadata": metadata}
+                        )
+                    }
+                )
+    
+            monkeypatch.setattr(lifecycle, "local_submission", declare_fixture_flag)
+        scene = lifecycle.exercise_lifecycle(tmp_path)
+        scope = release_scope(scene)
+        (region_item,) = scope.catalogue.of_kind(ArtifactKind.REGION)
+        region_ref = RegionContentRef.model_validate(region_item.ref.model_dump())
+        region = scope.resolve(region_ref, RegionDefinition)
+        assert region.region_id == REGION
+        source_rows = TrustedWorkerSource(
+            scope.media,
+            RegistryRecordRef(
+                record_id=scope.task.context.device_id,
+                version=VERSION,
+                digest=sha256_digest(b"device"),
+            ),
+            RegistryRecordRef(
+                record_id=scope.task.context.camera_id,
+                version=VERSION,
+                digest=sha256_digest(b"camera"),
+            ),
+        )
+        (profile,) = scope.catalogue.of_kind(ArtifactKind.PROFILE)
+        opened = OpenExecution(
+            scope,
+            scene.execution,
+            scene.release,
+            source_rows,
+            region_ref,
+            region,
+            (
+                _profile_plan(
+                    scope, ProfileContentRef.model_validate(profile.ref.model_dump())
+                ),
+            ),
+        )
+        execution = ExecutionRecord(
+            schema_version=VERSION,
+            execution_id=scope.execution_id,
+            task_id=scope.task.task_id,
+            pins=scope.pins,
+            trace=scope.task.trace,
+            status=ExecutionStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            model_invocation_refs=(),
+        )
+        node_ref = NodeRunRef(record_kind=K.NODE_RUN, record_id="local.n01")
+        attempt = Attempt(
+            schema_version=VERSION,
+            attempt_id="local.attempt",
+            execution_id=scope.execution_id,
+            owner=NodeAttemptOwner(owner_kind="node", node_run_ref=node_ref),
+            attempt_number=1,
+            status=AttemptStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+        )
+        node = NodeRun(
+            schema_version=VERSION,
+            node_run_id=node_ref.record_id,
+            execution_id=scope.execution_id,
+            node_id=NodeId.N01,
+            trace=scope.task.trace,
+            config_ref=scene.execution.policy_ref,
+            upstream_inputs=(artifact(K.TASK, scope.task.task_id, scope.task).pin,),
+            input_digest=scope.pins.bundle_digest,
+            status=NodeRunStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            attempt_history=(
+                AttemptLink(
+                    attempt_ref=AttemptRef(
+                        record_kind=K.ATTEMPT, record_id=attempt.attempt_id
+                    ),
+                    attempt_number=1,
+                ),
+            ),
+            output_refs=(),
+        )
+        branch = BranchKey(NodeId.N01)
+        claimed = ClaimedNode(
+            JobClaim(
+                scope.task.idempotency_scope,
+                scope.execution_id,
+                node.node_run_id,
+                "local.job",
+                1,
+                "local",
+                AT,
+            ),
+            attempt,
+            node,
+            branch,
+            opened,
+            BranchInputs(),
+            execution,
+            AT,
+        )
+>       context = build_context(
+            claimed, invocation_envelope(opened, branch, node, attempt)
+        ).message
+
+tests/contract/test_wp05_decision_gate.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/jimu_runtime/inspection/perception/context.py:242: in build_context
+    fields = _fields(claimed, inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+src/jimu_runtime/inspection/perception/context.py:124: in _fields
+    region_data = _region_inputs(claimed)
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+claimed = ClaimedNode(claim=JobClaim(scope=IdempotencyScope(project_id='synthetic.nonmotor.parking', client_id='synthetic.edge')...tion_refs=()), deadline=datetime.datetime(2026, 1, 2, 0, 0, tzinfo=datetime.timezone.utc), authority=None, evidence=())
+
+    def _region_inputs(claimed: ClaimedNode) -> dict[str, object]:
+        opened = claimed.opened
+        scope = opened.scope
+        region = scope.resolve(opened.region_ref, RegionDefinition)
+        if region != opened.region or region.geometry_ref is None:
+            raise ValueError("verified Region geometry is unavailable")
+        geometry = scope.resolve(region.geometry_ref, GeometryResourceDefinition)
+        source = scope.catalogue.resolve(geometry.provenance.source_asset_ref)
+        if (
+            not isinstance(source.value, StaticAssetDescriptor)
+            or source.asset_bytes is None
+        ):
+            raise ValueError("verified Region geometry asset is unavailable")
+>       area = verify_parking_area(
+            region_ref=opened.region_ref,
+            region=region,
+            geometry_ref=region.geometry_ref,
+            geometry=geometry,
+            source=source.value,
+            source_bytes=source.asset_bytes,
+            coordinates=original_frame(scope),
+        )
+E       TypeError: verify_parking_area() missing 1 required keyword-only argument: 'catalogue'
+
+src/jimu_runtime/inspection/perception/context.py:67: TypeError
+_ test_signed_scene_uses_metadata_truth_gate[ne-False-RuleTruth.FALSE-ApplicabilityReason.EXCLUDED_BY_POLICY] _
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-405/test_signed_scene_uses_metadat1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7df3d39ad490>
+operator = 'ne', absent = False, expected = <RuleTruth.FALSE: 'false'>
+reason = <ApplicabilityReason.EXCLUDED_BY_POLICY: 'excluded_by_policy'>
+
+    @pytest.mark.parametrize(
+        ("operator", "absent", "expected", "reason"),
+        (
+            ("eq", False, RuleTruth.TRUE, ApplicabilityReason.INCLUDED_BY_POLICY),
+            ("ne", False, RuleTruth.FALSE, ApplicabilityReason.EXCLUDED_BY_POLICY),
+            ("ne", True, RuleTruth.UNKNOWN, ApplicabilityReason.METADATA_UNKNOWN),
+        ),
+    )
+    def test_signed_scene_uses_metadata_truth_gate(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        operator: str,
+        absent: bool,
+        expected: RuleTruth,
+        reason: ApplicabilityReason,
+    ) -> None:
+        source = load_source()
+        policy = next(
+            item for item in source.artifacts if item.artifact_id == "applicability"
+        )
+        content = json.loads(policy.content)
+        selector = {
+            "source": "context_snapshot",
+            "schema_ref": None,
+            "field_path": ["fixture_enabled"],
+        }
+        content["policy"].update(
+            context_allowlist=[selector],
+            condition_ast={
+                "kind": "comparison",
+                "operator": operator,
+                "left": {"kind": "context_ref", "selector": selector},
+                "right": {
+                    "kind": "literal",
+                    "constant": {
+                        "type_definition": {"kind": "bool"},
+                        "value": {"kind": "bool", "value": True},
+                    },
+                },
+            },
+        )
+        target = (ArtifactKind.CONTEXT_SCHEMA, "parking-context", VERSION)
+        revised = replace(
+            policy,
+            content=canonical_bytes(content),
+            reference_slots=(
+                ReferenceSlot(
+                    location=("policy", "context_allowlist", 0, "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+                ReferenceSlot(
+                    location=("policy", "condition_ast", "left", "selector", "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+            ),
+        )
+        context_schema = next(
+            row for row in source.artifacts if row.kind is ArtifactKind.CONTEXT_SCHEMA
+        )
+        schema_doc = json.loads(context_schema.content)
+        schema_doc["properties"]["fixture_enabled"] = {"type": "boolean"}
+        provenance = next(
+            row for row in source.artifacts if row.artifact_id == "context-provenance"
+        )
+        provenance_doc = json.loads(provenance.content)
+        provenance_doc["policy"]["fields"].append(
+            {
+                "field_path": ["fixture_enabled"],
+                "schema_ref": None,
+                "required": False,
+                "time_sensitive": False,
+                "allowed_sources": ["trusted_task_metadata"],
+            }
+        )
+        replacements = {
+            policy.identity: revised,
+            context_schema.identity: replace(
+                context_schema, content=canonical_bytes(schema_doc)
+            ),
+            provenance.identity: replace(
+                provenance,
+                content=canonical_bytes(provenance_doc),
+                reference_slots=(
+                    *provenance.reference_slots,
+                    ReferenceSlot(
+                        location=("policy", "fields", 1, "schema_ref"),
+                        target=target,
+                        schema_ref=True,
+                    ),
+                ),
+            ),
+        }
+        modified = with_source_provenance(
+            replace(
+                source,
+                artifacts=tuple(
+                    replacements.get(row.identity, row) for row in source.artifacts
+                ),
+            )
+        )
+        monkeypatch.setattr(lifecycle, "load_source", lambda: modified)
+        if not absent:
+            submit = lifecycle.local_submission
+    
+            def declare_fixture_flag(media):
+                from jimu_runtime.domain.values import BooleanValue, RecordValue
+    
+                original = submit(media)
+                metadata = RecordValue(
+                    kind="record",
+                    value={"fixture_enabled": BooleanValue(kind="bool", value=True)},
+                )
+                return original.model_copy(
+                    update={
+                        "context": original.context.model_copy(
+                            update={"metadata": metadata}
+                        )
+                    }
+                )
+    
+            monkeypatch.setattr(lifecycle, "local_submission", declare_fixture_flag)
+        scene = lifecycle.exercise_lifecycle(tmp_path)
+        scope = release_scope(scene)
+        (region_item,) = scope.catalogue.of_kind(ArtifactKind.REGION)
+        region_ref = RegionContentRef.model_validate(region_item.ref.model_dump())
+        region = scope.resolve(region_ref, RegionDefinition)
+        assert region.region_id == REGION
+        source_rows = TrustedWorkerSource(
+            scope.media,
+            RegistryRecordRef(
+                record_id=scope.task.context.device_id,
+                version=VERSION,
+                digest=sha256_digest(b"device"),
+            ),
+            RegistryRecordRef(
+                record_id=scope.task.context.camera_id,
+                version=VERSION,
+                digest=sha256_digest(b"camera"),
+            ),
+        )
+        (profile,) = scope.catalogue.of_kind(ArtifactKind.PROFILE)
+        opened = OpenExecution(
+            scope,
+            scene.execution,
+            scene.release,
+            source_rows,
+            region_ref,
+            region,
+            (
+                _profile_plan(
+                    scope, ProfileContentRef.model_validate(profile.ref.model_dump())
+                ),
+            ),
+        )
+        execution = ExecutionRecord(
+            schema_version=VERSION,
+            execution_id=scope.execution_id,
+            task_id=scope.task.task_id,
+            pins=scope.pins,
+            trace=scope.task.trace,
+            status=ExecutionStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            model_invocation_refs=(),
+        )
+        node_ref = NodeRunRef(record_kind=K.NODE_RUN, record_id="local.n01")
+        attempt = Attempt(
+            schema_version=VERSION,
+            attempt_id="local.attempt",
+            execution_id=scope.execution_id,
+            owner=NodeAttemptOwner(owner_kind="node", node_run_ref=node_ref),
+            attempt_number=1,
+            status=AttemptStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+        )
+        node = NodeRun(
+            schema_version=VERSION,
+            node_run_id=node_ref.record_id,
+            execution_id=scope.execution_id,
+            node_id=NodeId.N01,
+            trace=scope.task.trace,
+            config_ref=scene.execution.policy_ref,
+            upstream_inputs=(artifact(K.TASK, scope.task.task_id, scope.task).pin,),
+            input_digest=scope.pins.bundle_digest,
+            status=NodeRunStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            attempt_history=(
+                AttemptLink(
+                    attempt_ref=AttemptRef(
+                        record_kind=K.ATTEMPT, record_id=attempt.attempt_id
+                    ),
+                    attempt_number=1,
+                ),
+            ),
+            output_refs=(),
+        )
+        branch = BranchKey(NodeId.N01)
+        claimed = ClaimedNode(
+            JobClaim(
+                scope.task.idempotency_scope,
+                scope.execution_id,
+                node.node_run_id,
+                "local.job",
+                1,
+                "local",
+                AT,
+            ),
+            attempt,
+            node,
+            branch,
+            opened,
+            BranchInputs(),
+            execution,
+            AT,
+        )
+>       context = build_context(
+            claimed, invocation_envelope(opened, branch, node, attempt)
+        ).message
+
+tests/contract/test_wp05_decision_gate.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/jimu_runtime/inspection/perception/context.py:242: in build_context
+    fields = _fields(claimed, inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+src/jimu_runtime/inspection/perception/context.py:124: in _fields
+    region_data = _region_inputs(claimed)
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+claimed = ClaimedNode(claim=JobClaim(scope=IdempotencyScope(project_id='synthetic.nonmotor.parking', client_id='synthetic.edge')...tion_refs=()), deadline=datetime.datetime(2026, 1, 2, 0, 0, tzinfo=datetime.timezone.utc), authority=None, evidence=())
+
+    def _region_inputs(claimed: ClaimedNode) -> dict[str, object]:
+        opened = claimed.opened
+        scope = opened.scope
+        region = scope.resolve(opened.region_ref, RegionDefinition)
+        if region != opened.region or region.geometry_ref is None:
+            raise ValueError("verified Region geometry is unavailable")
+        geometry = scope.resolve(region.geometry_ref, GeometryResourceDefinition)
+        source = scope.catalogue.resolve(geometry.provenance.source_asset_ref)
+        if (
+            not isinstance(source.value, StaticAssetDescriptor)
+            or source.asset_bytes is None
+        ):
+            raise ValueError("verified Region geometry asset is unavailable")
+>       area = verify_parking_area(
+            region_ref=opened.region_ref,
+            region=region,
+            geometry_ref=region.geometry_ref,
+            geometry=geometry,
+            source=source.value,
+            source_bytes=source.asset_bytes,
+            coordinates=original_frame(scope),
+        )
+E       TypeError: verify_parking_area() missing 1 required keyword-only argument: 'catalogue'
+
+src/jimu_runtime/inspection/perception/context.py:67: TypeError
+_ test_signed_scene_uses_metadata_truth_gate[ne-True-RuleTruth.UNKNOWN-ApplicabilityReason.METADATA_UNKNOWN] _
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-405/test_signed_scene_uses_metadat2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7df3d3584980>
+operator = 'ne', absent = True, expected = <RuleTruth.UNKNOWN: 'unknown'>
+reason = <ApplicabilityReason.METADATA_UNKNOWN: 'metadata_unknown'>
+
+    @pytest.mark.parametrize(
+        ("operator", "absent", "expected", "reason"),
+        (
+            ("eq", False, RuleTruth.TRUE, ApplicabilityReason.INCLUDED_BY_POLICY),
+            ("ne", False, RuleTruth.FALSE, ApplicabilityReason.EXCLUDED_BY_POLICY),
+            ("ne", True, RuleTruth.UNKNOWN, ApplicabilityReason.METADATA_UNKNOWN),
+        ),
+    )
+    def test_signed_scene_uses_metadata_truth_gate(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        operator: str,
+        absent: bool,
+        expected: RuleTruth,
+        reason: ApplicabilityReason,
+    ) -> None:
+        source = load_source()
+        policy = next(
+            item for item in source.artifacts if item.artifact_id == "applicability"
+        )
+        content = json.loads(policy.content)
+        selector = {
+            "source": "context_snapshot",
+            "schema_ref": None,
+            "field_path": ["fixture_enabled"],
+        }
+        content["policy"].update(
+            context_allowlist=[selector],
+            condition_ast={
+                "kind": "comparison",
+                "operator": operator,
+                "left": {"kind": "context_ref", "selector": selector},
+                "right": {
+                    "kind": "literal",
+                    "constant": {
+                        "type_definition": {"kind": "bool"},
+                        "value": {"kind": "bool", "value": True},
+                    },
+                },
+            },
+        )
+        target = (ArtifactKind.CONTEXT_SCHEMA, "parking-context", VERSION)
+        revised = replace(
+            policy,
+            content=canonical_bytes(content),
+            reference_slots=(
+                ReferenceSlot(
+                    location=("policy", "context_allowlist", 0, "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+                ReferenceSlot(
+                    location=("policy", "condition_ast", "left", "selector", "schema_ref"),
+                    target=target,
+                    schema_ref=True,
+                ),
+            ),
+        )
+        context_schema = next(
+            row for row in source.artifacts if row.kind is ArtifactKind.CONTEXT_SCHEMA
+        )
+        schema_doc = json.loads(context_schema.content)
+        schema_doc["properties"]["fixture_enabled"] = {"type": "boolean"}
+        provenance = next(
+            row for row in source.artifacts if row.artifact_id == "context-provenance"
+        )
+        provenance_doc = json.loads(provenance.content)
+        provenance_doc["policy"]["fields"].append(
+            {
+                "field_path": ["fixture_enabled"],
+                "schema_ref": None,
+                "required": False,
+                "time_sensitive": False,
+                "allowed_sources": ["trusted_task_metadata"],
+            }
+        )
+        replacements = {
+            policy.identity: revised,
+            context_schema.identity: replace(
+                context_schema, content=canonical_bytes(schema_doc)
+            ),
+            provenance.identity: replace(
+                provenance,
+                content=canonical_bytes(provenance_doc),
+                reference_slots=(
+                    *provenance.reference_slots,
+                    ReferenceSlot(
+                        location=("policy", "fields", 1, "schema_ref"),
+                        target=target,
+                        schema_ref=True,
+                    ),
+                ),
+            ),
+        }
+        modified = with_source_provenance(
+            replace(
+                source,
+                artifacts=tuple(
+                    replacements.get(row.identity, row) for row in source.artifacts
+                ),
+            )
+        )
+        monkeypatch.setattr(lifecycle, "load_source", lambda: modified)
+        if not absent:
+            submit = lifecycle.local_submission
+    
+            def declare_fixture_flag(media):
+                from jimu_runtime.domain.values import BooleanValue, RecordValue
+    
+                original = submit(media)
+                metadata = RecordValue(
+                    kind="record",
+                    value={"fixture_enabled": BooleanValue(kind="bool", value=True)},
+                )
+                return original.model_copy(
+                    update={
+                        "context": original.context.model_copy(
+                            update={"metadata": metadata}
+                        )
+                    }
+                )
+    
+            monkeypatch.setattr(lifecycle, "local_submission", declare_fixture_flag)
+        scene = lifecycle.exercise_lifecycle(tmp_path)
+        scope = release_scope(scene)
+        (region_item,) = scope.catalogue.of_kind(ArtifactKind.REGION)
+        region_ref = RegionContentRef.model_validate(region_item.ref.model_dump())
+        region = scope.resolve(region_ref, RegionDefinition)
+        assert region.region_id == REGION
+        source_rows = TrustedWorkerSource(
+            scope.media,
+            RegistryRecordRef(
+                record_id=scope.task.context.device_id,
+                version=VERSION,
+                digest=sha256_digest(b"device"),
+            ),
+            RegistryRecordRef(
+                record_id=scope.task.context.camera_id,
+                version=VERSION,
+                digest=sha256_digest(b"camera"),
+            ),
+        )
+        (profile,) = scope.catalogue.of_kind(ArtifactKind.PROFILE)
+        opened = OpenExecution(
+            scope,
+            scene.execution,
+            scene.release,
+            source_rows,
+            region_ref,
+            region,
+            (
+                _profile_plan(
+                    scope, ProfileContentRef.model_validate(profile.ref.model_dump())
+                ),
+            ),
+        )
+        execution = ExecutionRecord(
+            schema_version=VERSION,
+            execution_id=scope.execution_id,
+            task_id=scope.task.task_id,
+            pins=scope.pins,
+            trace=scope.task.trace,
+            status=ExecutionStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            model_invocation_refs=(),
+        )
+        node_ref = NodeRunRef(record_kind=K.NODE_RUN, record_id="local.n01")
+        attempt = Attempt(
+            schema_version=VERSION,
+            attempt_id="local.attempt",
+            execution_id=scope.execution_id,
+            owner=NodeAttemptOwner(owner_kind="node", node_run_ref=node_ref),
+            attempt_number=1,
+            status=AttemptStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+        )
+        node = NodeRun(
+            schema_version=VERSION,
+            node_run_id=node_ref.record_id,
+            execution_id=scope.execution_id,
+            node_id=NodeId.N01,
+            trace=scope.task.trace,
+            config_ref=scene.execution.policy_ref,
+            upstream_inputs=(artifact(K.TASK, scope.task.task_id, scope.task).pin,),
+            input_digest=scope.pins.bundle_digest,
+            status=NodeRunStatus.RUNNING,
+            created_at=AT,
+            started_at=AT,
+            attempt_history=(
+                AttemptLink(
+                    attempt_ref=AttemptRef(
+                        record_kind=K.ATTEMPT, record_id=attempt.attempt_id
+                    ),
+                    attempt_number=1,
+                ),
+            ),
+            output_refs=(),
+        )
+        branch = BranchKey(NodeId.N01)
+        claimed = ClaimedNode(
+            JobClaim(
+                scope.task.idempotency_scope,
+                scope.execution_id,
+                node.node_run_id,
+                "local.job",
+                1,
+                "local",
+                AT,
+            ),
+            attempt,
+            node,
+            branch,
+            opened,
+            BranchInputs(),
+            execution,
+            AT,
+        )
+>       context = build_context(
+            claimed, invocation_envelope(opened, branch, node, attempt)
+        ).message
+
+tests/contract/test_wp05_decision_gate.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/jimu_runtime/inspection/perception/context.py:242: in build_context
+    fields = _fields(claimed, inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+src/jimu_runtime/inspection/perception/context.py:124: in _fields
+    region_data = _region_inputs(claimed)
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+claimed = ClaimedNode(claim=JobClaim(scope=IdempotencyScope(project_id='synthetic.nonmotor.parking', client_id='synthetic.edge')...tion_refs=()), deadline=datetime.datetime(2026, 1, 2, 0, 0, tzinfo=datetime.timezone.utc), authority=None, evidence=())
+
+    def _region_inputs(claimed: ClaimedNode) -> dict[str, object]:
+        opened = claimed.opened
+        scope = opened.scope
+        region = scope.resolve(opened.region_ref, RegionDefinition)
+        if region != opened.region or region.geometry_ref is None:
+            raise ValueError("verified Region geometry is unavailable")
+        geometry = scope.resolve(region.geometry_ref, GeometryResourceDefinition)
+        source = scope.catalogue.resolve(geometry.provenance.source_asset_ref)
+        if (
+            not isinstance(source.value, StaticAssetDescriptor)
+            or source.asset_bytes is None
+        ):
+            raise ValueError("verified Region geometry asset is unavailable")
+>       area = verify_parking_area(
+            region_ref=opened.region_ref,
+            region=region,
+            geometry_ref=region.geometry_ref,
+            geometry=geometry,
+            source=source.value,
+            source_bytes=source.asset_bytes,
+            coordinates=original_frame(scope),
+        )
+E       TypeError: verify_parking_area() missing 1 required keyword-only argument: 'catalogue'
+
+src/jimu_runtime/inspection/perception/context.py:67: TypeError
+_________ test_geometry_masks_keep_selected_child_and_named_input_role _________
+
+runtime = Scenario(scope=SyntheticExecution(task=AcceptedTask(schema_version='1.0.0', task_id='task.031c033f570ab8256b43c754b664...ON: 'tool_execution'>, record_id='synthetic.tool.e62c0b4ec36707c86d5464dffb262a3445b59ba4e697672a7418dc3290a82fcb')))))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-405/test_geometry_masks_keep_selec0')
+
+    def test_geometry_masks_keep_selected_child_and_named_input_role(runtime, tmp_path):
+        from jimu_runtime.bundle.semantic_inputs import require_definition
+        from jimu_runtime.domain.definition_enums import EvidenceType
+        from jimu_runtime.domain.policies import EvidencePolicyArtifact
+        from jimu_runtime.domain.runtime.tool_executions import ReturnedToolAttempt
+        from jimu_runtime.inspection.rules._guard_sources import EvidenceSources
+        from tests.fixtures.wp05.geometry import STEPS, GeometryFixture
+    
+>       fixture = GeometryFixture(tmp_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/unit/test_wp05_guard.py:487: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.fixtures.wp05.geometry.GeometryFixture object at 0x7df3d35cbb60>
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-405/test_geometry_masks_keep_selec0')
+
+    def __init__(self, tmp_path):
+        scene = exercise_lifecycle(tmp_path)
+        self.resolved = scene.execution
+        self.task = scene.task
+        self.payload = (DIRECTORY / "assets" / "synthetic-frame.png").read_bytes()
+        self.coordinates = CoordinateSystem(
+            coordinate_system_id="geometry-fixture.original",
+            frame="original_image",
+            dimensions=ImageDimensions(width=64, height=48),
+        )
+        self.bbox = BBoxXYXY(xyxy=(40.0, 23.0, 52.0, 33.0))
+        at = datetime.now(UTC)
+        self.execution = ExecutionRecord(
+            schema_version=VERSION,
+            execution_id="geometry-fixture",
+            task_id=self.task.task_id,
+            pins=self.resolved.pins,
+            trace=self.task.trace,
+            status=ExecutionStatus.RUNNING,
+            created_at=at,
+            started_at=at,
+            model_invocation_refs=(),
+        )
+        self.media = MediaAsset(
+            schema_version=VERSION,
+            media_ref=self.task.media_ref,
+            storage=StorageReference(store_id="fixture", object_key="test/image.png"),
+            stage=self.finalized(at, self.task.media_ref.sha256),
+            color_space="RGB",
+            mime_type="image/png",
+            byte_size=len(self.payload),
+            dimensions=self.coordinates.dimensions,
+        )
+        catalog = self.resolved.catalogue
+        (profile_entry,) = catalog.of_kind(ArtifactKind.PROFILE)
+        self.profile = require_definition(catalog, profile_entry.ref, ProfileDefinition)
+        self.profile_ref = ProfileContentRef.model_validate(
+            profile_entry.ref.model_dump()
+        )
+        self.object = ObjectRecord(
+            schema_version=VERSION,
+            object_id="geometry-object",
+            execution_id=self.execution.execution_id,
+            profile_ref=self.profile_ref,
+            question_selection_ref=QuestionSelectionRef(
+                record_kind=K.QUESTION_SELECTION_RECORD, record_id="geometry-questions"
+            ),
+            effective_question_refs=self.profile.question_refs,
+            entity_ref=self.profile.entity_ref,
+            grounding_record_ref=GroundingRecordRef(
+                record_kind=K.GROUNDING_RECORD, record_id="geometry-grounding"
+            ),
+            source_media_ref=self.media.media_ref,
+            coordinate_system=self.coordinates,
+            bbox=self.bbox,
+            grounding_producer=ModelGroundingProvenance(
+                kind="model",
+                model_binding_ref=self.profile.grounding_binding.model_binding_ref,
+                model_invocation_ref=ModelInvocationRef(
+                    record_kind=K.MODEL_INVOCATION, record_id="geometry-grounding-model"
+                ),
+            ),
+            visibility="visible",
+            localization_status="localized",
+            evidence_refs=(),
+        )
+        (region_entry,) = catalog.of_kind(ArtifactKind.REGION)
+        self.region_ref = RegionContentRef.model_validate(region_entry.ref.model_dump())
+        self.region = region = require_definition(
+            catalog, self.region_ref, RegionDefinition
+        )
+        self.region_geometry = geometry = require_definition(
+            catalog, region.geometry_ref, GeometryResourceDefinition
+        )
+        self.region_source = source = require_definition(
+            catalog, geometry.provenance.source_asset_ref, StaticAssetDescriptor
+        )
+        self.region_bytes = self.resolved.files.payloads[source.data_path]
+        self.parking_area = self.verify_region(self.region_bytes)
+        self.tools = {
+            pin.tool_ref.artifact_id: require_definition(
+                catalog, pin.tool_ref, ToolDefinition
+            )
+            for pin in self.resolved.pins.tool_pins
+        }
+        self.proofs = {
+            tool.implementation_requirement.capability_id: TrustPin(
+                identity=tool.implementation_requirement.capability_id,
+                version=VERSION,
+                sha256=sha256(CPU_ARTIFACT.read_bytes()).hexdigest(),
+            )
+            for tool in self.tools.values()
+        }
+        resources = ResourceAdmission.provision(
+            tmp_path / "geometry-resources.sqlite3",
+            HostInventory(
+                "wp05-geometry",
+                lease_ttl_ms=8000,
+                cpu_slots=1,
+                scopes=(ResourceScope("wp05-synthetic", "cpu", 1),),
+            ),
+        )
+        self.executor = ToolExecutor(
+            ToolWorkerRegistry(
+>               synthetic_cpu_implementations(
+                    resources,
+                    "wp05-synthetic",
+                    "wp05-geometry",
+                    tuple(self.tools.values()),
+                    self.proofs,
+                    synthetic_image_digests=frozenset({self.media.media_ref.sha256}),
+                )
+            )
+        )
+E       TypeError: synthetic_cpu_implementations() got an unexpected keyword argument 'synthetic_image_digests'
+
+tests/fixtures/wp05/geometry.py:195: TypeError
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/decision/final.xml -
+=========================== short test summary info ============================
+FAILED tests/contract/test_wp05_decision_gate.py::test_signed_scene_uses_metadata_truth_gate[eq-False-RuleTruth.TRUE-ApplicabilityReason.INCLUDED_BY_POLICY]
+FAILED tests/contract/test_wp05_decision_gate.py::test_signed_scene_uses_metadata_truth_gate[ne-False-RuleTruth.FALSE-ApplicabilityReason.EXCLUDED_BY_POLICY]
+FAILED tests/contract/test_wp05_decision_gate.py::test_signed_scene_uses_metadata_truth_gate[ne-True-RuleTruth.UNKNOWN-ApplicabilityReason.METADATA_UNKNOWN]
+FAILED tests/unit/test_wp05_guard.py::test_geometry_masks_keep_selected_child_and_named_input_role
+4 failed, 131 passed in 60.18s (0:01:00)

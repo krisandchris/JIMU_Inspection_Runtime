@@ -1,0 +1,31 @@
+2026-11-18T05:49:20Z
+{"check": "worker_process_ready", "pid": 3506835, "runtime_install": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/__init__.py"}
+{"adapter_error": "ValueError", "diagnostic": "tool result differs from its immutable scope, configuration or child owner"}
+{"check": "durable_node_diagnostics", "child_steps": [["tactile_paving_segmentation", "succeeded", null, "succeeded", []], ["wheel_segmentation", "succeeded", null, "succeeded", []]], "dispatches": [["model", null, "acknowledged", null, "policy_disabled"], ["model", null, "acknowledged", null, "policy_disabled"], ["model", null, "acknowledged", null, "policy_disabled"], ["tool", "wheel_segmentation", "acknowledged", null, null], ["tool", "tactile_paving_segmentation", "acknowledged", null, null], ["tool", "wheel_boundary_geometry", "acknowledged", null, null], ["model", null, "acknowledged", null, "policy_disabled"]], "rows": [["N01", "succeeded", null, null], ["N02", "succeeded", null, null], ["N03", "succeeded", null, null], ["N04", "succeeded", null, null], ["N05", "succeeded", null, null], ["N05", "failed", null, null], ["N05", "failed", "worker_provider_invalid_output", "worker_provider_invalid_output"], ["N05", "succeeded", null, null], ["N06", "succeeded", null, null]]}
+{"calls": [["discovery", null, null], ["grounding", null, null], ["observation", [40, 23, 52, 33], "perception.object.9272ba9ed669300b321d9f927285d313176e76c832b52c0e2006b425dab07614"], ["candidate", [40, 23, 52, 33], "perception.object.9272ba9ed669300b321d9f927285d313176e76c832b52c0e2006b425dab07614"]], "check": "provider_transcript_on_failure", "errors": []}
+{"check": "worker_process_closed", "pid": 3506835, "signal": null}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 328, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 314, in main
+    await run_case(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 242, in run_case
+    result = await audit(
+             ^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 254, in audit
+    wire = await check_dispatches(con, scope, provider, store)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 121, in check_dispatches
+    assert row["receipt"]["response_bytes_omission_reason"] == (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+exit=1

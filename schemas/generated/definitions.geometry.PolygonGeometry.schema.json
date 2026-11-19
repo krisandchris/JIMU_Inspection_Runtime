@@ -1,0 +1,62 @@
+{
+  "$defs": {
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "GeometryCoordinate": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      ],
+      "maximum": 9007199254740991,
+      "minimum": -9007199254740991
+    },
+    "GeometryPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/GeometryCoordinate"
+        },
+        "y": {
+          "$ref": "#/$defs/GeometryCoordinate"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "GeometryPoint",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One 2D exterior ring with implicit closure and no holes.",
+  "properties": {
+    "kind": {
+      "const": "polygon",
+      "title": "Kind",
+      "type": "string"
+    },
+    "vertices": {
+      "items": {
+        "$ref": "#/$defs/GeometryPoint"
+      },
+      "maxItems": 256,
+      "minItems": 3,
+      "title": "Vertices",
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "kind",
+    "vertices"
+  ],
+  "title": "PolygonGeometry",
+  "type": "object"
+}

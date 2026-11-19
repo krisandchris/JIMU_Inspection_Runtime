@@ -1,0 +1,22 @@
+2026-11-18T11:27:26Z
+env PYTHONPATH=/tmp/jimu-wp07-acceptance-ayGr0sgy/product JIMU_CAPTURE_DIR=/tmp/jimu-wp07-acceptance-ayGr0sgy/monitor JIMU_CAPTURE_RUNTIME=jimu-wp07-local:monitor-ayGr0sgy JIMU_CAPTURE_PROM=quay.io/prometheus/prometheus@sha256:aafa9d694e6a883c02db516d9f6e5b84e14195f49a2a6456a4cca815edda72b9 JIMU_CAPTURE_GRAFANA=grafana/grafana@sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf /tmp/jimu-wp07-acceptance-ayGr0sgy/dev/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/monitor_smoke.py 
+read_only_scoped_postgres: 16.14 (Debian 16.14-1.pgdg13+1)
+compose_project: jimu-monitor-ad0a604662da
+services: grafana
+observability
+prometheus
+grafana_random_loopback: 127.0.0.1:35172
+grafana_host_loopback_health: 200
+observability_ready: {'schema_version': '1.0.0', 'database': 'ready', 'workflow_schema': 'ready', 'worker_claim': 'unknown'}
+anonymous_metrics_and_ready: 401
+prometheus_target_health: up
+grafana_health: ok version: 13.3.1
+prometheus_scoped_task_count: 1 database_task_count: 2
+prometheus_task_labels: ['__name__', 'instance', 'job', 'status']
+prometheus_unreported_token_series: 0
+grafana_provisioned_dashboard: jimu-runtime datasource: jimu-prometheus
+grafana_dashboard_queries_executed: 13 first_panel_value: 1
+cleaned_compose_containers_volumes_and_networks: True
+signed_workflow_and_monitor_smoke: PASS
+2026-11-18T11:28:30Z
+exit=0

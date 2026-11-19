@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--locked",
+    "--offline",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "tests/unit/test_c_applicability_records.py",
+    "tests/contract/test_c_applicability_schemas.py",
+    "tests/negative/test_c_applicability_invalid.py",
+    "-q",
+    "-o",
+    "cache_dir=/tmp/jimu-c4-applicability-l_87ncpl/pytest-cache",
+    "--basetemp=/tmp/jimu-c4-applicability-l_87ncpl/pytest-tmp",
+    "--junitxml=planning/implementation_evidence/WP-01C/c4_applicability/pytest.xml"
+  ],
+  "cwd": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "started_at": "2026-11-18T02:01:24.387776+00:00",
+  "ended_at": "2026-11-18T02:01:25.739016+00:00",
+  "exit_code": 0
+}

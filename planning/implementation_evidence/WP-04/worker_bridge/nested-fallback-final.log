@@ -1,0 +1,10 @@
+Command env PYTHONPATH=. .venv/bin/python planning/implementation_evidence/WP-04/independent/probe_nested.py
+Repository HEAD 2552affeb69fbc2594fe70724f895b0db0967d47 (detached, with WP-04 worktree changes)
+Start 2026-11-18T05:03:44.542805+00:00
+End 2026-11-18T05:03:55.057015+00:00
+Exit 0
+Python 3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]
+Platform Linux-6.8.0-149-generic-x86_64-with-glibc2.39
+Dependencies {'pytest': '8.4.2', 'ruff': '0.14.14', 'mypy': '1.18.2', 'pydantic': '2.12.5', 'httpx': '0.28.1', 'sqlalchemy': '2.0.52', 'psycopg': '3.3.5'}
+
+{"check": "nested_fallback_across_children", "dispatches": [["tool", "operation.tool_step.551f880e37cb2b5f6d4137cf48fa5c5a6f22b578c10b0fca6095c3fd31ad7916", "tool:f53dff3e41ab7ba3cf4359422ddb0672996f81bf7c6f214993ff19c557b3906a", "bedfd5f836ca4be3a9d1a87b9eb3587b", "independent-nested-first", "timeout", "failed", "tool_reported_failure"], ["nested_model", "operation.model.38c6dd9dd6a2b5f8d79ea9cf30c0031d1ae0e1e2391d3810aba0c5454b7725c3", "dispatch.8a9bc3e4b70b4e9389144d0b87d50300", "bedfd5f836ca4be3a9d1a87b9eb3587b", "independent-nested-first", "timeout", null, "http_deadline_exceeded"], ["tool", "operation.tool_step.551f880e37cb2b5f6d4137cf48fa5c5a6f22b578c10b0fca6095c3fd31ad7916", "tool:5204a04a4f8c4556960d1f23dafdad3fc159853c717d187c97923a89ce7e3da0", "71648e6bc3a2447e9bc1050c8d012301", "independent-nested-recovery", null, "succeeded", null], ["nested_model", "operation.model.38c6dd9dd6a2b5f8d79ea9cf30c0031d1ae0e1e2391d3810aba0c5454b7725c3", "dispatch.e79716b8728946af93a8bf4b25d3a6a7", "71648e6bc3a2447e9bc1050c8d012301", "independent-nested-recovery", null, null, null]], "errors": ["timeout"], "node_steps": ["applied", "applied", "applied", "applied", "retry_scheduled", "applied", "staged", "finalized"], "physical_posts": [1, 1], "step_completions": [["failed", "tool:f53dff3e41ab7ba3cf4359422ddb0672996f81bf7c6f214993ff19c557b3906a", "bedfd5f836ca4be3a9d1a87b9eb3587b"], ["succeeded", "tool:5204a04a4f8c4556960d1f23dafdad3fc159853c717d187c97923a89ce7e3da0", "71648e6bc3a2447e9bc1050c8d012301"]]}

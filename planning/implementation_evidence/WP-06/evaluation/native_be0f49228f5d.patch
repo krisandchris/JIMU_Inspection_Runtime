@@ -1,0 +1,2076 @@
+--- /dev/null
++++ b/src/jimu_runtime/evaluation/__init__.py
+@@ -0,0 +1,26 @@
++"""Local scoring and human-review primitives for frozen inspection snapshots."""
++
++from jimu_runtime.evaluation.contracts import (
++    DatasetManifest,
++    PredictionSnapshot,
++    ScoringProtocol,
++)
++from jimu_runtime.evaluation.review import (
++    BadCaseAttribution,
++    revise_attribution,
++)
++from jimu_runtime.evaluation.scoring import EvaluationReport, score
++from jimu_runtime.evaluation.truth import ReviewHistory, TruthSnapshot, revise_truth
++
++__all__ = [
++    "BadCaseAttribution",
++    "DatasetManifest",
++    "EvaluationReport",
++    "PredictionSnapshot",
++    "ReviewHistory",
++    "ScoringProtocol",
++    "TruthSnapshot",
++    "revise_attribution",
++    "revise_truth",
++    "score",
++]
+--- /dev/null
++++ b/src/jimu_runtime/evaluation/contracts.py
+@@ -0,0 +1,436 @@
++"""Frozen input contracts for offline evaluation of one exact execution cohort."""
++
++from collections.abc import Hashable, Iterable
++from typing import Annotated, Literal, Self
++
++from pydantic import BeforeValidator, Field, model_validator
++
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_support import (
++    immutable_sequence,
++    require_unique_references,
++)
++from jimu_runtime.domain.enums import DecisionResult, ExecutionStatus, FactStatus
++from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
++from jimu_runtime.domain.fact_selectors import FactSchemaContentRef, QuestionContentRef
++from jimu_runtime.domain.primitives import ArtifactId, Digest, RecordId, Version
++from jimu_runtime.domain.runtime.applicability import RuleTruth
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.domain.runtime.decisions import RulePath
++from jimu_runtime.domain.runtime.executions import (
++    ConfiguredModelPin,
++    ConfiguredToolPin,
++    ExecutionPins,
++    ExecutionRecord,
++)
++from jimu_runtime.domain.runtime.facts import ProfileContentRef
++from jimu_runtime.domain.runtime.intake import AcceptedTask, IdempotencyScope
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.runtime.media import BBoxXYXY, ImageDimensions
++from jimu_runtime.domain.runtime.perception import DiscoveryOutcome, GroundingOutcome
++from jimu_runtime.domain.runtime.replay import ScoringProtocolPin
++from jimu_runtime.domain.runtime.tool_executions import ToolExecution
++from jimu_runtime.domain.values import Value
++
++type Entries[T] = Annotated[
++    tuple[T, ...], Field(max_length=1024), BeforeValidator(immutable_sequence)
++]
++type Samples[T] = Annotated[
++    tuple[T, ...],
++    Field(min_length=1, max_length=100_000),
++    BeforeValidator(immutable_sequence),
++]
++type Objects[T] = Annotated[
++    tuple[T, ...], Field(max_length=512), BeforeValidator(immutable_sequence)
++]
++type ModelAttempts[T] = Annotated[
++    tuple[T, ...], Field(max_length=16_384), BeforeValidator(immutable_sequence)
++]
++type Split = Literal["training", "calibration", "holdout"]
++type ReviewState = Literal["labeled", "unlabeled", "conflicted", "abstained"]
++
++
++def canonical_digest(record: ContractModel) -> Digest:
++    """Hash the canonical JSON of an immutable evaluation or source contract."""
++    return sha256_digest(canonical_bytes(record.model_dump(mode="json")))
++
++
++def require_unique(values: Iterable[Hashable], name: str) -> None:
++    seen: set[Hashable] = set()
++    for value in values:
++        if value in seen:
++            raise ValueError(f"duplicate {name}")
++        seen.add(value)
++
++
++class SnapshotPin(ContractModel):
++    record_id: RecordId
++    version: Version
++    digest: Digest
++
++
++class VersionedSnapshot(ContractModel):
++    schema_version: Literal["1.0.0"]
++    record_id: RecordId
++    version: Version
++
++    def pin(self) -> SnapshotPin:
++        return SnapshotPin(
++            record_id=self.record_id,
++            version=self.version,
++            digest=canonical_digest(self),
++        )
++
++
++class DatasetSample(ContractModel):
++    sample_id: RecordId
++    image_sha256: Digest
++    image_dimensions: ImageDimensions
++    dedup_group: RecordId
++    split: Split
++
++
++class DatasetManifest(VersionedSnapshot):
++    scope: IdempotencyScope
++    samples: Samples[DatasetSample]
++
++    @model_validator(mode="after")
++    def dataset_integrity(self) -> Self:
++        require_unique((item.sample_id for item in self.samples), "sample ID")
++        require_unique((item.image_sha256 for item in self.samples), "image digest")
++        group_splits: dict[str, Split] = {}
++        for item in self.samples:
++            if group_splits.setdefault(item.dedup_group, item.split) != item.split:
++                raise ValueError("deduplication group crosses dataset splits")
++        return self
++
++
++class ScoringProtocol(ContractModel):
++    schema_version: Literal["1.0.0"]
++    protocol_id: ArtifactId
++    version: Version
++    bundle_digest: Digest
++    iou_threshold_basis_points: Annotated[int, Field(ge=1, le=10_000)]
++    matching: Literal["greedy_iou_then_truth_id_then_prediction_id"]
++    profile_refs: Entries[ProfileContentRef]
++    question_refs: Entries[QuestionContentRef]
++    geometry_refs: Entries[FactSchemaContentRef]
++    rule_paths: Entries[RulePath]
++
++    @model_validator(mode="after")
++    def catalogue(self) -> Self:
++        require_unique_references(self.profile_refs)
++        require_unique_references(self.question_refs)
++        require_unique_references(self.geometry_refs)
++        require_unique(
++            (
++                (p.rule_set_ref.artifact_id, p.rule_ref.artifact_id)
++                for p in self.rule_paths
++            ),
++            "logical Rule path",
++        )
++        return self
++
++    def pin(self) -> ScoringProtocolPin:
++        return ScoringProtocolPin(
++            protocol_id=self.protocol_id,
++            version=self.version,
++            digest=canonical_digest(self),
++        )
++
++
++class QuestionLabel(ContractModel):
++    question_ref: QuestionContentRef
++    value: Value
++
++
++class GeometryLabel(ContractModel):
++    fact_schema_ref: FactSchemaContentRef
++    value: Value
++
++
++class RuleLabel(ContractModel):
++    path: RulePath
++    matched: bool
++
++
++class LabeledObject(ContractModel):
++    label_id: RecordId
++    profile_ref: ProfileContentRef
++    box: BBoxXYXY
++    questions: Entries[QuestionLabel]
++    geometry: Entries[GeometryLabel]
++    rules: Entries[RuleLabel]
++
++    @model_validator(mode="after")
++    def unique_labels(self) -> Self:
++        require_unique_references(tuple(item.question_ref for item in self.questions))
++        require_unique_references(tuple(item.fact_schema_ref for item in self.geometry))
++        require_unique((item.path for item in self.rules), "Rule label")
++        return self
++
++
++class SampleLabels(ContractModel):
++    # Null means no complete Profile-presence annotation. An empty tuple confirms
++    # absence of all Profiles in the protocol catalogue.
++    present_profiles: Entries[ProfileContentRef] | None
++    objects: Objects[LabeledObject]
++    task_violation: bool | None
++
++    @model_validator(mode="after")
++    def coherent_labels(self) -> Self:
++        require_unique((item.label_id for item in self.objects), "object label ID")
++        if self.present_profiles is not None:
++            require_unique_references(self.present_profiles)
++            if any(
++                obj.profile_ref not in self.present_profiles for obj in self.objects
++            ):
++                raise ValueError("object label contradicts annotated Profile presence")
++        if (
++            self.present_profiles is None
++            and not self.objects
++            and self.task_violation is None
++        ):
++            raise ValueError("labeled samples require an independent truth claim")
++        return self
++
++
++class FactPrediction(ContractModel):
++    status: FactStatus
++    value: Value | None = None
++
++    @model_validator(mode="after")
++    def known_has_value(self) -> Self:
++        if (self.value is not None) != (self.status is FactStatus.KNOWN):
++            raise ValueError("only known Facts can supply a value")
++        return self
++
++
++class QuestionPrediction(FactPrediction):
++    question_ref: QuestionContentRef
++
++
++class GeometryPrediction(FactPrediction):
++    fact_schema_ref: FactSchemaContentRef
++
++
++class RulePrediction(ContractModel):
++    path: RulePath
++    status: Literal["evaluated", "blocked", "skipped", "not_evaluated"]
++    predicate: RuleTruth | None = None
++
++    @model_validator(mode="after")
++    def evaluated_predicate(self) -> Self:
++        if (self.predicate is not None) != (self.status == "evaluated"):
++            raise ValueError("Rule result requires an effective evaluated predicate")
++        return self
++
++
++class PredictedObject(ContractModel):
++    object_id: RecordId
++    box: BBoxXYXY
++    questions: Entries[QuestionPrediction]
++    geometry: Entries[GeometryPrediction]
++    rules: Entries[RulePrediction]
++
++    @model_validator(mode="after")
++    def unique_predictions(self) -> Self:
++        require_unique_references(tuple(item.question_ref for item in self.questions))
++        require_unique_references(tuple(item.fact_schema_ref for item in self.geometry))
++        require_unique((item.path for item in self.rules), "predicted Rule path")
++        return self
++
++
++class ProfilePrediction(ContractModel):
++    profile_ref: ProfileContentRef
++    grounding: GroundingOutcome
++    objects: Objects[PredictedObject]
++
++    @model_validator(mode="after")
++    def grounding_result(self) -> Self:
++        if (self.grounding is GroundingOutcome.OBJECTS and not self.objects) or (
++            self.grounding not in (GroundingOutcome.OBJECTS, GroundingOutcome.PARTIAL)
++            and self.objects
++        ):
++            raise ValueError("grounding objects require objects or partial outcome")
++        return self
++
++
++class SamplePrediction(ContractModel):
++    sample_id: RecordId
++    task: AcceptedTask
++    execution: ExecutionRecord
++    model_invocations: ModelAttempts[ModelInvocation]
++    tool_executions: Entries[ToolExecution]
++    discovery: DiscoveryOutcome
++    profiles: Entries[ProfilePrediction]
++    decision: DecisionResult | None
++    auto_cleared: bool
++
++    @model_validator(mode="after")
++    def execution_source(self) -> Self:
++        execution, task = self.execution, self.task
++        if (
++            execution.task_id,
++            execution.pins.release_id,
++            execution.pins.bundle_digest,
++        ) != (task.task_id, task.release_id, task.bundle_digest):
++            raise ValueError(
++                "Task and Execution must have the same source and release pins"
++            )
++        if execution.status in (ExecutionStatus.INITIALIZED, ExecutionStatus.RUNNING):
++            raise ValueError("evaluation requires a terminal Execution")
++        require_unique(
++            (entry.profile_ref for entry in self.profiles), "discovered Profile"
++        )
++        object_ids = tuple(
++            obj.object_id for entry in self.profiles for obj in entry.objects
++        )
++        require_unique(object_ids, "prediction object ID")
++        if len(object_ids) > 512:
++            raise ValueError("too many objects for one evaluation sample")
++        if (self.discovery is DiscoveryOutcome.HITS and not self.profiles) or (
++            self.discovery not in (DiscoveryOutcome.HITS, DiscoveryOutcome.PARTIAL)
++            and self.profiles
++        ):
++            raise ValueError("discovered Profiles require hits or partial outcome")
++        if self.auto_cleared and (
++            self.decision is not DecisionResult.NO_VIOLATION
++            or execution.status is not ExecutionStatus.COMPLETED
++            or self.discovery is not DiscoveryOutcome.HITS
++        ):
++            raise ValueError(
++                "automatic clearance requires complete negative processing"
++            )
++        if self.decision is DecisionResult.NO_VIOLATION and (
++            self.discovery is not DiscoveryOutcome.HITS
++            or execution.status is not ExecutionStatus.COMPLETED
++            or any(
++                item.grounding is not GroundingOutcome.OBJECTS for item in self.profiles
++            )
++        ):
++            raise ValueError(
++                "no_violation requires complete discovery and grounded targets"
++            )
++        self._validate_attempts()
++        return self
++
++    def _validate_attempts(self) -> None:
++        execution = self.execution
++        model_ids = tuple(row.model_invocation_id for row in self.model_invocations)
++        require_unique(model_ids, "ModelInvocation ID")
++        require_unique(
++            (row.tool_execution_id for row in self.tool_executions), "ToolExecution ID"
++        )
++        if not {ref.record_id for ref in execution.model_invocation_refs} <= set(
++            model_ids
++        ):
++            raise ValueError("missing pinned ModelInvocation records")
++        model_pins = {pin.binding_ref: pin for pin in execution.pins.model_pins}
++        for row in self.model_invocations:
++            configured = row.configured_provider
++            pin = model_pins.get(configured.binding_ref)
++            if (
++                row.execution_id != execution.execution_id
++                or pin is None
++                or (
++                    configured.provider_policy_ref != pin.provider_policy_ref
++                    or configured.primary_deployment_id != pin.primary_deployment_id
++                    or row.route_trace.fallback_policy_ref != pin.fallback_policy_ref
++                )
++            ):
++                raise ValueError("ModelInvocation contradicts Execution configuration")
++            deployments = {
++                deployment.deployment_id: deployment for deployment in pin.deployments
++            }
++            primary = deployments[pin.primary_deployment_id]
++            selected = deployments.get(row.route_trace.selected_deployment_id)
++            if (
++                selected is None
++                or (
++                    configured.provider_id,
++                    configured.provider_kind,
++                    configured.logical_model_id,
++                )
++                != (
++                    primary.provider_id,
++                    primary.provider_kind,
++                    primary.logical_model_id,
++                )
++                or (
++                    row.actual_provider is not None
++                    and (
++                        row.actual_provider.provider_id,
++                        row.actual_provider.provider_kind,
++                    )
++                    != (selected.provider_id, selected.provider_kind)
++                )
++            ):
++                raise ValueError(
++                    "ModelInvocation provider identity contradicts Execution pins"
++                )
++        tool_refs = {pin.tool_ref for pin in execution.pins.tool_pins}
++        if any(
++            row.execution_id != execution.execution_id or row.tool_ref not in tool_refs
++            for row in self.tool_executions
++        ):
++            raise ValueError("ToolExecution contradicts Execution configuration")
++
++
++class ExecutionCohort(ContractModel):
++    """Execution configuration shared by the trial. Each input digest stays per sample."""
++
++    release_id: RecordId
++    bundle_digest: Digest
++    runtime_version: Version
++    workflow_version: Version
++    model_pins: Entries[ConfiguredModelPin]
++    tool_pins: Entries[ConfiguredToolPin]
++
++    @classmethod
++    def from_execution(cls, pins: ExecutionPins) -> Self:
++        return cls.model_validate(pins.model_dump(exclude={"input_digest"}))
++
++
++class PredictionSnapshot(VersionedSnapshot):
++    dataset: SnapshotPin
++    scope: IdempotencyScope
++    split: Literal["holdout"]
++    cohort: ExecutionCohort
++    producer: ActorRef
++    entries: Samples[SamplePrediction]
++
++    @model_validator(mode="after")
++    def prediction_identity(self) -> Self:
++        require_unique(
++            (entry.sample_id for entry in self.entries), "prediction sample ID"
++        )
++        require_unique(
++            (entry.execution.execution_id for entry in self.entries), "Execution ID"
++        )
++        require_unique((entry.task.task_id for entry in self.entries), "Task ID")
++        require_unique(
++            (
++                row.model_invocation_id
++                for entry in self.entries
++                for row in entry.model_invocations
++            ),
++            "ModelInvocation ID across samples",
++        )
++        require_unique(
++            (
++                row.tool_execution_id
++                for entry in self.entries
++                for row in entry.tool_executions
++            ),
++            "ToolExecution ID across samples",
++        )
++
++        if any(
++            entry.task.idempotency_scope != self.scope
++            or ExecutionCohort.from_execution(entry.execution.pins) != self.cohort
++            for entry in self.entries
++        ):
++            raise ValueError("prediction samples must share the exact cohort and scope")
++        return self
+--- /dev/null
++++ b/src/jimu_runtime/evaluation/review.py
+@@ -0,0 +1,91 @@
++"""Versioned Bad Case attribution for completed offline evaluation reports."""
++
++from typing import Literal, Self
++
++from pydantic import model_validator
++
++from jimu_runtime.domain.definition_support import (
++    Description,
++    UTCDateTime,
++)
++from jimu_runtime.domain.primitives import RecordId
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.domain.runtime.executions import PinnedRuntimeInput
++from jimu_runtime.domain.runtime.facts import EvidenceRef
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.evaluation.contracts import (
++    Entries,
++    SnapshotPin,
++    VersionedSnapshot,
++    require_unique,
++)
++from jimu_runtime.evaluation.scoring import EvaluationReport
++
++
++class AttributionEvidence(PinnedRuntimeInput):
++    ref: EvidenceRef
++
++
++class BadCaseAttribution(VersionedSnapshot):
++    report: SnapshotPin
++    scope: IdempotencyScope
++    sample_id: RecordId
++    attributed_stage: Literal[
++        "dataset",
++        "discovery",
++        "grounding",
++        "question",
++        "geometry",
++        "rule",
++        "task",
++        "inconclusive",
++    ]
++    rationale: Description
++    actor: ActorRef
++    recorded_at: UTCDateTime
++    evidence: Entries[AttributionEvidence]
++    supersedes: SnapshotPin | None
++
++    @model_validator(mode="after")
++    def attribution_integrity(self) -> Self:
++        if self.actor.actor_kind != "human":
++            raise ValueError("attribution requires a human actor recorded by the host")
++        if self.supersedes is not None and (
++            self.supersedes.record_id != self.record_id
++            or self.supersedes.version == self.version
++        ):
++            raise ValueError(
++                "attribution must append a different revision of this case"
++            )
++        require_unique((row.ref for row in self.evidence), "attribution evidence")
++        return self
++
++    def validate_source(self, report: EvaluationReport) -> None:
++        checked = EvaluationReport.model_validate(report)
++        if (
++            checked.pin() != self.report
++            or checked.scope != self.scope
++            or not any(row.sample_id == self.sample_id for row in checked.samples)
++        ):
++            raise ValueError("attribution must address the exact report and sample")
++
++
++def revise_attribution(
++    report: EvaluationReport,
++    previous: BadCaseAttribution,
++    revision: BadCaseAttribution,
++) -> BadCaseAttribution:
++    """Validate a correction against the exact prior attribution without mutation."""
++    previous = BadCaseAttribution.model_validate(previous)
++    revision = BadCaseAttribution.model_validate(revision)
++    previous.validate_source(report)
++    revision.validate_source(report)
++    if (
++        revision.supersedes != previous.pin()
++        or revision.sample_id != previous.sample_id
++        or revision.recorded_at < previous.recorded_at
++    ):
++        raise ValueError(
++            "attribution revision must pin the same case and follow its prior record"
++        )
++    return revision
+--- /dev/null
++++ b/src/jimu_runtime/evaluation/scoring.py
+@@ -0,0 +1,732 @@
++"""Deterministic offline stage scoring of independently pinned snapshots."""
++
++from collections import Counter, defaultdict
++from collections.abc import Iterable
++from fractions import Fraction
++from typing import Annotated, Literal, Self
++
++from pydantic import Field, model_validator
++
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.enums import DecisionResult, ExecutionStatus, FactStatus
++from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
++from jimu_runtime.domain.fact_selectors import FactSchemaContentRef, QuestionContentRef
++from jimu_runtime.domain.primitives import Digest, RecordId, Version
++from jimu_runtime.domain.references import ContentRef
++from jimu_runtime.domain.runtime.applicability import RuleTruth
++from jimu_runtime.domain.runtime.decisions import RulePath
++from jimu_runtime.domain.runtime.facts import ProfileContentRef
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.invocations import ActualProviderIdentity
++from jimu_runtime.domain.runtime.media import BBoxXYXY
++from jimu_runtime.domain.runtime.perception import DiscoveryOutcome, GroundingOutcome
++from jimu_runtime.domain.runtime.replay import ScoringProtocolPin
++from jimu_runtime.domain.runtime.tool_executions import ImplementationVersionResolution
++from jimu_runtime.domain.values import Value
++from jimu_runtime.evaluation.contracts import (
++    DatasetManifest,
++    DatasetSample,
++    Entries,
++    ExecutionCohort,
++    FactPrediction,
++    LabeledObject,
++    ModelAttempts,
++    Objects,
++    PredictedObject,
++    PredictionSnapshot,
++    ReviewState,
++    RulePrediction,
++    SampleLabels,
++    SamplePrediction,
++    Samples,
++    ScoringProtocol,
++    SnapshotPin,
++    VersionedSnapshot,
++    canonical_digest,
++)
++from jimu_runtime.evaluation.truth import TruthEntry, TruthSnapshot
++
++type Count = Annotated[int, Field(ge=0, le=2**53 - 1)]
++type Probability = Annotated[float, Field(ge=0.0, le=1.0)]
++type Outcome = Literal[
++    "correct",
++    "incorrect",
++    "unknown",
++    "error",
++    "not_applicable",
++    "not_evaluated",
++    "missing",
++    "unmatched",
++    "blocked",
++    "skipped",
++]
++
++
++class Ratio(ContractModel):
++    numerator: Count
++    denominator: Count
++    value: Probability | None
++
++    @model_validator(mode="after")
++    def check_ratio(self) -> Self:
++        expected = self.numerator / self.denominator if self.denominator else None
++        if self.numerator > self.denominator or self.value != expected:
++            raise ValueError("rate must agree with numerator and denominator")
++        return self
++
++    @classmethod
++    def of(cls, numerator: int, denominator: int) -> Self:
++        return cls(
++            numerator=numerator,
++            denominator=denominator,
++            value=numerator / denominator if denominator else None,
++        )
++
++
++class ComparisonCounts(ContractModel):
++    correct: Count
++    incorrect: Count
++    unknown: Count
++    error: Count
++    not_applicable: Count
++    not_evaluated: Count
++    missing: Count
++    unmatched: Count
++    blocked: Count
++    skipped: Count
++    accuracy: Ratio
++    coverage: Ratio
++
++    @model_validator(mode="after")
++    def validate_counts(self) -> Self:
++        covered = self.correct + self.incorrect
++        total = covered + (
++            self.unknown
++            + self.error
++            + self.not_applicable
++            + self.not_evaluated
++            + self.missing
++            + self.unmatched
++            + self.blocked
++            + self.skipped
++        )
++        if self.accuracy != Ratio.of(
++            self.correct, covered
++        ) or self.coverage != Ratio.of(covered, total):
++            raise ValueError("comparison rates must agree with outcome counts")
++        return self
++
++    @classmethod
++    def summarize(cls, outcomes: Iterable[Outcome]) -> Self:
++        counts = Counter(outcomes)
++        covered = counts["correct"] + counts["incorrect"]
++        return cls(
++            correct=counts["correct"],
++            incorrect=counts["incorrect"],
++            unknown=counts["unknown"],
++            error=counts["error"],
++            not_applicable=counts["not_applicable"],
++            not_evaluated=counts["not_evaluated"],
++            missing=counts["missing"],
++            unmatched=counts["unmatched"],
++            blocked=counts["blocked"],
++            skipped=counts["skipped"],
++            accuracy=Ratio.of(counts["correct"], covered),
++            coverage=Ratio.of(covered, counts.total()),
++        )
++
++
++class ProfileCheck(ContractModel):
++    profile_ref: ProfileContentRef
++    hit: bool
++
++
++class GroundingCheck(ContractModel):
++    profile_ref: ProfileContentRef
++    outcome: GroundingOutcome
++
++
++class QuestionCheck(ContractModel):
++    question_ref: QuestionContentRef
++    outcome: Outcome
++
++
++class GeometryCheck(ContractModel):
++    fact_schema_ref: FactSchemaContentRef
++    outcome: Outcome
++
++
++class RuleCheck(ContractModel):
++    path: RulePath
++    outcome: Outcome
++
++
++class BoxMatch(ContractModel):
++    object_id: RecordId
++    iou: Probability
++
++
++class ObjectCheck(ContractModel):
++    label_id: RecordId
++    profile_ref: ProfileContentRef
++    match: BoxMatch | None
++    questions: Entries[QuestionCheck]
++    geometry: Entries[GeometryCheck]
++    rules: Entries[RuleCheck]
++
++
++class ModelSource(ContractModel):
++    invocation_id: RecordId
++    digest: Digest
++    outcome: Literal["succeeded", "failed", "not_dispatched"]
++    actual_provider: ActualProviderIdentity | None
++
++
++class ToolSource(ContractModel):
++    tool_execution_id: RecordId
++    digest: Digest
++    outcome: Literal["succeeded", "partial", "failed", "not_dispatched"]
++    version_resolution: ImplementationVersionResolution
++    actual_version: Version | None
++
++
++class SampleScore(ContractModel):
++    sample_id: RecordId
++    image_sha256: Digest
++    task_id: RecordId
++    task_digest: Digest
++    execution_id: RecordId
++    execution_digest: Digest
++    execution_input_digest: Digest
++    execution_status: ExecutionStatus
++    models: ModelAttempts[ModelSource]
++    tools: Entries[ToolSource]
++    review_state: ReviewState
++    target_present: bool | None
++    discovery: DiscoveryOutcome
++    profiles: Entries[ProfileCheck]
++    grounding: Entries[GroundingCheck]
++    objects: Objects[ObjectCheck]
++    task_violation: bool | None
++    decision: DecisionResult | None
++    auto_cleared: bool
++
++
++class ProfileMetrics(ContractModel):
++    profile_ref: ProfileContentRef
++    recall: Ratio
++
++
++class QuestionMetrics(ContractModel):
++    question_ref: QuestionContentRef
++    comparison: ComparisonCounts
++
++
++class GeometryMetrics(ContractModel):
++    fact_schema_ref: FactSchemaContentRef
++    comparison: ComparisonCounts
++
++
++class RuleMetrics(ContractModel):
++    path: RulePath
++    comparison: ComparisonCounts
++
++
++class Summary(ContractModel):
++    samples: Count
++    labeled_samples: Count
++    unlabeled_samples: Count
++    conflicted_samples: Count
++    abstained_samples: Count
++    task_labeled_samples: Count
++    task_unknown_truth_samples: Count
++    profile_recall: Ratio
++    profiles: Entries[ProfileMetrics]
++    grounding_recall: Ratio
++    matched_mean_iou: Probability | None
++    # Mean IoU uses the match numerator of grounding_recall as its sample count.
++    questions: Entries[QuestionMetrics]
++    geometry: Entries[GeometryMetrics]
++    rules: Entries[RuleMetrics]
++    tool_success: Ratio
++    tool_failed: Count
++    tool_partial: Count
++    tool_not_dispatched: Count
++    tool_implementation_unavailable: Count
++    model_version_unavailable: Count
++    discovery_no_hits: Ratio
++    discovery_not_evaluated: Count
++    discovery_failed: Count
++    discovery_partial: Count
++    no_hits_target_miss: Ratio
++    no_hits_labeled_target_miss: Ratio
++    no_hits_target_truth_unavailable: Count
++    task_violation_precision: Ratio
++    task_violation_predictions_without_truth: Count
++    task_violation_recall: Ratio
++    task_violation_miss_rate: Ratio
++    erroneous_release_rate: Ratio
++    automatic_release_risk: Ratio
++    automatic_release_coverage: Ratio
++    automatic_release_unlabeled: Count
++    uncertain_tasks: Count
++    not_applicable_tasks: Count
++    not_evaluated_tasks: Count
++    failed_executions: Count
++    partial_failed_executions: Count
++    cancelled_executions: Count
++
++
++class EvaluationReport(VersionedSnapshot):
++    scope: IdempotencyScope
++    split: Literal["holdout"]
++    dataset: SnapshotPin
++    truth: SnapshotPin
++    predictions: SnapshotPin
++    scoring_protocol: ScoringProtocolPin
++    cohort: ExecutionCohort
++    samples: Samples[SampleScore]
++    summary: Summary
++
++
++def _check_inputs(
++    dataset: DatasetManifest,
++    truth: TruthSnapshot,
++    predictions: PredictionSnapshot,
++    protocol: ScoringProtocol,
++    expected_protocol: ScoringProtocolPin,
++) -> dict[str, DatasetSample]:
++    dataset_pin = dataset.pin()
++    if truth.dataset != dataset_pin or predictions.dataset != dataset_pin:
++        raise ValueError("truth and predictions must pin this exact dataset snapshot")
++    if dataset.scope != truth.scope or dataset.scope != predictions.scope:
++        raise ValueError("assessment scope mismatch")
++    if truth.split != predictions.split:
++        raise ValueError("truth and prediction splits must match")
++    if (
++        protocol.pin() != expected_protocol
++        or protocol.bundle_digest != predictions.cohort.bundle_digest
++    ):
++        raise ValueError("assessment protocol or Bundle digest mismatch")
++    samples = {
++        sample.sample_id: sample
++        for sample in dataset.samples
++        if sample.split == truth.split
++    }
++    if samples.keys() != {entry.sample_id for entry in truth.entries}:
++        raise ValueError("truth must account for every holdout sample exactly once")
++    if samples.keys() != {entry.sample_id for entry in predictions.entries}:
++        raise ValueError(
++            "predictions must account for every holdout sample exactly once"
++        )
++    return samples
++
++
++def _ref_key(ref: ContentRef) -> tuple[str, str, str]:
++    return ref.artifact_id, ref.version, ref.digest
++
++
++def _rule_key(path: RulePath) -> tuple[tuple[str, str, str], tuple[str, str, str]]:
++    return _ref_key(path.rule_set_ref), _ref_key(path.rule_ref)
++
++
++class _Catalogue:
++    def __init__(self, protocol: ScoringProtocol) -> None:
++        self.profiles = set(protocol.profile_refs)
++        self.questions = set(protocol.question_refs)
++        self.geometry = set(protocol.geometry_refs)
++        self.rules = set(protocol.rule_paths)
++
++    def check_object(self, item: LabeledObject | PredictedObject) -> None:
++        if (
++            any(row.question_ref not in self.questions for row in item.questions)
++            or any(row.fact_schema_ref not in self.geometry for row in item.geometry)
++            or any(row.path not in self.rules for row in item.rules)
++        ):
++            raise ValueError(
++                "object contains a Question, Geometry or Rule outside the protocol"
++            )
++
++
++def _iou(left: BBoxXYXY, right: BBoxXYXY) -> Fraction:
++    # Exact arithmetic over binary64 input coordinates avoids rounded ties and
++    # zero area after multiplication for very small, valid boxes.
++    ax0, ay0, ax1, ay1 = map(Fraction, left.xyxy)
++    bx0, by0, bx1, by1 = map(Fraction, right.xyxy)
++    width = min(ax1, bx1) - max(ax0, bx0)
++    height = min(ay1, by1) - max(ay0, by0)
++    if width <= 0 or height <= 0:
++        return Fraction(0)
++    intersection = width * height
++    left_area = (ax1 - ax0) * (ay1 - ay0)
++    right_area = (bx1 - bx0) * (by1 - by0)
++    return intersection / (left_area + right_area - intersection)
++
++
++def _matches(
++    labels: tuple[LabeledObject, ...],
++    predicted: dict[ProfileContentRef, tuple[PredictedObject, ...]],
++    threshold: Fraction,
++) -> dict[str, tuple[PredictedObject, Fraction]]:
++    candidates: list[tuple[Fraction, str, str]] = []
++    by_id: dict[str, PredictedObject] = {}
++    for label in labels:
++        for obj in predicted.get(label.profile_ref, ()):
++            iou = _iou(label.box, obj.box)
++            if iou >= threshold:
++                candidates.append((-iou, label.label_id, obj.object_id))
++                by_id[obj.object_id] = obj
++    matched: dict[str, tuple[PredictedObject, Fraction]] = {}
++    used_predictions: set[str] = set()
++    for negative_iou, label_id, object_id in sorted(candidates):
++        if label_id not in matched and object_id not in used_predictions:
++            matched[label_id] = by_id[object_id], -negative_iou
++            used_predictions.add(object_id)
++    return matched
++
++
++def _fact_check(truth: Value, prediction: FactPrediction | None) -> Outcome:
++    if prediction is None:
++        return "missing"
++    match prediction.status:
++        case FactStatus.KNOWN:
++            return "correct" if prediction.value == truth else "incorrect"
++        case FactStatus.UNKNOWN:
++            return "unknown"
++        case FactStatus.ERROR:
++            return "error"
++        case FactStatus.NOT_APPLICABLE:
++            return "not_applicable"
++        case FactStatus.NOT_EVALUATED:
++            return "not_evaluated"
++
++
++def _rule_check(truth: bool, prediction: RulePrediction | None) -> Outcome:
++    if prediction is None:
++        return "missing"
++    if prediction.status != "evaluated":
++        return prediction.status
++    if prediction.predicate is RuleTruth.UNKNOWN:
++        return "unknown"
++    return (
++        "correct" if truth == (prediction.predicate is RuleTruth.TRUE) else "incorrect"
++    )
++
++
++def _object_score(
++    truth: LabeledObject, match: tuple[PredictedObject, Fraction] | None
++) -> ObjectCheck:
++    pred, iou = match if match is not None else (None, None)
++    questions = {row.question_ref: row for row in pred.questions} if pred else {}
++    geometry = {row.fact_schema_ref: row for row in pred.geometry} if pred else {}
++    rules = {row.path: row for row in pred.rules} if pred else {}
++    return ObjectCheck(
++        label_id=truth.label_id,
++        profile_ref=truth.profile_ref,
++        match=BoxMatch(object_id=pred.object_id, iou=float(iou))
++        if pred and iou is not None
++        else None,
++        questions=tuple(
++            QuestionCheck(
++                question_ref=row.question_ref,
++                outcome=_fact_check(row.value, questions.get(row.question_ref))
++                if pred
++                else "unmatched",
++            )
++            for row in sorted(
++                truth.questions, key=lambda row: _ref_key(row.question_ref)
++            )
++        ),
++        geometry=tuple(
++            GeometryCheck(
++                fact_schema_ref=row.fact_schema_ref,
++                outcome=_fact_check(row.value, geometry.get(row.fact_schema_ref))
++                if pred
++                else "unmatched",
++            )
++            for row in sorted(
++                truth.geometry, key=lambda row: _ref_key(row.fact_schema_ref)
++            )
++        ),
++        rules=tuple(
++            RuleCheck(
++                path=row.path,
++                outcome=_rule_check(row.matched, rules.get(row.path))
++                if pred
++                else "unmatched",
++            )
++            for row in sorted(truth.rules, key=lambda row: _rule_key(row.path))
++        ),
++    )
++
++
++def _check_dataset_sample(
++    sample: DatasetSample,
++    labels: SampleLabels | None,
++    pred: SamplePrediction,
++    catalogue: _Catalogue,
++) -> None:
++    if pred.task.media_ref.sha256 != sample.image_sha256:
++        raise ValueError("prediction image does not match the frozen dataset sample")
++    if labels is not None:
++        for ref in labels.present_profiles or ():
++            if ref not in catalogue.profiles:
++                raise ValueError("truth Profile outside the exact protocol catalogue")
++        for obj in labels.objects:
++            if obj.profile_ref not in catalogue.profiles:
++                raise ValueError(
++                    "labeled object Profile outside the exact protocol catalogue"
++                )
++            obj.box.validate_bounds(sample.image_dimensions)
++            catalogue.check_object(obj)
++    for profile in pred.profiles:
++        if profile.profile_ref not in catalogue.profiles:
++            raise ValueError("prediction Profile outside the exact protocol catalogue")
++        for detected in profile.objects:
++            detected.box.validate_bounds(sample.image_dimensions)
++            catalogue.check_object(detected)
++
++
++def _sample_score(
++    sample: DatasetSample,
++    truth: TruthEntry,
++    pred: SamplePrediction,
++    catalogue: _Catalogue,
++    threshold: Fraction,
++) -> SampleScore:
++    labels = truth.labels
++    _check_dataset_sample(sample, labels, pred, catalogue)
++    predictions = {row.profile_ref: row.objects for row in pred.profiles}
++    present = labels.present_profiles if labels is not None else None
++    targets = labels.objects if labels is not None else ()
++    target_present = bool(present) if present is not None else True if targets else None
++    matches = _matches(targets, predictions, threshold)
++    return SampleScore(
++        sample_id=sample.sample_id,
++        image_sha256=sample.image_sha256,
++        task_id=pred.task.task_id,
++        task_digest=canonical_digest(pred.task),
++        execution_id=pred.execution.execution_id,
++        execution_digest=canonical_digest(pred.execution),
++        execution_input_digest=pred.execution.pins.input_digest,
++        execution_status=pred.execution.status,
++        models=tuple(
++            ModelSource(
++                invocation_id=row.model_invocation_id,
++                digest=canonical_digest(row),
++                outcome=row.outcome.status,
++                actual_provider=row.actual_provider,
++            )
++            for row in sorted(
++                pred.model_invocations, key=lambda row: row.model_invocation_id
++            )
++        ),
++        tools=tuple(
++            ToolSource(
++                tool_execution_id=row.tool_execution_id,
++                digest=canonical_digest(row),
++                outcome=row.status,
++                version_resolution=row.implementation_version_resolution,
++                actual_version=row.actual_implementation_version,
++            )
++            for row in sorted(
++                pred.tool_executions, key=lambda row: row.tool_execution_id
++            )
++        ),
++        review_state=truth.state,
++        target_present=target_present,
++        discovery=pred.discovery,
++        profiles=tuple(
++            ProfileCheck(profile_ref=ref, hit=ref in predictions)
++            for ref in sorted(
++                set(present or ()) | {row.profile_ref for row in targets}, key=_ref_key
++            )
++        ),
++        grounding=tuple(
++            GroundingCheck(profile_ref=row.profile_ref, outcome=row.grounding)
++            for row in sorted(pred.profiles, key=lambda row: _ref_key(row.profile_ref))
++        ),
++        objects=tuple(
++            _object_score(target, matches.get(target.label_id))
++            for target in sorted(targets, key=lambda row: row.label_id)
++        ),
++        task_violation=labels.task_violation if labels is not None else None,
++        decision=pred.decision,
++        auto_cleared=pred.auto_cleared,
++    )
++
++
++def _summarize(rows: tuple[SampleScore, ...], protocol: ScoringProtocol) -> Summary:
++    reviews: Counter[ReviewState] = Counter(row.review_state for row in rows)
++    discovery = Counter(row.discovery for row in rows)
++    executions = Counter(row.execution_status for row in rows)
++    decisions = Counter(row.decision for row in rows)
++    tool_status = Counter(tool.outcome for row in rows for tool in row.tools)
++    tool_version = Counter(
++        tool.version_resolution for row in rows for tool in row.tools
++    )
++    profiles: dict[ProfileContentRef, list[bool]] = defaultdict(list)
++    questions: dict[QuestionContentRef, list[Outcome]] = defaultdict(list)
++    geometry: dict[FactSchemaContentRef, list[Outcome]] = defaultdict(list)
++    rules: dict[RulePath, list[Outcome]] = defaultdict(list)
++    ious: list[float] = []
++    labeled_objects = 0
++    for row in rows:
++        for profile in row.profiles:
++            profiles[profile.profile_ref].append(profile.hit)
++        for obj in row.objects:
++            labeled_objects += 1
++            if obj.match is not None:
++                ious.append(obj.match.iou)
++            for question in obj.questions:
++                questions[question.question_ref].append(question.outcome)
++            for fact in obj.geometry:
++                geometry[fact.fact_schema_ref].append(fact.outcome)
++            for rule in obj.rules:
++                rules[rule.path].append(rule.outcome)
++
++    profile_hits = sum(sum(group) for group in profiles.values())
++    profile_labels = sum(len(group) for group in profiles.values())
++    labeled_tasks = [row for row in rows if row.task_violation is not None]
++    no_hits = [row for row in rows if row.discovery is DiscoveryOutcome.NO_HITS]
++    no_hits_labeled = [row for row in no_hits if row.target_present is not None]
++    true_positives = sum(
++        row.task_violation is True and row.decision is DecisionResult.VIOLATION
++        for row in labeled_tasks
++    )
++    labeled_violation_predictions = sum(
++        row.decision is DecisionResult.VIOLATION for row in labeled_tasks
++    )
++    all_violations = sum(row.task_violation is True for row in labeled_tasks)
++    erroneous_releases = sum(
++        row.task_violation is True and row.auto_cleared for row in labeled_tasks
++    )
++    labeled_auto_clears = sum(row.auto_cleared for row in labeled_tasks)
++    all_auto_clears = sum(row.auto_cleared for row in rows)
++    no_hits_target_misses = sum(row.target_present is True for row in no_hits_labeled)
++    return Summary(
++        samples=len(rows),
++        labeled_samples=reviews["labeled"],
++        unlabeled_samples=reviews["unlabeled"],
++        conflicted_samples=reviews["conflicted"],
++        abstained_samples=reviews["abstained"],
++        task_labeled_samples=len(labeled_tasks),
++        task_unknown_truth_samples=len(rows) - len(labeled_tasks),
++        profile_recall=Ratio.of(profile_hits, profile_labels),
++        profiles=tuple(
++            ProfileMetrics(
++                profile_ref=ref, recall=Ratio.of(sum(profiles[ref]), len(profiles[ref]))
++            )
++            for ref in sorted(protocol.profile_refs, key=_ref_key)
++        ),
++        grounding_recall=Ratio.of(len(ious), labeled_objects),
++        matched_mean_iou=sum(ious) / len(ious) if ious else None,
++        questions=tuple(
++            QuestionMetrics(
++                question_ref=ref, comparison=ComparisonCounts.summarize(questions[ref])
++            )
++            for ref in sorted(protocol.question_refs, key=_ref_key)
++        ),
++        geometry=tuple(
++            GeometryMetrics(
++                fact_schema_ref=ref,
++                comparison=ComparisonCounts.summarize(geometry[ref]),
++            )
++            for ref in sorted(protocol.geometry_refs, key=_ref_key)
++        ),
++        rules=tuple(
++            RuleMetrics(path=path, comparison=ComparisonCounts.summarize(rules[path]))
++            for path in sorted(protocol.rule_paths, key=_rule_key)
++        ),
++        tool_success=Ratio.of(
++            tool_status["succeeded"],
++            tool_status.total() - tool_status["not_dispatched"],
++        ),
++        tool_failed=tool_status["failed"],
++        tool_partial=tool_status["partial"],
++        tool_not_dispatched=tool_status["not_dispatched"],
++        tool_implementation_unavailable=tool_version["unavailable"],
++        model_version_unavailable=sum(
++            model.actual_provider is not None
++            and model.actual_provider.version_resolution == "unavailable"
++            for row in rows
++            for model in row.models
++        ),
++        discovery_no_hits=Ratio.of(len(no_hits), len(rows)),
++        discovery_not_evaluated=discovery[DiscoveryOutcome.NOT_EVALUATED],
++        discovery_failed=discovery[DiscoveryOutcome.FAILED],
++        discovery_partial=discovery[DiscoveryOutcome.PARTIAL],
++        no_hits_target_miss=Ratio.of(no_hits_target_misses, len(no_hits)),
++        no_hits_labeled_target_miss=Ratio.of(
++            no_hits_target_misses, len(no_hits_labeled)
++        ),
++        no_hits_target_truth_unavailable=len(no_hits) - len(no_hits_labeled),
++        task_violation_precision=Ratio.of(
++            true_positives, labeled_violation_predictions
++        ),
++        task_violation_predictions_without_truth=(
++            decisions[DecisionResult.VIOLATION] - labeled_violation_predictions
++        ),
++        task_violation_recall=Ratio.of(true_positives, all_violations),
++        task_violation_miss_rate=Ratio.of(
++            all_violations - true_positives, all_violations
++        ),
++        erroneous_release_rate=Ratio.of(erroneous_releases, all_violations),
++        automatic_release_risk=Ratio.of(erroneous_releases, labeled_auto_clears),
++        automatic_release_coverage=Ratio.of(all_auto_clears, len(rows)),
++        automatic_release_unlabeled=all_auto_clears - labeled_auto_clears,
++        uncertain_tasks=decisions[DecisionResult.UNCERTAIN],
++        not_applicable_tasks=decisions[DecisionResult.NOT_APPLICABLE],
++        not_evaluated_tasks=decisions[None],
++        failed_executions=executions[ExecutionStatus.FAILED],
++        partial_failed_executions=executions[ExecutionStatus.PARTIAL_FAILED],
++        cancelled_executions=executions[ExecutionStatus.CANCELLED],
++    )
++
++
++def score(
++    dataset: DatasetManifest,
++    truth: TruthSnapshot,
++    predictions: PredictionSnapshot,
++    protocol: ScoringProtocol,
++    *,
++    expected_protocol: ScoringProtocolPin,
++) -> EvaluationReport:
++    """Score the frozen holdout, without reading images or calling models or tools."""
++    dataset = DatasetManifest.model_validate(dataset)
++    truth = TruthSnapshot.model_validate(truth)
++    predictions = PredictionSnapshot.model_validate(predictions)
++    protocol = ScoringProtocol.model_validate(protocol)
++    expected_protocol = ScoringProtocolPin.model_validate(expected_protocol)
++    samples = _check_inputs(dataset, truth, predictions, protocol, expected_protocol)
++    by_prediction = {row.sample_id: row for row in predictions.entries}
++    by_truth = {row.sample_id: row for row in truth.entries}
++    catalogue = _Catalogue(protocol)
++    threshold = Fraction(protocol.iou_threshold_basis_points, 10_000)
++    rows = tuple(
++        _sample_score(
++            sample, by_truth[sample_id], by_prediction[sample_id], catalogue, threshold
++        )
++        for sample_id, sample in sorted(samples.items())
++    )
++    prediction_pin, truth_pin = predictions.pin(), truth.pin()
++    identity = sha256_digest(
++        canonical_bytes(
++            [truth_pin.digest, prediction_pin.digest, expected_protocol.digest]
++        )
++    )
++    return EvaluationReport(
++        schema_version="1.0.0",
++        record_id=f"evaluation.{identity}",
++        version="1.0.0",
++        scope=dataset.scope,
++        split=truth.split,
++        dataset=dataset.pin(),
++        truth=truth_pin,
++        predictions=prediction_pin,
++        scoring_protocol=expected_protocol,
++        cohort=predictions.cohort,
++        samples=rows,
++        summary=_summarize(rows, protocol),
++    )
+--- /dev/null
++++ b/src/jimu_runtime/evaluation/truth.py
+@@ -0,0 +1,303 @@
++"""Independent truth snapshots backed by append-only human reviews."""
++
++from __future__ import annotations
++
++from typing import Literal, Self
++
++from pydantic import model_validator
++
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_support import (
++    Description,
++    ReviewReportRef,
++    UTCDateTime,
++)
++from jimu_runtime.domain.primitives import RecordId, Version
++from jimu_runtime.domain.runtime.authority import ActorRef
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.evaluation.contracts import (
++    DatasetManifest,
++    Entries,
++    ReviewState,
++    SampleLabels,
++    Samples,
++    SnapshotPin,
++    VersionedSnapshot,
++    canonical_digest,
++    require_unique,
++)
++
++
++class ReviewVote(ContractModel):
++    schema_version: Literal["1.0.0"]
++    vote_id: RecordId
++    actor: ActorRef
++    recorded_at: UTCDateTime
++    rationale: Description
++    labels: SampleLabels | None  # A null vote explicitly abstains.
++
++
++class Adjudication(ContractModel):
++    schema_version: Literal["1.0.0"]
++    adjudication_id: RecordId
++    actor: ActorRef
++    recorded_at: UTCDateTime
++    rationale: Description
++    selected_vote_id: RecordId | None  # Null records an affirmative abstention.
++
++
++class ReviewHistory(VersionedSnapshot):
++    dataset: SnapshotPin
++    scope: IdempotencyScope
++    split: Literal["holdout"]
++    sample_id: RecordId
++    base_truth: SnapshotPin | None
++    previous: SnapshotPin | None
++    votes: Entries[ReviewVote]
++    adjudication: Adjudication | None
++
++    @model_validator(mode="after")
++    def review_integrity(self) -> Self:
++        if self.previous is not None and (
++            self.previous.record_id != self.record_id
++            or self.previous.version == self.version
++        ):
++            raise ValueError(
++                "previous review must pin a different version of this history"
++            )
++        require_unique((vote.vote_id for vote in self.votes), "vote ID")
++        require_unique((vote.actor for vote in self.votes), "review voter")
++        if any(vote.actor.actor_kind != "human" for vote in self.votes):
++            raise ValueError("a vote requires a human actor recorded by the host")
++        if tuple(vote.recorded_at for vote in self.votes) != tuple(
++            sorted(vote.recorded_at for vote in self.votes)
++        ):
++            raise ValueError("votes must be in append order")
++        if self.adjudication is not None:
++            self._check_adjudication(self.adjudication)
++        return self
++
++    def _check_adjudication(self, result: Adjudication) -> None:
++        if not self.votes or result.recorded_at < self.votes[-1].recorded_at:
++            raise ValueError("adjudication must follow the recorded votes")
++        if result.actor.actor_kind != "human" or result.actor in {
++            vote.actor for vote in self.votes
++        }:
++            raise ValueError("adjudication requires an independent human actor")
++        if result.selected_vote_id is not None and not any(
++            vote.vote_id == result.selected_vote_id and vote.labels is not None
++            for vote in self.votes
++        ):
++            raise ValueError("adjudication must select a recorded substantive vote")
++
++    def _append(
++        self,
++        *,
++        version: Version,
++        votes: tuple[ReviewVote, ...],
++        adjudication: Adjudication | None,
++    ) -> Self:
++        if self.adjudication is not None:
++            raise ValueError(
++                "resolved review is closed; open a new review against revised truth"
++            )
++        return type(self).model_validate(
++            {
++                **self.model_dump(mode="python"),
++                "version": version,
++                "previous": self.pin(),
++                "votes": votes,
++                "adjudication": adjudication,
++            }
++        )
++
++    def append_vote(self, vote: ReviewVote, *, version: Version) -> Self:
++        return self._append(
++            version=version, votes=(*self.votes, vote), adjudication=None
++        )
++
++    def adjudicate(self, result: Adjudication, *, version: Version) -> Self:
++        return self._append(version=version, votes=self.votes, adjudication=result)
++
++    def _disposition(self) -> tuple[ReviewState, SampleLabels | None]:
++        result = self.adjudication
++        if result is not None and result.selected_vote_id is not None:
++            vote = next(
++                vote for vote in self.votes if vote.vote_id == result.selected_vote_id
++            )
++            return "labeled", vote.labels
++        substantive = [vote.labels for vote in self.votes if vote.labels is not None]
++        if result is not None or (self.votes and not substantive):
++            return "abstained", None
++        if substantive:
++            first_claim = _label_claim(substantive[0])
++            if any(_label_claim(labels) != first_claim for labels in substantive[1:]):
++                return "conflicted", None
++        return "unlabeled", None
++
++    def reviewed_entry(self, review_ref: ReviewReportRef) -> TruthEntry:
++        """Project recorded adjudication or unresolved review into an independent label."""
++        state, labels = self._disposition()
++        return TruthEntry(
++            sample_id=self.sample_id,
++            state=state,
++            labels=labels,
++            review_ref=review_ref,
++            review=self,
++        )
++
++
++def _label_claim(labels: SampleLabels) -> tuple[object, ...]:
++    # Annotators may use different local label IDs and ordering for the same claims.
++    objects = sorted(
++        canonical_digest(
++            obj.model_copy(
++                update={
++                    "label_id": "label",
++                    "questions": tuple(
++                        sorted(
++                            obj.questions,
++                            key=lambda row: canonical_digest(row.question_ref),
++                        )
++                    ),
++                    "geometry": tuple(
++                        sorted(
++                            obj.geometry,
++                            key=lambda row: canonical_digest(row.fact_schema_ref),
++                        )
++                    ),
++                    "rules": tuple(
++                        sorted(obj.rules, key=lambda row: canonical_digest(row.path))
++                    ),
++                }
++            )
++        )
++        for obj in labels.objects
++    )
++    profiles = labels.present_profiles
++    return (
++        None if profiles is None else frozenset(profiles),
++        labels.task_violation,
++        objects,
++    )
++
++
++class TruthEntry(ContractModel):
++    sample_id: RecordId
++    state: ReviewState
++    labels: SampleLabels | None = None
++    review_ref: ReviewReportRef | None = None
++
++    review: ReviewHistory | None = None
++
++    @model_validator(mode="after")
++    def reviewed_truth(self) -> Self:
++        if self.review is None:
++            if (
++                self.state != "unlabeled"
++                or self.labels is not None
++                or self.review_ref is not None
++            ):
++                raise ValueError("resolved truth requires recorded human review")
++            return self
++        if (
++            self.review.sample_id != self.sample_id
++            or self.review_ref is None
++            or self.review_ref.sha256 != canonical_digest(self.review)
++            or self.review_ref.version != self.review.version
++        ):
++            raise ValueError("truth must pin the exact review revision and sample")
++        if (self.state, self.labels) != self.review._disposition():
++            raise ValueError("truth must match the recorded review disposition")
++        return self
++
++
++class TruthSnapshot(VersionedSnapshot):
++    dataset: SnapshotPin
++    scope: IdempotencyScope
++    split: Literal["holdout"]
++    prior: SnapshotPin | None
++    entries: Samples[TruthEntry]
++
++    @model_validator(mode="after")
++    def truth_identity(self) -> Self:
++        require_unique((item.sample_id for item in self.entries), "truth sample ID")
++        if self.prior is not None and (
++            self.prior.record_id != self.record_id or self.prior.version == self.version
++        ):
++            raise ValueError(
++                "prior truth must pin another version of this snapshot identity"
++            )
++        for entry in self.entries:
++            review = entry.review
++            if review is None:
++                continue
++            if (
++                review.dataset != self.dataset
++                or review.scope != self.scope
++                or review.split != self.split
++            ):
++                raise ValueError(
++                    "review must match the exact truth dataset, scope and split"
++                )
++            if review.base_truth is not None and (
++                review.base_truth.record_id != self.record_id
++                or review.base_truth.version == self.version
++            ):
++                raise ValueError(
++                    "review base must pin an earlier revision of this truth"
++                )
++        return self
++
++
++def revise_truth(
++    dataset: DatasetManifest,
++    previous: TruthSnapshot,
++    review: ReviewHistory,
++    review_ref: ReviewReportRef,
++    *,
++    version: Version,
++) -> TruthSnapshot:
++    """Publish a new in-memory truth revision with one independently reviewed entry."""
++    dataset = DatasetManifest.model_validate(dataset)
++    previous = TruthSnapshot.model_validate(previous)
++    review = ReviewHistory.model_validate(review)
++    source = previous.pin()
++    if (
++        dataset.pin() != previous.dataset
++        or review.base_truth != source
++        or review.dataset != previous.dataset
++        or review.scope != previous.scope
++        or dataset.scope != previous.scope
++        or review.split != previous.split
++    ):
++        raise ValueError(
++            "review and prior truth must pin the exact dataset, scope and revision"
++        )
++    sample = next(
++        (row for row in dataset.samples if row.sample_id == review.sample_id), None
++    )
++    holdout = {row.sample_id for row in dataset.samples if row.split == previous.split}
++    if (
++        sample is None
++        or sample.split != previous.split
++        or holdout != {row.sample_id for row in previous.entries}
++    ):
++        raise ValueError("truth review must address the exact holdout sample")
++    updated = review.reviewed_entry(review_ref)
++    if updated.labels is not None:
++        for obj in updated.labels.objects:
++            obj.box.validate_bounds(sample.image_dimensions)
++    return TruthSnapshot(
++        schema_version="1.0.0",
++        record_id=previous.record_id,
++        version=version,
++        dataset=previous.dataset,
++        scope=previous.scope,
++        split=previous.split,
++        prior=source,
++        entries=tuple(
++            updated if row.sample_id == review.sample_id else row
++            for row in previous.entries
++        ),
++    )
+--- /dev/null
++++ b/tests/contract/test_wp06_eval_contracts.py
+@@ -0,0 +1,44 @@
++"""JSON round trips and generated schema for the frozen evaluation inputs and report."""
++
++import json
++
++import pytest
++from fixtures.wp06.evaluation_sample import synthetic_inputs
++from jsonschema import Draft202012Validator, FormatChecker
++from pydantic import ValidationError
++
++from jimu_runtime.evaluation import score
++from jimu_runtime.evaluation.scoring import Ratio
++
++
++def test_generated_schemas_and_roundtrips():
++    dataset, truth, predictions, protocol = synthetic_inputs()
++    report = score(
++        dataset, truth, predictions, protocol, expected_protocol=protocol.pin()
++    )
++    for model in (dataset, truth, predictions, protocol, report):
++        schema = type(model).model_json_schema()
++        Draft202012Validator.check_schema(schema)
++        validator = Draft202012Validator(schema, format_checker=FormatChecker())
++        payload = json.loads(model.model_dump_json())
++        validator.validate(payload)
++        restored = type(model).model_validate_json(model.model_dump_json())
++        assert restored == model and restored.pin() == model.pin()
++        payload["undocumented"] = True
++        assert not validator.is_valid(payload)
++        with pytest.raises(ValidationError, match="extra"):
++            type(model).model_validate_json(json.dumps(payload))
++
++
++@pytest.mark.parametrize(
++    "bad",
++    [
++        {"numerator": 1, "denominator": 0, "value": None},
++        {"numerator": 0, "denominator": 0, "value": 0.0},
++        {"numerator": 1, "denominator": 2, "value": 0.25},
++        {"numerator": True, "denominator": 2, "value": 0.5},
++    ],
++)
++def test_invalid_ratios_rejected(bad):
++    with pytest.raises(ValidationError):
++        Ratio.model_validate(bad)
+--- /dev/null
++++ b/tests/negative/test_wp06_eval_rejections.py
+@@ -0,0 +1,174 @@
++"""Reject split contamination, mismatched pins and unsupported truth or provenance."""
++
++import pytest
++from fixtures.wp06.evaluation_sample import (
++    adjudication,
++    make_vote,
++    new_review,
++    report_ref,
++    synthetic_inputs,
++)
++from pydantic import ValidationError
++
++from jimu_runtime.domain.enums import DecisionResult
++from jimu_runtime.domain.runtime.perception import DiscoveryOutcome
++from jimu_runtime.evaluation import (
++    DatasetManifest,
++    PredictionSnapshot,
++    TruthSnapshot,
++    revise_truth,
++    score,
++)
++from jimu_runtime.evaluation.contracts import SamplePrediction
++from jimu_runtime.evaluation.truth import TruthEntry
++
++
++@pytest.mark.parametrize("which", ["sample_id", "image_sha256", "dedup_group"])
++def test_manifest_rejects_duplicate_or_leaked_samples(which):
++    dataset, *_ = synthetic_inputs()
++    cal = dataset.samples[-1].model_copy(
++        update={which: getattr(dataset.samples[0], which)}
++    )
++    with pytest.raises(ValidationError, match="duplicate|crosses"):
++        DatasetManifest.model_validate(
++            dataset.model_copy(update={"samples": (*dataset.samples[:-1], cal)})
++        )
++
++
++@pytest.mark.parametrize(
++    "which", ["dataset", "protocol", "truth_scope", "trial_scope", "split", "coverage"]
++)
++def test_score_rejects_mismatched_inputs(which):
++    dataset, truth, predictions, protocol = synthetic_inputs()
++    pinned = protocol.pin()
++    if which == "dataset":
++        dataset = dataset.model_copy(update={"version": "2.0.0"})
++    elif which == "protocol":
++        protocol = protocol.model_copy(update={"version": "2.0.0"})
++    elif which == "truth_scope":
++        truth = truth.model_copy(
++            update={"scope": truth.scope.model_copy(update={"client_id": "elsewhere"})}
++        )
++    elif which == "trial_scope":
++        predictions = predictions.model_copy(
++            update={
++                "scope": predictions.scope.model_copy(
++                    update={"project_id": "elsewhere"}
++                )
++            }
++        )
++    elif which == "split":
++        truth = truth.model_copy(update={"split": "calibration"})
++    elif which == "coverage":
++        predictions = predictions.model_copy(
++            update={"entries": predictions.entries[:-1]}
++        )
++    with pytest.raises(ValueError, match="dataset|protocol|scope|split|holdout"):
++        score(dataset, truth, predictions, protocol, expected_protocol=pinned)
++
++
++def test_predictions_and_truth_are_exactly_once():
++    _, truth, predictions, _ = synthetic_inputs()
++    with pytest.raises(ValidationError, match="duplicate prediction"):
++        PredictionSnapshot.model_validate(
++            predictions.model_copy(
++                update={"entries": (*predictions.entries, predictions.entries[-1])}
++            )
++        )
++    with pytest.raises(ValidationError, match="duplicate truth"):
++        TruthSnapshot.model_validate(
++            truth.model_copy(update={"entries": (*truth.entries, truth.entries[-1])})
++        )
++
++
++@pytest.mark.parametrize("which", ["release", "model", "tool", "no_hits"])
++def test_prediction_rejects_invalid_source(which):
++    _, _, trial, _ = synthetic_inputs()
++    pred = trial.entries[0]
++    if which == "release":
++        pred = pred.model_copy(
++            update={"task": pred.task.model_copy(update={"release_id": "wrong"})}
++        )
++    elif which == "model":
++        pred = pred.model_copy(update={"model_invocations": ()})
++    elif which == "tool":
++        bad_tool = pred.tool_executions[0].model_copy(
++            update={"execution_id": "elsewhere"}
++        )
++        pred = pred.model_copy(update={"tool_executions": (bad_tool,)})
++    elif which == "no_hits":
++        pred = pred.model_copy(
++            update={
++                "profiles": (),
++                "discovery": DiscoveryOutcome.NO_HITS,
++                "decision": DecisionResult.NO_VIOLATION,
++                "auto_cleared": True,
++            }
++        )
++    with pytest.raises(
++        ValidationError,
++        match="release|ModelInvocation|ToolExecution|automatic clearance",
++    ):
++        SamplePrediction.model_validate(pred)
++
++
++@pytest.mark.parametrize("which", ["image", "version", "bounds"])
++def test_bound_prediction_content_is_checked_against_protocol_and_dataset(which):
++    dataset, truth, predictions, protocol = synthetic_inputs()
++    pred = predictions.entries[0]
++    profile = pred.profiles[0]
++    obj = profile.objects[0]
++    if which == "image":
++        media = pred.task.media_ref.model_copy(update={"sha256": "f" * 64})
++        pred = pred.model_copy(
++            update={"task": pred.task.model_copy(update={"media_ref": media})}
++        )
++    elif which == "version":
++        profile = profile.model_copy(
++            update={
++                "profile_ref": profile.profile_ref.model_copy(
++                    update={"version": "2.0.0"}
++                )
++            }
++        )
++        pred = pred.model_copy(update={"profiles": (profile,)})
++    elif which == "bounds":
++        obj = obj.model_copy(
++            update={"box": obj.box.model_copy(update={"xyxy": (0.0, 0.0, 500.0, 10.0)})}
++        )
++        pred = pred.model_copy(
++            update={"profiles": (profile.model_copy(update={"objects": (obj,)}),)}
++        )
++    predictions = predictions.model_copy(
++        update={"entries": (pred, *predictions.entries[1:])}
++    )
++    with pytest.raises(ValueError, match="image|catalogue|bounds"):
++        score(dataset, truth, predictions, protocol, expected_protocol=protocol.pin())
++
++
++def test_open_and_mismatched_reviews_cannot_manufacture_truth():
++    dataset, truth, _, _ = synthetic_inputs()
++    vote = make_vote("voter", truth.entries[0].labels)
++    reviewing = new_review(dataset, "c", truth.pin()).append_vote(vote, version="2.0.0")
++    with pytest.raises(ValidationError, match="disposition"):
++        TruthEntry(
++            sample_id="c",
++            state="labeled",
++            labels=vote.labels,
++            review=reviewing,
++            review_ref=report_ref(reviewing),
++        )
++    with pytest.raises(ValidationError, match="independent"):
++        reviewing.adjudicate(
++            adjudication(vote.vote_id, adjudicator="voter"), version="3.0.0"
++        )
++    with pytest.raises(ValidationError, match="duplicate"):
++        reviewing.append_vote(vote, version="3.0.0")
++    complete = reviewing.adjudicate(adjudication(vote.vote_id), version="3.0.0")
++    with pytest.raises(ValidationError, match="exact review"):
++        complete.reviewed_entry(report_ref(reviewing))
++    with pytest.raises(ValueError, match="closed"):
++        complete.append_vote(make_vote("late", None), version="4.0.0")
++    changed = truth.model_copy(update={"version": "4.0.0"})
++    with pytest.raises(ValueError, match="revision"):
++        revise_truth(dataset, changed, complete, report_ref(complete), version="5.0.0")
+--- /dev/null
++++ b/tests/unit/test_wp06_eval_scoring.py
+@@ -0,0 +1,246 @@
++"""Finite cases for stage scoring, deterministic matching and review revisions."""
++
++from fixtures.wp06.evaluation_sample import (
++    BOX,
++    QUESTION,
++    RULE,
++    actor,
++    adjudication,
++    make_vote,
++    new_review,
++    report_ref,
++    reviewed,
++    synthetic_inputs,
++)
++
++from jimu_runtime.domain.enums import FactStatus
++from jimu_runtime.domain.runtime.facts import EvidenceRef
++from jimu_runtime.domain.runtime.media import BBoxXYXY
++from jimu_runtime.evaluation import (
++    BadCaseAttribution,
++    revise_attribution,
++    revise_truth,
++    score,
++)
++from jimu_runtime.evaluation.contracts import (
++    GeometryPrediction,
++    QuestionPrediction,
++    RulePrediction,
++    canonical_digest,
++)
++from jimu_runtime.evaluation.review import AttributionEvidence
++from jimu_runtime.evaluation.scoring import Ratio
++
++
++def test_complete_scoring_and_reproduction():
++    dataset, truth, predictions, protocol = synthetic_inputs()
++    sources = tuple(model.pin() for model in (dataset, truth, predictions, protocol))
++    report = score(
++        dataset, truth, predictions, protocol, expected_protocol=protocol.pin()
++    )
++    assert report == score(
++        dataset, truth, predictions, protocol, expected_protocol=protocol.pin()
++    )
++    assert sources == tuple(
++        model.pin() for model in (dataset, truth, predictions, protocol)
++    )
++    assert (
++        report.dataset,
++        report.truth,
++        report.predictions,
++        report.scoring_protocol,
++    ) == sources
++    assert report.samples[0].execution_digest == canonical_digest(
++        predictions.entries[0].execution
++    )
++    model = report.samples[0].models[0]
++    assert model.actual_provider.version_resolution == "unavailable"
++    assert model.digest == canonical_digest(predictions.entries[0].model_invocations[0])
++    assert report.samples[0].tools[0].actual_version == "1.0.0"
++    summary = report.summary
++    assert (
++        summary.labeled_samples,
++        summary.unlabeled_samples,
++        summary.conflicted_samples,
++        summary.abstained_samples,
++    ) == (4, 1, 1, 1)
++    assert summary.profile_recall == Ratio.of(3, 4)
++    assert summary.grounding_recall == Ratio.of(1, 1)
++    assert summary.matched_mean_iou == 0.5
++    assert summary.questions[0].comparison.accuracy == Ratio.of(1, 1)
++    assert summary.geometry[0].comparison.accuracy == Ratio.of(0, 1)
++    assert summary.rules[0].comparison.accuracy == Ratio.of(1, 1)
++    assert summary.tool_success == Ratio.of(1, 1)
++    assert summary.discovery_no_hits == Ratio.of(2, 7)
++    assert summary.no_hits_target_miss == Ratio.of(1, 2)
++    assert summary.no_hits_labeled_target_miss == Ratio.of(1, 1)
++    assert summary.no_hits_target_truth_unavailable == 1
++    assert summary.task_violation_precision == Ratio.of(1, 1)
++    assert summary.task_violation_recall == Ratio.of(1, 3)
++    assert summary.erroneous_release_rate == Ratio.of(1, 3)
++    assert summary.automatic_release_risk == Ratio.of(1, 2)
++    assert summary.automatic_release_coverage == Ratio.of(3, 7)
++    assert summary.automatic_release_unlabeled == 1
++    assert (
++        summary.uncertain_tasks,
++        summary.not_evaluated_tasks,
++        summary.failed_executions,
++    ) == (2, 1, 1)
++
++
++def test_exact_iou_threshold_and_undefined_accuracy():
++    dataset, truth, predictions, protocol = synthetic_inputs()
++    stricter = protocol.model_copy(
++        update={"version": "2.0.0", "iou_threshold_basis_points": 5001}
++    )
++    report = score(
++        dataset, truth, predictions, stricter, expected_protocol=stricter.pin()
++    )
++    assert report.samples[0].objects[0].match is None
++    assert report.summary.grounding_recall == Ratio.of(0, 1)
++    assert report.summary.matched_mean_iou is None
++    comparison = report.summary.questions[0].comparison
++    assert comparison.unmatched == 1
++    assert comparison.accuracy == Ratio.of(0, 0)
++    assert comparison.coverage == Ratio.of(0, 1)
++
++
++def test_box_ties_and_nonknown_stage_results_are_independent():
++    dataset, truth, predictions, protocol = synthetic_inputs()
++    truth_a = truth.entries[0].labels
++    labels = truth_a.model_copy(
++        update={
++            "objects": (
++                truth_a.objects[0].model_copy(update={"label_id": "truth-z"}),
++                truth_a.objects[0].model_copy(update={"label_id": "truth-a"}),
++            )
++        }
++    )
++    truth = truth.model_copy(
++        update={"entries": (reviewed(dataset, "a", labels), *truth.entries[1:])}
++    )
++    pred = predictions.entries[0]
++    profile = pred.profiles[0]
++    obj = profile.objects[0]
++    first = obj.model_copy(
++        update={
++            "box": BOX,
++            "questions": (
++                QuestionPrediction(question_ref=QUESTION, status=FactStatus.UNKNOWN),
++            ),
++            "geometry": (
++                GeometryPrediction(
++                    fact_schema_ref=protocol.geometry_refs[0],
++                    status=FactStatus.NOT_EVALUATED,
++                ),
++            ),
++            "rules": (RulePrediction(path=RULE, status="blocked"),),
++        }
++    )
++    second = obj.model_copy(update={"box": BOX, "object_id": "obj-2"})
++    for order in ((second, first), (first, second)):
++        sample = pred.model_copy(
++            update={"profiles": (profile.model_copy(update={"objects": order}),)}
++        )
++        candidate = predictions.model_copy(
++            update={"entries": (*predictions.entries[1:], sample)}
++        )
++        report = score(
++            dataset, truth, candidate, protocol, expected_protocol=protocol.pin()
++        )
++        assert [
++            (check.label_id, check.match.object_id)
++            for check in report.samples[0].objects
++        ] == [("truth-a", "obj-1"), ("truth-z", "obj-2")]
++        summary = report.summary
++        assert (
++            summary.questions[0].comparison.unknown
++            == summary.rules[0].comparison.blocked
++            == 1
++        )
++        assert summary.geometry[0].comparison.not_evaluated == 1
++        assert summary.questions[0].comparison.coverage == Ratio.of(1, 2)
++
++
++def test_very_small_valid_boxes_have_defined_iou():
++    dataset, truth, predictions, protocol = synthetic_inputs()
++    truth_a = truth.entries[0].labels
++    tiny = BBoxXYXY(xyxy=(0.0, 0.0, 5e-324, 5e-324))
++    labels = truth_a.model_copy(
++        update={"objects": (truth_a.objects[0].model_copy(update={"box": tiny}),)}
++    )
++    truth = truth.model_copy(
++        update={"entries": (reviewed(dataset, "a", labels), *truth.entries[1:])}
++    )
++    first = predictions.entries[0]
++    profile = first.profiles[0]
++    obj = profile.objects[0].model_copy(update={"box": tiny})
++    entry = first.model_copy(
++        update={"profiles": (profile.model_copy(update={"objects": (obj,)}),)}
++    )
++    predictions = predictions.model_copy(
++        update={"entries": (entry, *predictions.entries[1:])}
++    )
++    report = score(
++        dataset, truth, predictions, protocol, expected_protocol=protocol.pin()
++    )
++    assert report.samples[0].objects[0].match.iou == 1.0
++
++
++def test_review_remains_pending_until_independent_adjudication_then_revises_truth():
++    dataset, truth, predictions, protocol = synthetic_inputs()
++    original = truth.pin()
++    vote = make_vote("review-voter", truth.entries[0].labels)
++    history = new_review(dataset, "c", original).append_vote(vote, version="2.0.0")
++    assert history.reviewed_entry(report_ref(history)).state == "unlabeled"
++    decided = history.adjudicate(adjudication(vote.vote_id), version="3.0.0")
++    updated = revise_truth(
++        dataset, truth, decided, report_ref(decided), version="2.0.0"
++    )
++    assert history.adjudication is None and decided.previous == history.pin()
++    assert truth.pin() == original and updated.prior == original
++    assert (
++        truth.entries[2].state == "unlabeled" and updated.entries[2].state == "labeled"
++    )
++    new_report = score(
++        dataset, updated, predictions, protocol, expected_protocol=protocol.pin()
++    )
++    assert new_report.predictions == predictions.pin()
++    assert new_report.summary.erroneous_release_rate == Ratio.of(2, 4)
++
++
++def test_bad_case_attribution_is_independent_and_append_only():
++    dataset, truth, predictions, protocol = synthetic_inputs()
++    report = score(
++        dataset, truth, predictions, protocol, expected_protocol=protocol.pin()
++    )
++    case = BadCaseAttribution(
++        schema_version="1.0.0",
++        record_id="case-a",
++        version="1.0.0",
++        report=report.pin(),
++        scope=report.scope,
++        sample_id="a",
++        attributed_stage="geometry",
++        rationale="Wheel boundary differs",
++        actor=actor("investigator"),
++        recorded_at=predictions.entries[0].execution.ended_at,
++        evidence=(
++            AttributionEvidence(
++                ref=EvidenceRef(record_kind="evidence", record_id="evidence-a"),
++                digest="a" * 64,
++            ),
++        ),
++        supersedes=None,
++    )
++    case.validate_source(report)
++    revised = case.model_copy(
++        update={
++            "version": "2.0.0",
++            "supersedes": case.pin(),
++            "attributed_stage": "inconclusive",
++        }
++    )
++    assert revise_attribution(report, case, revised) == revised
++    assert case.attributed_stage == "geometry"
++    assert case.report == revised.report == report.pin()

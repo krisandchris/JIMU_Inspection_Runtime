@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/independent/runtime_probe.py", line 363, in <module>
+    main(Path(temporary))
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/independent/runtime_probe.py", line 192, in main
+    a = compile_checked(source, compile_one)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/independent/runtime_probe.py", line 158, in compile_checked
+    checks={row.check_id: row.status for row in compiled.checks},
+                                                ^^^^^^^^^^^^^^^
+AttributeError: 'CompileReport' object has no attribute 'checks'

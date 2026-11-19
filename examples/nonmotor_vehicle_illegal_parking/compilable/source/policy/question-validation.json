@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "question-validation",
+  "policy": {
+    "policy_kind": "question_validation",
+    "coercion": "forbid",
+    "extra_fields": "forbid",
+    "association": "exact_question_ref",
+    "missing_item": "error",
+    "invalid_record": "whole_fact_error",
+    "sibling_retention": "trusted_envelope_only"
+  }
+}

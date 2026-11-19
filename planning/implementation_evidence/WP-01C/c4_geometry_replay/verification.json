@@ -1,0 +1,81 @@
+{
+  "workdir": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "revision": "2552affeb69fbc2594fe70724f895b0db0967d47",
+  "checkout": "detached",
+  "scope": "WP-01C C4 static geometry and replay contracts",
+  "started_utc": "2026-11-18T02:04:55.836487+00:00",
+  "ended_utc": "2026-11-18T02:04:59.726719+00:00",
+  "platform": "Linux-6.8.0-149-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "uv": "uv 0.9.15",
+  "packages": {
+    "pydantic": "2.12.5",
+    "pydantic-core": "2.41.5",
+    "pytest": "8.4.2",
+    "jsonschema": "4.25.1",
+    "ruff": "0.14.14",
+    "mypy": "1.18.2",
+    "rfc8785": "0.1.4"
+  },
+  "uv_lock_sha256": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb",
+  "execution_fixture_sha256": "8c9b5c9eae1167ea412749faee8eceb3802a40387fb28775ebb93352a8c9ad2a",
+  "checks": {
+    "targeted": {
+      "command": "uv run --locked --no-sync python -m pytest -q -o cache_dir=/tmp/jimu-wp01c-geometry-replay-3_w0ave5/pytest-cache --basetemp=/tmp/jimu-wp01c-geometry-replay-3_w0ave5/pytest-tmp --junitxml=planning/implementation_evidence/WP-01C/c4_geometry_replay/pytest.xml tests/unit/test_c_geometry_replay.py tests/contract/test_c_geometry_replay_schema.py tests/negative/test_c_geometry_replay_invalid.py tests/contract/test_b_ontology.py tests/negative/test_b_ontology_invalid.py tests/unit/test_c_execution.py tests/contract/test_c_execution_schema.py tests/negative/test_c_execution_invalid.py",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "UV_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/uv",
+        "RUFF_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/ruff",
+        "MYPY_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/mypy"
+      },
+      "started_utc": "2026-11-18T02:04:55.836843+00:00",
+      "ended_utc": "2026-11-18T02:04:57.553629+00:00",
+      "exit_code": 0,
+      "stdout": "........................................................................ [ 17%]\n........................................................................ [ 34%]\n........................................................................ [ 51%]\n........................................................................ [ 68%]\n........................................................................ [ 85%]\n............................................................             [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c4_geometry_replay/pytest.xml -\n420 passed in 1.43s\n",
+      "stderr": ""
+    },
+    "lint": {
+      "command": "uv run --locked --no-sync ruff check src/jimu_runtime/domain/definitions/geometry.py src/jimu_runtime/domain/runtime/replay.py tests/unit/test_c_geometry_replay.py tests/contract/test_c_geometry_replay_schema.py tests/negative/test_c_geometry_replay_invalid.py",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "UV_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/uv",
+        "RUFF_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/ruff",
+        "MYPY_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/mypy"
+      },
+      "started_utc": "2026-11-18T02:04:57.553646+00:00",
+      "ended_utc": "2026-11-18T02:04:57.566151+00:00",
+      "exit_code": 0,
+      "stdout": "All checks passed!\n",
+      "stderr": ""
+    },
+    "format_check": {
+      "command": "uv run --locked --no-sync ruff format --check src/jimu_runtime/domain/definitions/geometry.py src/jimu_runtime/domain/runtime/replay.py tests/unit/test_c_geometry_replay.py tests/contract/test_c_geometry_replay_schema.py tests/negative/test_c_geometry_replay_invalid.py",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "UV_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/uv",
+        "RUFF_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/ruff",
+        "MYPY_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/mypy"
+      },
+      "started_utc": "2026-11-18T02:04:57.566177+00:00",
+      "ended_utc": "2026-11-18T02:04:57.578950+00:00",
+      "exit_code": 0,
+      "stdout": "5 files already formatted\n",
+      "stderr": ""
+    },
+    "mypy": {
+      "command": "uv run --locked --no-sync mypy src/jimu_runtime/domain/definitions/geometry.py src/jimu_runtime/domain/runtime/replay.py",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "UV_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/uv",
+        "RUFF_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/ruff",
+        "MYPY_CACHE_DIR": "/tmp/jimu-wp01c-geometry-replay-3_w0ave5/mypy"
+      },
+      "started_utc": "2026-11-18T02:04:57.578966+00:00",
+      "ended_utc": "2026-11-18T02:04:59.718455+00:00",
+      "exit_code": 0,
+      "stdout": "Success: no issues found in 2 source files\n",
+      "stderr": ""
+    }
+  },
+  "runtime_evidence": "RUNTIME_NOT_RUN"
+}

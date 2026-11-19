@@ -1,0 +1,5 @@
+2026-11-18T05:04:52Z
+env PYTHONPATH=. uv run --locked --offline python planning/implementation_evidence/WP-04/independent/probe_fallback.py 
+{"check": "current_exact_fallback_after_timeout", "dispatches": [["dispatch.e3fd37418ffd48f089c48c84ffe6f146", "operation.model.cae282f94e4efcccea93760b592ef36bd81c0a39e5a9f9b16e128debe9b3a21f", "bfa3b2d7442d4161aadab3a2b7db43bb", 1, "independent-primary", "timeout"], ["dispatch.ad6d20b2faf84365a2e30c4fbebdcd55", "operation.model.cae282f94e4efcccea93760b592ef36bd81c0a39e5a9f9b16e128debe9b3a21f", "b94c5a38bfab4811a4d440ef5436c9e6", 2, "independent-fallback", null]], "fallback": "fixture.remote.fallback", "primary": "fixture.remote.parking", "review": "wp03-fallback-review"}
+2026-11-18T05:05:00Z
+exit=0

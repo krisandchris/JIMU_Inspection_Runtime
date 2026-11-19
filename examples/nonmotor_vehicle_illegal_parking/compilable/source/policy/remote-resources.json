@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "remote-resources",
+  "policy": {
+    "policy_kind": "resource_requirements",
+    "resource_class": "remote",
+    "remote_quota_id": "synthetic.loopback.quota",
+    "max_concurrency": 1,
+    "timeout_ms": 5000,
+    "input_byte_limit": 262144,
+    "output_byte_limit": 262144
+  }
+}

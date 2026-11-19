@@ -1,0 +1,1431 @@
+--- /dev/null
++++ b/src/jimu_runtime/inspection/media/__init__.py
+@@ -0,0 +1,27 @@
++"""Trusted host adapter for WP-05 original images and audited local sidecars."""
++
++from jimu_runtime.inspection.media.persistence import LocalMediaStore as LocalMediaStore
++from jimu_runtime.inspection.media.types import (
++    MaskSidecarRecord as MaskSidecarRecord,
++)
++from jimu_runtime.inspection.media.types import (
++    MediaError as MediaError,
++)
++from jimu_runtime.inspection.media.types import (
++    MediaLimits as MediaLimits,
++)
++from jimu_runtime.inspection.media.types import (
++    StoredModelResponse as StoredModelResponse,
++)
++from jimu_runtime.inspection.media.types import (
++    ToolSidecarSlot as ToolSidecarSlot,
++)
++from jimu_runtime.inspection.media.types import (
++    ToolSidecarSpec as ToolSidecarSpec,
++)
++from jimu_runtime.inspection.media.types import (
++    VerifiedEvidence as VerifiedEvidence,
++)
++from jimu_runtime.inspection.media.types import (
++    VerifiedOriginal as VerifiedOriginal,
++)
+--- /dev/null
++++ b/src/jimu_runtime/inspection/media/decoder.py
+@@ -0,0 +1,114 @@
++"""Bounded JPEG/PNG CPU decoding for the trusted local media adapter."""
++
++from io import BytesIO
++from typing import Literal
++
++from PIL import Image, UnidentifiedImageError
++
++from jimu_runtime.domain.runtime.media import ImageDimensions
++from jimu_runtime.inspection.media.types import ImageMime, MediaError, MediaLimits
++
++_FORMATS: dict[ImageMime, str] = {"image/jpeg": "JPEG", "image/png": "PNG"}
++_PNG_END = b"\x00\x00\x00\x00IEND\xaeB\x60\x82"
++
++
++def _single_jpeg(content: bytes) -> bool:
++    """Locate the first top-level EOI while skipping segments and stuffed data."""
++    if not content.startswith(b"\xff\xd8"):
++        return False
++    end = len(content)
++    position = 2
++    scanning = False
++    while position < end:
++        if scanning:
++            position = content.find(b"\xff", position)
++            if position < 0:
++                return False
++        elif content[position] != 0xFF:
++            return False
++        position += 1
++        while position < end and content[position] == 0xFF:
++            position += 1
++        if position == end:
++            return False
++        marker = content[position]
++        position += 1
++        if marker == 0xD9:
++            return position == end
++        if scanning and (marker == 0 or 0xD0 <= marker <= 0xD7):
++            continue
++        if marker <= 0x01 or 0xD0 <= marker <= 0xD8 or position + 2 > end:
++            return False
++        length = int.from_bytes(content[position : position + 2], "big")
++        if length < 2:
++            return False
++        position += length
++        scanning = marker == 0xDA
++    return False
++
++
++def verify_image(
++    content: bytes,
++    mime: ImageMime,
++    dimensions: ImageDimensions,
++    limits: MediaLimits,
++    *,
++    encoding: Literal["rgb", "binary_mask"],
++) -> None:
++    expected_format = _FORMATS[mime]
++    if mime == "image/png" and not content.endswith(_PNG_END):
++        raise MediaError("media_decode_failed")
++    if mime == "image/jpeg" and not _single_jpeg(content):
++        raise MediaError("media_decode_failed")
++    try:
++        with (
++            BytesIO(content) as source,
++            Image.open(source, formats=(expected_format,)) as image,
++        ):
++            if image.format != expected_format:
++                raise MediaError("media_format_mismatch")
++            width, height = image.size
++            if (
++                not 1 <= width <= limits.max_dimension
++                or not 1 <= height <= limits.max_dimension
++                or width * height > limits.max_pixels
++            ):
++                raise MediaError("media_dimensions_limit")
++            if (width, height) != (dimensions.width, dimensions.height):
++                raise MediaError("media_dimensions_mismatch")
++            if (
++                getattr(image, "n_frames", 1) != 1
++                or "loop" in image.info
++                or "transparency" in image.info
++            ):
++                raise MediaError("media_frame_unsupported")
++            if encoding == "rgb" and image.mode != "RGB":
++                raise MediaError("media_rgb_required")
++            if encoding == "binary_mask" and image.mode not in {"1", "L"}:
++                raise MediaError("media_binary_mask_required")
++            image.verify()
++            # PNG verification consumes IEND up to its four-byte CRC.
++            if mime == "image/png" and source.tell() != len(content) - 4:
++                raise MediaError("media_frame_unsupported")
++        # verify() checks container integrity. load() forces actual pixel decoding.
++        with Image.open(BytesIO(content), formats=(expected_format,)) as image:
++            image.load()
++            if image.getexif().get(274, 1) != 1 or "transparency" in image.info:
++                raise MediaError("media_frame_unsupported")
++            if encoding == "binary_mask" and image.mode == "L":
++                histogram = image.histogram()
++                if any(histogram[1:255]):
++                    raise MediaError("media_binary_mask_required")
++    except MediaError:
++        raise
++    except (
++        Image.DecompressionBombError,
++        UnidentifiedImageError,
++        OSError,
++        ValueError,
++        SyntaxError,
++        OverflowError,
++        TypeError,
++        IndexError,
++    ):
++        raise MediaError("media_decode_failed") from None
+--- /dev/null
++++ b/src/jimu_runtime/inspection/media/files.py
+@@ -0,0 +1,105 @@
++"""Private immutable files published using same-directory staging and hard links."""
++
++import os
++import stat
++from hashlib import sha256
++from pathlib import Path
++
++from jimu_runtime.inspection.media.types import MediaError
++
++
++class LocalBytes:
++    def __init__(self, root: Path) -> None:
++        self._directory = root / "media-v1"
++        try:
++            self._directory.mkdir(mode=0o700, parents=True, exist_ok=True)
++            directory = self._directory.lstat()
++            if (
++                not stat.S_ISDIR(directory.st_mode)
++                or directory.st_uid != os.geteuid()
++                or directory.st_mode & 0o077
++            ):
++                raise MediaError("media_directory_not_private")
++            self._sync_directory(root)
++        except OSError:
++            raise MediaError("media_directory_unavailable") from None
++
++    @staticmethod
++    def _sync_directory(directory: Path) -> None:
++        descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
++        try:
++            os.fsync(descriptor)
++        finally:
++            os.close(descriptor)
++
++    def read(self, key: str, digest: str, size: int, limit: int) -> bytes:
++        if not 1 <= size <= limit:
++            raise MediaError("media_size_limit")
++        try:
++            path = self._directory / key
++            descriptor = os.open(
++                path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
++            )
++            with os.fdopen(descriptor, "rb") as file:
++                info = os.fstat(file.fileno())
++                if (
++                    not stat.S_ISREG(info.st_mode)
++                    or info.st_uid != os.geteuid()
++                    or info.st_mode & 0o077
++                    or info.st_size != size
++                ):
++                    raise MediaError("media_file_metadata_mismatch")
++                content = file.read(size + 1)
++        except OSError:
++            raise MediaError("media_file_unavailable") from None
++        if len(content) != size or sha256(content).hexdigest() != digest:
++            raise MediaError("media_content_mismatch")
++        return content
++
++    def publish(
++        self, key: str, content: bytes, digest: str, *, recover_orphan: bool
++    ) -> None:
++        """The caller holds the binding lock until its owning DB transaction ends."""
++        path = self._directory / key
++        stage = self._directory / f"{key}.stage"
++        try:
++            stage.unlink(missing_ok=True)
++            try:
++                self.read(key, digest, len(content), len(content))
++            except MediaError:
++                if not recover_orphan:
++                    raise
++                # The scope binding is absent under its lock. No reader can
++                # acquire this key through a committed binding.
++                path.unlink(missing_ok=True)
++            else:
++                self._sync_directory(self._directory)
++                return
++
++            fd = os.open(
++                stage,
++                os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
++                0o600,
++            )
++            try:
++                with os.fdopen(fd, "wb") as file:
++                    file.write(content)
++                    file.flush()
++                    os.fchmod(file.fileno(), 0o400)
++                    os.fsync(file.fileno())
++                self.read(stage.name, digest, len(content), len(content))
++                os.link(stage, path, follow_symlinks=False)
++            finally:
++                stage.unlink(missing_ok=True)
++            self._sync_directory(self._directory)
++        except OSError:
++            raise MediaError("media_publication_failed") from None
++
++    def remove_orphan(self, key: str) -> None:
++        """Use only after checking absence under the exact DB binding lock."""
++        try:
++            (self._directory / f"{key}.stage").unlink(missing_ok=True)
++            (self._directory / key).unlink(missing_ok=True)
++            self._sync_directory(self._directory)
++        except OSError:
++            raise MediaError("media_orphan_cleanup_failed") from None
+--- /dev/null
++++ b/src/jimu_runtime/inspection/media/persistence.py
+@@ -0,0 +1,953 @@
++"""Scope-keyed PostgreSQL bindings for an isolated durable local filesystem."""
++
++import asyncio
++from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
++from contextlib import asynccontextmanager, suppress
++from dataclasses import dataclass, replace
++from datetime import UTC, datetime
++from functools import partial
++from hashlib import sha256
++from pathlib import Path
++from typing import Literal
++
++from sqlalchemy import text
++from sqlalchemy.exc import SQLAlchemyError
++from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
++
++from jimu_runtime.domain.definition_enums import EvidenceType
++from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
++from jimu_runtime.domain.runtime.evidence import (
++    EvidenceAsset,
++    ObjectEvidenceScope,
++    ProjectEvidenceAccess,
++    TaskEvidenceAccess,
++)
++from jimu_runtime.domain.runtime.intake import AcceptedTask, IdempotencyScope
++from jimu_runtime.domain.runtime.media import (
++    FinalizedAsset,
++    ImageDimensions,
++    MediaAsset,
++    MediaRef,
++    StorageReference,
++)
++from jimu_runtime.domain.runtime.tool_executions import (
++    FailedToolResult,
++    ReturnedToolAttempt,
++    ToolPlanStepOrigin,
++)
++from jimu_runtime.domain.values import RecordValue
++from jimu_runtime.gateway.http_wire import WireError, strict_json
++from jimu_runtime.gateway.invocation import TransportResult
++from jimu_runtime.gateway.journal import DispatchJournal, StoredDispatch
++from jimu_runtime.gateway.journal_records import (
++    ModelDispatchResult,
++    ModelDispatchTarget,
++    NestedModelDispatchTarget,
++    ToolDispatchResult,
++    ToolDispatchTarget,
++)
++from jimu_runtime.inspection.media.decoder import verify_image
++from jimu_runtime.inspection.media.files import LocalBytes
++from jimu_runtime.inspection.media.types import (
++    IMAGE_MIME,
++    RECORD_ID,
++    STORE_ID,
++    TOOL_SLOT,
++    ImageMime,
++    MaskSidecarRecord,
++    MediaError,
++    MediaLimits,
++    StoredModelResponse,
++    ToolSidecarSlot,
++    ToolSidecarSpec,
++    VerifiedEvidence,
++    VerifiedOriginal,
++)
++from jimu_runtime.workflow.repository import read_output
++
++type _Role = Literal["model_raw", "model_normalized"] | ToolSidecarSlot
++
++_TOOL_STEPS: dict[ToolSidecarSlot, str] = {
++    "wheel_mask": "wheel_segmentation",
++    "tactile_paving_mask": "tactile_paving_segmentation",
++    "geometry": "wheel_boundary_geometry",
++}
++
++_ORIGINAL = text("""
++    SELECT record::text
++    FROM jimu_workflow.original_media
++    WHERE (project_id, client_id, media_id) = (:project, :client, :media)
++""")
++_ARTIFACT = text("""
++    SELECT store_id, content_sha256, byte_size, wire_sha256, wire_size,
++           evidence_id, evidence_claim_sha256, staged_at
++    FROM jimu_workflow.dispatch_media
++    WHERE (project_id, client_id, execution_id, dispatch_id, role)
++        = (:project, :client, :execution, :dispatch, :role)
++""")
++_ARTIFACT_INSERT = text("""
++    INSERT INTO jimu_workflow.dispatch_media
++        (project_id, client_id, execution_id, dispatch_id, role, store_id,
++         content_sha256, byte_size, wire_sha256, wire_size, evidence_id, evidence_claim_sha256)
++    VALUES (:project, :client, :execution, :dispatch, :role, :store_id,
++        :digest, :size, :wire_digest, :wire_size, :evidence_id, :evidence_claim_digest)
++    ON CONFLICT DO NOTHING
++    RETURNING staged_at
++""")
++_DEFAULT_LIMITS = MediaLimits()
++_BLOB_LOCK = text("SELECT pg_catalog.pg_advisory_xact_lock(:key)")
++
++
++def _scope(scope: IdempotencyScope) -> dict[str, str]:
++    IdempotencyScope.model_validate(scope)
++    return {"project": scope.project_id, "client": scope.client_id}
++
++
++def _key(kind: str, *parts: str) -> str:
++    return sha256(canonical_bytes(["jimu.media.v1", kind, *parts])).hexdigest()
++
++
++@dataclass(frozen=True, slots=True)
++class _DispatchKey:
++    scope: IdempotencyScope
++    execution_id: str
++    dispatch_id: str
++
++    def __post_init__(self) -> None:
++        IdempotencyScope.model_validate(self.scope)
++        RECORD_ID.validate_python(self.execution_id)
++        RECORD_ID.validate_python(self.dispatch_id)
++
++    def key(self, role: _Role) -> str:
++        return _key(
++            "dispatch",
++            self.scope.project_id,
++            self.scope.client_id,
++            self.execution_id,
++            self.dispatch_id,
++            role,
++        )
++
++    def params(self) -> dict[str, str]:
++        return {
++            **_scope(self.scope),
++            "execution": self.execution_id,
++            "dispatch": self.dispatch_id,
++        }
++
++
++@dataclass(frozen=True, slots=True)
++class _Blob:
++    store_id: str
++    digest: str
++    size: int
++    wire_digest: str | None = None
++    wire_size: int | None = None
++    evidence_id: str | None = None
++    evidence_claim_digest: str | None = None
++
++    def params(self) -> dict[str, str | int | None]:
++        return {
++            "store_id": self.store_id,
++            "digest": self.digest,
++            "size": self.size,
++            "wire_digest": self.wire_digest,
++            "wire_size": self.wire_size,
++            "evidence_id": self.evidence_id,
++            "evidence_claim_digest": self.evidence_claim_digest,
++        }
++
++
++@dataclass(frozen=True, slots=True)
++class _ToolContext:
++    binding: _DispatchKey
++    dispatch: StoredDispatch
++    target: ToolDispatchTarget
++    task: AcceptedTask
++    original: VerifiedOriginal
++
++
++async def _locked(connection: AsyncConnection, key: str) -> None:
++    value = int.from_bytes(bytes.fromhex(key[:16]), byteorder="big", signed=True)
++    await connection.execute(_BLOB_LOCK, {"key": value})
++
++
++async def _durable[T](operation: Coroutine[object, object, T]) -> T:
++    """Keep DB ownership until the off-thread filesystem mutation has stopped."""
++    task = asyncio.create_task(operation)
++
++    def observe(completed: asyncio.Task[T]) -> None:
++        if not completed.cancelled():
++            completed.exception()
++
++    task.add_done_callback(observe)
++    return await asyncio.shield(task)
++
++
++def _check_size(content: bytes, limit: int) -> None:
++    if type(content) is not bytes or not 1 <= len(content) <= limit:
++        raise MediaError("media_size_limit")
++
++
++def _check_json_object(content: bytes) -> None:
++    try:
++        validated = strict_json(content, exact_numbers=True)
++    except WireError:
++        raise MediaError("media_json_invalid") from None
++    if not isinstance(validated, dict):
++        raise MediaError("media_json_object_required")
++
++
++class LocalMediaStore:
++    """Trusted host adapter; use one private persistent root per PostgreSQL DB.
++
++    Authenticate and authorize scopes in the host before calling. Read methods
++    independently bind bytes to scope and durable identity.
++    """
++
++    def __init__(
++        self,
++        root: Path,
++        engine: AsyncEngine,
++        *,
++        store_id: str = "jimu.local-media",
++        limits: MediaLimits = _DEFAULT_LIMITS,
++    ) -> None:
++        self._store_id = STORE_ID.validate_python(store_id)
++        self._bytes = LocalBytes(root)
++        self._engine = engine
++        self._journal = DispatchJournal(engine)
++        self._limits = limits
++        self._decode_slots = asyncio.Semaphore(limits.max_parallel_decodes)
++
++    @asynccontextmanager
++    async def _transaction(self) -> AsyncIterator[AsyncConnection]:
++        async with self._engine.connect() as connection:
++            await connection.execution_options(isolation_level="READ COMMITTED")
++            async with connection.begin():
++                await connection.exec_driver_sql("SET LOCAL lock_timeout TO '5s'")
++                yield connection
++
++    @asynccontextmanager
++    async def _publication(
++        self, *reclaim: Callable[[], Awaitable[bool]]
++    ) -> AsyncIterator[AsyncConnection]:
++        try:
++            async with self._transaction() as connection:
++                yield connection
++        except (MediaError, SQLAlchemyError):
++            # A fresh transaction rechecks the binding, including ambiguous
++            # commit outcomes and a successful concurrent retry.
++            for cleanup in reclaim:
++                with suppress(MediaError, SQLAlchemyError):
++                    await cleanup()
++            raise
++
++    async def _decode(
++        self,
++        content: bytes,
++        mime_type: ImageMime,
++        dimensions: ImageDimensions,
++        *,
++        encoding: Literal["rgb", "binary_mask"],
++    ) -> None:
++        async def run() -> None:
++            async with self._decode_slots:
++                await asyncio.to_thread(
++                    verify_image,
++                    content,
++                    mime_type,
++                    dimensions,
++                    self._limits,
++                    encoding=encoding,
++                )
++
++        await _durable(run())
++
++    def _storage(self, key: str) -> StorageReference:
++        return StorageReference(store_id=self._store_id, object_key=f"media-v1/{key}")
++
++    @staticmethod
++    def _finalized(digest: str, at: datetime) -> FinalizedAsset:
++        return FinalizedAsset(
++            stage="finalized",
++            staged_at=at,
++            verified_at=at,
++            verified_sha256=digest,
++            object_version=f"sha256:{digest}",
++        )
++
++    async def publish_original(
++        self,
++        scope: IdempotencyScope,
++        media_ref: MediaRef,
++        *,
++        mime_type: ImageMime,
++        dimensions: ImageDimensions,
++        content: bytes,
++    ) -> MediaAsset:
++        """Publish a scope-owned original ahead of Task intake."""
++        params = {**_scope(scope), "media": MediaRef.model_validate(media_ref).media_id}
++        key = _key("original", scope.project_id, scope.client_id, media_ref.media_id)
++        mime_type = IMAGE_MIME.validate_python(mime_type)
++        dimensions = ImageDimensions.model_validate(dimensions)
++        _check_size(content, self._limits.max_original_bytes)
++        if sha256(content).hexdigest() != media_ref.sha256:
++            raise MediaError("media_content_mismatch")
++        await self._decode(content, mime_type, dimensions, encoding="rgb")
++        return await _durable(
++            self._publish_original(
++                params, key, media_ref, mime_type, dimensions, content
++            )
++        )
++
++    async def _publish_original(
++        self,
++        params: dict[str, str],
++        key: str,
++        media_ref: MediaRef,
++        mime_type: ImageMime,
++        dimensions: ImageDimensions,
++        content: bytes,
++    ) -> MediaAsset:
++        async with self._publication(
++            partial(self._cleanup_original, key, params)
++        ) as connection:
++            await _locked(connection, key)
++            row = (await connection.execute(_ORIGINAL, params)).scalar_one_or_none()
++            common = MediaAsset(
++                schema_version="1.0.0",
++                media_ref=media_ref,
++                storage=self._storage(key),
++                stage=self._finalized(media_ref.sha256, datetime.now(UTC)),
++                mime_type=mime_type,
++                dimensions=dimensions,
++                byte_size=len(content),
++                color_space="RGB",
++            )
++            if row is not None:
++                old = MediaAsset.model_validate_json(row)
++                if (
++                    not isinstance(old.stage, FinalizedAsset)
++                    or old.stage
++                    != self._finalized(media_ref.sha256, old.stage.staged_at)
++                    or old != common.model_copy(update={"stage": old.stage})
++                ):
++                    raise MediaError("original_media_identity_conflict")
++            else:
++                old = common
++                await connection.execute(
++                    text("""
++                        INSERT INTO jimu_workflow.original_media
++                            (project_id, client_id, media_id, record)
++                        VALUES (:project, :client, :media, CAST(:record AS json))
++                    """),
++                    {**params, "record": common.stable_json()},
++                )
++            await asyncio.to_thread(
++                self._bytes.publish,
++                key,
++                content,
++                media_ref.sha256,
++                recover_orphan=row is None,
++            )
++            return old
++
++    async def read_original(
++        self, scope: IdempotencyScope, media_ref: MediaRef
++    ) -> VerifiedOriginal:
++        params = {**_scope(scope), "media": MediaRef.model_validate(media_ref).media_id}
++        key = _key("original", scope.project_id, scope.client_id, media_ref.media_id)
++        async with self._engine.connect() as connection:
++            row = (await connection.execute(_ORIGINAL, params)).scalar_one_or_none()
++        if row is None:
++            raise MediaError("original_media_unavailable")
++        asset = MediaAsset.model_validate_json(row)
++        if (
++            asset.media_ref != media_ref
++            or asset.storage != self._storage(key)
++            or not isinstance(asset.stage, FinalizedAsset)
++            or asset.stage != self._finalized(media_ref.sha256, asset.stage.staged_at)
++        ):
++            raise MediaError("original_media_identity_conflict")
++        content = await asyncio.to_thread(
++            self._bytes.read,
++            key,
++            asset.media_ref.sha256,
++            asset.byte_size,
++            self._limits.max_original_bytes,
++        )
++        await self._decode(
++            content,
++            IMAGE_MIME.validate_python(asset.mime_type),
++            asset.dimensions,
++            encoding="rgb",
++        )
++        return VerifiedOriginal(asset, content)
++
++    async def verified_original(
++        self, scope: IdempotencyScope, media_ref: MediaRef
++    ) -> MediaAsset:
++        return (await self.read_original(scope, media_ref)).asset
++
++    async def verified_task_original(
++        self, scope: IdempotencyScope, task: AcceptedTask
++    ) -> VerifiedOriginal:
++        task = AcceptedTask.model_validate(task)
++        if task.idempotency_scope != scope:
++            raise MediaError("original_media_scope_mismatch")
++        result = await self.read_original(scope, task.media_ref)
++        task.validate_media(result.asset)
++        return result
++
++    async def _require_dispatch(self, binding: _DispatchKey) -> StoredDispatch:
++        dispatch = await self._journal.get_dispatch(
++            binding.scope, binding.execution_id, binding.dispatch_id
++        )
++        if dispatch is None or not dispatch.send_admitted:
++            raise MediaError("media_dispatch_unavailable")
++        return dispatch
++
++    async def _stage_blob(
++        self,
++        connection: AsyncConnection,
++        binding: _DispatchKey,
++        role: _Role,
++        content: bytes,
++        blob: _Blob,
++    ) -> datetime:
++        key = binding.key(role)
++        params = {**binding.params(), "role": role}
++        await _locked(connection, key)
++        inserted = (
++            await connection.execute(_ARTIFACT_INSERT, {**params, **blob.params()})
++        ).scalar_one_or_none()
++        if inserted is None:
++            current = await self._get_blob(connection, binding, role)
++            if current is None or current[0] != blob:
++                raise MediaError("dispatch_media_identity_conflict")
++            staged_at = current[1]
++        else:
++            staged_at = inserted.astimezone(UTC)
++        await asyncio.to_thread(
++            self._bytes.publish,
++            key,
++            content,
++            blob.digest,
++            recover_orphan=inserted is not None,
++        )
++        return staged_at
++
++    @staticmethod
++    async def _get_blob(
++        connection: AsyncConnection, binding: _DispatchKey, role: _Role
++    ) -> tuple[_Blob, datetime] | None:
++        row = (
++            await connection.execute(_ARTIFACT, {**binding.params(), "role": role})
++        ).one_or_none()
++        if row is None:
++            return None
++        return (
++            _Blob(
++                row.store_id,
++                row.content_sha256,
++                row.byte_size,
++                row.wire_sha256,
++                row.wire_size,
++                row.evidence_id,
++                row.evidence_claim_sha256,
++            ),
++            row.staged_at.astimezone(UTC),
++        )
++
++    async def _read_blob(
++        self, binding: _DispatchKey, role: _Role, blob: _Blob, limit: int
++    ) -> bytes:
++        if blob.store_id != self._store_id:
++            raise MediaError("media_store_identity_mismatch")
++        return await asyncio.to_thread(
++            self._bytes.read, binding.key(role), blob.digest, blob.size, limit
++        )
++
++    async def cleanup_unbound_original(
++        self, scope: IdempotencyScope, media_id: str
++    ) -> bool:
++        """Reclaim a crashed/rolled-back publication whose binding was never committed."""
++        params = {**_scope(scope), "media": RECORD_ID.validate_python(media_id)}
++        key = _key("original", scope.project_id, scope.client_id, media_id)
++        return await _durable(self._cleanup_original(key, params))
++
++    async def _cleanup_original(self, key: str, params: dict[str, str]) -> bool:
++        async with self._transaction() as connection:
++            await _locked(connection, key)
++            if (
++                await connection.execute(_ORIGINAL, params)
++            ).scalar_one_or_none() is not None:
++                return False
++            await asyncio.to_thread(self._bytes.remove_orphan, key)
++            return True
++
++    async def cleanup_unbound_dispatch(
++        self, scope: IdempotencyScope, execution_id: str, dispatch_id: str, role: _Role
++    ) -> bool:
++        """Reclaim only bytes without a committed role binding."""
++        if role not in {"model_raw", "model_normalized"}:
++            TOOL_SLOT.validate_python(role)
++        binding = _DispatchKey(scope, execution_id, dispatch_id)
++        return await _durable(self._cleanup_dispatch(binding, role))
++
++    async def _cleanup_dispatch(self, binding: _DispatchKey, role: _Role) -> bool:
++        key = binding.key(role)
++        async with self._transaction() as connection:
++            await _locked(connection, key)
++            if await self._get_blob(connection, binding, role) is not None:
++                return False
++            await asyncio.to_thread(self._bytes.remove_orphan, key)
++            return True
++
++    async def stage_model_response(
++        self,
++        scope: IdempotencyScope,
++        execution_id: str,
++        dispatch_id: str,
++        receipt: TransportResult,
++    ) -> None:
++        """Stage a trusted HTTP observation; historical reads also require its journal receipt."""
++        binding = _DispatchKey(scope, execution_id, dispatch_id)
++        dispatch = await self._require_dispatch(binding)
++        if not isinstance(
++            dispatch.intent.target, (ModelDispatchTarget, NestedModelDispatchTarget)
++        ):
++            raise MediaError("media_dispatch_kind_mismatch")
++        raw, normalized = receipt.response_bytes, receipt.parsed_content
++        if raw is None and normalized is None:
++            return
++        digest, size = receipt.response_digest, receipt.observed_response_bytes
++        if (
++            not receipt.dispatched
++            or receipt.response_status is None
++            or digest is None
++            or size is None
++            or not 1 <= size <= self._limits.max_response_bytes
++        ):
++            raise MediaError("model_response_incomplete")
++
++        for entry in dispatch.results:
++            recorded = entry.result
++            if (
++                not isinstance(recorded, ModelDispatchResult)
++                or recorded.response_digest is None
++            ):
++                continue
++            if (
++                recorded.response_digest,
++                recorded.observed_response_bytes,
++                recorded.response_status,
++            ) != (digest, size, receipt.response_status):
++                raise MediaError("model_response_wire_mismatch")
++            if raw is not None and recorded.response_bytes_omission_reason is not None:
++                raise MediaError("model_response_retention_mismatch")
++            if (
++                normalized is not None
++                and recorded.response_bytes_omission_reason
++                not in {None, "policy_disabled"}
++            ):
++                raise MediaError("model_response_retention_mismatch")
++
++        roles: list[tuple[_Role, bytes, _Blob]] = []
++        if raw is not None:
++            _check_size(raw, self._limits.max_response_bytes)
++            if len(raw) != size or sha256(raw).hexdigest() != digest:
++                raise MediaError("model_response_wire_mismatch")
++            roles.append(
++                ("model_raw", raw, _Blob(self._store_id, digest, size, digest, size))
++            )
++        if normalized is not None:
++            _check_size(normalized, self._limits.max_response_bytes)
++            if (
++                receipt.error is not None
++                or not 200 <= receipt.response_status <= 299
++                or receipt.validated_response_contract_digest
++                != dispatch.intent.response_contract_digest
++            ):
++                raise MediaError("model_response_contract_mismatch")
++            await asyncio.to_thread(_check_json_object, normalized)
++            if raw is not None:
++                await asyncio.to_thread(_check_chat_content, raw, normalized)
++            roles.append(
++                (
++                    "model_normalized",
++                    normalized,
++                    _Blob(
++                        self._store_id,
++                        sha256(normalized).hexdigest(),
++                        len(normalized),
++                        digest,
++                        size,
++                    ),
++                )
++            )
++        await _durable(self._stage_model_blobs(binding, roles))
++
++    async def _stage_model_blobs(
++        self, binding: _DispatchKey, roles: list[tuple[_Role, bytes, _Blob]]
++    ) -> None:
++        reclaim = tuple(
++            partial(self._cleanup_dispatch, binding, role) for role, _, _ in roles
++        )
++        async with self._publication(*reclaim) as connection:
++            for role, content, blob in roles:
++                await self._stage_blob(connection, binding, role, content, blob)
++
++    async def read_model_response(
++        self,
++        scope: IdempotencyScope,
++        execution_id: str,
++        dispatch_id: str,
++        *,
++        late: bool,
++    ) -> StoredModelResponse:
++        if type(late) is not bool:
++            raise MediaError("model_response_receipt_invalid")
++        binding = _DispatchKey(scope, execution_id, dispatch_id)
++        # Undispatched/rejected and interrupted results may legitimately have
++        # journal diagnostics but no bytes.
++        dispatch = await self._journal.get_dispatch(scope, execution_id, dispatch_id)
++        if dispatch is None:
++            raise MediaError("media_dispatch_unavailable")
++        receipt = next(
++            (entry.result for entry in dispatch.results if entry.late is late), None
++        )
++        if not isinstance(receipt, ModelDispatchResult):
++            raise MediaError("model_response_receipt_unavailable")
++        raw: bytes | None = None
++        normalized: bytes | None = None
++        if (
++            dispatch.send_admitted
++            and receipt.acknowledgement == "http_headers"
++            and receipt.response_digest is not None
++        ):
++            async with self._engine.connect() as connection:
++                if receipt.response_bytes_omission_reason is None:
++                    raw = await self._read_model_role(
++                        connection, binding, "model_raw", receipt
++                    )
++                if (
++                    receipt.error is None
++                    and receipt.response_status is not None
++                    and 200 <= receipt.response_status <= 299
++                    and receipt.response_bytes_omission_reason
++                    in {None, "policy_disabled"}
++                ):
++                    normalized = await self._read_model_role(
++                        connection, binding, "model_normalized", receipt
++                    )
++        if raw is not None and normalized is not None:
++            await asyncio.to_thread(_check_chat_content, raw, normalized)
++        return StoredModelResponse(receipt, late, raw, normalized)
++
++    async def _read_model_role(
++        self,
++        connection: AsyncConnection,
++        binding: _DispatchKey,
++        role: Literal["model_raw", "model_normalized"],
++        receipt: ModelDispatchResult,
++    ) -> bytes | None:
++        row = await self._get_blob(connection, binding, role)
++        if row is None:
++            return None
++        blob, _ = row
++        if (blob.wire_digest, blob.wire_size) != (
++            receipt.response_digest,
++            receipt.observed_response_bytes,
++        ):
++            raise MediaError("model_response_wire_mismatch")
++        return await self._read_blob(
++            binding, role, blob, self._limits.max_response_bytes
++        )
++
++    async def _tool_context(
++        self, binding: _DispatchKey, slot: ToolSidecarSlot
++    ) -> _ToolContext:
++        dispatch = await self._require_dispatch(binding)
++        target = dispatch.intent.target
++        if (
++            not isinstance(target, ToolDispatchTarget)
++            or target.object_ref is None
++            or not isinstance(target.invocation_origin, ToolPlanStepOrigin)
++            or target.invocation_origin.step_id != _TOOL_STEPS[slot]
++        ):
++            raise MediaError("tool_sidecar_slot_mismatch")
++        async with self._engine.connect() as connection:
++            row = (
++                await connection.execute(
++                    text("""
++                        SELECT t.record::text, e.task_id
++                        FROM jimu_workflow.executions AS e
++                        JOIN jimu_workflow.tasks AS t USING (project_id, client_id, task_id)
++                        WHERE (e.project_id, e.client_id, e.execution_id)
++                            = (:project, :client, :execution)
++                    """),
++                    binding.params(),
++                )
++            ).one_or_none()
++        if row is None:
++            raise MediaError("tool_sidecar_task_unavailable")
++        task = AcceptedTask.model_validate_json(row[0])
++        if task.task_id != row.task_id:
++            raise MediaError("tool_sidecar_task_mismatch")
++        original = await self.verified_task_original(binding.scope, task)
++        return _ToolContext(binding, dispatch, target, task, original)
++
++    async def stage_tool_sidecar(
++        self,
++        scope: IdempotencyScope,
++        execution_id: str,
++        dispatch_id: str,
++        slot: ToolSidecarSlot,
++        spec: ToolSidecarSpec,
++        content: bytes,
++    ) -> EvidenceAsset:
++        """Verify and stage one named CPU sidecar before ToolWorkerResponse is returned."""
++        TOOL_SLOT.validate_python(slot)
++        binding = _DispatchKey(scope, execution_id, dispatch_id)
++        _check_size(content, self._limits.max_sidecar_bytes)
++        context = await self._tool_context(binding, slot)
++        blob = _Blob(
++            self._store_id,
++            sha256(content).hexdigest(),
++            len(content),
++            evidence_id=RECORD_ID.validate_python(spec.evidence_id),
++        )
++        draft = self._tool_asset(context, slot, spec, blob, datetime.now(UTC))
++        await self._verify_sidecar(context, slot, draft, content)
++        if slot == "geometry":
++            if spec.mask_record is not None:
++                raise MediaError("tool_sidecar_slot_mismatch")
++        elif spec.mask_record is None:
++            raise MediaError("mask_sidecar_record_required")
++        else:
++            spec.mask_record.validate_evidence(draft)
++        blob = replace(blob, evidence_claim_digest=_evidence_claim_digest(draft))
++        return await _durable(self._publish_sidecar(context, slot, spec, blob, content))
++
++    def _tool_asset(
++        self,
++        context: _ToolContext,
++        slot: ToolSidecarSlot,
++        spec: ToolSidecarSpec,
++        blob: _Blob,
++        at: datetime,
++    ) -> EvidenceAsset:
++        target, binding = context.target, context.binding
++        assert target.object_ref is not None
++        project = binding.scope.project_id
++        access: ProjectEvidenceAccess | TaskEvidenceAccess
++        if spec.access == "project":
++            access = ProjectEvidenceAccess(scope="project", project_id=project)
++        elif spec.access == "task":
++            access = TaskEvidenceAccess(
++                scope="task", project_id=project, task_id=context.task.task_id
++            )
++        else:
++            raise MediaError("tool_sidecar_access_mismatch")
++        return EvidenceAsset(
++            schema_version="1.0.0",
++            evidence_id=spec.evidence_id,
++            evidence_type=EvidenceType.GEOMETRY
++            if slot == "geometry"
++            else EvidenceType.MASK,
++            scope=ObjectEvidenceScope(
++                scope="object",
++                execution_id=binding.execution_id,
++                object_ref=target.object_ref,
++                profile_ref=target.profile_ref,
++            ),
++            storage=self._storage(binding.key(slot)),
++            sha256=blob.digest,
++            mime_type="application/json" if slot == "geometry" else "image/png",
++            byte_size=blob.size,
++            stage=self._finalized(blob.digest, at),
++            spatial=spec.spatial,
++            producer_id=target.tool_ref.artifact_id,
++            producer_version=target.implementation_version,
++            access_scope=access,
++            retention=spec.retention,
++            created_at=at,
++        )
++
++    async def _publish_sidecar(
++        self,
++        context: _ToolContext,
++        slot: ToolSidecarSlot,
++        spec: ToolSidecarSpec,
++        blob: _Blob,
++        content: bytes,
++    ) -> EvidenceAsset:
++        reclaim = partial(self._cleanup_dispatch, context.binding, slot)
++        async with self._publication(reclaim) as connection:
++            staged_at = await self._stage_blob(
++                connection, context.binding, slot, content, blob
++            )
++        return self._tool_asset(context, slot, spec, blob, staged_at)
++
++    async def _verify_sidecar(
++        self,
++        context: _ToolContext,
++        slot: ToolSidecarSlot,
++        evidence: EvidenceAsset,
++        content: bytes,
++    ) -> None:
++        evidence.validate_original_media(context.original.asset)
++        spatial = evidence.spatial
++        if (
++            spatial.kind != "derived_image"
++            or spatial.transforms[0].source != context.original.coordinate_system
++        ):
++            raise MediaError("tool_sidecar_original_frame_mismatch")
++        if slot == "geometry":
++            await asyncio.to_thread(_check_json_object, content)
++            return
++        if (
++            len(spatial.transforms) != 1
++            or spatial.transforms[0].affine != (1, 0, 0, 0, 1, 0)
++            or spatial.coordinate_system.dimensions != context.original.asset.dimensions
++        ):
++            raise MediaError("mask_sidecar_original_grid_required")
++        await self._decode(
++            content,
++            "image/png",
++            spatial.coordinate_system.dimensions,
++            encoding="binary_mask",
++        )
++
++    async def read_tool_sidecar(
++        self,
++        scope: IdempotencyScope,
++        execution_id: str,
++        dispatch_id: str,
++        slot: ToolSidecarSlot,
++        *,
++        expected_asset: EvidenceAsset | None = None,
++    ) -> VerifiedEvidence:
++        """Resolve a sidecar through its exact Tool receipt and produced Attempt output.
++
++        A downstream Tool can pass the EvidenceAsset from the bound ancestor
++        result to require the exact Object, Profile, and producing payload.
++        """
++        TOOL_SLOT.validate_python(slot)
++        binding = _DispatchKey(scope, execution_id, dispatch_id)
++        context = await self._tool_context(binding, slot)
++        async with self._engine.connect() as connection:
++            stored = await self._get_blob(connection, binding, slot)
++            if stored is None or stored[0].evidence_id is None:
++                raise MediaError("tool_sidecar_unavailable")
++            blob, staged_at = stored
++            evidence_id = blob.evidence_id
++            assert evidence_id is not None
++            output_key = f"evidence.{evidence_id}"
++            evidence_kind = await connection.scalar(
++                text("""
++                    SELECT output_kind FROM jimu_workflow.produced_outputs
++                    WHERE (project_id, client_id, execution_id, node_run_id, attempt_id, output_key)
++                        = (:project, :client, :execution, :node, :attempt, :output_key)
++                """),
++                {
++                    **binding.params(),
++                    "node": context.dispatch.node_run_id,
++                    "attempt": context.dispatch.attempt_id,
++                    "output_key": output_key,
++                },
++            )
++            if evidence_kind != "evidence":
++                raise MediaError("tool_sidecar_output_unavailable")
++            asset = await read_output(
++                connection,
++                scope,
++                execution_id,
++                context.dispatch.node_run_id,
++                context.dispatch.attempt_id,
++                output_key,
++                EvidenceAsset,
++            )
++        receipt = next(
++            (row.result for row in context.dispatch.results if not row.late), None
++        )
++        if asset is None or not isinstance(receipt, ToolDispatchResult):
++            raise MediaError("tool_sidecar_output_unavailable")
++        if expected_asset is not None and asset != expected_asset:
++            raise MediaError("tool_sidecar_bound_asset_mismatch")
++        execution = receipt.execution
++        if (
++            receipt.acknowledgement != "tool_process"
++            or execution is None
++            or execution.tool_execution_id != dispatch_id
++            or execution.execution_id != execution_id
++            or execution.attempt_ref.record_id != context.dispatch.attempt_id
++            or execution.node_run_ref.record_id != context.dispatch.node_run_id
++            or execution.object_ref != context.target.object_ref
++            or execution.profile_ref != context.target.profile_ref
++            or not isinstance(execution.attempt_result, ReturnedToolAttempt)
++            or execution.attempt_result.result.status not in {"succeeded", "partial"}
++            or not any(
++                named.name == slot
++                and any(ref.record_id == evidence_id for ref in named.evidence_refs)
++                for named in execution.attempt_result.result.evidence
++            )
++        ):
++            raise MediaError("tool_sidecar_output_mismatch")
++        if slot != "geometry":
++            result = execution.attempt_result.result
++            payload = None if isinstance(result, FailedToolResult) else result.payload
++            if not isinstance(payload, RecordValue):
++                raise MediaError("mask_sidecar_record_required")
++            MaskSidecarRecord.from_typed_output(
++                payload.value.get(slot)
++            ).validate_evidence(asset)
++        if asset.spatial.kind != "derived_image":
++            raise MediaError("tool_sidecar_original_frame_mismatch")
++        expected = self._tool_asset(
++            context,
++            slot,
++            ToolSidecarSpec(
++                evidence_id, asset.spatial, asset.retention, asset.access_scope.scope
++            ),
++            blob,
++            staged_at,
++        )
++        if asset != expected or blob.evidence_claim_digest != _evidence_claim_digest(
++            asset
++        ):
++            raise MediaError("tool_sidecar_output_mismatch")
++        content = await self._read_blob(
++            binding, slot, blob, self._limits.max_sidecar_bytes
++        )
++        await self._verify_sidecar(context, slot, asset, content)
++        return VerifiedEvidence(asset, content)
++
++
++def _evidence_claim_digest(asset: EvidenceAsset) -> str:
++    # Digest the immutable claim excluding publication timestamps. The owning
++    # Attempt's produced_outputs retains the sole canonical EvidenceAsset.
++    claim = asset.model_dump(mode="json", exclude={"created_at", "stage"})
++    return sha256(canonical_bytes(claim)).hexdigest()
++
++
++def _check_chat_content(raw: bytes, normalized: bytes) -> None:
++    try:
++        envelope = strict_json(raw)
++    except WireError:
++        raise MediaError("model_response_wire_mismatch") from None
++    if isinstance(envelope, dict):
++        choices = envelope.get("choices")
++        if (
++            isinstance(choices, list)
++            and len(choices) == 1
++            and isinstance(choices[0], dict)
++        ):
++            message = choices[0].get("message")
++            if isinstance(message, dict):
++                content = message.get("content")
++                if isinstance(content, str) and content.encode("utf-8") == normalized:
++                    return
++    raise MediaError("model_response_normalized_mismatch")
+--- /dev/null
++++ b/src/jimu_runtime/inspection/media/types.py
+@@ -0,0 +1,161 @@
++"""Local media host contracts. Byte payloads are excluded from representations."""
++
++from collections.abc import Mapping
++from dataclasses import dataclass, field
++from typing import Literal
++
++from pydantic import TypeAdapter
++
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.primitives import ArtifactId, Digest, RecordId
++from jimu_runtime.domain.runtime.evidence import (
++    DerivedImageEvidence,
++    EvidenceAsset,
++    RetentionPolicyRef,
++)
++from jimu_runtime.domain.runtime.media import (
++    CoordinateSystem,
++    ImageDimensions,
++    MediaAsset,
++)
++from jimu_runtime.domain.values import (
++    EnumValue,
++    IntegerValue,
++    RecordValue,
++    StringValue,
++    Value,
++)
++from jimu_runtime.gateway.journal_records import ModelDispatchResult
++
++type ImageMime = Literal["image/jpeg", "image/png"]
++type ToolSidecarSlot = Literal["wheel_mask", "tactile_paving_mask", "geometry"]
++
++RECORD_ID = TypeAdapter[RecordId](RecordId)
++STORE_ID = TypeAdapter[ArtifactId](ArtifactId)
++IMAGE_MIME = TypeAdapter[ImageMime](ImageMime)
++TOOL_SLOT = TypeAdapter[ToolSidecarSlot](ToolSidecarSlot)
++
++
++class MediaError(ValueError):
++    """A fixed diagnostic without paths, credentials, or payload data."""
++
++
++@dataclass(frozen=True, slots=True)
++class MediaLimits:
++    max_original_bytes: int = 16 * 1024 * 1024
++    max_response_bytes: int = 8 * 1024 * 1024
++    max_sidecar_bytes: int = 16 * 1024 * 1024
++    max_dimension: int = 8192
++    max_pixels: int = 24_000_000
++    max_parallel_decodes: int = 2
++
++    def __post_init__(self) -> None:
++        for value, ceiling in (
++            (self.max_original_bytes, 64 * 1024 * 1024),
++            (self.max_response_bytes, 64 * 1024 * 1024),
++            (self.max_sidecar_bytes, 64 * 1024 * 1024),
++            (self.max_dimension, 8192),
++            (self.max_pixels, 24_000_000),
++            (self.max_parallel_decodes, 8),
++        ):
++            if type(value) is not int or not 1 <= value <= ceiling:
++                raise MediaError("media_limits_invalid")
++
++
++@dataclass(frozen=True, slots=True)
++class VerifiedOriginal:
++    asset: MediaAsset
++    content: bytes = field(repr=False)
++
++    @property
++    def coordinate_system(self) -> CoordinateSystem:
++        return CoordinateSystem(
++            coordinate_system_id=self.asset.media_ref.media_id,
++            frame="original_image",
++            dimensions=self.asset.dimensions,
++        )
++
++
++@dataclass(frozen=True, slots=True)
++class StoredModelResponse:
++    receipt: ModelDispatchResult
++    late: bool
++    raw: bytes | None = field(repr=False)
++    normalized: bytes | None = field(repr=False)
++
++
++class MaskSidecarRecord(ContractModel):
++    """The four declared fields from a named mask output, after value projection."""
++
++    coordinate_system: CoordinateSystem
++    evidence_id: RecordId
++    sha256: Digest
++    source_media_sha256: Digest
++
++    @classmethod
++    def from_typed_output(cls, output: Value | None) -> "MaskSidecarRecord":
++        fields = _record_fields(
++            output,
++            {"coordinate_system", "evidence_id", "sha256", "source_media_sha256"},
++        )
++        coordinates = _record_fields(
++            fields["coordinate_system"], {"coordinate_system_id", "dimensions", "frame"}
++        )
++        dimensions = _record_fields(coordinates["dimensions"], {"width", "height"})
++        frame = coordinates["frame"]
++        width, height = dimensions["width"], dimensions["height"]
++        if (
++            not isinstance(frame, EnumValue)
++            or frame.value != "original_image"
++            or not isinstance(width, IntegerValue)
++            or not isinstance(height, IntegerValue)
++        ):
++            raise MediaError("mask_sidecar_record_invalid")
++        return cls(
++            coordinate_system=CoordinateSystem(
++                coordinate_system_id=_typed_string(coordinates["coordinate_system_id"]),
++                frame="original_image",
++                dimensions=ImageDimensions(width=width.value, height=height.value),
++            ),
++            evidence_id=_typed_string(fields["evidence_id"]),
++            sha256=_typed_string(fields["sha256"]),
++            source_media_sha256=_typed_string(fields["source_media_sha256"]),
++        )
++
++    def validate_evidence(self, evidence: EvidenceAsset) -> None:
++        spatial = evidence.spatial
++        if (
++            not isinstance(spatial, DerivedImageEvidence)
++            or self.coordinate_system != spatial.transforms[0].source
++            or self.evidence_id != evidence.evidence_id
++            or self.sha256 != evidence.sha256
++            or self.source_media_sha256 != spatial.original_media_ref.sha256
++        ):
++            raise MediaError("mask_sidecar_record_mismatch")
++
++
++@dataclass(frozen=True, slots=True)
++class ToolSidecarSpec:
++    evidence_id: RecordId
++    spatial: DerivedImageEvidence
++    retention: RetentionPolicyRef
++    access: Literal["project", "task"]
++    mask_record: MaskSidecarRecord | None = None
++
++
++@dataclass(frozen=True, slots=True)
++class VerifiedEvidence:
++    asset: EvidenceAsset
++    content: bytes = field(repr=False)
++
++
++def _record_fields(value: Value | None, names: set[str]) -> Mapping[str, Value]:
++    if not isinstance(value, RecordValue) or value.value.keys() != names:
++        raise MediaError("mask_sidecar_record_invalid")
++    return value.value
++
++
++def _typed_string(value: Value) -> str:
++    if not isinstance(value, StringValue):
++        raise MediaError("mask_sidecar_record_invalid")
++    return value.value
+--- /dev/null
++++ b/src/jimu_runtime/workflow/migrations/007_media_artifacts.sql
+@@ -0,0 +1,53 @@
++-- Scope-bound local content references. The application can only append.
++CREATE TABLE jimu_workflow.original_media (
++    project_id text NOT NULL,
++    client_id text NOT NULL,
++    media_id text NOT NULL,
++    record json NOT NULL,
++    PRIMARY KEY (project_id, client_id, media_id),
++    CHECK ((record ->> 'schema_version') IS NOT DISTINCT FROM '1.0.0'),
++    CHECK ((record -> 'media_ref' ->> 'media_id') IS NOT DISTINCT FROM media_id),
++    CHECK ((record -> 'stage' ->> 'stage') IS NOT DISTINCT FROM 'finalized')
++);
++
++-- Staged transport/Tool bytes carry identity and integrity metadata only.
++-- A journal receipt or an exact Attempt output remains the source of authority.
++CREATE TABLE jimu_workflow.dispatch_media (
++    project_id text NOT NULL,
++    client_id text NOT NULL,
++    execution_id text NOT NULL,
++    dispatch_id text NOT NULL,
++    role text NOT NULL CHECK (role IN (
++        'model_raw', 'model_normalized', 'wheel_mask', 'tactile_paving_mask', 'geometry'
++    )),
++    schema_version text NOT NULL DEFAULT '1.0.0' CHECK (schema_version = '1.0.0'),
++    store_id text NOT NULL CHECK (store_id <> ''),
++    content_sha256 jimu_workflow.digest NOT NULL,
++    byte_size bigint NOT NULL CHECK (byte_size > 0),
++    wire_sha256 jimu_workflow.digest,
++    wire_size bigint CHECK (wire_size > 0),
++    evidence_id text,
++    evidence_claim_sha256 jimu_workflow.digest,
++    staged_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
++    PRIMARY KEY (project_id, client_id, execution_id, dispatch_id, role),
++    CHECK (
++        (role = 'model_raw' AND evidence_id IS NULL AND evidence_claim_sha256 IS NULL AND
++         content_sha256 IS NOT DISTINCT FROM wire_sha256 AND
++         byte_size IS NOT DISTINCT FROM wire_size)
++        OR (role = 'model_normalized' AND evidence_id IS NULL AND evidence_claim_sha256 IS NULL AND
++            wire_sha256 IS NOT NULL AND wire_size IS NOT NULL)
++        OR (role IN ('wheel_mask', 'tactile_paving_mask', 'geometry') AND
++            evidence_id IS NOT NULL AND evidence_id <> '' AND evidence_claim_sha256 IS NOT NULL AND
++            wire_sha256 IS NULL AND wire_size IS NULL)
++    ),
++    FOREIGN KEY (project_id, client_id, execution_id, dispatch_id)
++        REFERENCES jimu_workflow.dispatch_intents
++            (project_id, client_id, execution_id, dispatch_id)
++);
++
++CREATE UNIQUE INDEX dispatch_media_evidence_once
++    ON jimu_workflow.dispatch_media (project_id, client_id, execution_id, evidence_id)
++    WHERE evidence_id IS NOT NULL;
++
++GRANT SELECT, INSERT ON jimu_workflow.original_media, jimu_workflow.dispatch_media
++    TO jimu_workflow_app;

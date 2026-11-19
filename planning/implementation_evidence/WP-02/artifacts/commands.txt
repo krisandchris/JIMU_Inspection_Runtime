@@ -1,0 +1,108 @@
+Environment:
+Linux local CPU only
+uv 0.9.15
+Python 3.12.3
+{'pydantic': '2.12.5', 'pydantic-core': '2.41.5', 'jsonschema': '4.25.1', 'referencing': '0.37.0', 'rfc8785': '0.1.4', 'pytest': '8.4.2', 'ruff': '0.14.14', 'mypy': '1.18.2'}
+
++ uv lock --offline
+Resolved 23 packages in 0.49ms
+exit 0
+
++ diff -u /tmp/jimu-wp02-artifacts-before.lock uv.lock
+--- /tmp/jimu-wp02-artifacts-before.lock	2026-11-18 10:40:58.766912965 +0800
++++ uv.lock	2026-11-18 10:41:05.850817353 +0800
+@@ -43,13 +43,13 @@
+ version = "0.1.0"
+ source = { editable = "." }
+ dependencies = [
++    { name = "jsonschema" },
+     { name = "pydantic" },
+     { name = "rfc8785" },
+ ]
+ 
+ [package.dev-dependencies]
+ dev = [
+-    { name = "jsonschema" },
+     { name = "mypy" },
+     { name = "pytest" },
+     { name = "ruff" },
+@@ -58,13 +58,13 @@
+ 
+ [package.metadata]
+ requires-dist = [
++    { name = "jsonschema", specifier = ">=4.25.1,<4.26" },
+     { name = "pydantic", specifier = ">=2.12.5,<2.13" },
+     { name = "rfc8785", specifier = ">=0.1.4,<0.1.5" },
+ ]
+ 
+ [package.metadata.requires-dev]
+ dev = [
+-    { name = "jsonschema", specifier = ">=4.25.1,<4.26" },
+     { name = "mypy", specifier = ">=1.18.2,<1.19" },
+     { name = "pytest", specifier = ">=8.4.2,<8.5" },
+     { name = "ruff", specifier = ">=0.14.5,<0.15" },
+exit 1 (expected differences for dev-to-runtime dependency only)
+
++ uv run --locked --no-sync python -m pytest tests/{contract,unit,negative}/test_wp02_artifact*.py tests/{contract,unit,negative}/test_wp02_integrity*.py tests/unit/test_b_dependency_graph.py tests/contract/test_dependency_boundaries.py -q --junitxml=planning/implementation_evidence/WP-02/artifacts/tests.xml
+........................................................................ [ 41%]
+........................................................................ [ 82%]
+..............................                                           [100%]
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/artifacts/tests.xml -
+174 passed in 0.85s
+exit 0
+
++ uv run --locked --no-sync ruff check src/jimu_runtime/bundle/{artifacts,catalogue,closure}.py tests/{contract,unit,negative}/test_wp02_artifact*.py tests/fixtures/wp02/artifacts/support.py tests/{helpers/boundary_graph.py,unit/test_b_dependency_graph.py,contract/test_dependency_boundaries.py}
+All checks passed!
+exit 0
+
++ uv run --locked --no-sync ruff format --check src/jimu_runtime/bundle/{artifacts,catalogue,closure}.py tests/{contract,unit,negative}/test_wp02_artifact*.py tests/fixtures/wp02/artifacts/support.py tests/{helpers/boundary_graph.py,unit/test_b_dependency_graph.py,contract/test_dependency_boundaries.py}
+10 files already formatted
+exit 0
+
++ uv run --locked --no-sync mypy src/jimu_runtime/bundle/{artifacts,catalogue,closure}.py
+Success: no issues found in 3 source files
+exit 0
+
++ UV_PROJECT_ENVIRONMENT=/tmp/jimu-wp02-artifacts-nodev.4mLW1F uv sync --offline --locked --no-dev --python .venv/bin/python
+Using CPython 3.12.3 interpreter at: .venv/bin/python
+Creating virtual environment at: /tmp/jimu-wp02-artifacts-nodev.4mLW1F
+Resolved 23 packages in 0.47ms
+Installed 12 packages in 9ms
+ + annotated-types==0.8.0
+ + attrs==26.1.0
+ + jimu-runtime==0.1.0 (from file:///mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan)
+ + jsonschema==4.25.1
+ + jsonschema-specifications==2025.9.1
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + referencing==0.37.0
+ + rfc8785==0.1.4
+ + rpds-py==2026.9.1
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
+exit 0
+
++ /tmp/jimu-wp02-artifacts-nodev.4mLW1F/bin/python -c 'from importlib.metadata import version; from importlib.util import find_spec; from jimu_runtime.bundle.artifacts import ARTIFACT_LAYOUTS; from jimu_runtime.bundle.closure import validate_closure; print(version("jsonschema"), len(ARTIFACT_LAYOUTS), validate_closure.__name__); assert find_spec("pytest") is None'
+4.25.1 25 validate_closure
+exit 0
+
+Follow-up: distinguish the exact member in aggregate rejection diagnostics.
++ uv run --locked --no-sync python -m pytest tests/{contract,unit,negative}/test_wp02_artifact*.py tests/{contract,unit,negative}/test_wp02_integrity*.py tests/unit/test_b_dependency_graph.py tests/contract/test_dependency_boundaries.py -q --junitxml=planning/implementation_evidence/WP-02/artifacts/tests.xml
+........................................................................ [ 41%]
+........................................................................ [ 82%]
+...............................                                          [100%]
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/artifacts/tests.xml -
+175 passed in 0.87s
+exit 0
+
++ uv run --locked --no-sync mypy src/jimu_runtime/bundle/{artifacts,catalogue,closure}.py
+Success: no issues found in 3 source files
+exit 0
+
++ uv run --locked --no-sync ruff check src/jimu_runtime/bundle/{artifacts,catalogue,closure}.py tests/{contract,unit,negative}/test_wp02_artifact*.py tests/fixtures/wp02/artifacts/support.py tests/{helpers/boundary_graph.py,unit/test_b_dependency_graph.py,contract/test_dependency_boundaries.py}
+All checks passed!
+exit 0
+
++ uv run --locked --no-sync ruff format --check src/jimu_runtime/bundle/{artifacts,catalogue,closure}.py tests/{contract,unit,negative}/test_wp02_artifact*.py tests/fixtures/wp02/artifacts/support.py tests/{helpers/boundary_graph.py,unit/test_b_dependency_graph.py,contract/test_dependency_boundaries.py}
+10 files already formatted
+exit 0

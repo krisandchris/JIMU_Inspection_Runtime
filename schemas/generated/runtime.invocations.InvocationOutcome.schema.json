@@ -1,0 +1,171 @@
+{
+  "$defs": {
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "evidence",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "EvidenceRefs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "FailedInvocation": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "$ref": "#/$defs/InvocationError"
+        },
+        "status": {
+          "const": "failed",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "error"
+      ],
+      "title": "FailedInvocation",
+      "type": "object"
+    },
+    "InvocationError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "error_class": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TriggerError"
+            },
+            {
+              "enum": [
+                "validation",
+                "association",
+                "resource_exhausted",
+                "cancelled",
+                "internal"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Error Class"
+        }
+      },
+      "required": [
+        "error_class",
+        "code",
+        "diagnostic_refs"
+      ],
+      "title": "InvocationError",
+      "type": "object"
+    },
+    "SucceededInvocation": {
+      "additionalProperties": false,
+      "properties": {
+        "response_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Response Digest",
+          "type": "string"
+        },
+        "status": {
+          "const": "succeeded",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "response_digest"
+      ],
+      "title": "SucceededInvocation",
+      "type": "object"
+    },
+    "TriggerError": {
+      "enum": [
+        "transport",
+        "timeout",
+        "rate_limit",
+        "unavailable"
+      ],
+      "type": "string"
+    },
+    "UndispatchedInvocation": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "$ref": "#/$defs/InvocationError"
+        },
+        "status": {
+          "const": "not_dispatched",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "error"
+      ],
+      "title": "UndispatchedInvocation",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "mapping": {
+      "failed": "#/$defs/FailedInvocation",
+      "not_dispatched": "#/$defs/UndispatchedInvocation",
+      "succeeded": "#/$defs/SucceededInvocation"
+    },
+    "propertyName": "status"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SucceededInvocation"
+    },
+    {
+      "$ref": "#/$defs/FailedInvocation"
+    },
+    {
+      "$ref": "#/$defs/UndispatchedInvocation"
+    }
+  ]
+}

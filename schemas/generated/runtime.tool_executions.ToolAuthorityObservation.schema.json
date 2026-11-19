@@ -1,0 +1,238 @@
+{
+  "$defs": {
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "EmittedOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "emitted",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "fact_ref": {
+          "$ref": "#/$defs/FactRef"
+        },
+        "fact_status": {
+          "$ref": "#/$defs/FactStatus"
+        },
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "disposition",
+        "output_name",
+        "fact_status",
+        "fact_ref"
+      ],
+      "title": "EmittedOutput",
+      "type": "object"
+    },
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "evidence",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "EvidenceRefs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "FactReason": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "reason_code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Reason Code",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reason_code",
+        "message",
+        "diagnostic_refs"
+      ],
+      "title": "FactReason",
+      "type": "object"
+    },
+    "FactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "fact",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "FactRef",
+      "type": "object"
+    },
+    "FactStatus": {
+      "enum": [
+        "known",
+        "unknown",
+        "error",
+        "not_applicable",
+        "not_evaluated"
+      ],
+      "title": "FactStatus",
+      "type": "string"
+    },
+    "MappedOutputResult": {
+      "discriminator": {
+        "mapping": {
+          "emitted": "#/$defs/EmittedOutput",
+          "optional_absence": "#/$defs/OptionalAbsentOutput"
+        },
+        "propertyName": "disposition"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/EmittedOutput"
+        },
+        {
+          "$ref": "#/$defs/OptionalAbsentOutput"
+        }
+      ]
+    },
+    "OptionalAbsentOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "optional_absence",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/FactReason"
+        }
+      },
+      "required": [
+        "disposition",
+        "output_name",
+        "reason"
+      ],
+      "title": "OptionalAbsentOutput",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Qualification and mapped outputs observed for a returned Tool Plan step.",
+  "properties": {
+    "arrival_qualification": {
+      "enum": [
+        "on_time",
+        "late",
+        "unresolved"
+      ],
+      "title": "Arrival Qualification",
+      "type": "string"
+    },
+    "association_validation": {
+      "enum": [
+        "trusted",
+        "untrusted",
+        "unresolved"
+      ],
+      "title": "Association Validation",
+      "type": "string"
+    },
+    "envelope_validation": {
+      "enum": [
+        "trusted",
+        "untrusted",
+        "unresolved"
+      ],
+      "title": "Envelope Validation",
+      "type": "string"
+    },
+    "mapped_outputs": {
+      "items": {
+        "$ref": "#/$defs/MappedOutputResult"
+      },
+      "maxItems": 64,
+      "title": "Mapped Outputs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "arrival_qualification",
+    "envelope_validation",
+    "association_validation",
+    "mapped_outputs"
+  ],
+  "title": "ToolAuthorityObservation",
+  "type": "object"
+}

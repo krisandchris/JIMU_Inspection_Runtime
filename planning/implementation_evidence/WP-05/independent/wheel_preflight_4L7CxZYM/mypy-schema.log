@@ -1,0 +1,19 @@
+2026-11-18T06:24:43Z
++ /tmp/jimu-wp05-wheel-LDhNK49u/dev/bin/mypy --strict src/jimu_runtime scripts/generate_schemas.py examples/nonmotor_vehicle_illegal_parking/compilable/lifecycle.py examples/nonmotor_vehicle_illegal_parking/compilable/local_trust.py examples/nonmotor_vehicle_illegal_parking/compilable/scene.py examples/nonmotor_vehicle_illegal_parking/compilable/__main__.py
+Success: no issues found in 182 source files
++ /tmp/jimu-wp05-wheel-LDhNK49u/dev/bin/python scripts/generate_schemas.py --check
+Schema export matches
++ /tmp/jimu-wp05-wheel-LDhNK49u/dev/bin/python scripts/generate_schemas.py --output /tmp/jimu-wp05-wheel-LDhNK49u/schema-first
+Schema export written; COMPLETE_WP01C_CONTRACTS
++ /tmp/jimu-wp05-wheel-LDhNK49u/dev/bin/python scripts/generate_schemas.py --output /tmp/jimu-wp05-wheel-LDhNK49u/schema-second
+Schema export written; COMPLETE_WP01C_CONTRACTS
++ diff --recursive --brief /tmp/jimu-wp05-wheel-LDhNK49u/schema-first /tmp/jimu-wp05-wheel-LDhNK49u/schema-second
++ diff --recursive --brief schemas/generated /tmp/jimu-wp05-wheel-LDhNK49u/schema-first
++ python3 /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/independent/unchanged_schemas.py /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/primary_freeze_924eb788eab1/product_sha256.json /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_4L7CxZYM/product_sha256.json
+{"added": [], "changed": [], "current_schemas": 347, "previous_schemas": 347, "removed": []}
++ result=0
++ date -u +%FT%TZ
+2026-11-18T06:25:33Z
++ printf 'exit=%s\n' 0
+exit=0
++ exit 0

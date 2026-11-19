@@ -1,0 +1,760 @@
+--- /dev/null
++++ b/src/jimu_runtime/inspection/rules/evidence_guard.py
+@@ -0,0 +1,385 @@
++"""Build frozen guard proofs from a single fenced N06 input snapshot."""
++
++from collections.abc import Callable
++from dataclasses import dataclass
++
++from jimu_runtime.bundle.catalogue import ArtifactCatalogue
++from jimu_runtime.bundle.semantic_inputs import (
++    build_fact_schema_registry,
++    require_definition,
++)
++from jimu_runtime.domain.definition_enums import FactScope
++from jimu_runtime.domain.definitions.capabilities import ProfileDefinition
++from jimu_runtime.domain.enums import RuntimeRecordKind
++from jimu_runtime.domain.fact_selectors import (
++    FactSchemaContentRef,
++    FactSelector,
++    ProducerSelector,
++)
++from jimu_runtime.domain.nodes.decision import DecisionInput
++from jimu_runtime.domain.policies import EvidencePolicyArtifact
++from jimu_runtime.domain.primitives import ArtifactId
++from jimu_runtime.domain.rules.definitions import RuleDefinition, RuleSetDefinition
++from jimu_runtime.domain.runtime.authority import (
++    AuthoritativeResultSelection,
++    ObservationBatchSelection,
++    SystemOutputSelection,
++    ToolStepSelection,
++)
++from jimu_runtime.domain.runtime.decisions import (
++    BlockedRequiredEvidenceGuard,
++    CompleteRequiredEvidenceGuard,
++    RequiredEvidenceGuard,
++    RequiredEvidenceReason,
++    RequiredFactProof,
++    RulePath,
++)
++from jimu_runtime.domain.runtime.evidence import EvidenceAsset
++from jimu_runtime.domain.runtime.facts import (
++    AuthoritySelectionRef,
++    EvidenceRef,
++    FactRecord,
++    FactRef,
++    KnownFact,
++    QuestionFactSource,
++    SystemFactSource,
++    ToolFactSource,
++)
++from jimu_runtime.domain.runtime.intake import AcceptedTask
++from jimu_runtime.domain.runtime.media import MediaAsset
++from jimu_runtime.domain.validation.coverage_sources import CoverageAuthorityInput
++from jimu_runtime.domain.validation.runtime_authority import validate_runtime_authority
++from jimu_runtime.domain.values import RecordValue
++
++from ._guard_sources import (
++    EvidenceSources,
++    check_bundle_snapshot,
++    check_input_pin,
++    producer_for_fact,
++    validate_evidence_pins,
++)
++
++type _FactKey = tuple[FactScope, ArtifactId, FactSchemaContentRef, ProducerSelector]
++
++
++def _key(selector: FactSelector) -> _FactKey:
++    return (
++        selector.scope,
++        selector.fact_key,
++        selector.fact_schema_ref,
++        selector.producer_selector,
++    )
++
++
++def _result_matches(fact: FactRecord, head: AuthoritativeResultSelection) -> bool:
++    if (
++        fact.execution_id,
++        fact.scope,
++        fact.object_id,
++        fact.profile_ref,
++        fact.attempt_id,
++    ) != (
++        head.execution_id,
++        head.scope,
++        head.object_id,
++        head.profile_ref,
++        head.selected_attempt_id,
++    ):
++        return False
++    source = fact.source
++    if isinstance(source, QuestionFactSource) and isinstance(
++        head, ObservationBatchSelection
++    ):
++        return source.observation_batch_ref == head.selected_result_ref
++    if isinstance(source, ToolFactSource) and isinstance(head, ToolStepSelection):
++        return (source.tool_execution_ref, source.tool_plan_ref, source.step_id) == (
++            head.selected_result_ref,
++            head.tool_plan_ref,
++            head.step_id,
++        )
++    if isinstance(source, SystemFactSource) and isinstance(head, SystemOutputSelection):
++        return (source.system_output_ref, source.requirement, source.output_name) == (
++            head.selected_result_ref,
++            head.requirement,
++            head.output_name,
++        )
++    return False
++
++
++def _known_field(fact: FactRecord, selector: FactSelector) -> bool:
++    if not isinstance(fact, KnownFact):
++        return False
++    value = fact.value
++    for field in selector.field_path:
++        if not isinstance(value, RecordValue) or field not in value.value:
++            return False
++        value = value.value[field]
++    return True
++
++
++@dataclass(frozen=True, slots=True)
++class RuleGuardResult:
++    guard: RequiredEvidenceGuard
++    optional_fact_proofs: tuple[RequiredFactProof, ...]
++    predicate_facts: tuple[FactRecord, ...]
++    facts: tuple[FactRecord, ...]
++    selections: tuple[AuthoritativeResultSelection, ...]
++    evidence: tuple[EvidenceAsset, ...]
++
++    @property
++    def fact_refs(self) -> tuple[FactRef, ...]:
++        return tuple(
++            dict.fromkeys(
++                (
++                    *self.guard.required_fact_refs,
++                    *(proof.fact_ref for proof in self.optional_fact_proofs),
++                )
++            )
++        )
++
++
++class RequiredEvidenceGuardBuilder:
++    """Verify one Object's N06 input once, then build guards for reached Rules.
++
++    The caller supplies the admitted catalogue, scoped durable rows and exact N06
++    evidence pins from a single fenced read. The finite authority validator checks
++    every supplied history row, while storage and fence ownership stay with the
++    caller. The byte reader must use the current task scope and exact finalized
++    storage version, returning at most the requested number of bytes or None.
++    The byte budget applies to each Rule; availability reads are cached for the
++    lifetime of this fixed snapshot.
++    """
++
++    def __init__(
++        self,
++        *,
++        catalogue: ArtifactCatalogue,
++        authority: CoverageAuthorityInput,
++        inputs: DecisionInput,
++        task: AcceptedTask,
++        media: MediaAsset,
++        evidence_refs: tuple[EvidenceRef, ...],
++        evidence: tuple[EvidenceAsset, ...],
++        read_evidence: Callable[[EvidenceAsset, int], bytes | None],
++        max_evidence_bytes: int,
++    ) -> None:
++        records = authority.records
++        inputs = DecisionInput.model_validate(inputs)
++        task = AcceptedTask.model_validate(task)
++        media = MediaAsset.model_validate(media)
++        task.validate_media(media)
++        inputs.check_gate(records.eligibility)
++        execution = records.execution
++        envelope = inputs.envelope
++        if (
++            (task.task_id, task.trace, task.release_id, task.bundle_digest)
++            != (
++                execution.task_id,
++                execution.trace,
++                execution.pins.release_id,
++                execution.pins.bundle_digest,
++            )
++            or (envelope.task_id, envelope.execution_id, envelope.trace)
++            != (task.task_id, execution.execution_id, execution.trace)
++            or inputs.object_record not in records.objects
++        ):
++            raise ValueError(
++                "N06 input must pin the exact accepted Task, Execution and Object"
++            )
++        catalogue.resolve(envelope.node_config_ref)
++        check_bundle_snapshot(catalogue, authority)
++        projection = validate_runtime_authority(
++            authority.claims,
++            records,
++            fact_schemas=build_fact_schema_registry(catalogue),
++            parse_limits=authority.parse_limits,
++            snapshot_limits=authority.snapshot_limits,
++        )
++        self._catalogue = catalogue
++        self._profile = require_definition(
++            catalogue, inputs.object_record.profile_ref, ProfileDefinition
++        )
++        obj = inputs.object_record
++        if (obj.source_media_ref, obj.coordinate_system.dimensions) != (
++            media.media_ref,
++            media.dimensions,
++        ):
++            raise ValueError(
++                "N06 Object must retain the exact Task original media and dimensions"
++            )
++        kind = RuntimeRecordKind
++        pins = {
++            (pin.ref.record_kind, pin.ref.record_id): pin
++            for pin in envelope.upstream_artifacts
++        }
++        check_input_pin(pins, kind.OBJECT, obj.object_id, obj)
++        scope_keys = {(None, None), (obj.object_id, obj.profile_ref)}
++        scoped_facts = {ref.record_id for ref in inputs.fact_refs}
++        all_selections = {ref.record_id for ref in inputs.authority_selection_refs}
++        pinned_facts = {
++            fact.fact_id: fact for fact in records.facts if fact.fact_id in scoped_facts
++        }
++        selections = tuple(
++            record
++            for record in records.authority_selections
++            if record.selection_id in all_selections
++        )
++        for record in (*pinned_facts.values(), *selections):
++            if (record.object_id, record.profile_ref) not in scope_keys:
++                raise ValueError(
++                    "N06 input cites Fact or selection from another Object/Profile"
++                )
++        for fact in pinned_facts.values():
++            check_input_pin(pins, kind.FACT, fact.fact_id, fact)
++        for selection in selections:
++            check_input_pin(
++                pins,
++                kind.AUTHORITATIVE_RESULT_SELECTION,
++                selection.selection_id,
++                selection,
++            )
++        # Facts may exist without a qualifying head, and an explicitly pinned
++        # older revision cannot stand in for the current selected head.
++        self._candidate_keys: set[_FactKey] = set()
++        self._selected: dict[
++            _FactKey, tuple[FactRecord, AuthoritativeResultSelection]
++        ] = {}
++        fact_keys = {}
++        for fact in pinned_facts.values():
++            key = (
++                fact.scope,
++                fact.fact_key,
++                fact.fact_schema_ref,
++                producer_for_fact(fact),
++            )
++            self._candidate_keys.add(key)
++            fact_keys[fact.fact_id] = key
++        for head in projection.selected_revisions:
++            if head.selection_id not in all_selections:
++                continue
++            for fact_ref in head.selected_fact_refs:
++                selected_fact = pinned_facts.get(fact_ref.record_id)
++                if selected_fact is None:
++                    continue
++                if not _result_matches(selected_fact, head):
++                    raise ValueError(
++                        "selected Fact differs from its exact producer result and Attempt"
++                    )
++                key = fact_keys[selected_fact.fact_id]
++                if key in self._selected:
++                    raise ValueError(
++                        "multiple selected Facts occupy one Rule operand slot"
++                    )
++                self._selected[key] = (selected_fact, head)
++        rows = validate_evidence_pins(evidence_refs, evidence)
++        for ref, asset in rows.items():
++            check_input_pin(pins, kind.EVIDENCE, ref.record_id, asset)
++        self._evidence = EvidenceSources(
++            catalogue=catalogue,
++            task=task,
++            media=media,
++            obj=obj,
++            records=records,
++            evidence=rows,
++            read_evidence=read_evidence,
++            max_evidence_bytes=max_evidence_bytes,
++        )
++
++    def build(self, path: RulePath) -> RuleGuardResult:
++        path = RulePath.model_validate(path)
++        if path.rule_set_ref not in self._profile.rule_set_refs:
++            raise ValueError("RuleSet is outside the exact Object Profile")
++        rule_set = require_definition(
++            self._catalogue, path.rule_set_ref, RuleSetDefinition
++        )
++        if path.rule_ref not in rule_set.rule_refs:
++            raise ValueError("Rule is outside the exact selected RuleSet")
++        rule = require_definition(self._catalogue, path.rule_ref, RuleDefinition)
++        policy = require_definition(
++            self._catalogue, rule.evidence_policy_ref, EvidencePolicyArtifact
++        ).policy
++        required: list[RequiredFactProof] = []
++        optional: list[RequiredFactProof] = []
++        reasons: set[RequiredEvidenceReason] = set()
++        operands: dict[str, FactRecord] = {}
++        evidence_facts: dict[str, KnownFact] = {}
++        proved_facts: dict[str, FactRecord] = {}
++        proved_selections: dict[str, AuthoritativeResultSelection] = {}
++        for selectors, proofs, is_required in (
++            (rule.required_fact_selectors, required, True),
++            (rule.optional_fact_selectors, optional, False),
++        ):
++            for selector in selectors:
++                key = _key(selector)
++                selected = self._selected.get(key)
++                if selected is None:
++                    if is_required:
++                        reasons.add(
++                            RequiredEvidenceReason.PRODUCER_AUTHORITY_UNRESOLVED
++                            if key in self._candidate_keys
++                            else RequiredEvidenceReason.REQUIRED_FACT_UNAVAILABLE
++                        )
++                    continue
++                fact, head = selected
++                operands[fact.fact_id] = fact
++                field_known = _known_field(fact, selector)
++                if isinstance(fact, KnownFact) and field_known:
++                    evidence_facts[fact.fact_id] = fact
++                if is_required and not field_known:
++                    reasons.add(RequiredEvidenceReason.REQUIRED_FACT_UNAVAILABLE)
++                    continue
++                proved_facts[fact.fact_id] = fact
++                proved_selections[head.selection_id] = head
++                proofs.append(
++                    RequiredFactProof(
++                        selector=selector,
++                        fact_ref=FactRef(
++                            record_kind=RuntimeRecordKind.FACT, record_id=fact.fact_id
++                        ),
++                        authority_selection_ref=AuthoritySelectionRef(
++                            record_kind=RuntimeRecordKind.AUTHORITATIVE_RESULT_SELECTION,
++                            record_id=head.selection_id,
++                        ),
++                    )
++                )
++        evidence, missing = self._evidence.required(
++            policy, tuple(evidence_facts.values())
++        )
++        if missing:
++            reasons.add(RequiredEvidenceReason.EVIDENCE_UNAVAILABLE)
++        fact_refs = tuple(dict.fromkeys(proof.fact_ref for proof in required))
++        selection_refs = tuple(
++            dict.fromkeys(proof.authority_selection_ref for proof in required)
++        )
++        evidence_refs = tuple(
++            EvidenceRef(
++                record_kind=RuntimeRecordKind.EVIDENCE, record_id=asset.evidence_id
++            )
++            for asset in evidence
++        )
++        guard: RequiredEvidenceGuard
++        if reasons:
++            guard = BlockedRequiredEvidenceGuard(
++                outcome="blocked",
++                required_fact_refs=fact_refs,
++                required_evidence_refs=evidence_refs,
++                authoritative_result_selection_refs=selection_refs,
++                fact_proofs=tuple(required),
++                reasons=tuple(sorted(reasons, key=lambda reason: reason.value)),
++            )
++        else:
++            guard = CompleteRequiredEvidenceGuard(
++                outcome="complete",
++                required_fact_refs=fact_refs,
++                required_evidence_refs=evidence_refs,
++                authoritative_result_selection_refs=selection_refs,
++                fact_proofs=tuple(required),
++            )
++        return RuleGuardResult(
++            guard,
++            tuple(optional),
++            tuple(operands.values()),
++            tuple(proved_facts.values()),
++            tuple(proved_selections.values()),
++            evidence,
++        )
+--- /dev/null
++++ b/src/jimu_runtime/inspection/rules/_guard_sources.py
+@@ -0,0 +1,369 @@
++"""Resolve admitted definitions and the provenance of evidence for guard proofs."""
++
++from collections import defaultdict
++from collections.abc import Callable
++from hashlib import sha256
++
++from pydantic import TypeAdapter
++
++from jimu_runtime.bundle.catalogue import ArtifactCatalogue
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_enums import EvidenceType, FactScope
++from jimu_runtime.domain.definition_support import reference_identity
++from jimu_runtime.domain.definitions.capabilities import QuestionDefinition
++from jimu_runtime.domain.definitions.tools import ToolDefinition
++from jimu_runtime.domain.enums import RuntimeRecordKind
++from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
++from jimu_runtime.domain.fact_selectors import (
++    ProducerSelector,
++    QuestionProducerSelector,
++    SystemProducerSelector,
++    ToolProducerSelector,
++)
++from jimu_runtime.domain.policies import EvidencePolicy, EvidencePolicyArtifact
++from jimu_runtime.domain.references import ContentRef
++from jimu_runtime.domain.runtime.evidence import (
++    DerivedImageEvidence,
++    EvidenceAsset,
++    ObjectEvidenceScope,
++    OriginalImageEvidence,
++    TaskEvidenceAccess,
++)
++from jimu_runtime.domain.runtime.executions import PinnedRuntimeInput
++from jimu_runtime.domain.runtime.facts import (
++    EvidenceRef,
++    EvidenceRefs,
++    FactRecord,
++    KnownFact,
++    QuestionFactSource,
++    ToolFactSource,
++    require_unique_runtime_refs,
++)
++from jimu_runtime.domain.runtime.intake import AcceptedTask
++from jimu_runtime.domain.runtime.media import FinalizedAsset, MediaAsset
++from jimu_runtime.domain.runtime.perception import ObjectRecord
++from jimu_runtime.domain.runtime.tool_executions import ReturnedToolAttempt
++from jimu_runtime.domain.validation.authority_inputs import (
++    AuthorityQuestionInput,
++    AuthorityToolPlanInput,
++)
++from jimu_runtime.domain.validation.coverage_sources import CoverageAuthorityInput
++from jimu_runtime.domain.validation.definition_inputs import ProfileRegistration
++from jimu_runtime.domain.validation.runtime_authority import RuntimeAuthorityRecords
++from jimu_runtime.domain.validation.tool_plans import ToolRegistration
++
++_EVIDENCE_REFS = TypeAdapter[EvidenceRefs](EvidenceRefs)
++
++
++def check_bundle_snapshot(
++    catalogue: ArtifactCatalogue, authority: CoverageAuthorityInput
++) -> None:
++    """Keep every authority registration tied to the admitted Bundle's definitions."""
++    manifest = authority.records.manifest
++    if tuple(entry.inventory for entry in catalogue.artifacts) != manifest.artifacts:
++        raise ValueError("guard catalogue differs from the admitted Execution Manifest")
++    history = authority.claims.history
++    for item in authority.claims.producer_catalogues:
++        if (
++            catalogue.resolve(item.registration.ref).value
++            != item.registration.definition
++        ):
++            raise ValueError(
++                "authority catalogue differs from its pinned Bundle artifact"
++            )
++        definitions: tuple[
++            ProfileRegistration
++            | AuthorityQuestionInput
++            | AuthorityToolPlanInput
++            | ToolRegistration,
++            ...,
++        ] = (
++            *item.context.profiles,
++            *item.context.questions,
++            *item.context.plans,
++            *item.context.tools,
++            *history.questions,
++            *history.plans,
++            *history.tools,
++        )
++        for registration in definitions:
++            if catalogue.resolve(registration.ref).value != registration.definition:
++                raise ValueError(
++                    "authority definition differs from its pinned Bundle artifact"
++                )
++        for policy in item.context.policies:
++            if catalogue.resolve(policy.ref).value != policy.artifact:
++                raise ValueError(
++                    "authority policy differs from its pinned Bundle artifact"
++                )
++
++
++def check_input_pin(
++    pins: dict[tuple[RuntimeRecordKind, str], PinnedRuntimeInput],
++    kind: RuntimeRecordKind,
++    record_id: str,
++    record: ContractModel,
++) -> None:
++    pin = pins.get((kind, record_id))
++    if (
++        pin is not None
++        and pin.digest
++        != sha256(canonical_bytes(record.model_dump(mode="json"))).hexdigest()
++    ):
++        raise ValueError("N06 input pin differs from the actual runtime record digest")
++
++
++def producer_for_fact(fact: FactRecord) -> ProducerSelector:
++    source = fact.source
++    if isinstance(source, QuestionFactSource):
++        return QuestionProducerSelector(
++            producer_kind=source.source_kind,
++            question_ref=source.question_ref,
++            output_name="primary",
++        )
++    if isinstance(source, ToolFactSource):
++        return ToolProducerSelector(
++            producer_kind=source.source_kind,
++            tool_plan_ref=source.tool_plan_ref,
++            step_id=source.step_id,
++            tool_ref=source.tool_ref,
++            output_name=source.output_name,
++        )
++    return SystemProducerSelector(
++        producer_kind=source.source_kind,
++        requirement=source.requirement,
++        output_name=source.output_name,
++    )
++
++
++def validate_evidence_pins(
++    refs: tuple[EvidenceRef, ...], rows: tuple[EvidenceAsset, ...]
++) -> dict[EvidenceRef, EvidenceAsset]:
++    refs = _EVIDENCE_REFS.validate_python(refs)
++    require_unique_runtime_refs(refs)
++    if len(rows) > 1024:
++        raise ValueError("N06 exceeds the Evidence record limit")
++    allowed = set(refs)
++    result = {}
++    for raw in rows:
++        asset = EvidenceAsset.model_validate(raw)
++        ref = EvidenceRef(
++            record_kind=RuntimeRecordKind.EVIDENCE, record_id=asset.evidence_id
++        )
++        if ref not in allowed:
++            raise ValueError("Evidence record was not pinned in the exact N06 input")
++        if ref in result:
++            raise ValueError("duplicate N06 Evidence record")
++        result[ref] = asset
++    return result
++
++
++class EvidenceSources:
++    def __init__(
++        self,
++        *,
++        catalogue: ArtifactCatalogue,
++        task: AcceptedTask,
++        media: MediaAsset,
++        obj: ObjectRecord,
++        records: RuntimeAuthorityRecords,
++        evidence: dict[EvidenceRef, EvidenceAsset],
++        read_evidence: Callable[[EvidenceAsset, int], bytes | None],
++        max_evidence_bytes: int,
++    ) -> None:
++        if type(max_evidence_bytes) is not int or max_evidence_bytes <= 0:
++            raise ValueError("N06 Evidence byte budget must be a positive integer")
++        self._catalogue = catalogue
++        self._media = media
++        self._obj = obj
++        self._read = read_evidence
++        self._max_evidence_bytes = max_evidence_bytes
++        self._by_ref = evidence
++        self._by_type: dict[EvidenceType, list[EvidenceRef]] = defaultdict(list)
++        self._policies: dict[EvidenceRef, EvidencePolicy] = {}
++        self._available: dict[EvidenceRef, bool] = {}
++        self._fact_evidence: dict[str, frozenset[EvidenceRef]] = {}
++        self._tools = {item.tool_execution_id: item for item in records.tool_executions}
++        self._invocations = {
++            item.model_invocation_id: item for item in records.model_invocations
++        }
++        for ref, asset in sorted(evidence.items(), key=lambda pair: pair[0].record_id):
++            if (
++                asset.scope.execution_id != obj.execution_id
++                or (
++                    isinstance(asset.scope, ObjectEvidenceScope)
++                    and (asset.scope.object_ref.record_id, asset.scope.profile_ref)
++                    != (obj.object_id, obj.profile_ref)
++                )
++                or asset.access_scope.project_id != task.idempotency_scope.project_id
++                or (
++                    isinstance(asset.access_scope, TaskEvidenceAccess)
++                    and asset.access_scope.task_id != task.task_id
++                )
++            ):
++                raise ValueError(
++                    "N06 Evidence belongs to another Task, Project, Execution or Object/Profile"
++                )
++            self._by_type[asset.evidence_type].append(ref)
++
++    def _source_policy(self, ref: EvidenceRef, asset: EvidenceAsset) -> EvidencePolicy:
++        policy = self._policies.get(ref)
++        if policy is None:
++            policy = require_definition(
++                self._catalogue,
++                asset.retention.evidence_policy_ref,
++                EvidencePolicyArtifact,
++            ).policy
++            self._policies[ref] = policy
++        return policy
++
++    def _authorized_producer_refs(self, fact: KnownFact) -> frozenset[EvidenceRef]:
++        source = fact.source
++        direct = set(fact.evidence_refs) & self._by_ref.keys()
++        if not direct:
++            return frozenset()
++        producer_ids = {(fact.producer_id, fact.producer_version)}
++        source_policy_ref: ContentRef | None = None
++        if isinstance(source, QuestionFactSource):
++            question = require_definition(
++                self._catalogue, source.question_ref, QuestionDefinition
++            )
++            source_policy_ref = question.evidence_policy_ref
++            invocation = self._invocations[source.model_invocation_ref.record_id]
++            binding = invocation.configured_provider.binding_ref
++            producer_ids.add((binding.artifact_id, binding.version))
++            invocation_refs = set(invocation.evidence_refs)
++            direct = {
++                ref
++                for ref in direct
++                if self._by_ref[ref].evidence_type
++                not in (EvidenceType.MODEL_REQUEST, EvidenceType.MODEL_RESPONSE)
++                or ref in invocation_refs
++            }
++        elif isinstance(source, ToolFactSource):
++            tool = self._tools[source.tool_execution_ref.record_id]
++            definition = require_definition(
++                self._catalogue, source.tool_ref, ToolDefinition
++            )
++            source_policy_ref = definition.evidence_policy_ref
++            if not isinstance(tool.attempt_result, ReturnedToolAttempt):
++                return frozenset()
++            if tool.actual_implementation_version is not None:
++                producer_ids.add((fact.producer_id, tool.actual_implementation_version))
++            output_names = {
++                path[0]
++                for output in definition.fact_outputs
++                if output.output_name == source.output_name
++                for path in (output.evidence_paths or ())
++            }
++            result = tool.attempt_result.result
++            named = {
++                ref
++                for entry in result.evidence
++                if entry.name in output_names
++                for ref in entry.evidence_refs
++            }
++            named.update(
++                ref
++                for state in result.output_states
++                if state.output_name == source.output_name
++                for ref in state.evidence_refs
++            )
++            direct.intersection_update(named, tool.evidence_refs)
++        return frozenset(
++            ref
++            for ref in direct
++            if (
++                isinstance(self._by_ref[ref].scope, ObjectEvidenceScope)
++                == (fact.scope is FactScope.OBJECT)
++                and (self._by_ref[ref].producer_id, self._by_ref[ref].producer_version)
++                in producer_ids
++                and (
++                    source_policy_ref is None
++                    or reference_identity(
++                        self._by_ref[ref].retention.evidence_policy_ref
++                    )
++                    == reference_identity(source_policy_ref)
++                )
++            )
++        )
++
++    def _linked_refs(self, fact: KnownFact) -> frozenset[EvidenceRef]:
++        refs = self._fact_evidence.get(fact.fact_id)
++        if refs is None:
++            refs = self._authorized_producer_refs(fact)
++            self._fact_evidence[fact.fact_id] = refs
++        return refs
++
++    def _qualifies(
++        self, ref: EvidenceRef, policy: EvidencePolicy, linked: set[EvidenceRef]
++    ) -> bool:
++        asset = self._by_ref[ref]
++        if not isinstance(asset.stage, FinalizedAsset):
++            return False
++        original = asset.evidence_type is EvidenceType.ORIGINAL_IMAGE
++        if not original and ref not in linked:
++            return False
++        produced = self._source_policy(ref, asset)
++        if (
++            asset.evidence_type not in produced.allowed_evidence_types
++            or asset.retention.retention_class != produced.retention_class
++            or asset.retention.retention_class != policy.retention_class
++            or produced.retention_duration_seconds < policy.retention_duration_seconds
++            or asset.access_scope.scope != produced.access_scope
++            or (policy.access_scope == "task" and asset.access_scope.scope != "task")
++        ):
++            return False
++        spatial = asset.spatial
++        if isinstance(spatial, OriginalImageEvidence | DerivedImageEvidence):
++            asset.validate_original_media(self._media)
++            root = (
++                spatial.coordinate_system
++                if isinstance(spatial, OriginalImageEvidence)
++                else spatial.transforms[0].source
++            )
++            if root != self._obj.coordinate_system:
++                raise ValueError(
++                    "N06 spatial Evidence has a different original coordinate frame"
++                )
++        return True
++
++    def _readable(self, ref: EvidenceRef) -> bool:
++        if ref not in self._available:
++            asset = self._by_ref[ref]
++            try:
++                data = self._read(asset, asset.byte_size)
++            except OSError:
++                data = None
++            self._available[ref] = (
++                type(data) is bytes
++                and len(data) == asset.byte_size
++                and sha256(data).hexdigest() == asset.sha256
++            )
++        return self._available[ref]
++
++    def required(
++        self, policy: EvidencePolicy, facts: tuple[KnownFact, ...]
++    ) -> tuple[tuple[EvidenceAsset, ...], bool]:
++        types = set(policy.required_evidence_types)
++        if policy.original_media_required:
++            types.add(EvidenceType.ORIGINAL_IMAGE)
++        linked: set[EvidenceRef] = set()
++        if types - {EvidenceType.ORIGINAL_IMAGE}:
++            for fact in facts:
++                linked.update(self._linked_refs(fact))
++        selected = []
++        remaining_bytes = self._max_evidence_bytes
++        for kind in sorted(types, key=lambda item: item.value):
++            for ref in self._by_type.get(kind, ()):
++                asset = self._by_ref[ref]
++                if asset.byte_size > remaining_bytes or not self._qualifies(
++                    ref, policy, linked
++                ):
++                    continue
++                remaining_bytes -= asset.byte_size
++                if self._readable(ref):
++                    selected.append(asset)
++                    break
++        return tuple(selected), len(selected) != len(types)

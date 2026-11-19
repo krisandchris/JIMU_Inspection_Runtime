@@ -1,0 +1,320 @@
+{
+  "title": "JIMU Runtime",
+  "uid": "jimu-runtime",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "tags": [
+    "jimu",
+    "runtime"
+  ],
+  "timezone": "utc",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Task states",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "jimu-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jimu_retained_tasks",
+          "legendFormat": "{{status}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Workflow jobs",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "jimu-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jimu_workflow_jobs",
+          "legendFormat": "{{status}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Retried attempts",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "jimu-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jimu_retained_node_retries",
+          "legendFormat": "{{node}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Attempt results",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "jimu-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jimu_retained_attempt_results",
+          "legendFormat": "{{node}} {{status}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Retained p95 runtime",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "jimu-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, jimu_retained_queue_wait_seconds_bucket)",
+          "legendFormat": "queue",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, jimu_retained_task_duration_seconds_bucket)",
+          "legendFormat": "task",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.95, jimu_retained_model_duration_seconds_bucket)",
+          "legendFormat": "model",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        },
+        {
+          "refId": "D",
+          "expr": "histogram_quantile(0.95, jimu_retained_tool_duration_seconds_bucket)",
+          "legendFormat": "tool",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Retained p95 by node",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "jimu-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, jimu_retained_node_duration_seconds_bucket)",
+          "legendFormat": "{{node}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Physical dispatch receipts",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "jimu-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jimu_retained_dispatch_receipts",
+          "legendFormat": "{{kind}} {{boundary}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Reported tokens and evidence faults",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "jimu-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jimu_retained_reported_tokens{direction=\"input\"}",
+          "legendFormat": "input",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "jimu_retained_reported_tokens{direction=\"output\"}",
+          "legendFormat": "output",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        },
+        {
+          "refId": "C",
+          "expr": "jimu_retained_response_evidence_failures",
+          "legendFormat": "response_evidence_failures",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "jimu-prometheus"
+          }
+        }
+      ]
+    }
+  ]
+}

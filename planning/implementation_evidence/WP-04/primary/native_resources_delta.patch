@@ -1,0 +1,1919 @@
+diff --git a/src/jimu_runtime/workers/__init__.py b/src/jimu_runtime/workers/__init__.py
+new file mode 100644
+index 0000000..76bcd6a
+--- /dev/null
++++ b/src/jimu_runtime/workers/__init__.py
+@@ -0,0 +1 @@
++"""Host-owned resource admission and isolated worker processes."""
+diff --git a/src/jimu_runtime/workers/lifecycle.py b/src/jimu_runtime/workers/lifecycle.py
+new file mode 100644
+index 0000000..592c8bc
+--- /dev/null
++++ b/src/jimu_runtime/workers/lifecycle.py
+@@ -0,0 +1,311 @@
++"""Run a host-allowlisted command with a durable start and stop boundary."""
++
++import asyncio
++import os
++import selectors
++import socket
++import subprocess
++import sys
++from contextlib import suppress
++from dataclasses import dataclass
++from enum import StrEnum
++from pathlib import Path
++from threading import Event, Thread
++from time import monotonic
++from typing import IO
++
++from jimu_runtime.workers.resources import (
++    ResourceAdmission,
++    ResourceLease,
++    ResourceUnavailable,
++)
++
++_CHUNK_BYTES = 64 * 1024
++_POLL_SECONDS = 0.025
++_EXIT_WAIT_SECONDS = 1.0
++_GUARDIAN = Path(__file__).with_name("process_guardian.py")
++
++
++class WorkerFailure(StrEnum):
++    START_FAILED = "start_failed"
++    TIMEOUT = "timeout"
++    OUTPUT_LIMIT = "output_limit"
++    PROCESS_FAILED = "process_failed"
++    INTERRUPTED = "interrupted"
++    INVALID_BUDGET = "invalid_budget"
++
++
++class WorkerStart(StrEnum):
++    NOT_DISPATCHED = "not_dispatched"
++    STARTED = "started"
++    START_UNKNOWN = "start_unknown"
++
++
++class WorkerProcessError(RuntimeError):
++    """A bounded failure report independent of subprocess argv and stderr."""
++
++    def __init__(
++        self,
++        reason: WorkerFailure,
++        start_state: WorkerStart,
++        *,
++        output: bytes | None = None,
++    ) -> None:
++        self.reason = reason
++        self.start_state = start_state
++        self.output = output
++        super().__init__(reason)
++
++    @property
++    def dispatched(self) -> bool:
++        return self.start_state != WorkerStart.NOT_DISPATCHED
++
++
++@dataclass(slots=True)
++class _RunningCall:
++    deadline: float
++    lease: ResourceLease
++    cancelled: Event
++    output_byte_limit: int
++    next_heartbeat: float = 0.0
++    start: WorkerStart = WorkerStart.NOT_DISPATCHED
++
++
++class IsolatedWorker:
++    def __init__(self, admission: ResourceAdmission) -> None:
++        self._admission = admission
++        self._running: set[asyncio.Task[bytes]] = set()
++
++    async def run(
++        self,
++        lease: ResourceLease,
++        argv: tuple[str, ...],
++        payload: bytes,
++        *,
++        timeout_ms: int,
++        output_byte_limit: int,
++    ) -> bytes:
++        """Keep the physical reservation until a local process group has exited."""
++        deadline = monotonic()
++        if type(timeout_ms) is int and 0 < timeout_ms <= lease.timeout_ms:
++            deadline += timeout_ms / 1000
++        call = _RunningCall(deadline, lease, Event(), output_byte_limit)
++        task = asyncio.create_task(
++            asyncio.to_thread(self._run, call, argv, payload, timeout_ms)
++        )
++        self._running.add(task)
++        task.add_done_callback(self._finished)
++        try:
++            return await asyncio.shield(task)
++        except asyncio.CancelledError:
++            call.cancelled.set()
++            with suppress(WorkerProcessError, ResourceUnavailable):
++                await asyncio.shield(task)
++            raise
++
++    def _finished(self, task: asyncio.Task[bytes]) -> None:
++        self._running.discard(task)
++        if not task.cancelled():
++            task.exception()  # Observe cleanup failures if its caller cancelled twice.
++
++    def _run(
++        self, call: _RunningCall, argv: tuple[str, ...], payload: bytes, timeout_ms: int
++    ) -> bytes:
++        lease = call.lease
++        child: subprocess.Popen[bytes] | None = None
++        attached = False
++        completed = False
++        try:
++            if (
++                not argv
++                or not os.path.isabs(argv[0])
++                or any("\x00" in argument for argument in argv)
++                or lease.resource_class == "remote"
++                or type(payload) is not bytes
++                or len(payload) > lease.input_byte_limit
++                or type(timeout_ms) is not int
++                or not 0 < timeout_ms <= lease.timeout_ms
++                or type(call.output_byte_limit) is not int
++                or not 0 < call.output_byte_limit <= lease.output_byte_limit
++            ):
++                raise WorkerProcessError(WorkerFailure.INVALID_BUDGET, call.start)
++            self._check_call(call)
++            operator, guardian = socket.socketpair()
++            with operator, guardian:
++                child = subprocess.Popen(
++                    [
++                        sys.executable,
++                        "-I",
++                        str(_GUARDIAN),
++                        str(guardian.fileno()),
++                        self._admission.guardian_ledger_uri,
++                        lease.lease_id,
++                        lease.owner_generation,
++                        *argv,
++                    ],
++                    stdin=subprocess.PIPE,
++                    stdout=subprocess.PIPE,
++                    stderr=subprocess.DEVNULL,
++                    pass_fds=(guardian.fileno(),),
++                    start_new_session=True,
++                    env={"LANG": "C.UTF-8", "PATH": os.defpath},
++                )
++                guardian.close()
++                self._admission.attach_process_group(lease, child.pid)
++                attached = True
++                self._check_call(call)
++                call.start = WorkerStart.START_UNKNOWN
++                operator.sendall(b"S")
++                output = self._exchange(call, child, operator, payload)
++                completed = True
++                return output
++        except (OSError, ResourceUnavailable):
++            reason = (
++                WorkerFailure.START_FAILED
++                if call.start == WorkerStart.NOT_DISPATCHED
++                else WorkerFailure.INTERRUPTED
++            )
++            raise WorkerProcessError(reason, call.start) from None
++        finally:
++            if attached and not completed:
++                # The control endpoint closes first; the guardian owns tree shutdown.
++                with suppress(ResourceUnavailable):
++                    self._admission.begin_draining(lease)
++            if child is not None:
++                self._reap(child, lease if attached else None)
++            released = False
++            with suppress(ResourceUnavailable):
++                # The ledger checks the durable tree receipt and guardian exit.
++                released = (
++                    self._admission.release(lease)
++                    if attached
++                    else self._admission.release_reserved(lease)
++                )
++            if completed and not released:
++                raise WorkerProcessError(WorkerFailure.INTERRUPTED, call.start)
++
++    def _check_call(self, call: _RunningCall) -> None:
++        if call.cancelled.is_set():
++            raise WorkerProcessError(WorkerFailure.INTERRUPTED, call.start)
++        now = monotonic()
++        if now >= call.deadline:
++            raise WorkerProcessError(WorkerFailure.TIMEOUT, call.start)
++        if now >= call.next_heartbeat:
++            if not self._admission.renew(call.lease):
++                raise WorkerProcessError(WorkerFailure.INTERRUPTED, call.start)
++            call.next_heartbeat = now + self._admission.heartbeat_interval_seconds
++
++    def _exchange(
++        self,
++        call: _RunningCall,
++        child: subprocess.Popen[bytes],
++        operator: socket.socket,
++        payload: bytes,
++    ) -> bytes:
++        assert child.stdin is not None and child.stdout is not None
++        output = bytearray()
++        written = 0
++        output_open = True
++        operator.setblocking(False)
++        with selectors.DefaultSelector() as ready:
++            ready.register(operator, selectors.EVENT_READ, "ack")
++            os.set_blocking(child.stdout.fileno(), False)
++            ready.register(child.stdout, selectors.EVENT_READ, "output")
++            if payload:
++                os.set_blocking(child.stdin.fileno(), False)
++                ready.register(child.stdin, selectors.EVENT_WRITE, "input")
++            else:
++                child.stdin.close()
++            while True:
++                self._check_call(call)
++                returncode = child.poll()
++                if returncode is not None and not output_open:
++                    if call.start == WorkerStart.START_UNKNOWN:
++                        self._read_ack(call, operator, ready)
++                    if returncode != 0 or written != len(payload):
++                        raise WorkerProcessError(
++                            WorkerFailure.PROCESS_FAILED,
++                            call.start,
++                            output=bytes(output),
++                        )
++                    if call.start != WorkerStart.STARTED:
++                        raise WorkerProcessError(WorkerFailure.INTERRUPTED, call.start)
++                    return bytes(output)
++                remaining = min(call.deadline, call.next_heartbeat) - monotonic()
++                for key, _ in ready.select(max(0.0, min(_POLL_SECONDS, remaining))):
++                    if key.data == "ack":
++                        self._read_ack(call, operator, ready)
++                    elif key.data == "input":
++                        written = self._write_input(
++                            child.stdin, payload, written, ready
++                        )
++                    elif key.data == "output":
++                        chunk = os.read(child.stdout.fileno(), _CHUNK_BYTES)
++                        if chunk:
++                            # Only the actual worker can write to this pipe.
++                            call.start = WorkerStart.STARTED
++                        if len(chunk) > call.output_byte_limit - len(output):
++                            raise WorkerProcessError(
++                                WorkerFailure.OUTPUT_LIMIT, call.start
++                            )
++                        if chunk:
++                            output.extend(chunk)
++                        else:
++                            output_open = False
++                            ready.unregister(child.stdout)
++
++    @staticmethod
++    def _read_ack(
++        call: _RunningCall, operator: socket.socket, ready: selectors.BaseSelector
++    ) -> None:
++        with suppress(KeyError):
++            ready.unregister(operator)
++        ack = operator.recv(1)
++        if ack == b"Y":
++            call.start = WorkerStart.STARTED
++        elif ack == b"N":
++            call.start = WorkerStart.NOT_DISPATCHED
++            raise WorkerProcessError(WorkerFailure.START_FAILED, call.start)
++        else:
++            raise WorkerProcessError(WorkerFailure.INTERRUPTED, call.start)
++
++    @staticmethod
++    def _write_input(
++        pipe: IO[bytes], payload: bytes, written: int, ready: selectors.BaseSelector
++    ) -> int:
++        try:
++            written += os.write(
++                pipe.fileno(), payload[written : written + _CHUNK_BYTES]
++            )
++        except BlockingIOError:
++            return written
++        except BrokenPipeError:
++            ready.unregister(pipe)
++            pipe.close()
++            return written
++        if written == len(payload):
++            ready.unregister(pipe)
++            pipe.close()
++        return written
++
++    def _reap(
++        self, child: subprocess.Popen[bytes], lease: ResourceLease | None
++    ) -> None:
++        if child.stdin is not None:
++            child.stdin.close()
++        if child.stdout is not None:
++            child.stdout.close()
++        try:
++            child.wait(timeout=_EXIT_WAIT_SECONDS)
++        except subprocess.TimeoutExpired:
++            # A guardian blocked in the kernel may exit long after the caller's
++            # deadline. Reap it without depending on another admission or launch.
++            Thread(target=self._reap_later, args=(child, lease), daemon=True).start()
++
++    def _reap_later(
++        self, child: subprocess.Popen[bytes], lease: ResourceLease | None
++    ) -> None:
++        child.wait()
++        if lease is not None:
++            with suppress(ResourceUnavailable):
++                self._admission.release(lease)
+diff --git a/src/jimu_runtime/workers/process_guardian.py b/src/jimu_runtime/workers/process_guardian.py
+new file mode 100644
+index 0000000..91d261f
+--- /dev/null
++++ b/src/jimu_runtime/workers/process_guardian.py
+@@ -0,0 +1,119 @@
++"""Private Linux subreaper and durable witness of worker-tree completion."""
++
++import ctypes
++import os
++import select
++import signal
++import socket
++import sqlite3
++import subprocess
++import sys
++from contextlib import closing, suppress
++from pathlib import Path
++from time import monotonic, sleep
++
++_TERM_GRACE_SECONDS = 0.15
++_POLL_SECONDS = 0.025
++_PR_SET_CHILD_SUBREAPER = 36
++
++
++def _kill_adopted_children() -> None:
++    # No concurrent waitpid can reap/reuse these PIDs before pidfd_open.
++    guardian = os.getpid()
++    children = Path(f"/proc/self/task/{guardian}/children").read_text(encoding="ascii")
++    for child in children.split():
++        with suppress(ProcessLookupError):
++            pid_fd = os.pidfd_open(int(child))
++            try:
++                signal.pidfd_send_signal(pid_fd, signal.SIGKILL)
++            finally:
++                os.close(pid_fd)
++
++
++def _supervise(control: socket.socket, worker_pid: int, stopping: bool) -> int:
++    worker_code = 125
++    stop_at: float | None = None
++    while True:
++        try:
++            pid, status = os.waitpid(-1, os.WNOHANG)
++        except ChildProcessError:
++            return worker_code
++        if pid > 0:
++            if pid == worker_pid:
++                code = os.waitstatus_to_exitcode(status)
++                worker_code = code if code >= 0 else 128 - code
++            continue
++        if stop_at is None and not stopping:
++            ready, _, _ = select.select((control,), (), (), _POLL_SECONDS)
++            if not ready:
++                continue
++            # Closing the owning supervisor's endpoint also initiates shutdown.
++            stopping = True
++        if stop_at is None:
++            stop_at = monotonic() + _TERM_GRACE_SECONDS
++            os.killpg(0, signal.SIGTERM)
++        elif monotonic() >= stop_at:
++            _kill_adopted_children()
++        sleep(_POLL_SECONDS)
++
++
++def _ignore_group_term(signum: int, frame: object) -> None:
++    # A caught signal resets to the default for the exec'd worker.
++    pass
++
++
++def main(
++    control_fd: int, ledger_uri: str, lease_id: str, generation: str, argv: list[str]
++) -> int:
++    with socket.socket(fileno=control_fd) as control:
++        if control.recv(1) != b"S":
++            _record_reaped(ledger_uri, lease_id, generation)
++            return 125
++        try:
++            libc = ctypes.CDLL(None, use_errno=True)
++            if libc.prctl(_PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) != 0:
++                raise OSError(ctypes.get_errno(), "cannot supervise descendants")
++            signal.signal(signal.SIGTERM, _ignore_group_term)
++            worker = subprocess.Popen(argv)
++        except OSError:
++            # No successful worker launch. Verify that no child remains before
++            # persisting the same witness used by the normal exit path.
++            try:
++                os.waitpid(-1, os.WNOHANG)
++            except ChildProcessError:
++                _record_reaped(ledger_uri, lease_id, generation)
++            with suppress(OSError):
++                control.sendall(b"N")
++            return 125
++        # The guardian must not keep worker pipe endpoints open while waiting.
++        os.close(0)
++        os.close(1)
++        try:
++            control.sendall(b"Y")
++        except OSError:
++            stopping = True
++        else:
++            stopping = False
++        worker.returncode = _supervise(control, worker.pid, stopping)
++        _record_reaped(ledger_uri, lease_id, generation)
++        return worker.returncode
++
++
++def _record_reaped(ledger_uri: str, lease_id: str, generation: str) -> None:
++    """Persist the receipt independently of the creator's control socket."""
++    stat = Path("/proc/self/stat").read_text(encoding="utf-8", errors="replace")
++    started = stat.rpartition(")")[2].split()[19]
++    with closing(sqlite3.connect(ledger_uri, uri=True, timeout=2)) as db, db:
++        db.execute("PRAGMA synchronous=FULL")
++        db.execute(
++            """UPDATE leases SET tree_reaped = 1
++               WHERE lease_id = ? AND owner_generation = ?
++               AND activity = 'group' AND pid = ? AND process_start = ?""",
++            (lease_id, generation, os.getpid(), started),
++        )
++
++
++if __name__ == "__main__":
++    sys.exit(
++        main(int(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5:])
++    )
+diff --git a/src/jimu_runtime/workers/process_identity.py b/src/jimu_runtime/workers/process_identity.py
+new file mode 100644
+index 0000000..2b5a767
+--- /dev/null
++++ b/src/jimu_runtime/workers/process_identity.py
+@@ -0,0 +1,54 @@
++"""Linux liveness evidence for a same-host worker or HTTP transport owner."""
++
++import os
++from dataclasses import dataclass
++from pathlib import Path
++from uuid import UUID
++
++
++@dataclass(frozen=True, slots=True)
++class HostProcessIdentity:
++    boot_id: str
++    pid_namespace: int
++
++    @classmethod
++    def current(cls) -> "HostProcessIdentity":
++        boot_id = str(
++            UUID(
++                Path("/proc/sys/kernel/random/boot_id")
++                .read_text(encoding="ascii")
++                .strip()
++            )
++        )
++        proc_pid = int(
++            Path("/proc/self/stat")
++            .read_text(encoding="utf-8", errors="replace")
++            .partition(" ")[0]
++        )
++        if proc_pid != os.getpid():
++            raise ValueError("procfs does not match the supervisor PID namespace")
++        return cls(boot_id, Path("/proc/self/ns/pid").stat().st_ino)
++
++    def process_exited(
++        self, boot_id: str, pid_namespace: int, pid: int, started: str
++    ) -> bool:
++        if boot_id != self.boot_id:
++            return True
++        if pid_namespace != self.pid_namespace:
++            return False
++        try:
++            state, observed_start = process_start(pid)
++        except FileNotFoundError:
++            return True
++        except (OSError, ValueError):
++            return False
++        return state == "Z" or observed_start != started
++
++
++def process_start(pid: int) -> tuple[str, str]:
++    # comm may contain spaces or a right parenthesis; stat fields follow the last one.
++    stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8", errors="replace")
++    ending = stat.rpartition(")")[2].split()
++    if len(ending) < 20:
++        raise ValueError("unverifiable process start")
++    return ending[0], ending[19]
+diff --git a/src/jimu_runtime/workers/resource_inventory.py b/src/jimu_runtime/workers/resource_inventory.py
+new file mode 100644
+index 0000000..149292c
+--- /dev/null
++++ b/src/jimu_runtime/workers/resource_inventory.py
+@@ -0,0 +1,170 @@
++"""Trusted inventory for one physical host and one shared resource database."""
++
++from dataclasses import dataclass
++from enum import StrEnum
++from hashlib import sha256
++from json import dumps
++from re import fullmatch
++from typing import Literal
++
++type ResourceClass = Literal["cpu", "remote", "gpu"]
++
++
++class LeaseLifetime(StrEnum):
++    RUN = "run"
++    RESIDENT = "resident"
++
++
++class RemoteCapacity(StrEnum):
++    LOCAL_TRANSPORT = "local_transport"
++    PROVIDER_INFLIGHT = "provider_inflight"
++
++
++def require_identity(value: str) -> None:
++    if not isinstance(value, str) or not fullmatch(r"[a-zA-Z0-9_:/.-]{1,192}", value):
++        raise ValueError("invalid resource identity")
++
++
++def _require_budget(value: int, minimum: int = 1) -> None:
++    if type(value) is not int or not minimum <= value <= 2**63 - 1:
++        raise ValueError("invalid host resource budget")
++
++
++@dataclass(frozen=True, slots=True)
++class RemoteQuota:
++    quota_id: str
++    slots: int
++    capacity: RemoteCapacity
++
++    def __post_init__(self) -> None:
++        require_identity(self.quota_id)
++        _require_budget(self.slots)
++        if not isinstance(self.capacity, RemoteCapacity):
++            raise ValueError("invalid remote capacity kind")
++
++
++@dataclass(frozen=True, slots=True)
++class GPUDevice:
++    device_id: str
++    memory_bytes: int
++    run_slots: int
++    resident_slots: int
++
++    def __post_init__(self) -> None:
++        require_identity(self.device_id)
++        _require_budget(self.memory_bytes)
++        _require_budget(self.run_slots, 0)
++        _require_budget(self.resident_slots, 0)
++
++
++@dataclass(frozen=True, slots=True)
++class GPUWorkerPool:
++    pool_id: str
++    device_id: str
++    run_slots: int
++    resident_slots: int
++
++    def __post_init__(self) -> None:
++        require_identity(self.pool_id)
++        require_identity(self.device_id)
++        _require_budget(self.run_slots, 0)
++        _require_budget(self.resident_slots, 0)
++
++
++@dataclass(frozen=True, slots=True)
++class ResourceScope:
++    scope_id: str
++    resource_class: ResourceClass
++    run_slots: int
++    resident_slots: int = 0
++    pool_or_quota_id: str | None = None
++
++    def __post_init__(self) -> None:
++        require_identity(self.scope_id)
++        _require_budget(self.run_slots, 0)
++        _require_budget(self.resident_slots, 0)
++        if self.resource_class == "cpu":
++            if self.pool_or_quota_id is not None:
++                raise ValueError("CPU scope uses the host CPU budget")
++        elif self.resource_class in ("remote", "gpu"):
++            if self.pool_or_quota_id is None:
++                raise ValueError("resource scope requires a host pool or quota")
++            require_identity(self.pool_or_quota_id)
++            if self.resource_class == "remote" and self.resident_slots:
++                raise ValueError("remote scope does not reserve resident workloads")
++        else:
++            raise ValueError("invalid resource class")
++
++
++@dataclass(frozen=True, slots=True)
++class HostInventory:
++    inventory_id: str
++    lease_ttl_ms: int
++    cpu_slots: int
++    scopes: tuple[ResourceScope, ...]
++    remote_quotas: tuple[RemoteQuota, ...] = ()
++    gpu_devices: tuple[GPUDevice, ...] = ()
++    gpu_worker_pools: tuple[GPUWorkerPool, ...] = ()
++
++    def __post_init__(self) -> None:
++        require_identity(self.inventory_id)
++        _require_budget(self.cpu_slots, 0)
++        _require_budget(self.lease_ttl_ms)
++        if self.lease_ttl_ms > 86_400_000:
++            raise ValueError("lease TTL exceeds one day")
++        for keys in (
++            tuple(scope.scope_id for scope in self.scopes),
++            tuple(quota.quota_id for quota in self.remote_quotas),
++            tuple(device.device_id for device in self.gpu_devices),
++            tuple(pool.pool_id for pool in self.gpu_worker_pools),
++        ):
++            if len(keys) != len(set(keys)):
++                raise ValueError("duplicate host resource identity")
++        gpu_ids = {device.device_id for device in self.gpu_devices}
++        pool_ids = {pool.pool_id for pool in self.gpu_worker_pools}
++        quota_ids = {quota.quota_id for quota in self.remote_quotas}
++        if any(pool.device_id not in gpu_ids for pool in self.gpu_worker_pools):
++            raise ValueError("worker pool names an unknown physical GPU")
++        for scope in self.scopes:
++            if scope.resource_class == "gpu" and scope.pool_or_quota_id not in pool_ids:
++                raise ValueError("GPU scope names an unknown worker pool")
++            if (
++                scope.resource_class == "remote"
++                and scope.pool_or_quota_id not in quota_ids
++            ):
++                raise ValueError("remote scope names an unknown quota")
++
++    def fingerprint(self) -> str:
++        normalized = (
++            self.inventory_id,
++            self.lease_ttl_ms,
++            self.cpu_slots,
++            sorted(
++                (
++                    scope.scope_id,
++                    scope.resource_class,
++                    scope.run_slots,
++                    scope.resident_slots,
++                    scope.pool_or_quota_id,
++                )
++                for scope in self.scopes
++            ),
++            sorted(
++                (quota.quota_id, quota.slots, quota.capacity)
++                for quota in self.remote_quotas
++            ),
++            sorted(
++                (
++                    device.device_id,
++                    device.memory_bytes,
++                    device.run_slots,
++                    device.resident_slots,
++                )
++                for device in self.gpu_devices
++            ),
++            sorted(
++                (pool.pool_id, pool.device_id, pool.run_slots, pool.resident_slots)
++                for pool in self.gpu_worker_pools
++            ),
++        )
++        return sha256(dumps(normalized, separators=(",", ":")).encode()).hexdigest()
+diff --git a/src/jimu_runtime/workers/resources.py b/src/jimu_runtime/workers/resources.py
+new file mode 100644
+index 0000000..e72f72f
+--- /dev/null
++++ b/src/jimu_runtime/workers/resources.py
+@@ -0,0 +1,546 @@
++"""Atomic host capacity accounting shared across independent worker processes."""
++
++import os
++import sqlite3
++from collections.abc import Iterator
++from contextlib import closing, contextmanager
++from dataclasses import dataclass
++from enum import StrEnum
++from pathlib import Path
++from time import monotonic_ns
++from typing import Protocol
++from uuid import uuid4
++
++from jimu_runtime.domain.policies import (
++    CPUResourceRequirements,
++    GPUResourceRequirements,
++    RemoteResourceRequirements,
++    ResourceRequirements,
++)
++from jimu_runtime.workers.process_identity import HostProcessIdentity, process_start
++from jimu_runtime.workers.resource_inventory import (
++    HostInventory,
++    LeaseLifetime,
++    RemoteCapacity,
++    ResourceClass,
++    require_identity,
++)
++
++_SCHEMA_VERSION = 2
++_SCHEMA = """
++CREATE TABLE inventory (
++    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
++    schema_version INTEGER NOT NULL,
++    inventory_id TEXT NOT NULL,
++    fingerprint TEXT NOT NULL
++) STRICT;
++CREATE TABLE leases (
++    lease_id TEXT PRIMARY KEY,
++    owner_id TEXT NOT NULL,
++    owner_generation TEXT NOT NULL,
++    scope_id TEXT NOT NULL,
++    resource_class TEXT NOT NULL,
++    capacity_id TEXT NOT NULL,
++    pool_id TEXT,
++    lifetime TEXT NOT NULL,
++    memory_bytes INTEGER NOT NULL,
++    scope_limit INTEGER NOT NULL,
++    timeout_ms INTEGER NOT NULL,
++    input_byte_limit INTEGER NOT NULL,
++    output_byte_limit INTEGER NOT NULL,
++    boot_id TEXT NOT NULL,
++    pid_namespace INTEGER NOT NULL,
++    expires_ns INTEGER NOT NULL,
++    state TEXT NOT NULL,
++    activity TEXT,
++    pid INTEGER,
++    process_start TEXT,
++    tree_reaped INTEGER NOT NULL DEFAULT 0 CHECK (tree_reaped IN (0, 1)),
++    dispatch_id TEXT UNIQUE
++) STRICT;
++CREATE INDEX lease_capacity ON leases (resource_class, capacity_id);
++CREATE INDEX lease_scope ON leases (scope_id, lifetime);
++"""
++_OWNED = "lease_id = ? AND owner_id = ? AND owner_generation = ? AND scope_id = ?"
++
++
++class ResourceUnavailable(RuntimeError):
++    """The host inventory cannot admit this workload."""
++
++    def __init__(self, reason: str) -> None:
++        self.reason = reason
++        super().__init__(reason)
++
++
++class LeaseState(StrEnum):
++    RESERVED = "reserved"
++    ACTIVE = "active"
++    DRAINING = "draining"
++
++
++class _Activity(StrEnum):
++    GROUP = "group"
++    TRANSPORT = "transport"
++    PROVIDER = "provider"
++
++
++@dataclass(frozen=True, slots=True)
++class ResourceLease:
++    lease_id: str
++    owner_id: str
++    owner_generation: str
++    scope_id: str
++    resource_class: ResourceClass
++    lifetime: LeaseLifetime
++    timeout_ms: int
++    input_byte_limit: int
++    output_byte_limit: int
++
++
++class ProviderTerminalVerifier(Protocol):
++    def __call__(
++        self, scope_id: str, dispatch_id: str, terminal_evidence_id: str
++    ) -> bool:
++        """Look up trusted evidence of terminal execution for this exact dispatch."""
++        ...
++
++
++@dataclass(frozen=True, slots=True)
++class _RequestedCapacity:
++    capacity_id: str
++    pool_id: str | None
++    slots: int
++    pool_slots: int
++    scope_limit: int
++    memory_bytes: int = 0
++    memory_capacity: int = 0
++
++
++def _lease_key(lease: ResourceLease) -> tuple[str, str, str, str]:
++    return lease.lease_id, lease.owner_id, lease.owner_generation, lease.scope_id
++
++
++class ResourceAdmission:
++    """Use a single persistent local SQLite file for the whole host inventory."""
++
++    def __init__(
++        self,
++        path: Path,
++        inventory: HostInventory,
++        *,
++        provider_terminal_verifier: ProviderTerminalVerifier | None = None,
++    ) -> None:
++        self._uri = path.absolute().as_uri() + "?mode=rw"
++        try:
++            self._identity = HostProcessIdentity.current()
++        except (OSError, ValueError):
++            raise ResourceUnavailable("worker_host_unverifiable") from None
++        self._inventory = inventory
++        self._identity_row = (
++            _SCHEMA_VERSION,
++            inventory.inventory_id,
++            inventory.fingerprint(),
++        )
++        self._verify_terminal = provider_terminal_verifier
++        self._scopes = {scope.scope_id: scope for scope in inventory.scopes}
++        self._devices = {device.device_id: device for device in inventory.gpu_devices}
++        self._pools = {pool.pool_id: pool for pool in inventory.gpu_worker_pools}
++        self._quotas = {quota.quota_id: quota for quota in inventory.remote_quotas}
++        with self._transaction():
++            pass
++
++    @classmethod
++    def provision(
++        cls,
++        path: Path,
++        inventory: HostInventory,
++        *,
++        provider_terminal_verifier: ProviderTerminalVerifier | None = None,
++    ) -> "ResourceAdmission":
++        """Explicit one-time bootstrap in a trusted, host-local directory."""
++        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
++        os.close(fd)
++        with closing(sqlite3.connect(path)) as db, db:
++            db.executescript(_SCHEMA)
++            db.execute(
++                "INSERT INTO inventory VALUES (1, ?, ?, ?)",
++                (_SCHEMA_VERSION, inventory.inventory_id, inventory.fingerprint()),
++            )
++        return cls(
++            path, inventory, provider_terminal_verifier=provider_terminal_verifier
++        )
++
++    @contextmanager
++    def _transaction(self) -> Iterator[sqlite3.Connection]:
++        try:
++            with closing(sqlite3.connect(self._uri, uri=True, timeout=0.25)) as db, db:
++                db.row_factory = sqlite3.Row
++                db.execute("BEGIN IMMEDIATE")
++                row = db.execute(
++                    "SELECT schema_version, inventory_id, fingerprint FROM inventory"
++                ).fetchone()
++                if row is None or tuple(row) != self._identity_row:
++                    raise ResourceUnavailable("inventory_mismatch")
++                yield db
++        except sqlite3.DatabaseError:
++            raise ResourceUnavailable("ledger_unavailable") from None
++
++    def _capacity(
++        self, requirements: ResourceRequirements, scope_id: str, lifetime: LeaseLifetime
++    ) -> _RequestedCapacity:
++        scope = self._scopes.get(scope_id)
++        if scope is None or scope.resource_class != requirements.resource_class:
++            raise ResourceUnavailable("no_host_budget")
++        scope_slots = (
++            scope.run_slots if lifetime == LeaseLifetime.RUN else scope.resident_slots
++        )
++        limit = min(scope_slots, requirements.max_concurrency)
++        if isinstance(requirements, CPUResourceRequirements):
++            return _RequestedCapacity("cpu", None, self._inventory.cpu_slots, 0, limit)
++        if isinstance(requirements, RemoteResourceRequirements):
++            quota = self._quotas.get(requirements.remote_quota_id)
++            if quota is not None and quota.quota_id == scope.pool_or_quota_id:
++                return _RequestedCapacity(quota.quota_id, None, quota.slots, 0, limit)
++        if isinstance(requirements, GPUResourceRequirements):
++            pool = self._pools.get(requirements.worker_pool_id)
++            if pool is not None and pool.pool_id == scope.pool_or_quota_id:
++                device = self._devices[pool.device_id]
++                run = lifetime == LeaseLifetime.RUN
++                return _RequestedCapacity(
++                    device.device_id,
++                    pool.pool_id,
++                    device.run_slots if run else device.resident_slots,
++                    pool.run_slots if run else pool.resident_slots,
++                    limit,
++                    requirements.gpu_memory_limit_bytes,
++                    device.memory_bytes,
++                )
++        raise ResourceUnavailable("no_host_budget")
++
++    def _has_capacity(
++        self, db: sqlite3.Connection, lease: ResourceLease, capacity: _RequestedCapacity
++    ) -> bool:
++        physical = db.execute(
++            """SELECT scope_id, pool_id, lifetime, memory_bytes
++               FROM leases WHERE resource_class = ? AND capacity_id = ?""",
++            (lease.resource_class, capacity.capacity_id),
++        ).fetchall()
++        # CPU slots are shared by resident and per-call work. Each GPU has separate
++        # slot limits for resident workers and calls, but a common memory budget.
++        slots_used = sum(
++            lease.resource_class != "gpu" or row["lifetime"] == lease.lifetime
++            for row in physical
++        )
++        if slots_used >= capacity.slots:
++            return False
++        if capacity.pool_id is not None:
++            pool_used = sum(
++                row["pool_id"] == capacity.pool_id and row["lifetime"] == lease.lifetime
++                for row in physical
++            )
++            memory_used = sum(row["memory_bytes"] for row in physical)
++            if (
++                pool_used >= capacity.pool_slots
++                or memory_used + capacity.memory_bytes > capacity.memory_capacity
++            ):
++                return False
++        limits = [
++            int(row["scope_limit"])
++            for row in db.execute(
++                "SELECT scope_limit FROM leases WHERE scope_id = ? AND lifetime = ?",
++                (lease.scope_id, lease.lifetime),
++            )
++        ]
++        return len(limits) < min([capacity.scope_limit, *limits])
++
++    def reserve(
++        self,
++        requirements: ResourceRequirements,
++        scope_id: str,
++        *,
++        owner_id: str,
++        lifetime: LeaseLifetime = LeaseLifetime.RUN,
++    ) -> ResourceLease:
++        require_identity(owner_id)
++        if not isinstance(lifetime, LeaseLifetime):
++            raise ValueError("invalid lease lifetime")
++        capacity = self._capacity(requirements, scope_id, lifetime)
++        lease = ResourceLease(
++            uuid4().hex,
++            owner_id,
++            uuid4().hex,
++            scope_id,
++            requirements.resource_class,
++            lifetime,
++            requirements.timeout_ms,
++            requirements.input_byte_limit,
++            requirements.output_byte_limit,
++        )
++        with self._transaction() as db:
++            self._reconcile(db)
++            if self._has_capacity(db, lease, capacity):
++                db.execute(
++                    """INSERT INTO leases (
++                           lease_id, owner_id, owner_generation, scope_id, resource_class,
++                           capacity_id, pool_id, lifetime, memory_bytes, scope_limit,
++                           timeout_ms, input_byte_limit, output_byte_limit,
++                           boot_id, pid_namespace, expires_ns, state
++                       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
++                    (
++                        *_lease_key(lease),
++                        lease.resource_class,
++                        capacity.capacity_id,
++                        capacity.pool_id,
++                        lease.lifetime,
++                        capacity.memory_bytes,
++                        capacity.scope_limit,
++                        lease.timeout_ms,
++                        lease.input_byte_limit,
++                        lease.output_byte_limit,
++                        self._identity.boot_id,
++                        self._identity.pid_namespace,
++                        self._expires_at(),
++                        LeaseState.RESERVED,
++                    ),
++                )
++                return lease
++        raise ResourceUnavailable("capacity_exhausted")
++
++    def _expires_at(self) -> int:
++        return monotonic_ns() + self._inventory.lease_ttl_ms * 1_000_000
++
++    @property
++    def heartbeat_interval_seconds(self) -> float:
++        return self._inventory.lease_ttl_ms / 3000
++
++    def _owned_row(
++        self, db: sqlite3.Connection, lease: ResourceLease
++    ) -> sqlite3.Row | None:
++        row = db.execute(
++            f"SELECT * FROM leases WHERE {_OWNED}", _lease_key(lease)
++        ).fetchone()
++        if not isinstance(row, sqlite3.Row):
++            return None
++        if (
++            row["resource_class"],
++            row["lifetime"],
++            row["timeout_ms"],
++            row["input_byte_limit"],
++            row["output_byte_limit"],
++        ) != (
++            lease.resource_class,
++            lease.lifetime,
++            lease.timeout_ms,
++            lease.input_byte_limit,
++            lease.output_byte_limit,
++        ):
++            return None
++        return row
++
++    def state(self, lease: ResourceLease) -> LeaseState | None:
++        with self._transaction() as db:
++            row = self._owned_row(db, lease)
++            return None if row is None else LeaseState(row["state"])
++
++    def renew(self, lease: ResourceLease) -> bool:
++        with self._transaction() as db:
++            row = self._owned_row(db, lease)
++            if (
++                row is None
++                or row["state"] == LeaseState.DRAINING
++                or not self._fresh(row)
++            ):
++                return False
++            db.execute(
++                f"UPDATE leases SET expires_ns = ? WHERE {_OWNED}",
++                (self._expires_at(), *_lease_key(lease)),
++            )
++            return True
++
++    def _fresh(self, row: sqlite3.Row) -> bool:
++        return (
++            row["boot_id"] == self._identity.boot_id
++            and row["pid_namespace"] == self._identity.pid_namespace
++            and int(row["expires_ns"]) > monotonic_ns()
++        )
++
++    @property
++    def guardian_ledger_uri(self) -> str:
++        """Give the trusted guardian access to its durable completion record."""
++        return self._uri
++
++    def attach_process_group(self, lease: ResourceLease, pgid: int) -> None:
++        """Record the isolated group while its launcher gate is still closed."""
++        if (
++            lease.resource_class == "remote"
++            or pgid <= 1
++            or pgid == os.getpgrp()
++            or os.getpgid(pgid) != pgid
++        ):
++            raise ResourceUnavailable("invalid_worker_group")
++        _, started = process_start(pgid)
++        self._activate(lease, _Activity.GROUP, pid=pgid, process_started=started)
++
++    def activate_remote(self, lease: ResourceLease, dispatch_id: str) -> None:
++        """Record the dispatch boundary before starting a transport call."""
++        require_identity(dispatch_id)
++        scope = self._scopes.get(lease.scope_id)
++        if (
++            lease.resource_class != "remote"
++            or scope is None
++            or scope.pool_or_quota_id is None
++        ):
++            raise ResourceUnavailable("invalid_remote_lease")
++        quota = self._quotas[scope.pool_or_quota_id]
++        if quota.capacity == RemoteCapacity.PROVIDER_INFLIGHT:
++            self._activate(lease, _Activity.PROVIDER, dispatch_id=dispatch_id)
++        else:
++            pid = os.getpid()
++            _, started = process_start(pid)
++            self._activate(
++                lease,
++                _Activity.TRANSPORT,
++                pid=pid,
++                process_started=started,
++                dispatch_id=dispatch_id,
++            )
++
++    def _activate(
++        self,
++        lease: ResourceLease,
++        activity: _Activity,
++        *,
++        pid: int | None = None,
++        process_started: str | None = None,
++        dispatch_id: str | None = None,
++    ) -> None:
++        with self._transaction() as db:
++            row = self._owned_row(db, lease)
++            if (
++                row is None
++                or row["state"] != LeaseState.RESERVED
++                or not self._fresh(row)
++            ):
++                raise ResourceUnavailable("lease_inactive")
++            db.execute(
++                f"""UPDATE leases SET state = ?, activity = ?, pid = ?,
++                       process_start = ?, dispatch_id = ?, expires_ns = ?
++                    WHERE {_OWNED}""",
++                (
++                    LeaseState.ACTIVE,
++                    activity,
++                    pid,
++                    process_started,
++                    dispatch_id,
++                    self._expires_at(),
++                    *_lease_key(lease),
++                ),
++            )
++
++    def begin_draining(self, lease: ResourceLease) -> bool:
++        with self._transaction() as db:
++            if self._owned_row(db, lease) is None:
++                return False
++            self._drain(db, lease.lease_id)
++            return True
++
++    def release_reserved(self, lease: ResourceLease) -> bool:
++        """Abandon an unstarted reservation without affecting a concurrent launch."""
++        with self._transaction() as db:
++            row = self._owned_row(db, lease)
++            if row is None or row["state"] != LeaseState.RESERVED:
++                return False
++            self._delete(db, lease.lease_id)
++            return True
++
++    def release(self, lease: ResourceLease) -> bool:
++        """Release a finished reservation, retaining unconfirmed physical work."""
++        with self._transaction() as db:
++            row = self._owned_row(db, lease)
++            if row is None:
++                return False
++            if (
++                self._physically_exited(row)
++                or row["activity"] == _Activity.TRANSPORT
++                and row["pid"] == os.getpid()
++                and row["process_start"] == process_start(os.getpid())[1]
++                and row["pid_namespace"] == self._identity.pid_namespace
++                and row["boot_id"] == self._identity.boot_id
++            ):
++                self._delete(db, lease.lease_id)
++                return True
++            self._drain(db, lease.lease_id)
++            return False
++
++    def settle_provider(
++        self, lease_id: str, dispatch_id: str, terminal_evidence_id: str
++    ) -> bool:
++        """Allow restart recovery using a host verifier and an exact dispatch."""
++        require_identity(dispatch_id)
++        require_identity(terminal_evidence_id)
++        if self._verify_terminal is None:
++            return False
++        with self._transaction() as db:
++            row = db.execute(
++                """SELECT scope_id FROM leases
++                   WHERE lease_id = ? AND dispatch_id = ? AND activity = ?""",
++                (lease_id, dispatch_id, _Activity.PROVIDER),
++            ).fetchone()
++        if row is None or not self._verify_terminal(
++            row["scope_id"], dispatch_id, terminal_evidence_id
++        ):
++            return False
++        with self._transaction() as db:
++            result = db.execute(
++                "DELETE FROM leases WHERE lease_id = ? AND dispatch_id = ? AND activity = ?",
++                (lease_id, dispatch_id, _Activity.PROVIDER),
++            )
++            return result.rowcount == 1
++
++    def reconcile(self) -> tuple[str, ...]:
++        """Recover reservations and terminated local work with expired/draining leases."""
++        with self._transaction() as db:
++            return self._reconcile(db)
++
++    def _reconcile(self, db: sqlite3.Connection) -> tuple[str, ...]:
++        reclaimed = []
++        for row in db.execute(
++            """SELECT * FROM leases WHERE expires_ns <= ? OR boot_id != ? OR state = ?
++               ORDER BY lease_id""",
++            (monotonic_ns(), self._identity.boot_id, LeaseState.DRAINING),
++        ).fetchall():
++            lease_id = row["lease_id"]
++            if self._physically_exited(row):
++                self._delete(db, lease_id)
++                reclaimed.append(lease_id)
++            else:
++                self._drain(db, lease_id)
++        return tuple(reclaimed)
++
++    def _physically_exited(self, row: sqlite3.Row) -> bool:
++        if row["activity"] is None:
++            return True  # No launch may begin before its activity is recorded.
++        if row["activity"] == _Activity.GROUP:
++            # Setsid descendants may outlive a killed guardian and its original
++            # process group. Require the guardian's durable subreaper receipt.
++            if row["boot_id"] != self._identity.boot_id:
++                return True
++            return bool(row["tree_reaped"]) and self._identity.process_exited(
++                row["boot_id"], row["pid_namespace"], row["pid"], row["process_start"]
++            )
++        if row["activity"] == _Activity.TRANSPORT:
++            return self._identity.process_exited(
++                row["boot_id"], row["pid_namespace"], row["pid"], row["process_start"]
++            )
++        return False  # A local timeout or restart cannot prove provider termination.
++
++    @staticmethod
++    def _drain(db: sqlite3.Connection, lease_id: str) -> None:
++        db.execute(
++            "UPDATE leases SET state = ? WHERE lease_id = ?",
++            (LeaseState.DRAINING, lease_id),
++        )
++
++    @staticmethod
++    def _delete(db: sqlite3.Connection, lease_id: str) -> None:
++        db.execute("DELETE FROM leases WHERE lease_id = ?", (lease_id,))
+diff --git a/tests/contract/test_wp04_worker_lifecycle.py b/tests/contract/test_wp04_worker_lifecycle.py
+new file mode 100644
+index 0000000..034bb45
+--- /dev/null
++++ b/tests/contract/test_wp04_worker_lifecycle.py
+@@ -0,0 +1,415 @@
++import asyncio
++import ctypes
++import os
++import signal
++import subprocess
++import sys
++from contextlib import contextmanager, suppress
++from dataclasses import replace
++from multiprocessing import get_context
++from pathlib import Path
++from time import monotonic, sleep
++
++import pytest
++from fixtures.wp04_resources import commands
++from fixtures.wp04_resources.scenario import cpu, worker_inventory
++
++from jimu_runtime.workers.lifecycle import (
++    IsolatedWorker,
++    WorkerFailure,
++    WorkerProcessError,
++    WorkerStart,
++)
++from jimu_runtime.workers.resources import (
++    LeaseState,
++    ResourceAdmission,
++    ResourceUnavailable,
++)
++
++
++def command(*args):
++    return (sys.executable, commands.__file__, *map(str, args))
++
++
++async def wait_ready(marker):
++    async with asyncio.timeout(5):
++        while not marker.exists():
++            await asyncio.sleep(0.015)
++    return tuple(map(int, marker.read_text().split()))
++
++
++def assert_no_tree(pids):
++    leader, descendant, guardian = pids
++    for pid in (leader, descendant, guardian):
++        with pytest.raises(ProcessLookupError):
++            os.kill(pid, 0)
++    with pytest.raises(ProcessLookupError):
++        os.killpg(guardian, 0)
++
++
++@contextmanager
++def marked_subreaper():
++    # The test must collect only its own orphaned guardian after killing a parent.
++    libc = ctypes.CDLL(None, use_errno=True)
++    before = ctypes.c_int()
++    assert libc.prctl(37, ctypes.byref(before), 0, 0, 0) == 0
++    assert libc.prctl(36, 1, 0, 0, 0) == 0
++    try:
++        yield
++    finally:
++        assert libc.prctl(36, before.value, 0, 0, 0) == 0
++
++
++def test_worker_round_trip_and_exact_normal_failure(tmp_path):
++    admission = ResourceAdmission.provision(
++        tmp_path / "resources.db", worker_inventory()
++    )
++    runner = IsolatedWorker(admission)
++
++    async def exercise():
++        lease = admission.reserve(cpu(), "test.cpu", owner_id="worker")
++        payload = bytes(range(256)) * 640
++        output = await runner.run(
++            lease,
++            command("echo"),
++            payload,
++            timeout_ms=3000,
++            output_byte_limit=len(payload),
++        )
++        assert output == payload[::-1]
++        assert admission.state(lease) is None
++
++        lease = admission.reserve(cpu(), "test.cpu", owner_id="worker")
++        with pytest.raises(WorkerProcessError) as failed:
++            await runner.run(
++                lease, command("failure"), b"", timeout_ms=3000, output_byte_limit=16
++            )
++        assert failed.value.reason == WorkerFailure.PROCESS_FAILED
++        assert failed.value.start_state == WorkerStart.STARTED
++        assert failed.value.output == b"{}"
++        assert "PRIVATE_STDERR" not in str(failed.value)
++        assert admission.state(lease) is None
++
++    asyncio.run(exercise())
++
++
++@pytest.mark.parametrize(
++    ("work", "reason", "start"),
++    [
++        ("oversize", WorkerFailure.OUTPUT_LIMIT, WorkerStart.STARTED),
++        ("missing", WorkerFailure.START_FAILED, WorkerStart.NOT_DISPATCHED),
++        ("relative", WorkerFailure.INVALID_BUDGET, WorkerStart.NOT_DISPATCHED),
++    ],
++)
++def test_worker_fails_closed_without_truncated_evidence(tmp_path, work, reason, start):
++    admission = ResourceAdmission.provision(
++        tmp_path / "resources.db", worker_inventory()
++    )
++    lease = admission.reserve(cpu(), "test.cpu", owner_id="worker")
++    args = {
++        "oversize": command("oversize"),
++        "missing": (str(tmp_path / "missing-executable"),),
++        "relative": ("relative-executable",),
++    }[work]
++    with pytest.raises(WorkerProcessError) as failed:
++        asyncio.run(
++            IsolatedWorker(admission).run(
++                lease, args, b"", timeout_ms=3000, output_byte_limit=16
++            )
++        )
++    assert failed.value.reason == reason
++    assert failed.value.start_state == start
++    assert failed.value.output is None
++    assert admission.state(lease) is None
++
++
++def test_timeout_holds_capacity_while_real_descendant_is_still_alive(tmp_path):
++    admission = ResourceAdmission.provision(
++        tmp_path / "resources.db", worker_inventory()
++    )
++    runner = IsolatedWorker(admission)
++    marker = tmp_path / "timeout-ready"
++
++    async def exercise():
++        lease = admission.reserve(cpu(), "test.cpu", owner_id="initial")
++        task = asyncio.create_task(
++            runner.run(
++                lease,
++                command("tree", marker),
++                b"",
++                timeout_ms=700,
++                output_byte_limit=16,
++            )
++        )
++        pids = await wait_ready(marker)
++        async with asyncio.timeout(5):
++            while admission.state(lease) != LeaseState.DRAINING:
++                await asyncio.sleep(0.004)
++        os.kill(pids[1], 0)
++        with pytest.raises(ResourceUnavailable, match="capacity_exhausted"):
++            admission.reserve(cpu(), "test.cpu", owner_id="competitor")
++        with pytest.raises(WorkerProcessError) as failed:
++            await task
++        assert failed.value.reason == WorkerFailure.TIMEOUT
++        assert failed.value.dispatched
++        assert_no_tree(pids)
++        next_lease = admission.reserve(cpu(), "test.cpu", owner_id="competitor")
++        assert not admission.release(lease)
++        assert admission.release(next_lease)
++
++    asyncio.run(exercise())
++
++
++@pytest.mark.parametrize("mode", ["tree", "escaped-tree"])
++def test_cancellation_reaps_real_worker_tree(tmp_path, mode):
++    admission = ResourceAdmission.provision(
++        tmp_path / "resources.db", worker_inventory()
++    )
++    runner = IsolatedWorker(admission)
++    marker = tmp_path / "cancel-ready"
++
++    async def exercise():
++        lease = admission.reserve(cpu(), "test.cpu", owner_id="worker")
++        task = asyncio.create_task(
++            runner.run(
++                lease,
++                command(mode, marker),
++                b"",
++                timeout_ms=5000,
++                output_byte_limit=16,
++            )
++        )
++        pids = await wait_ready(marker)
++        task.cancel()
++        with pytest.raises(asyncio.CancelledError):
++            await task
++        assert_no_tree(pids)
++        assert admission.state(lease) is None
++
++    asyncio.run(exercise())
++
++
++def _supervisor(path: Path, marker: Path, output, mode):
++    admission = ResourceAdmission(path, worker_inventory(ttl=1000))
++    lease = admission.reserve(cpu(), "test.cpu", owner_id="before-crash")
++    output.put(lease)
++    asyncio.run(
++        IsolatedWorker(admission).run(
++            lease, command(mode, marker), b"", timeout_ms=8000, output_byte_limit=16
++        )
++    )
++
++
++def _wait_orphan(guardian: int):
++    deadline = monotonic() + 5
++    while monotonic() < deadline:
++        pid, status = os.waitpid(guardian, os.WNOHANG)
++        if pid:
++            assert os.WIFEXITED(status)
++            return
++        sleep(0.025)
++    raise AssertionError("guardian did not exit")
++
++
++@pytest.mark.parametrize("mode", ["tree", "escaped-tree"])
++def test_hard_supervisor_restart_preserves_lease_until_worker_tree_exits(
++    tmp_path, mode
++):
++    inventory = worker_inventory(ttl=1000)
++    path, marker = tmp_path / "resources.db", tmp_path / "restart-ready"
++    ResourceAdmission.provision(path, inventory)
++    ctx = get_context("spawn")
++    results = ctx.Queue()
++    supervisor = ctx.Process(target=_supervisor, args=(path, marker, results, mode))
++    pids = None
++    with marked_subreaper():
++        supervisor.start()
++        try:
++            lease = results.get(timeout=5)
++            pids = asyncio.run(wait_ready(marker))
++            supervisor.kill()
++            supervisor.join(5)
++            assert supervisor.exitcode == -signal.SIGKILL
++
++            restarted = ResourceAdmission(path, inventory)
++            # The owner changed. Even an explicit draining/release request must
++            # keep capacity while the original guardian group actually exists.
++            assert not restarted.release(lease)
++            assert restarted.state(lease) == LeaseState.DRAINING
++            with pytest.raises(ResourceUnavailable, match="capacity_exhausted"):
++                restarted.reserve(cpu(), "test.cpu", owner_id="restarted")
++
++            _wait_orphan(pids[2])
++            assert_no_tree(pids)
++            assert restarted.reconcile() == (lease.lease_id,)
++            replacement = restarted.reserve(cpu(), "test.cpu", owner_id=lease.owner_id)
++            assert not restarted.release(lease)
++            assert restarted.release(replacement)
++        finally:
++            if supervisor.is_alive():
++                supervisor.kill()
++                supervisor.join(5)
++            if pids is not None:
++                with suppress(ChildProcessError):
++                    _wait_orphan(pids[2])
++
++
++def test_expired_lease_still_charges_a_live_group(tmp_path):
++    admission = ResourceAdmission.provision(
++        tmp_path / "resources.db", worker_inventory(ttl=250)
++    )
++    lease = admission.reserve(cpu(), "test.cpu", owner_id="worker")
++    # An independent worker is isolated in a new group. The supervisor deliberately
++    # stops heartbeating to exercise the lease expiry path during physical work.
++    process = subprocess.Popen(
++        command("descendant", tmp_path / "manual-group"), start_new_session=True
++    )
++    try:
++        admission.attach_process_group(lease, process.pid)
++        sleep(0.28)
++        assert admission.reconcile() == ()
++        assert admission.state(lease) == LeaseState.DRAINING
++        assert not admission.renew(lease)
++        assert not admission.release(lease)
++        os.kill(process.pid, 0)
++        with pytest.raises(ResourceUnavailable, match="capacity_exhausted"):
++            admission.reserve(cpu(), "test.cpu", owner_id="competitor")
++    finally:
++        process.kill()
++        process.wait(timeout=5)
++    # A process without the trusted guardian cannot prove it supervised every
++    # descendant. Its exhaustion remains pending after ordinary process exit.
++    assert admission.reconcile() == ()
++    assert admission.state(lease) == LeaseState.DRAINING
++
++
++def test_duplicate_launch_cannot_release_the_real_worker(tmp_path):
++    admission = ResourceAdmission.provision(
++        tmp_path / "resources.db", worker_inventory()
++    )
++    runner = IsolatedWorker(admission)
++    marker = tmp_path / "original"
++
++    async def exercise():
++        lease = admission.reserve(cpu(), "test.cpu", owner_id="worker")
++        task = asyncio.create_task(
++            runner.run(
++                lease,
++                command("tree", marker),
++                b"",
++                timeout_ms=5000,
++                output_byte_limit=16,
++            )
++        )
++        try:
++            pids = await wait_ready(marker)
++            with pytest.raises(WorkerProcessError) as duplicate:
++                await runner.run(
++                    lease,
++                    command("echo"),
++                    b"second",
++                    timeout_ms=1000,
++                    output_byte_limit=16,
++                )
++            assert duplicate.value.reason == WorkerFailure.START_FAILED
++            assert not duplicate.value.dispatched
++            assert admission.state(lease) == LeaseState.ACTIVE
++            os.kill(pids[1], 0)
++        finally:
++            task.cancel()
++            with pytest.raises(asyncio.CancelledError):
++                await task
++        assert_no_tree(pids)
++
++    asyncio.run(exercise())
++
++
++def test_deferred_reap_preserves_capacity_until_a_stopped_guardian_can_exit(tmp_path):
++    admission = ResourceAdmission.provision(
++        tmp_path / "resources.db", worker_inventory()
++    )
++    runner = IsolatedWorker(admission)
++    marker = tmp_path / "deferred"
++
++    async def exercise():
++        lease = admission.reserve(cpu(), "test.cpu", owner_id="worker")
++        task = asyncio.create_task(
++            runner.run(
++                lease,
++                command("tree", marker),
++                b"",
++                timeout_ms=5000,
++                output_byte_limit=16,
++            )
++        )
++        pids = await wait_ready(marker)
++        os.kill(pids[2], signal.SIGSTOP)
++        try:
++            task.cancel()
++            with pytest.raises(asyncio.CancelledError):
++                await task
++            assert admission.state(lease) == LeaseState.DRAINING
++            os.kill(pids[1], 0)
++            with pytest.raises(ResourceUnavailable, match="capacity_exhausted"):
++                admission.reserve(cpu(), "test.cpu", owner_id="competitor")
++        finally:
++            os.kill(pids[2], signal.SIGCONT)
++        async with asyncio.timeout(5):
++            while admission.state(lease) is not None:
++                await asyncio.sleep(0.015)
++        assert_no_tree(pids)
++
++    asyncio.run(exercise())
++
++
++def test_guardian_death_with_escaped_descendant_requires_proof_before_reuse(tmp_path):
++    inventory = worker_inventory()
++    path, marker = tmp_path / "resources.db", tmp_path / "escaped"
++    admission = ResourceAdmission.provision(path, inventory)
++    runner = IsolatedWorker(admission)
++
++    async def exercise():
++        lease = admission.reserve(cpu(), "test.cpu", owner_id="worker")
++        task = asyncio.create_task(
++            runner.run(
++                lease,
++                command("escaped-tree", marker),
++                b"",
++                timeout_ms=5000,
++                output_byte_limit=16,
++            )
++        )
++        leader, descendant, guardian = await wait_ready(marker)
++        try:
++            assert os.getpgid(descendant) != guardian
++            os.kill(guardian, signal.SIGKILL)
++            os.kill(leader, signal.SIGKILL)
++            with pytest.raises(WorkerProcessError):
++                await task
++            os.waitpid(leader, 0)
++            with pytest.raises(ProcessLookupError):
++                os.killpg(guardian, 0)
++            os.kill(descendant, 0)
++            restarted = ResourceAdmission(path, inventory)
++            assert restarted.reconcile() == ()
++            assert restarted.state(lease) == LeaseState.DRAINING
++            assert not restarted.release(lease)
++            with pytest.raises(ResourceUnavailable, match="capacity_exhausted"):
++                restarted.reserve(cpu(), "test.cpu", owner_id="replacement")
++        finally:
++            os.kill(descendant, signal.SIGKILL)
++            os.waitpid(descendant, 0)
++        assert restarted.reconcile() == ()
++        # Only the boot-identity change releases a lost receipt in this
++        # implementation. The process exits above are real; reboot is simulated.
++        restarted._identity = replace(
++            restarted._identity, boot_id="00000000-0000-0000-0000-000000000000"
++        )
++        assert restarted.reconcile() == (lease.lease_id,)
++        next_lease = restarted.reserve(cpu(), "test.cpu", owner_id=lease.owner_id)
++        assert not restarted.release(lease)
++        assert restarted.state(next_lease) == LeaseState.RESERVED
++        assert restarted.release(next_lease)
++
++    with marked_subreaper():
++        asyncio.run(exercise())
+diff --git a/tests/fixtures/wp04_resources/scenario.py b/tests/fixtures/wp04_resources/scenario.py
+new file mode 100644
+index 0000000..dd73171
+--- /dev/null
++++ b/tests/fixtures/wp04_resources/scenario.py
+@@ -0,0 +1,47 @@
++"""Small host quotas and reproducible trusted commands for live Linux tests."""
++
++from jimu_runtime.domain.definition_enums import PolicyKind
++from jimu_runtime.domain.policies import (
++    CPUResourceRequirements,
++    GPUResourceRequirements,
++    RemoteResourceRequirements,
++)
++from jimu_runtime.workers.resource_inventory import HostInventory, ResourceScope
++
++# Fixture limits apply to the declared command, independent of host capacity.
++BUDGET = {
++    "policy_kind": PolicyKind.RESOURCE_REQUIREMENTS,
++    "max_concurrency": 10,
++    "timeout_ms": 10_000,
++    "input_byte_limit": 256 * 1024,
++    "output_byte_limit": 256 * 1024,
++}
++
++
++def cpu(*, concurrency: int = 10) -> CPUResourceRequirements:
++    return CPUResourceRequirements.model_validate(
++        {**BUDGET, "max_concurrency": concurrency, "resource_class": "cpu"}
++    )
++
++
++def gpu(pool: str, memory: int) -> GPUResourceRequirements:
++    return GPUResourceRequirements.model_validate(
++        {
++            **BUDGET,
++            "resource_class": "gpu",
++            "worker_pool_id": pool,
++            "gpu_memory_limit_bytes": memory,
++        }
++    )
++
++
++def remote(quota_id: str) -> RemoteResourceRequirements:
++    return RemoteResourceRequirements.model_validate(
++        {**BUDGET, "resource_class": "remote", "remote_quota_id": quota_id}
++    )
++
++
++def worker_inventory(*, ttl: int = 1000, slots: int = 1) -> HostInventory:
++    return HostInventory(
++        "isolated.host", ttl, slots, (ResourceScope("test.cpu", "cpu", 4),)
++    )
+diff --git a/tests/unit/test_wp04_resource_inventory.py b/tests/unit/test_wp04_resource_inventory.py
+new file mode 100644
+index 0000000..7104f9a
+--- /dev/null
++++ b/tests/unit/test_wp04_resource_inventory.py
+@@ -0,0 +1,202 @@
++from dataclasses import replace
++from multiprocessing import get_context
++from time import sleep
++
++import pytest
++from fixtures.wp04_resources.scenario import cpu, gpu, remote, worker_inventory
++
++from jimu_runtime.workers.resource_inventory import (
++    GPUDevice,
++    GPUWorkerPool,
++    HostInventory,
++    LeaseLifetime,
++    RemoteCapacity,
++    RemoteQuota,
++    ResourceScope,
++)
++from jimu_runtime.workers.resources import (
++    LeaseState,
++    ResourceAdmission,
++    ResourceUnavailable,
++)
++
++
++def _compete(path, inventory, start, release, output, owner):
++    admission = ResourceAdmission(path, inventory)
++    if not start.wait(5):
++        output.put("barrier")
++        return
++    try:
++        lease = admission.reserve(cpu(), "test.cpu", owner_id=owner)
++    except ResourceUnavailable as error:
++        output.put(error.reason)
++    else:
++        output.put("admitted")
++        if release.wait(5):
++            assert admission.release(lease)
++
++
++def test_admission_is_atomic_between_two_independent_processes(tmp_path):
++    inventory = worker_inventory(ttl=10_000)
++    path = tmp_path / "resources.db"
++    admission = ResourceAdmission.provision(path, inventory)
++    ctx = get_context("spawn")
++    start, release = ctx.Event(), ctx.Event()
++    output = ctx.Queue()
++    workers = [
++        ctx.Process(
++            target=_compete, args=(path, inventory, start, release, output, str(index))
++        )
++        for index in range(2)
++    ]
++    try:
++        for worker in workers:
++            worker.start()
++        start.set()
++        assert sorted(output.get(timeout=10) for _ in workers) == [
++            "admitted",
++            "capacity_exhausted",
++        ]
++    finally:
++        release.set()
++        for worker in workers:
++            worker.join(5)
++            if worker.is_alive():
++                worker.terminate()
++                worker.join(5)
++    assert all(worker.exitcode == 0 for worker in workers)
++    after = admission.reserve(cpu(), "test.cpu", owner_id="after")
++    assert admission.release(after)
++
++
++def test_reopened_inventory_requires_exact_config_and_never_creates_state(tmp_path):
++    path = tmp_path / "resources.db"
++    inventory = worker_inventory()
++    with pytest.raises(ResourceUnavailable, match="ledger_unavailable"):
++        ResourceAdmission(path, inventory)
++    assert not path.exists()
++    ResourceAdmission.provision(path, inventory)
++    with pytest.raises(FileExistsError):
++        ResourceAdmission.provision(path, inventory)
++    with pytest.raises(ResourceUnavailable, match="inventory_mismatch"):
++        ResourceAdmission(path, replace(inventory, cpu_slots=2))
++    with pytest.raises(ResourceUnavailable, match="inventory_mismatch"):
++        ResourceAdmission(path, replace(inventory, inventory_id="second.host"))
++
++
++def test_expired_reservation_and_stale_generation_cannot_release_new_holder(tmp_path):
++    admission = ResourceAdmission.provision(
++        tmp_path / "resources.db", worker_inventory(ttl=50)
++    )
++    old = admission.reserve(cpu(), "test.cpu", owner_id="worker.restarted")
++    sleep(0.075)
++    assert not admission.renew(old)
++    assert admission.reconcile() == (old.lease_id,)
++    current = admission.reserve(cpu(), "test.cpu", owner_id=old.owner_id)
++    assert current.lease_id != old.lease_id
++    assert not admission.release(old)
++    assert not admission.begin_draining(
++        replace(current, owner_generation=old.owner_generation)
++    )
++    assert admission.state(current) == LeaseState.RESERVED
++    assert not admission.release(replace(current, scope_id="different"))
++    assert admission.release_reserved(current)
++    assert not admission.release(current)
++
++
++def test_only_registered_budget_and_pinned_scope_concurrency_are_accepted(tmp_path):
++    admission = ResourceAdmission.provision(
++        tmp_path / "resources.db", worker_inventory(slots=4)
++    )
++    with pytest.raises(ResourceUnavailable, match="no_host_budget"):
++        admission.reserve(cpu(), "test.missing", owner_id="worker")
++    with pytest.raises(ResourceUnavailable, match="no_host_budget"):
++        admission.reserve(remote("quota.other"), "test.cpu", owner_id="worker")
++    current = admission.reserve(cpu(concurrency=1), "test.cpu", owner_id="worker")
++    with pytest.raises(ResourceUnavailable, match="capacity_exhausted"):
++        admission.reserve(cpu(concurrency=3), "test.cpu", owner_id="other")
++    assert admission.release(current)
++    assert admission.release(admission.reserve(cpu(), "test.cpu", owner_id="other"))
++
++
++def test_gpu_model_residency_and_tool_run_share_synthetic_physical_memory(tmp_path):
++    inventory = HostInventory(
++        "synthetic.gpu",
++        5000,
++        0,
++        (
++            ResourceScope("model", "gpu", 2, 1, "model.pool"),
++            ResourceScope("tool", "gpu", 2, 0, "tool.pool"),
++        ),
++        gpu_devices=(GPUDevice("synthetic.0", 100, 3, 1),),
++        gpu_worker_pools=(
++            GPUWorkerPool("model.pool", "synthetic.0", 2, 1),
++            GPUWorkerPool("tool.pool", "synthetic.0", 1, 0),
++        ),
++    )
++    admission = ResourceAdmission.provision(tmp_path / "resources.db", inventory)
++    resident = admission.reserve(
++        gpu("model.pool", 70),
++        "model",
++        owner_id="model-server",
++        lifetime=LeaseLifetime.RESIDENT,
++    )
++    with pytest.raises(ResourceUnavailable, match="capacity_exhausted"):
++        admission.reserve(gpu("tool.pool", 31), "tool", owner_id="vision-worker")
++    tool = admission.reserve(gpu("tool.pool", 30), "tool", owner_id="vision-worker")
++    with pytest.raises(ResourceUnavailable, match="capacity_exhausted"):
++        admission.reserve(gpu("tool.pool", 1), "tool", owner_id="second-tool")
++    with pytest.raises(ResourceUnavailable, match="no_host_budget"):
++        admission.reserve(gpu("model.pool", 30), "tool", owner_id="vision-worker")
++    assert admission.release(resident)
++    assert admission.release(tool)
++
++
++def test_provider_inflight_needs_exact_terminal_proof_after_restart(tmp_path):
++    inventory = HostInventory(
++        "remote.host",
++        50,
++        0,
++        (
++            ResourceScope("provider", "remote", 2, pool_or_quota_id="provider.quota"),
++            ResourceScope("transport", "remote", 2, pool_or_quota_id="local.quota"),
++        ),
++        (
++            RemoteQuota("provider.quota", 1, RemoteCapacity.PROVIDER_INFLIGHT),
++            RemoteQuota("local.quota", 1, RemoteCapacity.LOCAL_TRANSPORT),
++        ),
++    )
++    path = tmp_path / "resources.db"
++    before = ResourceAdmission.provision(path, inventory)
++    remote_lease = before.reserve(
++        remote("provider.quota"), "provider", owner_id="worker"
++    )
++    before.activate_remote(remote_lease, "dispatch.abc")
++    local_lease = before.reserve(remote("local.quota"), "transport", owner_id="worker")
++    before.activate_remote(local_lease, "dispatch.def")
++    assert before.release(local_lease)
++    assert not before.release(remote_lease)
++    sleep(0.075)
++
++    terminal = {("provider", "dispatch.abc", "trusted.completion")}
++    reopened = ResourceAdmission(
++        path, inventory, provider_terminal_verifier=lambda *proof: proof in terminal
++    )
++    assert reopened.reconcile() == ()
++    assert reopened.state(remote_lease) == LeaseState.DRAINING
++    assert not reopened.renew(remote_lease)
++    with pytest.raises(ResourceUnavailable, match="capacity_exhausted"):
++        reopened.reserve(remote("provider.quota"), "provider", owner_id="restarted")
++    assert not reopened.settle_provider(
++        remote_lease.lease_id, "dispatch.def", "trusted.completion"
++    )
++    assert not reopened.settle_provider(
++        remote_lease.lease_id, "dispatch.abc", "timeout"
++    )
++    assert reopened.settle_provider(
++        remote_lease.lease_id, "dispatch.abc", "trusted.completion"
++    )
++    assert not reopened.settle_provider(
++        remote_lease.lease_id, "dispatch.abc", "trusted.completion"
++    )
++    reopened.reserve(remote("provider.quota"), "provider", owner_id="restarted")

@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "geometry-evidence",
+  "policy": {
+    "policy_kind": "evidence",
+    "required_evidence_types": [
+      "original_image",
+      "mask",
+      "geometry"
+    ],
+    "allowed_evidence_types": [
+      "original_image",
+      "mask",
+      "geometry",
+      "bbox_visualization",
+      "tool_output",
+      "model_request",
+      "model_response"
+    ],
+    "on_missing": "block_result",
+    "original_media_required": true,
+    "retention_class": {
+      "vocabulary_ref": {
+        "$pin": [
+          "vocabulary",
+          "retention",
+          "1.0.0"
+        ]
+      },
+      "member": "synthetic"
+    },
+    "retention_duration_seconds": 86400,
+    "access_scope": "task",
+    "transform_required_for_derived": true
+  }
+}

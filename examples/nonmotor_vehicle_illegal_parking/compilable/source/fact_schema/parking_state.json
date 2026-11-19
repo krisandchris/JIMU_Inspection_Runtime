@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "schema_id": "parking_state",
+  "semantic_key": "parking_state",
+  "scope": "object",
+  "type_definition": {
+    "kind": "enum",
+    "members": [
+      "parked",
+      "unparked"
+    ]
+  },
+  "payload_schema_ref": null,
+  "value_schema_generation": {
+    "projection_profile_version": "1.0.0",
+    "generator_id": "jimu.value-schema",
+    "generator_version": "1.0.0",
+    "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+    "canonicalization_id": "JCS",
+    "global_limits": {
+      "string_max_length": 4096,
+      "list_max_items": 256,
+      "record_max_fields": 64,
+      "max_depth": 8
+    }
+  },
+  "allowed_producer_kinds": [
+    "vlm_question"
+  ],
+  "status_policy": {
+    "known_value": "required",
+    "non_known_value": "forbidden",
+    "non_known_reason": "required",
+    "error_diagnostics": "required",
+    "not_applicable_basis": "required",
+    "not_evaluated_reason": "required"
+  },
+  "units": {
+    "mode": "not_applicable"
+  },
+  "coordinate_system": {
+    "mode": "not_applicable"
+  },
+  "evidence_policy_ref": {
+    "$pin": [
+      "policy",
+      "question-evidence",
+      "1.0.0"
+    ]
+  },
+  "confidence_metadata_policy": {
+    "mode": "forbidden"
+  }
+}

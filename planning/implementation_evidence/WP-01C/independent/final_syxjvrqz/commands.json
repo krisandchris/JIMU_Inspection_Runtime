@@ -1,0 +1,531 @@
+[
+  {
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "duration_seconds": 0.036326,
+    "end_utc": "2026-11-18T02:17:39.928771+00:00",
+    "exit_code": 0,
+    "label": "git_head",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:17:39.892453+00:00",
+    "stderr": "git_head.stderr",
+    "stdout": "git_head.stdout"
+  },
+  {
+    "argv": [
+      "git",
+      "status",
+      "--porcelain=v1",
+      "--branch",
+      "--untracked-files=all"
+    ],
+    "duration_seconds": 0.039744,
+    "end_utc": "2026-11-18T02:17:39.968810+00:00",
+    "exit_code": 0,
+    "label": "git_status_before",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:17:39.929073+00:00",
+    "stderr": "git_status_before.stderr",
+    "stdout": "git_status_before.stdout"
+  },
+  {
+    "argv": [
+      "uname",
+      "-a"
+    ],
+    "duration_seconds": 0.036323,
+    "end_utc": "2026-11-18T02:17:40.005488+00:00",
+    "exit_code": 0,
+    "label": "host",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:17:39.969174+00:00",
+    "stderr": "host.stderr",
+    "stdout": "host.stdout"
+  },
+  {
+    "argv": [
+      "cat",
+      "/etc/os-release"
+    ],
+    "duration_seconds": 0.039617,
+    "end_utc": "2026-11-18T02:17:40.045638+00:00",
+    "exit_code": 0,
+    "label": "os_release",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:17:40.006028+00:00",
+    "stderr": "os_release.stderr",
+    "stdout": "os_release.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "--version"
+    ],
+    "duration_seconds": 0.038233,
+    "end_utc": "2026-11-18T02:17:40.084354+00:00",
+    "exit_code": 0,
+    "label": "uv_version",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:17:40.046126+00:00",
+    "stderr": "uv_version.stderr",
+    "stdout": "uv_version.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "-c",
+      "import importlib.metadata as m,json,platform,sys; print(json.dumps({'python': sys.version, 'executable': sys.executable, 'platform': platform.platform(), 'packages': {d.metadata['Name']: d.version for d in m.distributions()}}, indent=2, sort_keys=True))"
+    ],
+    "duration_seconds": 0.132583,
+    "end_utc": "2026-11-18T02:17:40.217266+00:00",
+    "exit_code": 0,
+    "label": "environment",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:17:40.084689+00:00",
+    "stderr": "environment.stderr",
+    "stdout": "environment.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "-m",
+      "pytest",
+      "tests/unit",
+      "tests/contract",
+      "tests/negative",
+      "-q",
+      "-o",
+      "cache_dir=/tmp/jimu-c-accept-inc8mpyl/pytest-cache",
+      "--basetemp=/tmp/jimu-c-accept-inc8mpyl/pytest-tmp",
+      "--junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/independent/final_syxjvrqz/pytest.xml"
+    ],
+    "duration_seconds": 223.967569,
+    "end_utc": "2026-11-18T02:21:24.185269+00:00",
+    "exit_code": 0,
+    "label": "pytest",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:17:40.217705+00:00",
+    "stderr": "pytest.stderr",
+    "stdout": "pytest.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "ruff",
+      "check",
+      "."
+    ],
+    "duration_seconds": 0.060027,
+    "end_utc": "2026-11-18T02:21:24.245677+00:00",
+    "exit_code": 0,
+    "label": "ruff_lint",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:21:24.185657+00:00",
+    "stderr": "ruff_lint.stderr",
+    "stdout": "ruff_lint.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "ruff",
+      "format",
+      "--check",
+      "src",
+      "tests",
+      "scripts"
+    ],
+    "duration_seconds": 0.059599,
+    "end_utc": "2026-11-18T02:21:24.305699+00:00",
+    "exit_code": 0,
+    "label": "ruff_format",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:21:24.246106+00:00",
+    "stderr": "ruff_format.stderr",
+    "stdout": "ruff_format.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "mypy",
+      "src/jimu_runtime"
+    ],
+    "duration_seconds": 3.73485,
+    "end_utc": "2026-11-18T02:21:28.041021+00:00",
+    "exit_code": 0,
+    "label": "mypy",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:21:24.306178+00:00",
+    "stderr": "mypy.stderr",
+    "stdout": "mypy.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "scripts/generate_schemas.py",
+      "--output",
+      "/tmp/jimu-c-accept-inc8mpyl/first"
+    ],
+    "duration_seconds": 12.102121,
+    "end_utc": "2026-11-18T02:21:40.143566+00:00",
+    "exit_code": 0,
+    "label": "export_first",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:21:28.041454+00:00",
+    "stderr": "export_first.stderr",
+    "stdout": "export_first.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "scripts/generate_schemas.py",
+      "--output",
+      "/tmp/jimu-c-accept-inc8mpyl/second"
+    ],
+    "duration_seconds": 12.485219,
+    "end_utc": "2026-11-18T02:21:52.629290+00:00",
+    "exit_code": 0,
+    "label": "export_second",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:21:40.144078+00:00",
+    "stderr": "export_second.stderr",
+    "stdout": "export_second.stdout"
+  },
+  {
+    "argv": [
+      "diff",
+      "-qr",
+      "/tmp/jimu-c-accept-inc8mpyl/first",
+      "/tmp/jimu-c-accept-inc8mpyl/second"
+    ],
+    "duration_seconds": 0.03894,
+    "end_utc": "2026-11-18T02:21:52.668661+00:00",
+    "exit_code": 0,
+    "label": "export_diff",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:21:52.629728+00:00",
+    "stderr": "export_diff.stderr",
+    "stdout": "export_diff.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "scripts/generate_schemas.py",
+      "--check"
+    ],
+    "duration_seconds": 12.347877,
+    "end_utc": "2026-11-18T02:22:05.017035+00:00",
+    "exit_code": 0,
+    "label": "export_check",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:21:52.669165+00:00",
+    "stderr": "export_check.stderr",
+    "stdout": "export_check.stdout"
+  },
+  {
+    "argv": [
+      "python3",
+      "-c",
+      "\nfrom hashlib import sha256\nfrom pathlib import Path\nimport json\nimport subprocess\nimport sys\n\nbaseline, first, second = sys.argv[1:]\ndirs = [Path('schemas/generated'), Path(first), Path(second)]\nsub = lambda args: subprocess.check_output(['git', *args])\npaths = sub(['ls-tree', '-r', '--name-only', baseline, '--', 'schemas/generated']).decode().splitlines()\nschemas = sorted(path for path in paths if path.endswith('.schema.json'))\nreport = {'baseline': baseline, 'count': len(schemas), 'schemas': {}}\nfor path in schemas:\n    name = Path(path).name\n    old = sha256(sub(['show', baseline + ':' + path])).hexdigest()\n    actual = {label: sha256((directory/name).read_bytes()).hexdigest() if (directory/name).is_file() else None\n        for label, directory in zip(('worktree', 'first', 'second'), dirs, strict=True)}\n    report['schemas'][name] = {'baseline': old, **actual, 'unchanged': all(value == old for value in actual.values())}\nold_index = sub(['show', baseline + ':schemas/generated/index.json'])\nreport['baseline_index_sha256'] = sha256(old_index).hexdigest()\nreport['current_index_sha256'] = sha256((dirs[0] / 'index.json').read_bytes()).hexdigest()\nreport['mismatches'] = [name for name, item in report['schemas'].items() if not item['unchanged']]\nreport['all_162_preserved'] = len(schemas) == 162 and not report['mismatches']\nprint(json.dumps(report, indent=2, sort_keys=True))\nsys.exit(0 if report['all_162_preserved'] else 1)\n",
+      "2552affeb69fbc2594fe70724f895b0db0967d47",
+      "/tmp/jimu-c-accept-inc8mpyl/first",
+      "/tmp/jimu-c-accept-inc8mpyl/second"
+    ],
+    "duration_seconds": 0.270395,
+    "end_utc": "2026-11-18T02:22:05.306454+00:00",
+    "exit_code": 0,
+    "label": "legacy_b_schema_bytes",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:22:05.036059+00:00",
+    "stderr": "legacy_b_schema_bytes.stderr",
+    "stdout": "legacy_b_schema_bytes.stdout"
+  },
+  {
+    "argv": [
+      "git",
+      "status",
+      "--porcelain=v1",
+      "--branch",
+      "--untracked-files=all"
+    ],
+    "duration_seconds": 0.038765,
+    "end_utc": "2026-11-18T02:22:05.345791+00:00",
+    "exit_code": 0,
+    "label": "git_status_after",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "count": 608,
+      "deleted": [],
+      "manifest_sha256": "a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2",
+      "matches_frozen": true
+    },
+    "start_utc": "2026-11-18T02:22:05.307032+00:00",
+    "stderr": "git_status_after.stderr",
+    "stdout": "git_status_after.stdout"
+  }
+]

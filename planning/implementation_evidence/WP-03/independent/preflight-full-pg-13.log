@@ -1,0 +1,55 @@
+2026-11-18T03:49:23Z
+PYTHONPATH=. uv run --locked python planning/implementation_evidence/WP-03/independent/probe_wp03.py
+{"check": "postgres", "first": [1, 2], "image_id": "sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae", "repeat": [], "version": "16.14 (Debian 16.14-1.pgdg13+1)"}
+{"check": "app_permission_rejected", "sql": "CREATE TABLE jimu_workflow.independent_denied (x integer)", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "UPDATE jimu_workflow.schema_migrations SET script_sha256=script_sha256", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "UPDATE jimu_workflow.execution_events SET event_number=event_number", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "DELETE FROM jimu_workflow.attempts WHERE false", "sqlstate": "42501"}
+{"check": "app_permission_rejected", "sql": "TRUNCATE jimu_workflow.produced_outputs", "sqlstate": "42501"}
+{"bundle_digest": "fb92ea591b70a54bb8107748cbcc2abb3e1cef233a7d473218850e5504adabd3", "check": "admission_and_duplicate_intake", "execution_id": "execution.c17a078b8456703828a41526af6eeddada2f1a879bfe35c6523356531f3dce29", "mode": "full"}
+{"after": "2026-11-18T03:49:33.952912+00:00", "before": "2026-11-18T03:49:33.020945+00:00", "check": "heartbeat_and_expired_fence", "contender_backend": 72}
+{"a_pid": 3092101, "b_pid": 3092118, "check": "takeover_and_late_audit", "rows": [[1, 1, "probe-a", "superseded", "fixture-request-a"], [2, 2, "probe-b", "succeeded", null]]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 71, "pid": 3092101}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 72, "pid": 3092118}
+{"check": "mock_returned_before_worker_crash", "worker_marker": {"attempt": "6e83ee7cd8fe41548736d71155f10e29", "external_request_ids": ["synthetic.request.80f52daaf48227c5d02299dd391a5440aa503854ace8eac920c43e8a24d41143", "synthetic.request.e2c9c3fc5ece5b553668f086836b73270a476da29f8ab26cc1e7764bbaf1e155"], "invocations": ["synthetic.model.6e8ee84df92eab0251a2f54216b0d8dc273a5b8828a09c4c7a63696c70324c6b", "synthetic.model.d316f852053e85f30579dd460a0e4aea564d2c044a6bcdceca5b0e64711f2656"], "label": "mock_returned", "pid": 3092118}}
+{"attempt": "running", "check": "n06_draft_before_authority", "draft_count": 1, "finalization_count": 0, "n06_authority": 0, "node": "running", "terminal_attempt": null}
+{"check": "all_n06_drafts_before_authority", "drafts": 3, "finalizations": 0, "n06_authority": 0}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 73, "pid": 3092388}
+{"active_digest": "b279834abd5e0177af2f354f5f6e5b6177306dc8652953f853542e1e94a7f0f7", "active_release": "release-2", "check": "activated_replacement_before_restart", "pinned_digest": "fb92ea591b70a54bb8107748cbcc2abb3e1cef233a7d473218850e5504adabd3", "pinned_release": "release-1"}
+{"check": "six_nodes_exact_relationships", "decisions": 3, "joint_requests": 3, "mandatory_matched": 3, "objects": 3, "profiles": 2, "question_facts": 6, "tool_executions": 3, "tool_facts": 3, "verified_artifact_digests": 60}
+{"authoritative_attempts": 1, "check": "ambiguous_mock_call_retried", "first_attempt": "6e83ee7cd8fe41548736d71155f10e29", "first_invocations": ["synthetic.model.6e8ee84df92eab0251a2f54216b0d8dc273a5b8828a09c4c7a63696c70324c6b", "synthetic.model.d316f852053e85f30579dd460a0e4aea564d2c044a6bcdceca5b0e64711f2656"], "second_attempt": "d9452e1c6f9b45b68530bc651dbc6d96", "second_invocations": ["synthetic.model.c206e3dff460aeea4cabf10f934726072283458ab7864741940d9ce8ea774231", "synthetic.model.e3553d20a0e61e20aa4c4d2e0b231f29cca92c019c800a67bb9e7f347d322213"]}
+{"authority": 3, "check": "restarted_and_published", "drafts": 3, "events": 71, "finalizations": 1, "preserved_history_prefix": 63}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 74, "pid": 3092726}
+{"check": "post_commit_restart_no_duplicate", "events": 71}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 75, "pid": 3092736}
+{"bundle_digest": "a82e7fac93fd86acf0bd2fc6f42a199b9000c8e37d2c1e9271d79989ad270d19", "check": "admission_and_duplicate_intake", "execution_id": "execution.e8d338dbf797d30da300c6488c8c90b4a3b93b85a8d0a05d03b008745185d16f", "mode": "excluded"}
+{"check": "coverage", "mode": "excluded", "node_attempts": [["N01", "succeeded", 1], ["N02", "skipped", 0], ["N03", "skipped", 0], ["N04", "skipped", 0], ["N05", "skipped", 0], ["N06", "skipped", 0]], "observed": ["not_evaluated", "not_applicable", "not_applicable", 0]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 76, "pid": 3093073}
+{"bundle_digest": "01342a6f02f3b1eec9c794c5ab0f2cf8ab7de3d871f7686715e0c074baca7f88", "check": "admission_and_duplicate_intake", "execution_id": "execution.2aea89a92a8d239ae208f5858b3b5a6495afd25216db5eb5fa31b21e42c8061a", "mode": "no_hits"}
+{"check": "coverage", "mode": "no_hits", "node_attempts": [["N01", "succeeded", 1], ["N02", "succeeded", 1], ["N03", "skipped", 0], ["N04", "skipped", 0], ["N05", "skipped", 0], ["N06", "skipped", 0]], "observed": ["no_hits", "none", "uncertain", 0]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 77, "pid": 3093381}
+{"bundle_digest": "01342a6f02f3b1eec9c794c5ab0f2cf8ab7de3d871f7686715e0c074baca7f88", "check": "admission_and_duplicate_intake", "execution_id": "execution.5de1bbda6ab6838e2ea7d7b20dd370876856293197b83896b05ef75738ca768f", "mode": "no_target"}
+{"check": "coverage", "mode": "no_target", "node_attempts": [["N01", "succeeded", 1], ["N02", "succeeded", 1], ["N03", "succeeded", 1], ["N04", "skipped", 0], ["N05", "skipped", 0], ["N06", "skipped", 0]], "observed": ["hits", "none", "uncertain", 0]}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 79, "pid": 3093795}
+{"bundle_digest": "e9ce8868075927aa405689f9afba6207832fa7ffb2dfb54e5a3d32e1cafc6551", "check": "admission_and_duplicate_intake", "execution_id": "execution.8e478c04e74af2b3fbf9b9665cedfea6a889c149c3cb8e083c9a8c1c5e693b76", "mode": "partial"}
+{"check": "worker_process_killed", "exit": -9, "pg_backend_pid": 80, "pid": 3094429}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1303, in <module>
+    asyncio.run(child() if sys.argv[1:] == ["child"] else independent())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1295, in independent
+    await coverage_probe(app, work / mode, mode)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-03/independent/probe_wp03.py", line 1191, in coverage_probe
+    assert {p.grounding_outcome.value for p in cov.profiles} == {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+2026-11-18T03:50:09Z
+exit=1

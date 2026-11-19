@@ -1,0 +1,1707 @@
+--- /dev/null
++++ b/src/jimu_runtime/gateway/http.py
+@@ -0,0 +1,629 @@
++"""Async, single-dispatch HTTP adapter for trusted Chat Completions endpoints."""
++
++import asyncio
++import json
++import re
++from dataclasses import dataclass, field
++from datetime import UTC, datetime
++from email.utils import parsedate_to_datetime
++from hashlib import sha256
++from ipaddress import ip_address
++from typing import Annotated, Literal, Protocol, Self
++
++import httpx
++from pydantic import (
++    ConfigDict,
++    Field,
++    SecretStr,
++    TypeAdapter,
++    ValidationError,
++    model_validator,
++)
++
++from jimu_runtime.bundle.trust import TrustPin
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.primitives import ArtifactId, Digest, RecordId, Version
++from jimu_runtime.domain.runtime.invocations import InvocationError, ProviderKind
++from jimu_runtime.gateway.http_wire import (
++    ChatContract as ChatContract,
++)
++from jimu_runtime.gateway.http_wire import (
++    ChatResponse,
++    WireError,
++    approved_model_id,
++    contains_text,
++    encode_chat,
++    strict_json,
++    validate_chat_request,
++)
++from jimu_runtime.gateway.http_wire import (
++    VerifiedImage as VerifiedImage,
++)
++from jimu_runtime.gateway.invocation import (
++    DispatchRequest,
++    ProviderObservation,
++    TransportResult,
++)
++from jimu_runtime.gateway.routing import PlannedRoute
++
++type ChatProtocol = Literal["openai_chat_completions", "vllm_openai_chat_completions"]
++type HTTPErrorClass = Literal[
++    "transport",
++    "timeout",
++    "rate_limit",
++    "unavailable",
++    "validation",
++    "association",
++    "resource_exhausted",
++]
++
++_MIB = 1024 * 1024
++_BEARER = re.compile(r"[A-Za-z0-9._~+/-]{8,2048}=*")
++_RECORD_ID = TypeAdapter[RecordId](RecordId)
++_VERSION = TypeAdapter[Version](Version)
++_DEPLOYMENT_VERSION = "x-jimu-deployment-version"
++_MODEL_VERSION = "x-jimu-model-version"
++_IMAGE_LIMIT_CODE = frozenset({"http_image_too_large", "http_request_too_large"})
++
++
++class HttpLimits(ContractModel):
++    timeout_ms: Annotated[int, Field(ge=1, le=600_000)]
++    io_timeout_ms: Annotated[int, Field(ge=1, le=600_000)]
++    request_bytes: Annotated[int, Field(ge=1, le=16 * _MIB)]
++    response_bytes: Annotated[int, Field(ge=1, le=8 * _MIB)]
++    image_bytes: Annotated[int, Field(ge=1, le=8 * _MIB)]
++    max_retry_after_seconds: Annotated[int, Field(ge=0, le=86_400)]
++
++
++class ChatEndpoint(ContractModel):
++    """Deployment-owned endpoint descriptor. Never resolved from a Bundle field."""
++
++    model_config = ConfigDict(hide_input_in_errors=True)
++    endpoint_id: ArtifactId
++    endpoint_version: Version
++    provider_id: ArtifactId
++    deployment_id: ArtifactId
++    provider_kind: ProviderKind
++    model_id: Annotated[str, Field(min_length=1, max_length=128)]
++    url: Annotated[str, Field(min_length=1, max_length=2048, repr=False)]
++    protocol: ChatProtocol
++    credential_ref: ArtifactId | None = Field(default=None, repr=False)
++    allow_plaintext_loopback: bool = False
++    retain_complete_response: bool = False
++    limits: HttpLimits
++
++    @model_validator(mode="after")
++    def approved_endpoint(self) -> Self:
++        try:
++            url = httpx.URL(self.url)
++        except (httpx.InvalidURL, ValueError):
++            raise ValueError("http_invalid_endpoint") from None
++        if (
++            not url.is_absolute_url
++            or url.userinfo
++            or "@" in self.url.partition("://")[2].partition("/")[0]
++            or "?" in self.url
++            or "#" in self.url
++            or "\\" in self.url
++            or not url.path.endswith("/chat/completions")
++            or url.scheme not in {"http", "https"}
++        ):
++            raise ValueError("http_invalid_endpoint")
++        if url.scheme == "http" and not (
++            self.allow_plaintext_loopback and _is_loopback(url)
++        ):
++            raise ValueError("http_plaintext_denied")
++        if not approved_model_id(self.model_id):
++            raise ValueError("http_invalid_model_id")
++        if (self.protocol == "vllm_openai_chat_completions") != (
++            self.provider_kind == "local"
++        ):
++            raise ValueError("http_protocol_provider_mismatch")
++        return self
++
++    @property
++    def descriptor_pin(self) -> TrustPin:
++        document = self.model_dump(mode="json")
++        document["url"] = str(httpx.URL(self.url))
++        payload = json.dumps(document, sort_keys=True, separators=(",", ":")).encode()
++        return TrustPin(
++            identity=self.endpoint_id,
++            version=self.endpoint_version,
++            sha256=sha256(payload).hexdigest(),
++        )
++
++
++class SecretResolver(Protocol):
++    def resolve(self, credential_ref: ArtifactId) -> SecretStr | None:
++        """Resolve a bearer token from an already available host secret source."""
++
++
++def _is_loopback(url: httpx.URL) -> bool:
++    try:
++        return ip_address(url.host).is_loopback
++    except ValueError:
++        return False
++
++
++def _safe_header(headers: httpx.Headers, name: str, secret: str | None) -> str | None:
++    values = headers.get_list(name)
++    if (
++        len(values) != 1
++        or not values[0]
++        or (secret is not None and secret in values[0])
++    ):
++        return None
++    return values[0]
++
++
++def _request_id(headers: httpx.Headers, secret: str | None) -> RecordId | None:
++    try:
++        return _RECORD_ID.validate_python(_safe_header(headers, "x-request-id", secret))
++    except ValidationError:
++        return None
++
++
++def _reported_version(
++    headers: httpx.Headers, name: str, secret: str | None
++) -> Version | None:
++    try:
++        return _VERSION.validate_python(_safe_header(headers, name, secret))
++    except ValidationError:
++        return None
++
++
++def _retry_after(value: str | None, limit: int) -> float | None:
++    if value is None or len(value) > 128:
++        return None
++    if value.isascii() and value.isdecimal():
++        return float(min(int(value), limit))
++    try:
++        date = parsedate_to_datetime(value)
++        if date.utcoffset() != UTC.utcoffset(None):
++            return None
++        delay = (date - datetime.now(UTC)).total_seconds()
++    except (ValueError, TypeError, OverflowError):
++        return None
++    return min(max(delay, 0.0), float(limit))
++
++
++async def _strip_trace_data(event: str, details: dict[str, object]) -> None:
++    # httpcore's trace extension sees the terminal event before its DEBUG
++    # formatter. The terminal dict may contain raw response headers or errors.
++    # Started-event dicts also serve as live request arguments and stay intact.
++    if event.endswith((".complete", ".failed")):
++        details.clear()
++
++
++@dataclass(slots=True)
++class _Receipt:
++    dispatched: bool = False
++    status: int | None = None
++    observed_bytes: int | None = None
++    digest: Digest | None = None
++    response_bytes: bytes | None = field(default=None, repr=False)
++    request_id: RecordId | None = None
++    model_id: str | None = None
++    deployment_version: Version | None = None
++    model_version: Version | None = None
++    retry_after_seconds: float | None = None
++
++    def result(
++        self,
++        *,
++        error: InvocationError | None = None,
++        parsed_content: bytes | None = None,
++    ) -> TransportResult:
++        observation = None
++        if (
++            self.request_id is not None
++            or self.model_id is not None
++            or self.deployment_version is not None
++            or self.model_version is not None
++        ):
++            observation = ProviderObservation(
++                provider_request_id=self.request_id,
++                model_id=self.model_id,
++                deployment_version=self.deployment_version,
++                model_version=self.model_version,
++            )
++        raw = self.response_bytes if error is None else None
++        omission: (
++            Literal["incomplete", "policy_disabled", "credential_echo", "unvalidated"]
++            | None
++        ) = None
++        if self.dispatched and raw is None:
++            if self.digest is None:
++                omission = "incomplete"
++            elif error is None:
++                omission = "policy_disabled"
++            elif error.code == "http_credential_echo":
++                omission = "credential_echo"
++            else:
++                omission = "unvalidated"
++        return TransportResult(
++            dispatched=self.dispatched,
++            error=error,
++            observation=observation,
++            response_digest=self.digest,
++            response_bytes=raw,
++            response_bytes_omission_reason=omission,
++            parsed_content=parsed_content,
++            retry_after_seconds=self.retry_after_seconds,
++            response_status=self.status,
++            observed_response_bytes=self.observed_bytes,
++        )
++
++    def failed(self, error_class: HTTPErrorClass, code: ArtifactId) -> TransportResult:
++        return self.result(
++            error=InvocationError(
++                error_class=error_class, code=code, diagnostic_refs=()
++            )
++        )
++
++
++def _status_failure(status: int) -> tuple[HTTPErrorClass, ArtifactId] | None:
++    if 200 <= status < 300:
++        return None
++    if status == 429:
++        return "rate_limit", "http_rate_limited"
++    if status == 408:
++        return "timeout", "http_request_timeout"
++    if status >= 500:
++        return "unavailable", "http_service_unavailable"
++    if status in {401, 403}:
++        return "validation", "http_auth_rejected"
++    if 300 <= status < 400:
++        return "validation", "http_redirect_denied"
++    return "validation", "http_status_rejected"
++
++
++def _echoes_credential(response: httpx.Response, body: bytearray, secret: str) -> bool:
++    token = secret.encode("ascii")
++    phrase = response.extensions.get("reason_phrase")
++    return (
++        token in body
++        or (isinstance(phrase, bytes) and token in phrase)
++        or any(token in name or token in value for name, value in response.headers.raw)
++    )
++
++
++def _check_response_framing(headers: httpx.Headers, limit: int) -> None:
++    content_encoding = headers.get("content-encoding")
++    if content_encoding is not None and content_encoding.lower() != "identity":
++        raise WireError("http_content_encoding_denied")
++    declared = headers.get("content-length")
++    if declared is not None:
++        if (
++            "transfer-encoding" in headers
++            or not declared.isascii()
++            or not declared.isdecimal()
++        ):
++            raise WireError("http_invalid_content_length")
++        # Integer conversion is bounded by the trusted limit's decimal width.
++        significant = declared.lstrip("0") or "0"
++        if len(significant) > len(str(limit)) or int(significant) > limit:
++            raise WireError("http_response_too_large")
++
++
++def _parse_success(
++    body: bytes,
++    contract: ChatContract,
++    route: PlannedRoute,
++    receipt: _Receipt,
++    *,
++    secret: str | None,
++) -> bytes:
++    wire = strict_json(body)
++    if secret is not None and contains_text(wire, secret):
++        raise WireError("http_credential_echo")
++    model = wire.get("model") if isinstance(wire, dict) else None
++    if model is not None:
++        if not isinstance(model, str) or not approved_model_id(model):
++            raise WireError("http_invalid_reported_model")
++        receipt.model_id = model
++        if receipt.model_id != route.ownership.model_id:
++            raise WireError("http_reported_model_mismatch")
++
++    try:
++        envelope = ChatResponse.model_validate(wire)
++    except ValidationError:
++        raise WireError("http_invalid_response_envelope") from None
++    content = envelope.choices[0].message.content
++    decoded = strict_json(content)
++    if secret is not None and contains_text(decoded, secret):
++        raise WireError("http_credential_echo")
++    try:
++        contract.response_model.model_validate_json(content)
++    except ValidationError:
++        raise WireError("http_invalid_response_content") from None
++    return content.encode("utf-8")
++
++
++class HttpModelTransport:
++    """Each call makes at most one physical POST to one exact approved endpoint."""
++
++    def __init__(
++        self,
++        endpoints: tuple[ChatEndpoint, ...],
++        contracts: tuple[ChatContract, ...],
++        *,
++        max_concurrency: int,
++        secrets: SecretResolver | None = None,
++        allow_network: bool = False,
++    ) -> None:
++        if type(max_concurrency) is not int or not 1 <= max_concurrency <= 1024:
++            raise ValueError("http_invalid_concurrency")
++        if type(allow_network) is not bool:
++            raise ValueError("http_invalid_network_policy")
++        endpoints = tuple(
++            ChatEndpoint.model_validate(endpoint) for endpoint in endpoints
++        )
++        self._endpoints = {(e.provider_id, e.deployment_id): e for e in endpoints}
++        self._contracts = {
++            (c.input_schema_ref, c.output_schema_ref, c.response_schema_digest): c
++            for c in contracts
++        }
++        if len(self._endpoints) != len(endpoints) or len(self._contracts) != len(
++            contracts
++        ):
++            raise ValueError("http_ambiguous_host_registration")
++        self._secrets = secrets
++        self._allow_network = allow_network
++        self._slots = asyncio.BoundedSemaphore(max_concurrency)
++
++    def _resolve(self, route: PlannedRoute) -> tuple[ChatEndpoint, ChatContract]:
++        endpoint = self._endpoints.get(
++            (route.selected.provider_id, route.selected.deployment_id)
++        )
++        if endpoint is None:
++            raise WireError("http_endpoint_unregistered")
++        if (
++            endpoint.provider_kind != route.selected.provider_kind
++            or endpoint.model_id != route.ownership.model_id
++            or endpoint.descriptor_pin != route.ownership.endpoint_descriptor_ref
++        ):
++            raise WireError("http_endpoint_pin_mismatch")
++        if not self._allow_network and not _is_loopback(httpx.URL(endpoint.url)):
++            raise WireError("http_network_disabled")
++        key = (
++            route.binding.input_schema_ref,
++            route.binding.output_schema_ref,
++            route.operation.response_contract_digest,
++        )
++        contract = self._contracts.get(key)
++        if contract is None:
++            raise WireError("http_schema_pin_unregistered")
++        return endpoint, contract
++
++    def prepare(
++        self, route: PlannedRoute, prompt: str, media: VerifiedImage | None = None
++    ) -> bytes:
++        """Render exact outbound bytes before the gateway records send intent."""
++        endpoint, contract = self._resolve(route)
++        return encode_chat(
++            endpoint.model_id,
++            prompt,
++            media,
++            contract,
++            request_limit=min(
++                endpoint.limits.request_bytes,
++                route.resource_requirements.input_byte_limit,
++            ),
++            image_limit=endpoint.limits.image_bytes,
++        )
++
++    def _bearer(self, endpoint: ChatEndpoint) -> str | None:
++        if endpoint.credential_ref is None:
++            return None
++        try:
++            secret = (
++                self._secrets.resolve(endpoint.credential_ref)
++                if self._secrets
++                else None
++            )
++        except Exception:
++            raise WireError("http_credential_unavailable") from None
++        if not isinstance(secret, SecretStr):
++            raise WireError("http_credential_unavailable")
++        value = secret.get_secret_value()
++        if len(value) > 2048 or not _BEARER.fullmatch(value) or value in endpoint.url:
++            raise WireError("http_credential_invalid")
++        return value
++
++    async def dispatch(self, request: DispatchRequest) -> TransportResult:
++        """Return safe receipt data; propagate cooperative task cancellation."""
++        receipt = _Receipt()
++        try:
++            endpoint, contract = self._resolve(request.route)
++        except WireError as exc:
++            return receipt.failed("association", exc.code)
++
++        requirements = request.route.resource_requirements
++        loop = asyncio.get_running_loop()
++        deadline = (
++            loop.time()
++            + min(endpoint.limits.timeout_ms, requirements.timeout_ms) / 1000
++        )
++        parsed: bytes | None
++        try:
++            async with asyncio.timeout_at(deadline), self._slots:
++                input_limit = min(
++                    endpoint.limits.request_bytes, requirements.input_byte_limit
++                )
++                if len(request.payload) > input_limit:
++                    raise WireError("http_request_too_large")
++                body = validate_chat_request(
++                    request.payload,
++                    endpoint.model_id,
++                    contract,
++                    image_limit=min(endpoint.limits.image_bytes, input_limit),
++                )
++                secret = self._bearer(endpoint)
++                if secret is not None and contains_text(body, secret):
++                    raise WireError("http_credential_in_request")
++                if loop.time() >= deadline:
++                    raise TimeoutError
++                parsed = await self._exchange(
++                    endpoint,
++                    contract,
++                    request,
++                    receipt,
++                    secret=secret,
++                    deadline=deadline,
++                    timeout_seconds=min(
++                        endpoint.limits.io_timeout_ms / 1000, deadline - loop.time()
++                    ),
++                    response_limit=min(
++                        endpoint.limits.response_bytes, requirements.output_byte_limit
++                    ),
++                )
++                if loop.time() >= deadline:
++                    raise TimeoutError
++        except (TimeoutError, httpx.TimeoutException):
++            return receipt.failed("timeout", "http_deadline_exceeded")
++        except httpx.TransportError:
++            return receipt.failed("transport", "http_transport_failure")
++        except WireError as exc:
++            return receipt.failed(_wire_error_class(exc.code), exc.code)
++
++        assert receipt.status is not None
++        failure = _status_failure(receipt.status)
++        if failure is not None:
++            return receipt.failed(*failure)
++        return receipt.result(parsed_content=parsed)
++
++    async def _exchange(
++        self,
++        endpoint: ChatEndpoint,
++        contract: ChatContract,
++        request: DispatchRequest,
++        receipt: _Receipt,
++        *,
++        secret: str | None,
++        deadline: float,
++        timeout_seconds: float,
++        response_limit: int,
++    ) -> bytes | None:
++        headers = {
++            "accept": "application/json",
++            "content-type": "application/json",
++            "accept-encoding": "identity",
++        }
++        if secret is not None:
++            headers["authorization"] = f"Bearer {secret}"
++        outbound = httpx.Request(
++            "POST",
++            endpoint.url,
++            headers=headers,
++            content=request.payload,
++            extensions={
++                "trace": _strip_trace_data,
++                "timeout": dict.fromkeys(
++                    ("connect", "read", "write", "pool"), timeout_seconds
++                ),
++            },
++        )
++        # The low-level stock transport performs no cookie, redirect, environment
++        # proxy or request/response logging processing.
++        async with httpx.AsyncHTTPTransport(
++            verify=True,
++            trust_env=False,
++            retries=0,
++            http1=True,
++            http2=False,
++            limits=httpx.Limits(max_connections=1, max_keepalive_connections=0),
++        ) as transport:
++            if asyncio.get_running_loop().time() >= deadline:
++                raise TimeoutError
++            receipt.dispatched = True
++            response = await transport.handle_async_request(outbound)
++            try:
++                return await self._consume(
++                    response,
++                    contract,
++                    request.route,
++                    receipt,
++                    secret=secret,
++                    response_limit=response_limit,
++                    retry_after_limit=endpoint.limits.max_retry_after_seconds,
++                    retain_complete_response=endpoint.retain_complete_response,
++                )
++            finally:
++                await response.aclose()
++
++    async def _consume(
++        self,
++        response: httpx.Response,
++        contract: ChatContract,
++        route: PlannedRoute,
++        receipt: _Receipt,
++        *,
++        secret: str | None,
++        response_limit: int,
++        retry_after_limit: int,
++        retain_complete_response: bool,
++    ) -> bytes | None:
++        if not 100 <= response.status_code <= 599:
++            raise WireError("http_invalid_status")
++        receipt.status = response.status_code
++        receipt.observed_bytes = 0
++        receipt.request_id = _request_id(response.headers, secret)
++        receipt.deployment_version = _reported_version(
++            response.headers, _DEPLOYMENT_VERSION, secret
++        )
++        receipt.model_version = _reported_version(
++            response.headers, _MODEL_VERSION, secret
++        )
++        if receipt.status in {429, 503}:
++            receipt.retry_after_seconds = _retry_after(
++                _safe_header(response.headers, "retry-after", secret), retry_after_limit
++            )
++        _check_response_framing(response.headers, response_limit)
++        body = bytearray()
++        async for chunk in response.aiter_raw():
++            receipt.observed_bytes += len(chunk)
++            if receipt.observed_bytes > response_limit:
++                raise WireError("http_response_too_large")
++            body.extend(chunk)
++        receipt.digest = sha256(body).hexdigest()
++        if secret is not None and _echoes_credential(response, body, secret):
++            raise WireError("http_credential_echo")
++
++        if _status_failure(receipt.status) is not None:
++            return None
++        content_type = (
++            response.headers.get("content-type", "").partition(";")[0].strip().lower()
++        )
++        if content_type != "application/json":
++            raise WireError("http_response_media_type")
++        if (
++            _DEPLOYMENT_VERSION in response.headers
++            and receipt.deployment_version is None
++        ) or (_MODEL_VERSION in response.headers and receipt.model_version is None):
++            raise WireError("http_invalid_reported_version")
++        if receipt.deployment_version not in {
++            None,
++            route.selected.deployment_version,
++        } or receipt.model_version not in {None, route.selected.model_version}:
++            raise WireError("http_reported_version_mismatch")
++        raw = bytes(body)
++        parsed = _parse_success(raw, contract, route, receipt, secret=secret)
++        if retain_complete_response:
++            receipt.response_bytes = raw
++        return parsed
++
++
++def _wire_error_class(code: ArtifactId) -> HTTPErrorClass:
++    if code in _IMAGE_LIMIT_CODE or code == "http_response_too_large":
++        return "resource_exhausted"
++    if code in {
++        "http_request_model_mismatch",
++        "http_request_contract_mismatch",
++        "http_reported_model_mismatch",
++        "http_reported_version_mismatch",
++    }:
++        return "association"
++    if code in {"http_invalid_content_length", "http_invalid_status"}:
++        return "transport"
++    return "validation"
+--- /dev/null
++++ b/src/jimu_runtime/gateway/http_wire.py
+@@ -0,0 +1,328 @@
++"""Bounded, non-streaming Chat Completions wire used by host-approved adapters."""
++
++import base64
++import binascii
++import json
++import re
++from dataclasses import dataclass, field
++from hashlib import sha256
++from math import isfinite
++from typing import Annotated, Literal
++
++from pydantic import Field
++
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
++from jimu_runtime.domain.primitives import ArtifactId, Digest
++from jimu_runtime.domain.references import SchemaRef
++
++type ImageMediaType = Literal["image/jpeg", "image/png"]
++
++_MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_./:-]{0,127}")
++_IMAGE_MAGIC: dict[ImageMediaType, bytes] = {
++    "image/jpeg": b"\xff\xd8\xff",
++    "image/png": b"\x89PNG\r\n\x1a\n",
++}
++_MAX_JSON_DEPTH = 64
++_MAX_RESPONSE_SCHEMA_BYTES = 1024 * 1024
++
++
++class WireError(ValueError):
++    """Fixed diagnostic code. Underlying payloads and exceptions stay private."""
++
++    def __init__(self, code: ArtifactId) -> None:
++        super().__init__(code)
++        self.code = code
++
++
++@dataclass(frozen=True, slots=True)
++class VerifiedImage:
++    """Trusted media loader provides verified image bytes and the original SHA-256."""
++
++    content: bytes = field(repr=False)
++    media_type: ImageMediaType
++    sha256: Digest
++
++
++@dataclass(frozen=True, slots=True)
++class ChatContract:
++    input_schema_ref: SchemaRef
++    output_schema_ref: SchemaRef
++    response_model: type[ContractModel]
++    accepts_image: bool = False
++    response_schema: bytes | None = field(default=None, repr=False)
++    _schema_bytes: bytes = field(init=False, repr=False)
++    response_schema_digest: Digest = field(init=False)
++
++    def __post_init__(self) -> None:
++        config = self.response_model.model_config
++        if config.get("extra") != "forbid" or config.get("strict") is not True:
++            raise ValueError("chat_response_contract_must_be_strict")
++        schema = self.response_schema
++        if schema is None:
++            schema = canonical_bytes(self.response_model.model_json_schema())
++        if (
++            type(schema) is not bytes
++            or not 1 <= len(schema) <= _MAX_RESPONSE_SCHEMA_BYTES
++        ):
++            raise ValueError("chat_response_schema_bytes_invalid")
++        if not isinstance(strict_json(schema), dict):
++            raise ValueError("chat_response_schema_requires_object")
++        object.__setattr__(self, "_schema_bytes", schema)
++        object.__setattr__(self, "response_schema_digest", sha256(schema).hexdigest())
++
++    def response_schema_document(self) -> object:
++        return strict_json(self._schema_bytes)
++
++
++def approved_model_id(value: str) -> bool:
++    return _MODEL_ID.fullmatch(value) is not None
++
++
++def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
++    result: dict[str, object] = {}
++    for key, value in pairs:
++        if key in result:
++            raise WireError("http_json_duplicate_key")
++        result[key] = value
++    return result
++
++
++def _invalid_number(_: str) -> float:
++    raise WireError("http_json_nonfinite")
++
++
++def _finite_float(value: str) -> float:
++    parsed = float(value)
++    if not isfinite(parsed):
++        return _invalid_number(value)
++    return parsed
++
++
++def strict_json(payload: bytes | str) -> object:
++    """Reject ambiguous keys, nonfinite numbers, invalid Unicode and excess depth."""
++    try:
++        value: object = json.loads(
++            payload.decode("utf-8") if isinstance(payload, bytes) else payload,
++            object_pairs_hook=_unique_object,
++            parse_constant=_invalid_number,
++            parse_float=_finite_float,
++        )
++        _inspect_json(value, depth=0)
++    except WireError:
++        raise
++    except (ValueError, RecursionError):
++        raise WireError("http_invalid_json") from None
++    return value
++
++
++def _inspect_json(value: object, *, depth: int) -> None:
++    if depth > _MAX_JSON_DEPTH:
++        raise WireError("http_json_excess_depth")
++    if isinstance(value, str):
++        value.encode("utf-8")
++    elif isinstance(value, dict):
++        for key, item in value.items():
++            _inspect_json(key, depth=depth + 1)
++            _inspect_json(item, depth=depth + 1)
++    elif isinstance(value, list):
++        for item in value:
++            _inspect_json(item, depth=depth + 1)
++
++
++def contains_text(value: object, text: str) -> bool:
++    """Detect the known credential in parsed keys and values, including escaped JSON."""
++    if isinstance(value, str):
++        return text in value
++    if isinstance(value, dict):
++        return any(
++            text in key or contains_text(item, text) for key, item in value.items()
++        )
++    if isinstance(value, list):
++        return any(contains_text(item, text) for item in value)
++    return False
++
++
++def _json_bytes(value: object) -> bytes:
++    return json.dumps(
++        value,
++        ensure_ascii=False,
++        sort_keys=True,
++        separators=(",", ":"),
++        allow_nan=False,
++    ).encode("utf-8")
++
++
++def _result_format(contract: ChatContract) -> dict[str, object]:
++    return {
++        "type": "json_schema",
++        "json_schema": {
++            "name": "jimu_response",
++            "strict": True,
++            "schema": contract.response_schema_document(),
++        },
++    }
++
++
++def _verify_image(content: bytes, media_type: ImageMediaType, limit: int) -> None:
++    if not isinstance(content, bytes) or not content.startswith(
++        _IMAGE_MAGIC[media_type]
++    ):
++        raise WireError("http_invalid_image")
++    if len(content) > limit:
++        raise WireError("http_image_too_large")
++
++
++def encode_chat(
++    model: str,
++    prompt: str,
++    image: VerifiedImage | None,
++    contract: ChatContract,
++    *,
++    request_limit: int,
++    image_limit: int,
++) -> bytes:
++    if not isinstance(prompt, str):
++        raise WireError("http_invalid_prompt")
++    if len(prompt) > request_limit:
++        raise WireError("http_request_too_large")
++    if not prompt.strip():
++        raise WireError("http_invalid_prompt")
++    try:
++        if len(prompt.encode("utf-8")) > request_limit:
++            raise WireError("http_request_too_large")
++    except UnicodeError:
++        raise WireError("http_invalid_prompt") from None
++
++    content: list[dict[str, object]] = [{"type": "text", "text": prompt}]
++    if image is not None:
++        if not contract.accepts_image or image.media_type not in _IMAGE_MAGIC:
++            raise WireError("http_image_not_allowed")
++        _verify_image(image.content, image.media_type, min(image_limit, request_limit))
++        if sha256(image.content).hexdigest() != image.sha256:
++            raise WireError("http_image_digest_mismatch")
++        if 4 * ((len(image.content) + 2) // 3) > request_limit:
++            raise WireError("http_request_too_large")
++        encoded = base64.b64encode(image.content).decode("ascii")
++        content.append(
++            {
++                "type": "image_url",
++                "image_url": {"url": f"data:{image.media_type};base64,{encoded}"},
++            }
++        )
++    body = _json_bytes(
++        {
++            "model": model,
++            "messages": [{"role": "user", "content": content}],
++            "stream": False,
++            "response_format": _result_format(contract),
++        }
++    )
++    if len(body) > request_limit:
++        raise WireError("http_request_too_large")
++    return body
++
++
++def _require_request_image(value: object, image_limit: int) -> None:
++    if not isinstance(value, dict) or set(value) != {"type", "image_url"}:
++        raise WireError("http_invalid_image")
++    target = value["image_url"]
++    if (
++        value["type"] != "image_url"
++        or not isinstance(target, dict)
++        or set(target) != {"url"}
++    ):
++        raise WireError("http_invalid_image")
++    url = target["url"]
++    if not isinstance(url, str):
++        raise WireError("http_invalid_image")
++    prefix, separator, data = url.partition(",")
++    for media_type in _IMAGE_MAGIC:
++        if separator and prefix == f"data:{media_type};base64":
++            if len(data) > 4 * ((image_limit + 2) // 3):
++                raise WireError("http_image_too_large")
++            try:
++                image = base64.b64decode(data, validate=True)
++            except (ValueError, binascii.Error):
++                raise WireError("http_invalid_image") from None
++            _verify_image(image, media_type, image_limit)
++            return
++    raise WireError("http_invalid_image")
++
++
++def validate_chat_request(
++    payload: bytes, model: str, contract: ChatContract, *, image_limit: int
++) -> object:
++    """Validate the exact bytes authorized by the caller's dispatch journal."""
++    root = strict_json(payload)
++    if not isinstance(root, dict) or set(root) != {
++        "model",
++        "messages",
++        "stream",
++        "response_format",
++    }:
++        raise WireError("http_invalid_request")
++    if root["model"] != model:
++        raise WireError("http_request_model_mismatch")
++    if root["stream"] is not False or _json_bytes(
++        root["response_format"]
++    ) != _json_bytes(_result_format(contract)):
++        raise WireError("http_request_contract_mismatch")
++    messages = root["messages"]
++    if not isinstance(messages, list) or len(messages) != 1:
++        raise WireError("http_invalid_request")
++    message = messages[0]
++    if (
++        not isinstance(message, dict)
++        or set(message) != {"role", "content"}
++        or message["role"] != "user"
++    ):
++        raise WireError("http_invalid_request")
++    parts = message["content"]
++    allowed_parts = 2 if contract.accepts_image else 1
++    if not isinstance(parts, list) or not 1 <= len(parts) <= allowed_parts:
++        raise WireError("http_invalid_request")
++    prompt = parts[0]
++    if (
++        not isinstance(prompt, dict)
++        or set(prompt) != {"type", "text"}
++        or prompt["type"] != "text"
++        or not isinstance(prompt["text"], str)
++        or not prompt["text"].strip()
++    ):
++        raise WireError("http_invalid_prompt")
++    if len(parts) == 2:
++        _require_request_image(parts[1], image_limit)
++    return root
++
++
++class _Message(ContractModel):
++    role: Literal["assistant"]
++    content: Annotated[str, Field(repr=False, min_length=1)]
++    refusal: None = None
++
++
++class _Choice(ContractModel):
++    index: Annotated[int, Field(ge=0, le=0)]
++    finish_reason: Literal["stop"]
++    message: _Message
++    logprobs: None = None
++
++
++class _Usage(ContractModel):
++    prompt_tokens: Annotated[int, Field(ge=0)]
++    completion_tokens: Annotated[int, Field(ge=0)]
++    total_tokens: Annotated[int, Field(ge=0)]
++
++
++class ChatResponse(ContractModel):
++    """Accepted subset of the HTTP provider envelope."""
++
++    choices: Annotated[list[_Choice], Field(min_length=1, max_length=1, repr=False)]
++    model: Annotated[str, Field(min_length=1, max_length=128)] | None = None
++    id: Annotated[str, Field(max_length=128)] | None = None
++    object: Literal["chat.completion"] | None = None
++    created: Annotated[int, Field(ge=0)] | None = None
++    usage: _Usage | None = None
++    service_tier: Annotated[str, Field(max_length=32)] | None = None
++    system_fingerprint: Annotated[str, Field(max_length=128)] | None = None
+--- /dev/null
++++ b/tests/contract/test_wp04_http_contract.py
+@@ -0,0 +1,247 @@
++"""Actual loopback requests validate the host-approved protocol and audit data."""
++
++import asyncio
++import base64
++import json
++from hashlib import sha256
++
++import pytest
++from fixtures.wp04 import http_support
++from fixtures.wp04.http_support import (
++    ChatPayload,
++    chat_body,
++    chunks,
++    endpoint,
++    http_peer,
++    read_request,
++    response,
++    transport_fixture,
++)
++from fixtures.wp04.routing_support import routing_fixture
++
++from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
++from jimu_runtime.gateway.http import ChatContract, HttpModelTransport, VerifiedImage
++from jimu_runtime.gateway.invocation import (
++    DispatchRequest,
++    ModelTransport,
++    project_dispatch,
++)
++
++loopback_only = http_support.loopback_only
++
++# A generated one-pixel RGB PNG, verified in the synthetic media loader fixture.
++_PNG = base64.b64decode(
++    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgYGAAAAAEAAH2FzhVAAAAAElFTkSuQmCC"
++)
++
++
++@pytest.mark.parametrize("protocol", ["openai_remote_fixture", "vllm_local_fixture"])
++def test_exact_prepared_bytes_image_contract_and_reported_identity(
++    protocol, loopback_only, monkeypatch
++):
++    async def run() -> None:
++        received = []
++        visible = chat_body()
++
++        async def handle(reader, writer):
++            received.append(await read_request(reader))
++            writer.write(
++                response(
++                    visible,
++                    headers=(
++                        (b"X-Request-ID", b"server-call-7"),
++                        (b"X-Jimu-Deployment-Version", b"2.1.0"),
++                        (b"X-Jimu-Model-Version", b"3.2.0"),
++                    ),
++                )
++            )
++            await writer.drain()
++
++        async with http_peer(loopback_only, handle) as url:
++            kind = "remote" if protocol == "openai_remote_fixture" else "local"
++            transport, route = transport_fixture(endpoint(url, provider_kind=kind))
++            image = VerifiedImage(_PNG, "image/png", sha256(_PNG).hexdigest())
++            payload = transport.prepare(route, "Inspect this image once.", image)
++            wire: ModelTransport = transport
++            result = await wire.dispatch(
++                DispatchRequest("loopback-success", route, payload)
++            )
++
++        assert len(received) == 1
++        request = received[0]
++        assert request.line == b"POST /v1/chat/completions HTTP/1.1"
++        assert request.headers[b"accept-encoding"] == b"identity"
++        assert b"authorization" not in request.headers
++        assert request.body == payload
++        doc = json.loads(payload)
++        assert doc["model"] == route.ownership.model_id
++        assert doc["stream"] is False
++        assert doc["messages"] == [
++            {
++                "role": "user",
++                "content": [
++                    {"type": "text", "text": "Inspect this image once."},
++                    {
++                        "type": "image_url",
++                        "image_url": {
++                            "url": "data:image/png;base64,"
++                            + base64.b64encode(_PNG).decode()
++                        },
++                    },
++                ],
++            }
++        ]
++        assert doc["response_format"]["json_schema"]["strict"] is True
++        assert (
++            doc["response_format"]["json_schema"]["schema"]
++            == ChatPayload.model_json_schema()
++        )
++        assert result.dispatched and result.error is None
++        assert result.observation is not None
++        assert result.observation.provider_request_id == "server-call-7"
++        assert result.observation.model_id == route.ownership.model_id
++        assert result.observation.deployment_version == "2.1.0"
++        assert result.observation.model_version == "3.2.0"
++        assert result.response_status == 200
++        assert result.observed_response_bytes == len(visible)
++        assert result.response_digest == sha256(visible).hexdigest()
++        assert result.response_bytes is None
++        assert result.response_bytes_omission_reason == "policy_disabled"
++        assert result.parsed_content is not None
++        assert (
++            ChatPayload.model_validate_json(result.parsed_content).finding == "parked"
++        )
++
++    # The proxy is also a loopback URL but never resolves to an authorized port.
++    monkeypatch.setenv("HTTP_PROXY", "http://127.0.0.1:1")
++    monkeypatch.setenv("ALL_PROXY", "http://127.0.0.1:1")
++    monkeypatch.setenv("NO_PROXY", "")
++    asyncio.run(run())
++
++
++@pytest.mark.parametrize("framing", ["close_delimited", "chunked"])
++def test_missing_content_length_and_version_keep_exact_observations(
++    framing, loopback_only
++):
++    async def run():
++        body = chat_body()
++
++        async def handle(reader, writer):
++            await read_request(reader)
++            if framing == "chunked":
++                writer.write(
++                    response(
++                        chunks(body[:12], body[12:40], body[40:]) + b"0\r\n\r\n",
++                        headers=((b"Transfer-Encoding", b"chunked"),),
++                        omit_length=True,
++                    )
++                )
++            else:
++                writer.write(response(body, omit_length=True))
++            await writer.drain()
++
++        async with http_peer(loopback_only, handle) as url:
++            transport, route = transport_fixture(endpoint(url))
++            payload = transport.prepare(route, "Return the finding.")
++            result = await transport.dispatch(
++                DispatchRequest("no-content-length", route, payload)
++            )
++        assert result.error is None
++        assert result.response_digest == sha256(body).hexdigest()
++        assert result.observed_response_bytes == len(body)
++        assert result.observation is not None
++        assert result.observation.model_id == route.ownership.model_id
++        assert result.observation.deployment_version is None
++        assert result.observation.model_version is None
++        assert result.observation.provider_request_id is None
++
++    asyncio.run(run())
++
++
++def test_real_planned_route_pins_derived_schema_before_send(loopback_only):
++    async def run():
++        received = []
++        selected = routing_fixture().primary_route().selected
++
++        async def handle(reader, writer):
++            received.append(await read_request(reader))
++            writer.write(
++                response(
++                    chat_body(),
++                    headers=(
++                        (b"X-Request-ID", b"n04-loopback-17"),
++                        (
++                            b"X-Jimu-Deployment-Version",
++                            selected.deployment_version.encode(),
++                        ),
++                        (b"X-Jimu-Model-Version", selected.model_version.encode()),
++                    ),
++                )
++            )
++            await writer.drain()
++
++        async with http_peer(loopback_only, handle) as url:
++            cfg = endpoint(url, retain_complete_response=True).model_copy(
++                update={
++                    "provider_id": selected.provider_id,
++                    "deployment_id": selected.deployment_id,
++                }
++            )
++            unrelated = routing_fixture(
++                endpoint_pin=cfg.descriptor_pin, model_id=cfg.model_id
++            ).primary_route()
++            derived = canonical_bytes(
++                {
++                    **ChatPayload.model_json_schema(),
++                    "description": "Exact synthetic joint contract resolved for this N04 attempt.",
++                }
++            )
++            contract = ChatContract(
++                unrelated.binding.input_schema_ref,
++                unrelated.binding.output_schema_ref,
++                ChatPayload,
++                response_schema=derived,
++            )
++            route = routing_fixture(
++                endpoint_pin=cfg.descriptor_pin,
++                model_id=cfg.model_id,
++                response_schema_digest=contract.response_schema_digest,
++            ).primary_route()
++            transport = HttpModelTransport((cfg,), (contract,), max_concurrency=1)
++            payload = transport.prepare(route, "Perform one joint observation.")
++            rejecting = await transport.dispatch(
++                DispatchRequest("wrong-derived-schema", unrelated, payload)
++            )
++            assert not rejecting.dispatched
++            assert (
++                rejecting.error is not None
++                and rejecting.error.code == "http_schema_pin_unregistered"
++            )
++
++            outbound = DispatchRequest("exact-derived-schema", route, payload)
++            result = await transport.dispatch(outbound)
++
++        assert len(received) == 1
++        assert route.operation.contract_snapshot is not None
++        snapshot = route.operation.contract_snapshot
++        assert snapshot.response_schema_sha256 == sha256(derived).hexdigest()
++        posted = json.loads(received[0].body)
++        assert posted["response_format"]["json_schema"]["schema"] == json.loads(derived)
++        outcome = project_dispatch(
++            outbound,
++            result,
++            started_at=route.approved_at,
++            completed_at=route.approved_at,
++            evidence_refs=(snapshot.response_schema_evidence_ref,),
++        )
++        assert outcome.error is None
++        assert outcome.invocation is not None
++        assert outcome.invocation.outcome.status == "succeeded"
++        assert outcome.output is not None
++        assert result.response_bytes == chat_body()
++        assert result.response_bytes_omission_reason is None
++        assert result.response_digest == sha256(result.response_bytes).hexdigest()
++        assert result.response_digest != sha256(outcome.output).hexdigest()
++        assert repr(result.response_bytes) not in repr(result)
++
++    asyncio.run(run())
+--- /dev/null
++++ b/tests/negative/test_wp04_http_negative.py
+@@ -0,0 +1,491 @@
++"""Transport failures preserve only bounded, observed data and never retry."""
++
++import asyncio
++import json
++import logging
++import secrets
++from hashlib import sha256
++from types import SimpleNamespace
++
++import pytest
++from fixtures.wp04 import http_support
++from fixtures.wp04.http_support import (
++    FixtureSecrets,
++    chat_body,
++    chunks,
++    endpoint,
++    http_peer,
++    read_request,
++    request,
++    response,
++    transport_fixture,
++)
++
++from jimu_runtime.gateway.invocation import DispatchRequest
++
++loopback_only = http_support.loopback_only
++
++
++async def _dispatch_wire(ports, wire, *, retain_complete_response=False, **limits):
++    received = []
++
++    async def handle(reader, writer):
++        received.append(await read_request(reader))
++        writer.write(wire)
++        await writer.drain()
++
++    async with http_peer(ports, handle) as url:
++        transport, route = transport_fixture(
++            endpoint(url, retain_complete_response=retain_complete_response), **limits
++        )
++        result = await transport.dispatch(request(transport, route))
++    assert len(received) == 1
++    return result
++
++
++@pytest.mark.parametrize(
++    ("status", "header", "error_class", "code", "retry_seconds"),
++    [
++        (429, b"120", "rate_limit", "http_rate_limited", 7.0),
++        (429, b"0", "rate_limit", "http_rate_limited", 0.0),
++        (429, b"-10", "rate_limit", "http_rate_limited", None),
++        (
++            503,
++            b"Wed, 21 Oct 2015 07:28:00 GMT",
++            "unavailable",
++            "http_service_unavailable",
++            0.0,
++        ),
++        (
++            503,
++            b"Thu, 01 Jan 2070 00:00:00 GMT",
++            "unavailable",
++            "http_service_unavailable",
++            7.0,
++        ),
++        (408, b"10", "timeout", "http_request_timeout", None),
++        (401, b"10", "validation", "http_auth_rejected", None),
++        (404, b"10", "validation", "http_status_rejected", None),
++    ],
++)
++def test_http_statuses_and_retry_after_are_explicit_single_attempts(
++    status, header, error_class, code, retry_seconds, loopback_only
++):
++    body = b'{"error":"non-authoritative fixture"}'
++    raw = response(body, status=status, headers=((b"Retry-After", header),))
++    result = asyncio.run(_dispatch_wire(loopback_only, raw))
++    assert result.error is not None
++    assert (result.error.error_class, result.error.code) == (error_class, code)
++    assert result.response_status == status
++    assert result.retry_after_seconds == retry_seconds
++    assert result.response_digest == sha256(body).hexdigest()
++    assert result.parsed_content is None
++    assert result.response_bytes is None
++
++
++def test_redirect_target_cannot_receive_requests(loopback_only):
++    async def run():
++        redirections = []
++
++        async def target(reader, writer):
++            redirections.append(await read_request(reader))
++
++        async with http_peer(loopback_only, target) as target_url:
++            body = b""
++            raw = response(
++                body, status=307, headers=((b"Location", target_url.encode()),)
++            )
++            result = await _dispatch_wire(loopback_only, raw)
++        assert not redirections
++        assert result.error is not None and result.error.code == "http_redirect_denied"
++        assert result.response_status == 307
++        assert result.response_digest == sha256(body).hexdigest()
++
++    asyncio.run(run())
++
++
++@pytest.mark.parametrize("framing", ["declared", "close_delimited", "chunked"])
++def test_route_and_endpoint_response_cap_prevents_partial_digest(
++    framing, loopback_only
++):
++    body = b"a" * 256
++    if framing == "declared":
++        raw = response(body)
++    elif framing == "chunked":
++        raw = response(
++            chunks(body[:48], body[48:]) + b"0\r\n\r\n",
++            headers=((b"Transfer-Encoding", b"chunked"),),
++            omit_length=True,
++        )
++    else:
++        raw = response(body, omit_length=True)
++
++    result = asyncio.run(
++        _dispatch_wire(
++            loopback_only, raw, route_output_limit=64, retain_complete_response=True
++        )
++    )
++    assert result.dispatched
++    assert result.error is not None
++    assert (result.error.error_class, result.error.code) == (
++        "resource_exhausted",
++        "http_response_too_large",
++    )
++    assert result.response_status == 200
++    assert result.response_digest is None
++    assert result.response_bytes is None
++    assert result.response_bytes_omission_reason == "incomplete"
++    assert result.parsed_content is None
++    if framing == "declared":
++        assert result.observed_response_bytes == 0
++    else:
++        assert result.observed_response_bytes > 64
++
++
++@pytest.mark.parametrize("framing", ["declared", "unterminated_chunked"])
++def test_truncated_body_is_transport_failure_without_prefix_digest(
++    framing, loopback_only
++):
++    body = b'{"partial":true}'
++    headers = ((b"X-Request-ID", b"visible-before-close"),)
++    if framing == "declared":
++        raw = response(body, length=128, headers=headers)
++    else:
++        raw = response(
++            chunks(body),
++            headers=(*headers, (b"Transfer-Encoding", b"chunked")),
++            omit_length=True,
++        )
++    result = asyncio.run(_dispatch_wire(loopback_only, raw))
++    assert result.error is not None and result.error.error_class == "transport"
++    assert result.response_status == 200
++    assert result.observed_response_bytes == len(body)
++    assert result.observation is not None
++    assert result.observation.provider_request_id == "visible-before-close"
++    assert result.response_digest is None
++    assert result.response_bytes is None
++    assert result.parsed_content is None
++
++
++def test_compressed_response_is_rejected_before_decode(loopback_only):
++    raw = response(b"opaque", headers=((b"Content-Encoding", b"gzip"),))
++    result = asyncio.run(_dispatch_wire(loopback_only, raw))
++    assert (
++        result.error is not None and result.error.code == "http_content_encoding_denied"
++    )
++    assert result.observed_response_bytes == 0
++    assert result.response_digest is None
++    assert result.parsed_content is None
++
++
++@pytest.mark.parametrize(
++    ("body", "code"),
++    [
++        (b'{"model":"a","model":"b","choices":[]}', "http_json_duplicate_key"),
++        (chat_body(content='{"finding":"clear","score":NaN}'), "http_json_nonfinite"),
++        (chat_body(content='{"finding":"clear","score":1e999}'), "http_json_nonfinite"),
++        (
++            chat_body(content='{"finding":"clear","score":0,"score":1}'),
++            "http_json_duplicate_key",
++        ),
++        (
++            chat_body(content='{"finding":"clear","score":"1"}'),
++            "http_invalid_response_content",
++        ),
++        (
++            chat_body(content='{"finding":"clear","score":1,"more":false}'),
++            "http_invalid_response_content",
++        ),
++        (chat_body(finish_reason="length"), "http_invalid_response_envelope"),
++        (chat_body(model="some-other/model"), "http_reported_model_mismatch"),
++    ],
++)
++def test_wire_and_content_validation_preserve_only_digest_on_failure(
++    body, code, loopback_only
++):
++    result = asyncio.run(_dispatch_wire(loopback_only, response(body)))
++    assert result.error is not None and result.error.code == code
++    assert result.response_digest == sha256(body).hexdigest()
++    assert result.response_bytes is None
++    assert result.parsed_content is None
++
++
++@pytest.mark.parametrize(
++    ("reported", "code"),
++    [
++        ("4.3.0", "http_reported_version_mismatch"),
++        ("forged", "http_invalid_reported_version"),
++    ],
++)
++def test_version_claims_cannot_override_pinned_versions(reported, code, loopback_only):
++    raw = response(chat_body(), headers=((b"X-Jimu-Model-Version", reported.encode()),))
++    result = asyncio.run(_dispatch_wire(loopback_only, raw))
++    assert result.error is not None and result.error.code == code
++    assert result.parsed_content is None
++
++
++def test_chunk_progress_does_not_extend_total_deadline(loopback_only):
++    async def run():
++        body = chat_body()
++
++        async def handle(reader, writer):
++            await read_request(reader)
++            writer.write(
++                response(
++                    b"", headers=((b"Transfer-Encoding", b"chunked"),), omit_length=True
++                )
++            )
++            for part in (body[:20], body[20:40], body[40:60], body[60:]):
++                writer.write(chunks(part))
++                await writer.drain()
++                await asyncio.sleep(0.08)
++            writer.write(b"0\r\n\r\n")
++            await writer.drain()
++
++        async with http_peer(loopback_only, handle) as url:
++            transport, route = transport_fixture(
++                endpoint(url, timeout_ms=900, io_timeout_ms=550),
++                route_timeout_ms=260,
++            )
++            result = await transport.dispatch(request(transport, route))
++        assert result.dispatched
++        assert result.error is not None and result.error.error_class == "timeout"
++        assert result.response_status == 200
++        assert 0 < result.observed_response_bytes <= len(body)
++        assert result.response_digest is None
++        assert result.parsed_content is None
++
++    asyncio.run(run())
++
++
++def test_io_timeout_before_response_headers_preserves_unknown_receipt(loopback_only):
++    async def run():
++        received = []
++
++        async def handle(reader, writer):
++            received.append(await read_request(reader))
++            await reader.read()
++
++        async with http_peer(loopback_only, handle) as url:
++            transport, route = transport_fixture(endpoint(url, io_timeout_ms=100))
++            result = await transport.dispatch(request(transport, route))
++        assert len(received) == 1 and result.dispatched
++        assert result.error is not None and result.error.error_class == "timeout"
++        assert result.response_status is None
++        assert result.observed_response_bytes is None
++        assert result.response_digest is None
++
++    asyncio.run(run())
++
++
++def test_cancelled_socket_is_closed_and_next_call_gets_slot(loopback_only):
++    async def run():
++        response_started = asyncio.Event()
++        client_closed = asyncio.Event()
++        requests = []
++
++        async def handle(reader, writer):
++            requests.append(await read_request(reader))
++            if len(requests) == 1:
++                writer.write(response(b"x", length=80))
++                await writer.drain()
++                response_started.set()
++                if await reader.read() == b"":
++                    client_closed.set()
++            else:
++                writer.write(response(chat_body()))
++                await writer.drain()
++
++        async with http_peer(loopback_only, handle) as url:
++            transport, route = transport_fixture(endpoint(url), host_max_concurrency=1)
++            job = asyncio.create_task(transport.dispatch(request(transport, route)))
++            await asyncio.wait_for(response_started.wait(), 2)
++            # The server has the request and headers were sent, while its body is incomplete.
++            job.cancel()
++            with pytest.raises(asyncio.CancelledError):
++                await job
++            await asyncio.wait_for(client_closed.wait(), 2)
++            confirmed = await transport.dispatch(
++                request(transport, route, dispatch_id="after-cancel")
++            )
++        assert len(requests) == 2
++        assert confirmed.error is None
++
++    asyncio.run(run())
++
++
++@pytest.mark.parametrize("echo_location", ["header", "escaped_json"])
++def test_credential_echo_cannot_reach_results_or_debug_logs(
++    echo_location, loopback_only, caplog
++):
++    async def run():
++        token = secrets.token_hex(16)
++        resolver = FixtureSecrets(token)
++        received_auth = asyncio.Event()
++        mask = "".join(f"\\u{ord(ch):04x}" for ch in token)
++        body = (
++            chat_body(content='{"finding":"' + mask + '","score":1}')
++            if echo_location == "escaped_json"
++            else chat_body()
++        )
++        headers = (
++            ((b"X-Request-ID", token.encode()), (b"X-Sensitive", token.encode()))
++            if echo_location == "header"
++            else ()
++        )
++
++        async def handle(reader, writer):
++            received = await read_request(reader)
++            if received.headers.get(b"authorization") == b"Bearer " + token.encode():
++                received_auth.set()
++            writer.write(response(body, headers=headers))
++            await writer.drain()
++
++        async with http_peer(loopback_only, handle) as url:
++            cfg = endpoint(url, credential=True, retain_complete_response=True)
++            transport, route = transport_fixture(cfg, secrets=resolver)
++            outbound = request(transport, route)
++            result = await transport.dispatch(outbound)
++        assert received_auth.is_set()
++        assert resolver.requested == ["fixture-token-ref"]
++        assert result.error is not None and result.error.code == "http_credential_echo"
++        assert (
++            result.observation is None or result.observation.provider_request_id is None
++        )
++        assert result.response_digest == sha256(body).hexdigest()
++        assert result.response_bytes is None
++        assert result.response_bytes_omission_reason == "credential_echo"
++        assert result.parsed_content is None
++        for candidate in (
++            repr(resolver),
++            repr(cfg),
++            repr(outbound),
++            repr(result),
++            caplog.text,
++        ):
++            if token in candidate:
++                pytest.fail("synthetic bearer leaked through a public representation")
++        assert any(record.name == "httpcore.http11" for record in caplog.records)
++
++    caplog.set_level(logging.DEBUG, "httpcore.http11")
++    asyncio.run(run())
++
++
++def test_unauthorized_model_media_secret_and_endpoint_pin_never_send(loopback_only):
++    async def run():
++        requests = []
++        token = secrets.token_hex(16)
++        resolver = FixtureSecrets(token)
++
++        async def handle(reader, writer):
++            requests.append(await read_request(reader))
++
++        async with http_peer(loopback_only, handle) as url:
++            cfg = endpoint(url, credential=True)
++            transport, route = transport_fixture(cfg, secrets=resolver)
++            approved = request(transport, route)
++            altered = json.loads(approved.payload)
++            altered["model"] = "not-the-pinned-model"
++            wrong_model = await transport.dispatch(
++                DispatchRequest("wrong-model", route, json.dumps(altered).encode())
++            )
++
++            altered = json.loads(approved.payload)
++            altered["messages"][0]["content"].append(
++                {"type": "image_url", "image_url": {"url": url}}
++            )
++            wrong_media = await transport.dispatch(
++                DispatchRequest("wrong-media", route, json.dumps(altered).encode())
++            )
++
++            altered = json.loads(approved.payload)
++            altered["messages"][0]["content"][0]["text"] = token
++            exposed = await transport.dispatch(
++                DispatchRequest(
++                    "credential-in-request", route, json.dumps(altered).encode()
++                )
++            )
++
++            route.ownership = SimpleNamespace(
++                model_id=cfg.model_id,
++                endpoint_descriptor_ref=endpoint(url).descriptor_pin,
++            )
++            wrong_pin = await transport.dispatch(
++                DispatchRequest("wrong-pin", route, approved.payload)
++            )
++
++        assert not requests
++        for result, code in (
++            (wrong_model, "http_request_model_mismatch"),
++            (wrong_media, "http_invalid_image"),
++            (exposed, "http_credential_in_request"),
++            (wrong_pin, "http_endpoint_pin_mismatch"),
++        ):
++            assert not result.dispatched
++            assert result.error is not None and result.error.code == code
++            assert result.response_status is None
++            assert result.response_digest is None
++
++    asyncio.run(run())
++
++
++def test_credential_required_but_unresolved_and_input_too_large_are_undispatched(
++    loopback_only,
++):
++    async def run():
++        received = []
++
++        async def handle(reader, writer):
++            received.append(await read_request(reader))
++
++        async with http_peer(loopback_only, handle) as url:
++            transport, route = transport_fixture(endpoint(url, credential=True))
++            missing = await transport.dispatch(request(transport, route))
++            oversize = await transport.dispatch(
++                DispatchRequest("oversize-input", route, b"x" * 4097)
++            )
++
++        assert not received
++        assert not missing.dispatched
++        assert (
++            missing.error is not None
++            and missing.error.code == "http_credential_unavailable"
++        )
++        assert missing.response_digest is None
++        assert not oversize.dispatched
++        assert oversize.error is not None
++        assert (oversize.error.error_class, oversize.error.code) == (
++            "resource_exhausted",
++            "http_request_too_large",
++        )
++
++    asyncio.run(run())
++
++
++def test_malformed_reply_does_not_log_untrusted_wire_error_details(
++    loopback_only, caplog
++):
++    async def run():
++        token = secrets.token_hex(16)
++        resolver = FixtureSecrets(token)
++
++        async def handle(reader, writer):
++            await read_request(reader)
++            # An ordinary incomplete header with a fixture credential included in the line.
++            writer.write(b"HTTP/1.1 200 fixture\r\n" + token.encode() + b"\r\n\r\n")
++            await writer.drain()
++
++        async with http_peer(loopback_only, handle) as url:
++            cfg = endpoint(url, credential=True)
++            transport, route = transport_fixture(cfg, secrets=resolver)
++            result = await transport.dispatch(request(transport, route))
++        assert (
++            result.error is not None and result.error.code == "http_transport_failure"
++        )
++        assert result.response_digest is None
++        if token in caplog.text or token in repr(result):
++            pytest.fail("synthetic bearer leaked through a transport exception")
++        assert any(record.name == "httpcore.http11" for record in caplog.records)
++
++    caplog.set_level(logging.DEBUG, "httpcore.http11")
++    asyncio.run(run())

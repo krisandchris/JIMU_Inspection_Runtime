@@ -1,0 +1,389 @@
+[
+  {
+    "argv": [
+      "uv",
+      "--version"
+    ],
+    "duration_seconds": 0.1359,
+    "end_utc": "2026-11-18T03:02:41.181275+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "uv_version",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:02:41.045337+00:00",
+    "stderr": "uv_version.stderr",
+    "stdout": "uv_version.stdout"
+  },
+  {
+    "argv": [
+      "openssl",
+      "version"
+    ],
+    "duration_seconds": 0.1291,
+    "end_utc": "2026-11-18T03:02:41.310555+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "openssl_version",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:02:41.181484+00:00",
+    "stderr": "openssl_version.stderr",
+    "stdout": "openssl_version.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "-c",
+      "import importlib.metadata as m, json, platform, sqlite3, sys; print(json.dumps(dict(python=sys.version, executable=sys.executable, platform=platform.platform(), sqlite=sqlite3.sqlite_version, packages={p:m.version(p) for p in ['jimu-runtime','pydantic','pydantic-core','jsonschema','referencing','rfc8785','pytest','mypy','ruff','uv-build']}),sort_keys=True,indent=2))"
+    ],
+    "duration_seconds": 0.2443,
+    "end_utc": "2026-11-18T03:02:41.555283+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "dependency_versions",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:02:41.310940+00:00",
+    "stderr": "dependency_versions.stderr",
+    "stdout": "dependency_versions.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "-m",
+      "pytest",
+      "tests/unit",
+      "tests/contract",
+      "tests/negative",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "--junitxml=/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/independent/frozen_r4hblz8g/pytest.xml"
+    ],
+    "duration_seconds": 281.5613,
+    "end_utc": "2026-11-18T03:07:23.883458+00:00",
+    "exit_code": 1,
+    "invocation_error": null,
+    "label": "pytest",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:02:42.322151+00:00",
+    "stderr": "pytest.stderr",
+    "stdout": "pytest.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "ruff",
+      "check",
+      "src",
+      "tests",
+      "scripts"
+    ],
+    "duration_seconds": 0.1521,
+    "end_utc": "2026-11-18T03:07:24.035873+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "ruff_lint",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:07:23.883772+00:00",
+    "stderr": "ruff_lint.stderr",
+    "stdout": "ruff_lint.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "ruff",
+      "format",
+      "--check",
+      "src",
+      "tests",
+      "scripts"
+    ],
+    "duration_seconds": 0.1555,
+    "end_utc": "2026-11-18T03:07:24.191672+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "ruff_format",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:07:24.036136+00:00",
+    "stderr": "ruff_format.stderr",
+    "stdout": "ruff_format.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "mypy",
+      "src"
+    ],
+    "duration_seconds": 4.3457,
+    "end_utc": "2026-11-18T03:07:28.537716+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "mypy",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:07:24.192023+00:00",
+    "stderr": "mypy.stderr",
+    "stdout": "mypy.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "scripts/generate_schemas.py",
+      "--output",
+      "/tmp/jimu-wp02-frozen-f9_607ca/schema-one"
+    ],
+    "duration_seconds": 12.8097,
+    "end_utc": "2026-11-18T03:07:41.347709+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "schema_first",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:07:28.538050+00:00",
+    "stderr": "schema_first.stderr",
+    "stdout": "schema_first.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "scripts/generate_schemas.py",
+      "--output",
+      "/tmp/jimu-wp02-frozen-f9_607ca/schema-two"
+    ],
+    "duration_seconds": 12.4075,
+    "end_utc": "2026-11-18T03:07:53.755542+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "schema_second",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:07:41.348019+00:00",
+    "stderr": "schema_second.stderr",
+    "stdout": "schema_second.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "scripts/generate_schemas.py",
+      "--check"
+    ],
+    "duration_seconds": 12.573,
+    "end_utc": "2026-11-18T03:08:06.328825+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "schema_check",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:07:53.755868+00:00",
+    "stderr": "schema_check.stderr",
+    "stdout": "schema_check.stdout"
+  },
+  {
+    "argv": [
+      "uv",
+      "run",
+      "--locked",
+      "--no-sync",
+      "python",
+      "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/independent/runtime_probe.py"
+    ],
+    "duration_seconds": 5.1938,
+    "end_utc": "2026-11-18T03:08:11.522988+00:00",
+    "exit_code": 0,
+    "invocation_error": null,
+    "label": "isolated_runtime",
+    "product_after": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "product_before": {
+      "added": [],
+      "changed": [],
+      "files": 668,
+      "match": true,
+      "missing": [],
+      "sha256": "7f4005d91fca32246f3344edecc834fa3e2c7ac53214a4dfddb55d88f77457b8"
+    },
+    "start_utc": "2026-11-18T03:08:06.329202+00:00",
+    "stderr": "isolated_runtime.stderr",
+    "stdout": "isolated_runtime.stdout"
+  }
+]

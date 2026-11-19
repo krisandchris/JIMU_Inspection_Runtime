@@ -1,0 +1,81 @@
+services:
+  database:
+    image: postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae
+    pull_policy: never
+    command: ["postgres", "-c", "log_min_error_statement=panic"]
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/admin_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    secrets: [admin_password]
+    volumes:
+      - database_state:/var/lib/postgresql/data
+    networks: [local]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  migrate:
+    image: "${JIMU_APP_IMAGE:?supply the reviewed local application image}"
+    pull_policy: never
+    command: ["python", "-m", "jimu_runtime.deployment.database"]
+    environment:
+      JIMU_DB_INSTANCE: "${JIMU_DB_INSTANCE:?supply the provisioned UUID}"
+    secrets: [admin_password, owner_password, app_password]
+    read_only: true
+    tmpfs: ["/tmp:rw,nosuid,nodev,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [local]
+    depends_on:
+      database:
+        condition: service_healthy
+
+  runtime:
+    image: "${JIMU_APP_IMAGE:?supply the reviewed local application image}"
+    pull_policy: never
+    command: ["python", "/opt/jimu/host/synthetic_host.py", "serve"]
+    environment:
+      JIMU_DB_INSTANCE: "${JIMU_DB_INSTANCE:?supply the provisioned UUID}"
+      JIMU_LOCAL_SYNTHETIC: "1"
+    init: true
+    read_only: true
+    tmpfs: ["/tmp:rw,nosuid,nodev,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 128
+    stop_grace_period: 25s
+    ports:
+      - "127.0.0.1:${JIMU_API_PORT:-0}:8080"
+    networks: [local, ingress]
+    secrets: [app_password, fixture_token]
+    volumes:
+      - runtime_state:/var/lib/jimu
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-m", "jimu_runtime.deployment.probe"]
+      interval: 2s
+      timeout: 5s
+      retries: 25
+
+volumes:
+  database_state: {}
+  runtime_state: {}
+
+networks:
+  local:
+    internal: true
+  ingress: {}
+
+secrets:
+  admin_password:
+    file: "${JIMU_SECRET_DIR:?supply a private local secrets directory}/admin_password"
+  owner_password:
+    file: "${JIMU_SECRET_DIR:?supply a private local secrets directory}/owner_password"
+  app_password:
+    file: "${JIMU_SECRET_DIR:?supply a private local secrets directory}/app_password"
+  fixture_token:
+    file: "${JIMU_SECRET_DIR:?supply a private local secrets directory}/fixture_token"

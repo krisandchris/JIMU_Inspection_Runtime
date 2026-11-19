@@ -1,0 +1,133 @@
+{
+  "label": "TEST_PASSED",
+  "runtime": "RUNTIME_NOT_RUN",
+  "executed_at_utc": "2026-11-18T02:58:55.794550+00:00",
+  "environment": {
+    "python": "3.12.3",
+    "os": "Linux",
+    "machine": "x86_64",
+    "packages": {
+      "jsonschema": "4.25.1",
+      "mypy": "1.18.2",
+      "pydantic": "2.12.5",
+      "pytest": "8.4.2",
+      "rfc8785": "0.1.4",
+      "ruff": "0.14.14"
+    },
+    "uv": "uv 0.9.15"
+  },
+  "runs": [
+    {
+      "name": "pytest",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/contract/test_wp02_producer_rules_contract.py",
+        "tests/negative/test_wp02_producer_rules_invalid.py",
+        "tests/unit/test_wp02_producer_rules.py",
+        "tests/contract/test_b_producer_authority_contracts.py",
+        "tests/contract/test_b_producer_authority_inputs.py",
+        "tests/contract/test_b_producer_ref.py",
+        "tests/contract/test_b_producers_contracts.py",
+        "tests/contract/test_c_rule_type_contract.py",
+        "tests/negative/test_b_producer_authority_inputs_invalid.py",
+        "tests/negative/test_b_producer_authority_invalid.py",
+        "tests/negative/test_b_producer_authority_review_regressions.py",
+        "tests/negative/test_b_producers_invalid.py",
+        "tests/negative/test_b_producers_validation_invalid.py",
+        "tests/negative/test_c_rule_types_invalid.py",
+        "tests/unit/test_b_producer_authority_input_views.py",
+        "tests/unit/test_b_producer_authority_integration.py",
+        "tests/unit/test_b_producers_data.py",
+        "tests/unit/test_b_producers_validation.py",
+        "tests/unit/test_c_rule_types.py",
+        "--junitxml=planning/implementation_evidence/WP-02/producer_rules/pytest.xml"
+      ],
+      "exit_code": 0,
+      "stdout": "........................................................................ [ 20%]\n........................................................................ [ 40%]\n........................................................................ [ 60%]\n........................................................................ [ 80%]\n.....................................................................    [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/producer_rules/pytest.xml -\n357 passed in 22.92s\n",
+      "stderr": ""
+    },
+    {
+      "name": "ruff",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "check",
+        "src/jimu_runtime/bundle/producer_rules.py",
+        "src/jimu_runtime/domain/validation/producers.py",
+        "tests/contract/test_wp02_producer_rules_contract.py",
+        "tests/negative/test_wp02_producer_rules_invalid.py",
+        "tests/unit/test_wp02_producer_rules.py",
+        "tests/fixtures/wp02/producer_rules"
+      ],
+      "exit_code": 0,
+      "stdout": "All checks passed!\n",
+      "stderr": ""
+    },
+    {
+      "name": "format",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "ruff",
+        "format",
+        "--check",
+        "src/jimu_runtime/bundle/producer_rules.py",
+        "src/jimu_runtime/domain/validation/producers.py",
+        "tests/contract/test_wp02_producer_rules_contract.py",
+        "tests/negative/test_wp02_producer_rules_invalid.py",
+        "tests/unit/test_wp02_producer_rules.py",
+        "tests/fixtures/wp02/producer_rules"
+      ],
+      "exit_code": 0,
+      "stdout": "6 files already formatted\n",
+      "stderr": ""
+    },
+    {
+      "name": "mypy",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "mypy",
+        "src/jimu_runtime/bundle/producer_rules.py",
+        "src/jimu_runtime/domain/validation/producers.py"
+      ],
+      "exit_code": 0,
+      "stdout": "Success: no issues found in 2 source files\n",
+      "stderr": ""
+    },
+    {
+      "name": "byte_integration",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "--no-sync",
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_wp02_compiler.py::test_synthetic_parking_compile_emits_typed_closed_bundle",
+        "tests/unit/test_wp02_admission_flow.py::test_signed_compiler_output_is_independently_verified_and_reopenable",
+        "--junitxml=planning/implementation_evidence/WP-02/producer_rules/integration.xml",
+        "--tb=short"
+      ],
+      "exit_code": 0,
+      "stdout": "..                                                                       [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-02/producer_rules/integration.xml -\n2 passed in 2.59s\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "$defs": {
+    "BundlePayloadPath": {
+      "maxLength": 512,
+      "pattern": "^(?!(?:manifest|checksums)\\.json$(?![\\s\\S]))(?!.*(?:^|/)[.]{1,2}(?:/|$))[^\\\\\\x00-\\x1f\\x7f-\\x9f:?#/]+(?:/[^\\\\\\x00-\\x1f\\x7f-\\x9f:?#/]+)*$(?![\\s\\S])",
+      "type": "string"
+    },
+    "ChecksumEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/BundlePayloadPath"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size": {
+          "$ref": "#/$defs/NonNegativeBudget"
+        }
+      },
+      "required": [
+        "path",
+        "size",
+        "sha256"
+      ],
+      "title": "ChecksumEntry",
+      "type": "object"
+    },
+    "NonNegativeBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned checksums.json data. File/hash comparison belongs to admission.",
+  "properties": {
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/ChecksumEntry"
+      },
+      "maxItems": 16384,
+      "title": "Entries",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "entries"
+  ],
+  "title": "ChecksumManifest",
+  "type": "object"
+}

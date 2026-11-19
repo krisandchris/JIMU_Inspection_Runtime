@@ -1,0 +1,103 @@
++ cd /tmp/jimu-wp05-wheel-2j4xlnYv
++ env PYTHONPATH=/tmp/jimu-wp05-wheel-2j4xlnYv/snapshot/product WP05_PROBE_DIAGNOSTICS=1 /tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py --installed --trace-dir /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_uGjkLZ1k/empty-exec no_hits no_target grounding_failure grounding_timeout
+{"check": "worker_process_ready", "pid": 3525787, "runtime_install": "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "durable_node_diagnostics", "child_steps": [], "dispatches": [["model", null, "acknowledged", null, null]], "rows": [["N01", "succeeded", null, null], ["N02", "succeeded", null, null], ["N03", "skipped", null, null], ["N04", "skipped", null, null], ["N05", "skipped", null, null], ["N06", "skipped", null, null]]}
+{"calls": [["discovery", null, null]], "check": "provider_transcript_on_failure", "errors": []}
+{"check": "worker_process_closed", "pid": 3525787, "signal": null}
+Traceback (most recent call last):
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py", line 642, in execute
+    result = self.await_(self._cursor.execute(query, params, **kw))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/psycopg/cursor_async.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.AmbiguousColumn: common column name "project_id" appears more than once in left table
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 336, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 322, in main
+    await run_case(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py", line 243, in run_case
+    result = await audit(
+             ^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 376, in audit
+    known_sidecars, by_object = await check_tool_evidence(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 167, in check_tool_evidence
+    rows = await _rows(
+           ^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/audit.py", line 62, in _rows
+    return (await connection.execute(text(query), scope.params())).mappings().all()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 659, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py", line 642, in execute
+    result = self.await_(self._cursor.execute(query, params, **kw))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/tmp/jimu-wp05-wheel-2j4xlnYv/system-venv/lib/python3.12/site-packages/psycopg/cursor_async.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.AmbiguousColumn) common column name "project_id" appears more than once in left table
+[SQL: 
+        SELECT completion.record::text AS completion, receipt.record AS receipt,
+               intent.record AS intent, intent.attempt_id, intent.node_run_id, intent.dispatch_id
+        FROM jimu_workflow.tool_step_completions AS completion
+        JOIN jimu_workflow.dispatch_intents AS intent
+          ON (intent.project_id, intent.client_id, intent.execution_id, intent.attempt_id, intent.dispatch_id)
+           = (completion.project_id, completion.client_id, completion.execution_id, completion.child_attempt_id, completion.tool_execution_id)
+        JOIN jimu_workflow.dispatch_results AS receipt USING (project_id, client_id, execution_id, dispatch_id)
+        WHERE (completion.project_id, completion.client_id, completion.execution_id) = (%(p)s, %(c)s, %(e)s)
+          AND NOT receipt.late
+    ]
+[SQL parameters hidden due to hide_parameters=True]
+(Background on this error at: https://sqlalche.me/e/20/f405)

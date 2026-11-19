@@ -1,0 +1,183 @@
+{
+  "execution": {
+    "schema_version": "1.0.0",
+    "execution_id": "exec-1",
+    "task_id": "task-1",
+    "pins": {
+      "release_id": "release-1",
+      "bundle_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "runtime_version": "1.0.0",
+      "workflow_version": "1.0.0",
+      "model_pins": [
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "discovery",
+            "version": "1.0.0",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "remote-vision",
+            "version": "1.0.0",
+            "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "primary_deployment_id": "remote-primary",
+          "deployments": [
+            {
+              "provider_id": "synthetic-provider",
+              "deployment_id": "remote-primary",
+              "logical_model_id": "synthetic-model",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.2.3"
+                ],
+                "allowed_model_versions": [
+                  "2.1.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image"
+              ]
+            }
+          ],
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback-vision",
+            "version": "1.0.0",
+            "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          }
+        }
+      ],
+      "tool_pins": [
+        {
+          "tool_ref": {
+            "artifact_kind": "tool",
+            "artifact_id": "geometry",
+            "version": "1.0.0",
+            "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "implementation_version": "1.0.1"
+        }
+      ],
+      "input_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    "trace": {
+      "trace_id": "trace-1"
+    },
+    "status": "initialized",
+    "created_at": "2026-11-18T03:00:00Z",
+    "model_invocation_refs": []
+  },
+  "node": {
+    "schema_version": "1.0.0",
+    "node_run_id": "node-1",
+    "execution_id": "exec-1",
+    "node_id": "N02",
+    "trace": {
+      "trace_id": "trace-1"
+    },
+    "config_ref": {
+      "artifact_kind": "policy",
+      "artifact_id": "workflow",
+      "version": "1.0.0",
+      "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    "upstream_inputs": [
+      {
+        "ref": {
+          "record_kind": "context_snapshot",
+          "record_id": "context-1"
+        },
+        "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    ],
+    "input_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "status": "running",
+    "created_at": "2026-11-18T03:00:00Z",
+    "started_at": "2026-11-18T03:00:01Z",
+    "attempt_history": [
+      {
+        "attempt_ref": {
+          "record_kind": "attempt",
+          "record_id": "attempt-1"
+        },
+        "attempt_number": 1
+      }
+    ],
+    "output_refs": []
+  },
+  "attempt": {
+    "schema_version": "1.0.0",
+    "attempt_id": "attempt-1",
+    "execution_id": "exec-1",
+    "owner": {
+      "owner_kind": "node",
+      "node_run_ref": {
+        "record_kind": "node_run",
+        "record_id": "node-1"
+      }
+    },
+    "attempt_number": 1,
+    "status": "timed_out",
+    "created_at": "2026-11-18T03:00:00Z",
+    "started_at": "2026-11-18T03:00:01Z",
+    "ended_at": "2026-11-18T03:00:02Z",
+    "reason": {
+      "code": "deadline_elapsed"
+    }
+  },
+  "late_event": {
+    "schema_version": "1.0.0",
+    "execution_event_id": "event-1",
+    "execution_id": "exec-1",
+    "event_number": 1,
+    "trace": {
+      "trace_id": "trace-1"
+    },
+    "recorded_at": "2026-11-18T03:00:03Z",
+    "payload": {
+      "event_kind": "late_response",
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "attempt-1"
+      },
+      "response_ref": {
+        "record_kind": "model_invocation",
+        "record_id": "invocation-1"
+      },
+      "reason": {
+        "code": "arrived_after_deadline"
+      }
+    }
+  },
+  "system_event": {
+    "schema_version": "1.0.0",
+    "execution_event_id": "event-2",
+    "execution_id": "exec-1",
+    "event_number": 2,
+    "trace": {
+      "trace_id": "trace-1"
+    },
+    "recorded_at": "2026-11-18T03:00:03Z",
+    "payload": {
+      "event_kind": "system_output",
+      "attempt_ref": {
+        "record_kind": "attempt",
+        "record_id": "system-1"
+      },
+      "requirement": {
+        "family": "system_fact_producer",
+        "capability_id": "profile-accounting",
+        "contract_version": "1.0.0",
+        "allowed_implementation_versions": [
+          "1.0.0"
+        ],
+        "required_features": []
+      },
+      "output_name": "result",
+      "actual_implementation_version": "1.0.0"
+    }
+  }
+}

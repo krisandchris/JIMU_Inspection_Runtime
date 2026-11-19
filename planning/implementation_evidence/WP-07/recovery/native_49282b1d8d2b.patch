@@ -1,0 +1,1341 @@
+--- /dev/null
++++ b/ops/recovery/__init__.py
+@@ -0,0 +1,292 @@
++"""Coordinated backup and restore for a provisioned, quiesced WP-07 test deployment."""
++
++import json
++import re
++from dataclasses import dataclass
++from hashlib import sha256
++from pathlib import Path
++
++from pydantic import ValidationError
++
++from ops.recovery import postgres as pg
++from ops.recovery.contracts import (
++    BUNDLE,
++    DUMP,
++    IDENTITY,
++    MANIFEST,
++    MEDIA,
++    RESOURCES,
++    Manifest,
++    RecoveryError,
++)
++from ops.recovery.filesystem import (
++    create_directory,
++    file_witness,
++    freeze_media,
++    ledger,
++    ledger_versions,
++    media_names,
++    new_private,
++    private_path,
++    publish_marker,
++    read_manifest,
++    read_private,
++    sync_directory,
++    validate_package_names,
++)
++from ops.recovery.postgres import Endpoint as Endpoint
++from ops.recovery.postgres import NativeTools as NativeTools
++
++RESTORED = "restore-verified.json"
++
++
++@dataclass(frozen=True, slots=True)
++class SourceVolumes:
++    bundle: Path
++    resources: Path
++    media_root: Path
++
++
++def _digest(value: str) -> str:
++    if not re.fullmatch(r"[0-9a-f]{64}", value):
++        raise RecoveryError("trusted_sha256_required")
++    return value
++
++
++def _encoded(manifest: Manifest) -> bytes:
++    return (
++        json.dumps(
++            manifest.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
++        )
++        + "\n"
++    ).encode("utf-8")
++
++
++def _require_credentials_outside(endpoint: Endpoint, *directories: Path) -> None:
++    password = private_path(endpoint.passfile)
++    if any(password.is_relative_to(path.absolute()) for path in directories):
++        raise RecoveryError("credentials_must_stay_outside_recovery_paths")
++
++
++def _check_media_identity(
++    root: Path, endpoint: Endpoint, *, source: bool = False
++) -> None:
++    with read_private(root / IDENTITY, parent_protected=source) as value:
++        if value.read(128) != endpoint.comment.encode("ascii"):
++            raise RecoveryError("media_database_identity_mismatch")
++
++
++def backup(
++    endpoint: Endpoint,
++    tools: NativeTools,
++    volumes: SourceVolumes,
++    package: Path,
++    *,
++    host_config_sha256: str,
++) -> str:
++    """Write a new immutable-input package and return its externally pinned manifest SHA."""
++    _digest(host_config_sha256)
++    _require_credentials_outside(endpoint, package, volumes.media_root / MEDIA)
++    if (
++        package.absolute().is_relative_to(volumes.media_root.absolute() / MEDIA)
++        or volumes.bundle.absolute() == volumes.resources.absolute()
++    ):
++        raise RecoveryError("backup_sources_and_destination_must_be_distinct")
++    bundle = private_path(volumes.bundle)
++    resources = private_path(volumes.resources)
++    with pg.database(endpoint) as source:
++        server_version = pg.quiesced(source, endpoint)
++        pg.isolated_schema(source, empty=False)
++        dump_version = tools.version("pg_dump", endpoint)
++        # Writers acquire media locks before a database write. Keep that ordering
++        # and use NOWAIT/zero timeout for the other stores.
++        with (
++            freeze_media(volumes.media_root),
++            ledger(bundle, freeze=True) as bundle_db,
++            ledger(resources, freeze=True) as resource_db,
++            source.transaction(),
++        ):
++            source.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
++            pg.quiesced(source, endpoint)
++            names = pg.tables(source)
++            pg.lock_tables(source, names)
++            versions = ledger_versions(bundle_db, resource_db, quiesced=True)
++            entries = media_names(volumes.media_root, source=True)
++            _check_media_identity(volumes.media_root, endpoint, source=True)
++            snapshot = source.execute("SELECT pg_export_snapshot()").fetchone()
++            assert snapshot is not None
++            output = create_directory(package)
++            media = create_directory(output / MEDIA)
++            witnesses = {
++                name: file_witness(
++                    volumes.media_root / name,
++                    output / name,
++                    parent_protected=name == IDENTITY,
++                )
++                for name in sorted(entries)
++            }
++            pg.verify_media(source, names, witnesses)
++            witnesses[BUNDLE] = file_witness(bundle, output / BUNDLE)
++            witnesses[RESOURCES] = file_witness(resources, output / RESOURCES)
++            with new_private(output / DUMP) as dump:
++                tools.run(
++                    "pg_dump",
++                    [
++                        *endpoint.cli_args(),
++                        "--format=custom",
++                        "--schema=jimu_workflow",
++                        "--no-owner",
++                        "--no-tablespaces",
++                        "--lock-wait-timeout=5000",
++                        "--snapshot",
++                        str(snapshot[0]),
++                    ],
++                    endpoint=endpoint,
++                    output=dump,
++                )
++            witnesses[DUMP] = file_witness(output / DUMP)
++            if witnesses[DUMP].size == 0:
++                raise RecoveryError("postgres_dump_empty")
++            manifest = Manifest(
++                schema_version="1.0.0",
++                logical_database_id=endpoint.instance_id,
++                source_database=endpoint.database,
++                postgres_version=server_version,
++                dump_version=dump_version,
++                host_config_sha256=host_config_sha256,
++                bundle_version=versions[0],
++                resource_version=versions[1],
++                inventory_id=versions[2],
++                inventory_sha256=versions[3],
++                postgres_tables=pg.snapshot(source, names),
++                files=witnesses,
++            )
++            pg.quiesced(source, endpoint)
++            raw = _encoded(manifest)
++            sync_directory(media)
++        # The manifest is the package publication marker and is written last.
++        publish_marker(output / MANIFEST, raw)
++        sync_directory(output)
++        sync_directory(output.parent)
++        return sha256(raw).hexdigest()
++
++
++def _check_package(package: Path, expected_sha256: str) -> tuple[Manifest, bytes]:
++    raw = read_manifest(package / MANIFEST)
++    if sha256(raw).hexdigest() != _digest(expected_sha256):
++        raise RecoveryError("backup_manifest_digest_mismatch")
++    try:
++        manifest = Manifest.model_validate_json(raw)
++    except ValidationError:
++        raise RecoveryError("backup_manifest_invalid") from None
++    if _encoded(manifest) != raw:
++        raise RecoveryError("backup_manifest_noncanonical")
++    expected = set(manifest.files)
++    validate_package_names(expected)
++    if {item.name for item in package.iterdir()} != {
++        MANIFEST,
++        MEDIA,
++        BUNDLE,
++        RESOURCES,
++        DUMP,
++    } or media_names(package) != {
++        name for name in expected if name.startswith(f"{MEDIA}/")
++    }:
++        raise RecoveryError("backup_package_has_missing_or_extra_files")
++    if (package / MEDIA / ".locks").exists():
++        raise RecoveryError("backup_package_contains_live_lock_files")
++    return manifest, raw
++
++
++def restore(
++    endpoint: Endpoint,
++    tools: NativeTools,
++    package: Path,
++    destination: Path,
++    *,
++    manifest_sha256: str,
++    host_config_sha256: str,
++) -> Manifest:
++    """Restore to externally provisioned empty PG16 and a new quarantined file root."""
++    package = private_path(package, directory=True)
++    _require_credentials_outside(endpoint, package, destination)
++    if destination.absolute().is_relative_to(package):
++        raise RecoveryError("restore_destination_must_be_outside_package")
++    manifest, _ = _check_package(package, manifest_sha256)
++    if (
++        manifest.logical_database_id != endpoint.instance_id
++        or manifest.host_config_sha256 != _digest(host_config_sha256)
++    ):
++        raise RecoveryError("restore_database_or_host_configuration_mismatch")
++    _check_media_identity(package, endpoint)
++    with pg.database(endpoint) as target:
++        target_version = pg.quiesced(target, endpoint)
++        pg.isolated_schema(target, empty=True)
++        restore_version = tools.version("pg_restore", endpoint)
++        output = create_directory(destination)
++        media = create_directory(output / MEDIA)
++        create_directory(media / ".locks")
++        for name in sorted(manifest.files):
++            restored = file_witness(
++                package / name,
++                output / name,
++                readonly=name.startswith(f"{MEDIA}/") and name != IDENTITY,
++            )
++            if restored != manifest.files[name]:
++                raise RecoveryError("backup_file_digest_mismatch")
++        _check_media_identity(output, endpoint)
++        with (
++            ledger(output / BUNDLE, freeze=False) as bundle,
++            ledger(output / RESOURCES, freeze=False) as resources,
++        ):
++            observed = ledger_versions(bundle, resources, quiesced=False)
++        if observed != (
++            manifest.bundle_version,
++            manifest.resource_version,
++            manifest.inventory_id,
++            manifest.inventory_sha256,
++        ):
++            raise RecoveryError("restored_sqlite_metadata_mismatch")
++        pg.quiesced(target, endpoint)
++        pg.isolated_schema(target, empty=True)
++        with read_private(output / DUMP) as dump:
++            tools.run(
++                "pg_restore",
++                [
++                    *endpoint.cli_args(),
++                    "--single-transaction",
++                    "--exit-on-error",
++                    "--no-owner",
++                    "--no-tablespaces",
++                ],
++                endpoint=endpoint,
++                source=dump,
++            )
++        with target.transaction():
++            pg.quiesced(target, endpoint)
++            pg.isolated_schema(target, empty=False)
++            names = pg.tables(target)
++            pg.lock_tables(target, names)
++            if pg.snapshot(target, names) != manifest.postgres_tables:
++                raise RecoveryError("restored_postgres_records_differ")
++            pg.verify_media(target, names, manifest.files)
++        sync_directory(media / ".locks")
++        sync_directory(media)
++        report = (
++            json.dumps(
++                {
++                    "schema_version": "1.0.0",
++                    "logical_database_id": str(endpoint.instance_id),
++                    "manifest_sha256": manifest_sha256,
++                    "host_config_sha256": host_config_sha256,
++                    "postgres_version": target_version,
++                    "restore_version": restore_version,
++                },
++                sort_keys=True,
++            )
++            + "\n"
++        )
++        publish_marker(output / RESTORED, report.encode("utf-8"))
++        sync_directory(output)
++        sync_directory(output.parent)
++        return manifest
+--- /dev/null
++++ b/ops/recovery/__main__.py
+@@ -0,0 +1,69 @@
++"""Run WP-07 backup or restore from the snapshot checkout."""
++
++import argparse
++import json
++from pathlib import Path
++from uuid import UUID
++
++from ops.recovery import Endpoint, NativeTools, SourceVolumes, backup, restore
++from ops.recovery.contracts import RecoveryError
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    command = parser.add_subparsers(dest="command", required=True)
++    backups = command.add_parser("backup")
++    restores = command.add_parser("restore")
++    for action in (backups, restores):
++        action.add_argument("--database", required=True)
++        action.add_argument("--port", required=True, type=int)
++        action.add_argument("--logical-id", required=True, type=UUID)
++        action.add_argument("--pgpass", required=True, type=Path)
++        action.add_argument("--host-config-sha256", required=True)
++        action.add_argument("--package", required=True, type=Path)
++        binaries = action.add_mutually_exclusive_group(required=True)
++        binaries.add_argument("--pg-bin", type=Path)
++        binaries.add_argument("--postgres-image")
++    backups.add_argument("--bundle-db", required=True, type=Path)
++    backups.add_argument("--resource-db", required=True, type=Path)
++    backups.add_argument("--media-root", required=True, type=Path)
++    restores.add_argument("--destination", required=True, type=Path)
++    restores.add_argument("--manifest-sha256", required=True)
++    args = parser.parse_args()
++    try:
++        endpoint = Endpoint(args.database, args.port, args.logical_id, args.pgpass)
++        native = NativeTools(args.pg_bin, args.postgres_image)
++        if args.command == "backup":
++            digest = backup(
++                endpoint,
++                native,
++                SourceVolumes(args.bundle_db, args.resource_db, args.media_root),
++                args.package,
++                host_config_sha256=args.host_config_sha256,
++            )
++            print(json.dumps({"manifest_sha256": digest}, sort_keys=True))
++        else:
++            manifest = restore(
++                endpoint,
++                native,
++                args.package,
++                args.destination,
++                manifest_sha256=args.manifest_sha256,
++                host_config_sha256=args.host_config_sha256,
++            )
++            print(
++                json.dumps({"logical_database_id": str(manifest.logical_database_id)})
++            )
++        return 0
++    except (RecoveryError, OSError) as error:
++        # Raw OS diagnostics may contain paths and deployment configuration.
++        code = (
++            str(error)
++            if isinstance(error, RecoveryError)
++            else "filesystem_operation_failed"
++        )
++        parser.exit(1, f"{code}\n")
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+--- /dev/null
++++ b/ops/recovery/contracts.py
+@@ -0,0 +1,45 @@
++"""Private recovery package contract."""
++
++from typing import Annotated, Literal
++from uuid import UUID
++
++from pydantic import Field
++
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.primitives import Digest
++
++MANIFEST = "manifest.json"
++DUMP = "database.dump"
++BUNDLE = "bundle-store.sqlite3"
++RESOURCES = "resource.sqlite3"
++MEDIA = "media-v1"
++IDENTITY = f"{MEDIA}/.database"
++
++
++class RecoveryError(RuntimeError):
++    """A contextual, credential-free recovery failure."""
++
++
++class FileWitness(ContractModel):
++    sha256: Digest
++    size: Annotated[int, Field(ge=0)]
++
++
++class RowWitness(ContractModel):
++    sha256: Digest
++    rows: Annotated[int, Field(ge=0)]
++
++
++class Manifest(ContractModel):
++    schema_version: Literal["1.0.0"]
++    logical_database_id: UUID
++    source_database: str
++    postgres_version: str
++    dump_version: str
++    host_config_sha256: Digest
++    bundle_version: int
++    resource_version: int
++    inventory_id: str
++    inventory_sha256: Digest
++    postgres_tables: dict[str, RowWitness]
++    files: dict[str, FileWitness]
+--- /dev/null
++++ b/ops/recovery/filesystem.py
+@@ -0,0 +1,261 @@
++"""Private paths, frozen SQLite ledgers and media copy verification."""
++
++import os
++import re
++import sqlite3
++import stat
++from collections.abc import Iterator
++from contextlib import ExitStack, closing, contextmanager
++from fcntl import LOCK_EX, LOCK_NB, flock
++from hashlib import sha256
++from pathlib import Path
++from typing import BinaryIO
++
++from jimu_runtime.workers.process_identity import HostProcessIdentity
++from ops.recovery.contracts import (
++    BUNDLE,
++    DUMP,
++    IDENTITY,
++    MEDIA,
++    RESOURCES,
++    FileWitness,
++    RecoveryError,
++)
++
++_MAX_MANIFEST = 16 * 1024 * 1024
++_MEDIA_NAME = re.compile(r"^[a-f0-9]{64}(?:\.stage)?$")
++
++
++def private_path(
++    path: Path, *, directory: bool = False, parent_protected: bool = False
++) -> Path:
++    path = path.absolute()
++    try:
++        metadata = path.lstat()
++        real = path.resolve(strict=True)
++    except OSError:
++        raise RecoveryError("private_path_unavailable") from None
++    kind = stat.S_ISDIR if directory else stat.S_ISREG
++    if (
++        real != path
++        or not kind(metadata.st_mode)
++        or metadata.st_uid != os.geteuid()
++        or (not parent_protected and metadata.st_mode & 0o077)
++        or not directory
++        and metadata.st_nlink != 1
++    ):
++        raise RecoveryError("unsafe_private_path")
++    return path
++
++
++def create_directory(path: Path) -> Path:
++    path = path.absolute()
++    try:
++        if path.parent.resolve(strict=True) != path.parent:
++            raise RecoveryError("unsafe_output_parent")
++        path.mkdir(mode=0o700)
++    except OSError:
++        raise RecoveryError("output_directory_must_be_new") from None
++    return private_path(path, directory=True)
++
++
++@contextmanager
++def read_private(path: Path, *, parent_protected: bool = False) -> Iterator[BinaryIO]:
++    if parent_protected:
++        private_path(path.parent, directory=True)
++    path = private_path(path, parent_protected=parent_protected)
++    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
++    with os.fdopen(descriptor, "rb") as content:
++        state = os.fstat(content.fileno())
++        if (
++            not stat.S_ISREG(state.st_mode)
++            or state.st_nlink != 1
++            or state.st_uid != os.geteuid()
++            or (not parent_protected and state.st_mode & 0o077)
++        ):
++            raise RecoveryError("unsafe_open_file")
++        yield content
++
++
++@contextmanager
++def new_private(path: Path) -> Iterator[BinaryIO]:
++    descriptor = os.open(
++        path, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600
++    )
++    with os.fdopen(descriptor, "wb") as content:
++        yield content
++        content.flush()
++        os.fsync(content.fileno())
++
++
++def read_manifest(path: Path) -> bytes:
++    with read_private(path) as content:
++        raw = content.read(_MAX_MANIFEST + 1)
++    if not 0 < len(raw) <= _MAX_MANIFEST:
++        raise RecoveryError("manifest_size_invalid")
++    return raw
++
++
++def file_witness(
++    source: Path,
++    destination: Path | None = None,
++    *,
++    parent_protected: bool = False,
++    readonly: bool = False,
++) -> FileWitness:
++    digest = sha256()
++    count = 0
++    with ExitStack() as context:
++        content = context.enter_context(
++            read_private(source, parent_protected=parent_protected)
++        )
++        output = (
++            None
++            if destination is None
++            else context.enter_context(new_private(destination))
++        )
++        for chunk in iter(lambda: content.read(1024 * 1024), b""):
++            digest.update(chunk)
++            count += len(chunk)
++            if output is not None:
++                output.write(chunk)
++        if output is not None and readonly:
++            os.fchmod(output.fileno(), 0o400)
++        if os.fstat(content.fileno()).st_size != count:
++            raise RecoveryError("file_changed_during_copy")
++    return FileWitness(sha256=digest.hexdigest(), size=count)
++
++
++def publish_marker(path: Path, content: bytes) -> None:
++    """Publish a complete marker without replacing a visible file."""
++    staged = path.with_name(f".{path.name}.pending")
++    with new_private(staged) as output:
++        output.write(content)
++    os.link(staged, path, follow_symlinks=False)
++    staged.unlink()
++
++
++def sync_directory(directory: Path) -> None:
++    descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
++    try:
++        os.fsync(descriptor)
++    finally:
++        os.close(descriptor)
++
++
++def media_names(root: Path, *, source: bool = False) -> set[str]:
++    media = private_path(root / MEDIA, directory=True)
++    entries: set[str] = set()
++    for child in media.iterdir():
++        if child.name == ".locks":
++            locks = private_path(child, directory=True)
++            for path in locks.iterdir():
++                if not re.fullmatch(r"[a-f0-9]{2}", path.name):
++                    raise RecoveryError("unexpected_media_lock_file")
++                private_path(path)
++        elif child.name == ".database" or _MEDIA_NAME.fullmatch(child.name):
++            private_path(child, parent_protected=source and child.name == ".database")
++            entries.add(f"{MEDIA}/{child.name}")
++        else:
++            raise RecoveryError("unexpected_media_file")
++    if IDENTITY not in entries:
++        raise RecoveryError("media_identity_missing")
++    return entries
++
++
++def validate_package_names(paths: set[str]) -> None:
++    fixed = {BUNDLE, DUMP, RESOURCES, IDENTITY}
++    if not fixed <= paths or any(
++        not item.startswith(f"{MEDIA}/")
++        or not _MEDIA_NAME.fullmatch(item.removeprefix(f"{MEDIA}/"))
++        for item in paths - fixed
++    ):
++        raise RecoveryError("manifest_contains_unsupported_paths")
++
++
++@contextmanager
++def freeze_media(root: Path) -> Iterator[None]:
++    directory = private_path(root / MEDIA / ".locks", directory=True)
++    with ExitStack() as locks:
++        for index in range(256):
++            path = directory / f"{index:02x}"
++            try:
++                fd = os.open(
++                    path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600
++                )
++                locks.callback(os.close, fd)
++                private_path(path)
++                flock(fd, LOCK_EX | LOCK_NB)
++            except OSError:
++                raise RecoveryError("media_writer_not_quiesced") from None
++        yield
++
++
++@contextmanager
++def ledger(path: Path, *, freeze: bool) -> Iterator[sqlite3.Connection]:
++    path = private_path(path)
++    if any(
++        os.path.lexists(str(path) + suffix) for suffix in ("-journal", "-wal", "-shm")
++    ):
++        raise RecoveryError("sqlite_recovery_required")
++    try:
++        with closing(
++            sqlite3.connect(
++                path.as_uri() + ("?mode=rw" if freeze else "?mode=ro"),
++                uri=True,
++                timeout=0,
++                isolation_level=None,
++            )
++        ) as connection:
++            if connection.execute("PRAGMA journal_mode").fetchone()[0] != "delete":
++                raise RecoveryError("unsupported_sqlite_journal")
++            connection.execute("BEGIN EXCLUSIVE" if freeze else "BEGIN")
++            if (
++                connection.execute("PRAGMA integrity_check").fetchall() != [("ok",)]
++                or connection.execute("PRAGMA foreign_key_check").fetchone() is not None
++            ):
++                raise RecoveryError("sqlite_integrity_failed")
++            yield connection
++    except sqlite3.Error:
++        raise RecoveryError("sqlite_ledger_unavailable_or_busy") from None
++
++
++def ledger_versions(
++    bundle: sqlite3.Connection,
++    resources: sqlite3.Connection,
++    *,
++    quiesced: bool,
++) -> tuple[int, int, str, str]:
++    bundle_version = bundle.execute("PRAGMA user_version").fetchone()[0]
++    tables = {
++        row[0]
++        for row in bundle.execute("SELECT name FROM sqlite_schema WHERE type='table'")
++    }
++    if (
++        bundle_version != 1
++        or not {"archives", "bundle_identities", "release_ledger"} <= tables
++    ):
++        raise RecoveryError("invalid_bundle_ledger")
++    rows = resources.execute(
++        "SELECT schema_version, inventory_id, fingerprint FROM inventory WHERE singleton=1"
++    ).fetchall()
++    if (
++        len(rows) != 1
++        or rows[0][0] != 4
++        or not rows[0][1]
++        or not re.fullmatch(r"[a-f0-9]{64}", rows[0][2])
++    ):
++        raise RecoveryError("invalid_resource_ledger")
++    if quiesced:
++        identity = HostProcessIdentity.current()
++        leases = resources.execute(
++            """SELECT boot_id, pid_namespace, pid, process_start FROM leases
++               WHERE pid IS NOT NULL AND tree_reaped = 0"""
++        )
++        for boot, namespace, pid, started in leases:
++            if started is None or not identity.process_exited(
++                boot, namespace, pid, started
++            ):
++                raise RecoveryError("worker_process_not_quiesced")
++    version, inventory, fingerprint = rows[0]
++    return bundle_version, version, inventory, fingerprint
+--- /dev/null
++++ b/ops/recovery/postgres.py
+@@ -0,0 +1,354 @@
++"""Verify a fenced PostgreSQL 16 database and run its native archive tools."""
++
++import os
++import re
++import subprocess
++from collections.abc import Iterator
++from contextlib import contextmanager
++from dataclasses import dataclass
++from hashlib import sha256
++from pathlib import Path
++from tempfile import TemporaryFile
++from typing import BinaryIO, TypedDict
++from uuid import UUID
++
++import psycopg
++from psycopg import sql
++
++from jimu_runtime.workflow.postgres import (
++    WORKFLOW_APP_ROLE,
++    WORKFLOW_OWNER_ROLE,
++    WORKFLOW_SCHEMA,
++)
++from ops.recovery.contracts import MEDIA, FileWitness, RecoveryError, RowWitness
++from ops.recovery.filesystem import private_path
++
++
++class _ConnectionArgs(TypedDict):
++    host: str
++    hostaddr: str
++    port: str
++    dbname: str
++    user: str
++    passfile: str
++    connect_timeout: str
++    sslmode: str
++
++
++@dataclass(frozen=True, slots=True)
++class Endpoint:
++    database: str
++    port: int
++    instance_id: UUID
++    passfile: Path
++
++    def __post_init__(self) -> None:
++        if (
++            not re.fullmatch(r"[a-z][a-z0-9_]{0,62}", self.database)
++            or self.database
++            in {
++                "postgres",
++                "template0",
++                "template1",
++            }
++            or type(self.port) is not int
++            or not 1 <= self.port <= 65535
++        ):
++            raise RecoveryError("invalid_isolated_database_endpoint")
++
++    @property
++    def comment(self) -> str:
++        return f"jimu-workflow-instance:{self.instance_id}"
++
++    def library_args(self) -> _ConnectionArgs:
++        return {
++            "host": "127.0.0.1",
++            "hostaddr": "127.0.0.1",
++            "port": str(self.port),
++            "dbname": self.database,
++            "user": WORKFLOW_OWNER_ROLE,
++            "passfile": str(private_path(self.passfile)),
++            "connect_timeout": "5",
++            "sslmode": "disable",
++        }
++
++    def cli_args(self) -> list[str]:
++        return [
++            "--host",
++            "127.0.0.1",
++            "--port",
++            str(self.port),
++            "--username",
++            WORKFLOW_OWNER_ROLE,
++            "--dbname",
++            self.database,
++            "--no-password",
++        ]
++
++
++@dataclass(frozen=True, slots=True)
++class NativeTools:
++    directory: Path | None = None
++    image: str | None = None
++
++    def __post_init__(self) -> None:
++        if (self.directory is None) == (self.image is None):
++            raise RecoveryError("exactly_one_postgres_tool_source_required")
++        if self.image is not None and not re.fullmatch(
++            r"sha256:[a-f0-9]{64}", self.image
++        ):
++            raise RecoveryError("postgres_image_digest_required")
++
++    def run(
++        self,
++        executable: str,
++        arguments: list[str],
++        *,
++        endpoint: Endpoint,
++        source: BinaryIO | None = None,
++        output: BinaryIO | None = None,
++    ) -> bytes:
++        if executable not in {"pg_dump", "pg_restore"}:
++            raise RecoveryError("unsupported_postgres_command")
++        password = private_path(endpoint.passfile)
++        env = {
++            "PATH": os.defpath,
++            "LC_ALL": "C",
++            "PGSSLMODE": "disable",
++            "PGCONNECT_TIMEOUT": "5",
++        }
++        if self.directory is not None:
++            command = [str((self.directory / executable).absolute())]
++            env["PGPASSFILE"] = str(password)
++        else:
++            assert self.image is not None
++            if any(character in str(password) for character in ",\r\n"):
++                raise RecoveryError("unsafe_pgpass_mount_path")
++            command = [
++                "/usr/bin/docker",
++                "--host",
++                "unix:///var/run/docker.sock",
++                "run",
++                "--rm",
++                "--pull=never",
++                "--network=host",
++                "--user",
++                f"{os.geteuid()}:{os.getegid()}",
++                "--mount",
++                f"type=bind,source={password},target=/run/pgpass,readonly",
++                "--env",
++                "PGPASSFILE=/run/pgpass",
++                "--env",
++                "PGCONNECT_TIMEOUT=5",
++                "--env",
++                "PGSSLMODE=disable",
++                *([] if source is None else ["-i"]),
++                self.image,
++                executable,
++            ]
++        try:
++            with TemporaryFile() as stderr:
++                result = subprocess.run(
++                    [*command, *arguments],
++                    stdin=source if source is not None else subprocess.DEVNULL,
++                    stdout=output if output is not None else subprocess.PIPE,
++                    stderr=stderr,
++                    env=env,
++                    timeout=300,
++                    check=False,
++                )
++        except (OSError, subprocess.TimeoutExpired):
++            raise RecoveryError(f"{executable}_unavailable") from None
++        if result.returncode:
++            # PostgreSQL diagnostics can contain data or deployment identifiers.
++            raise RecoveryError(f"{executable}_failed_exit_{result.returncode}")
++        return result.stdout or b""
++
++    def version(self, executable: str, endpoint: Endpoint) -> str:
++        raw = self.run(executable, ["--version"], endpoint=endpoint)
++        text = raw.decode("ascii", errors="replace").strip()
++        if not re.match(rf"^{executable} \(PostgreSQL\) 16(?:\.|\s|$)", text):
++            raise RecoveryError("postgres_16_tools_required")
++        return text
++
++
++def quiesced(connection: psycopg.Connection, endpoint: Endpoint) -> str:
++    connection.execute("SELECT pg_catalog.pg_stat_clear_snapshot()")
++    row = connection.execute(
++        """
++        SELECT current_database(), current_user, session_user, pg_get_userbyid(d.datdba),
++               shobj_description(d.oid, 'pg_database'), current_setting('server_version'),
++               current_setting('server_version_num')::int,
++               owner.rolcanlogin AND NOT (owner.rolsuper OR owner.rolcreatedb OR owner.rolcreaterole
++                   OR owner.rolreplication OR owner.rolbypassrls),
++               app.rolcanlogin AND NOT (app.rolsuper OR app.rolcreatedb OR app.rolcreaterole
++                   OR app.rolreplication OR app.rolbypassrls)
++                   AND NOT pg_has_role(app.oid, owner.oid, 'MEMBER')
++        FROM pg_catalog.pg_database d
++        JOIN pg_catalog.pg_roles owner ON owner.oid = d.datdba
++        JOIN pg_catalog.pg_roles app ON app.rolname = %s
++        WHERE d.datname = current_database()
++        """,
++        (WORKFLOW_APP_ROLE,),
++    ).fetchone()
++    if (
++        row is None
++        or row[:5]
++        != (
++            endpoint.database,
++            WORKFLOW_OWNER_ROLE,
++            WORKFLOW_OWNER_ROLE,
++            WORKFLOW_OWNER_ROLE,
++            endpoint.comment,
++        )
++        or not 160000 <= row[6] < 170000
++        or row[7:] != (True, True)
++    ):
++        raise RecoveryError("unverified_pg16_database_owner_or_identity")
++    connected_or_enabled = connection.execute(
++        """
++        SELECT EXISTS (
++            SELECT 1 FROM pg_catalog.pg_stat_activity
++            WHERE datname=current_database() AND pid <> pg_backend_pid()
++        ) OR EXISTS (
++            SELECT 1 FROM pg_catalog.pg_roles
++            WHERE rolcanlogin AND NOT rolsuper AND rolname <> current_user
++                AND has_database_privilege(oid, current_database(), 'CONNECT')
++        ) OR EXISTS (
++            SELECT 1 FROM pg_catalog.pg_prepared_xacts WHERE database=current_database()
++        )
++        """
++    ).fetchone()
++    if connected_or_enabled != (False,):
++        raise RecoveryError("postgres_writers_not_quiesced")
++    return str(row[5])
++
++
++@contextmanager
++def database(endpoint: Endpoint) -> Iterator[psycopg.Connection]:
++    try:
++        with psycopg.connect(**endpoint.library_args(), autocommit=True) as connection:
++            connection.execute("SET search_path TO pg_catalog")
++            connection.execute("SET statement_timeout TO '300s'")
++            connection.execute("SET lock_timeout TO '5s'")
++            connection.execute("SET TIME ZONE 'UTC'")
++            connection.execute("SET DateStyle TO 'ISO, YMD'")
++            connection.execute("SET bytea_output TO 'hex'")
++            yield connection
++    except psycopg.Error:
++        raise RecoveryError("postgres_query_failed") from None
++
++
++def isolated_schema(connection: psycopg.Connection, *, empty: bool) -> None:
++    found = {
++        row[0]
++        for row in connection.execute("""
++            SELECT nspname FROM pg_catalog.pg_namespace
++            WHERE nspname <> 'public' AND nspname <> 'information_schema'
++                AND nspname !~ '^pg_'
++        """)
++    }
++    if found != (set() if empty else {WORKFLOW_SCHEMA}) or connection.execute("""
++        SELECT EXISTS (
++            SELECT 1 FROM pg_catalog.pg_class WHERE relnamespace='public'::regnamespace
++        ) OR EXISTS (
++            SELECT 1 FROM pg_catalog.pg_proc WHERE pronamespace='public'::regnamespace
++        ) OR EXISTS (
++            SELECT 1 FROM pg_catalog.pg_type WHERE typnamespace='public'::regnamespace
++        ) OR EXISTS (
++            SELECT 1 FROM pg_catalog.pg_extension WHERE extname <> 'plpgsql'
++        ) OR EXISTS (SELECT 1 FROM pg_catalog.pg_largeobject_metadata)
++    """).fetchone() != (False,):
++        raise RecoveryError(
++            "target_database_not_empty"
++            if empty
++            else "unsupported_source_database_objects"
++        )
++
++
++def tables(connection: psycopg.Connection) -> tuple[str, ...]:
++    rows = connection.execute(
++        """
++        SELECT c.relname, pg_get_userbyid(c.relowner)
++        FROM pg_catalog.pg_class c
++        JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
++        WHERE n.nspname=%s AND c.relkind IN ('r','p','m','f')
++        ORDER BY c.relname COLLATE "C"
++    """,
++        (WORKFLOW_SCHEMA,),
++    ).fetchall()
++    if any(owner != WORKFLOW_OWNER_ROLE for _, owner in rows):
++        raise RecoveryError("postgres_table_owner_mismatch")
++    names = tuple(str(name) for name, _ in rows)
++    if not {
++        "schema_migrations",
++        "tasks",
++        "executions",
++        "jobs",
++        "execution_finalizations",
++        "dispatch_intents",
++        "original_media",
++        "dispatch_media",
++    } <= set(names):
++        raise RecoveryError("expected_workflow_tables_missing")
++    if connection.execute(
++        """
++        SELECT has_schema_privilege(%s,'jimu_workflow','USAGE')
++           AND has_table_privilege(%s,'jimu_workflow.tasks','SELECT')
++           AND NOT has_schema_privilege(%s,'jimu_workflow','CREATE')
++    """,
++        (WORKFLOW_APP_ROLE,) * 3,
++    ).fetchone() != (True,):
++        raise RecoveryError("postgres_runtime_permissions_mismatch")
++    return names
++
++
++def lock_tables(connection: psycopg.Connection, names: tuple[str, ...]) -> None:
++    connection.execute(
++        sql.SQL("LOCK TABLE {} IN SHARE MODE NOWAIT").format(
++            sql.SQL(", ").join(sql.Identifier(WORKFLOW_SCHEMA, name) for name in names)
++        )
++    )
++
++
++def snapshot(
++    connection: psycopg.Connection, names: tuple[str, ...]
++) -> dict[str, RowWitness]:
++    result = {}
++    for name in names:
++        digest, count = sha256(), 0
++        with connection.cursor(name="recovery_witness") as cursor:
++            cursor.execute(
++                sql.SQL("""
++                    SELECT encode(sha256(convert_to(to_jsonb(t)::text, 'UTF8')), 'hex') COLLATE "C" AS row_digest
++                    FROM {} t ORDER BY row_digest
++                """).format(sql.Identifier(WORKFLOW_SCHEMA, name))
++            )
++            for (value,) in cursor:
++                digest.update(bytes.fromhex(value))
++                count += 1
++        result[name] = RowWitness(rows=count, sha256=digest.hexdigest())
++    return result
++
++
++def verify_media(
++    connection: psycopg.Connection,
++    names: tuple[str, ...],
++    files: dict[str, FileWitness],
++) -> None:
++    queries = [
++        """SELECT file_key, record -> 'media_ref' ->> 'sha256', (record ->> 'byte_size')::bigint
++           FROM jimu_workflow.original_media""",
++        "SELECT file_key, content_sha256, byte_size FROM jimu_workflow.dispatch_media",
++    ]
++    if "observation_request_media" in names:
++        queries.append(
++            "SELECT file_key, content_sha256, byte_size FROM jimu_workflow.observation_request_media"
++        )
++    for query in queries:
++        with connection.cursor(name="recovery_media") as cursor:
++            cursor.execute(sql.SQL(query))
++            for key, digest, size in cursor:
++                asset = files.get(f"{MEDIA}/{key}")
++                if asset is None or (asset.sha256, asset.size) != (digest, size):
++                    raise RecoveryError("committed_media_file_missing_or_changed")
+--- /dev/null
++++ b/tests/contract/test_wp07_recovery.py
+@@ -0,0 +1,302 @@
++"""Exercise native backup and restore to separate private PostgreSQL 16 instances."""
++
++import asyncio
++import json
++import sqlite3
++from fcntl import LOCK_EX, flock
++from hashlib import sha256
++from pathlib import Path
++from shutil import copytree
++
++import psycopg
++import pytest
++from psycopg import sql
++
++from jimu_runtime.domain.policies import CPUResourceRequirements
++from jimu_runtime.domain.runtime.media import ImageDimensions, MediaRef
++from jimu_runtime.inspection.media import LocalMediaStore
++from jimu_runtime.workers.resource_inventory import HostInventory, ResourceScope
++from jimu_runtime.workers.resources import ResourceAdmission
++from jimu_runtime.workflow.postgres import (
++    WORKFLOW_APP_ROLE,
++    apply_migrations,
++    create_postgres_engine,
++)
++from jimu_runtime.workflow.worker import WorkerStep, WorkflowWorker
++from ops.recovery import Endpoint, NativeTools, SourceVolumes, backup, restore
++from ops.recovery.contracts import BUNDLE, MANIFEST, RESOURCES, RecoveryError
++from tests.fixtures.wp03.postgres.support import POSTGRES_IMAGE, isolated_postgres
++from tests.fixtures.wp03.worker.support import (
++    LIMITS,
++    accepted_worker,
++)
++
++_CONFIG = sha256(b"approved isolated fixture configuration revision").hexdigest()
++_IMAGE = Path(
++    "examples/nonmotor_vehicle_illegal_parking/compilable/assets/synthetic-frame.png"
++)
++
++
++def _owner(pg):
++    url = pg.migration_url
++    return psycopg.connect(
++        host="127.0.0.1",
++        port=url.port,
++        dbname=url.database,
++        user=url.username,
++        password=url.password,
++        connect_timeout=5,
++        autocommit=True,
++    )
++
++
++def _endpoint(pg, password_file, identity=None):
++    url = pg.migration_url
++    password_file.write_text(
++        f"127.0.0.1:{url.port}:{url.database}:{url.username}:{url.password}\n",
++        encoding="ascii",
++    )
++    password_file.chmod(0o600)
++    return Endpoint(
++        url.database, url.port, identity or pg.target.instance_id, password_file
++    )
++
++
++def _fence(pg, *, on):
++    with _owner(pg) as owner:
++        oc = (
++            sql.SQL("REVOKE CONNECT ON DATABASE {} FROM {}")
++            if on
++            else sql.SQL("GRANT CONNECT ON DATABASE {} TO {}")
++        )
++        owner.execute(
++            oc.format(
++                sql.Identifier(pg.target.database), sql.Identifier(WORKFLOW_APP_ROLE)
++            )
++        )
++
++
++async def _seed(pg, source: Path, media_root: Path):
++    owner = create_postgres_engine(pg.migration_url)
++    app = create_postgres_engine(pg.application_url)
++    try:
++        versions = await apply_migrations(owner, pg.target)
++        assert 7 in versions
++        worker, accepted, host = await accepted_worker(app, source)
++        scope, eid = accepted.task.idempotency_scope, accepted.execution.execution_id
++        steps = tuple(
++            [
++                await worker.run_once(scope, eid, owner="recovery-seed", lease_ms=2000)
++                for _ in range(14)
++            ]
++        )
++        assert WorkerStep.FINALIZED in steps
++        finalization = await worker.read_finalization(scope, eid)
++        assert finalization is not None and finalization.decisions
++        raw = _IMAGE.read_bytes()
++        media_ref = MediaRef(
++            media_id="physical-recovery-original", sha256=sha256(raw).hexdigest()
++        )
++        media = LocalMediaStore(media_root, app)
++        asset = await media.publish_original(
++            scope,
++            media_ref,
++            mime_type="image/png",
++            dimensions=ImageDimensions(width=64, height=48),
++            content=raw,
++        )
++        return accepted, host, finalization, asset, raw
++    finally:
++        await owner.dispose()
++        await app.dispose()
++
++
++async def _verify(pg, target, accepted, host, expected, asset, raw):
++    app = create_postgres_engine(pg.application_url)
++    try:
++        from jimu_runtime.bundle.store import LocalBundleStore
++        from tests.fixtures.wp03.worker.support import manager_for
++
++        store = LocalBundleStore(target)
++        manager = manager_for(store, host.release_host)
++        assert manager.get_release(accepted.task.release_id) is not None
++        worker = WorkflowWorker(app, manager, store, host=host, bundle_limits=LIMITS)
++        final = await worker.read_finalization(
++            accepted.task.idempotency_scope,
++            accepted.execution.execution_id,
++        )
++        assert final == expected
++        verified = await LocalMediaStore(target, app).read_original(
++            accepted.task.idempotency_scope, asset.media_ref
++        )
++        assert verified.asset == asset and verified.content == raw
++    finally:
++        await app.dispose()
++
++
++def test_recovery_round_trip_preserves_decision_original_release_and_lease(tmp_path):
++    with isolated_postgres() as original, isolated_postgres() as fresh:
++        source = tmp_path / "source"
++        source.mkdir(mode=0o700)
++        media_root = source / "media"
++        accepted, host, final, asset, raw = asyncio.run(
++            _seed(original, source, media_root)
++        )
++        inventory = HostInventory(
++            "recovery.host",
++            lease_ttl_ms=5000,
++            cpu_slots=1,
++            scopes=(ResourceScope("recovery.cpu", "cpu", 1),),
++        )
++        resources_path = source / RESOURCES
++        resources = ResourceAdmission.provision(resources_path, inventory)
++        lease = resources.reserve(
++            CPUResourceRequirements(
++                policy_kind="resource_requirements",
++                resource_class="cpu",
++                max_concurrency=1,
++                timeout_ms=1000,
++                input_byte_limit=2048,
++                output_byte_limit=2048,
++            ),
++            "recovery.cpu",
++            owner_id="recovery.suspended",
++        )
++        views = SourceVolumes(source / "ledger" / BUNDLE, resources_path, media_root)
++        package, target = tmp_path / "package", tmp_path / "restored"
++        dump = NativeTools(image=POSTGRES_IMAGE)
++        source_endpoint = _endpoint(original, tmp_path / "source.pgpass")
++        with pytest.raises(RecoveryError, match="postgres_writers_not_quiesced"):
++            backup(source_endpoint, dump, views, package, host_config_sha256=_CONFIG)
++        assert not package.exists()
++        _fence(original, on=True)
++        with _owner(original):
++            with pytest.raises(RecoveryError, match="postgres_writers_not_quiesced"):
++                backup(
++                    source_endpoint, dump, views, package, host_config_sha256=_CONFIG
++                )
++        with sqlite3.connect(resources_path) as occupied:
++            occupied.execute("BEGIN IMMEDIATE")
++            with pytest.raises(
++                RecoveryError, match="sqlite_ledger_unavailable_or_busy"
++            ):
++                backup(
++                    source_endpoint, dump, views, package, host_config_sha256=_CONFIG
++                )
++        shard = media_root / "media-v1" / ".locks" / "00"
++        with shard.open("r+b") as held:
++            flock(held.fileno(), LOCK_EX)
++            with pytest.raises(RecoveryError, match="media_writer_not_quiesced"):
++                backup(
++                    source_endpoint, dump, views, package, host_config_sha256=_CONFIG
++                )
++        assert not package.exists()
++        manifest_sha = backup(
++            source_endpoint, dump, views, package, host_config_sha256=_CONFIG
++        )
++        observed = json.loads((package / MANIFEST).read_bytes())
++        assert observed["source_database"] == original.target.database
++        assert observed["postgres_tables"]["execution_finalizations"]["rows"] == 1
++        assert observed["postgres_tables"]["original_media"]["rows"] == 1
++        with _owner(fresh) as owner:
++            owner.execute(
++                sql.SQL("COMMENT ON DATABASE {} IS {}").format(
++                    sql.Identifier(fresh.target.database),
++                    sql.Literal(original.target.database_comment),
++                )
++            )
++        _fence(fresh, on=True)
++        target_endpoint = _endpoint(
++            fresh, tmp_path / "target.pgpass", original.target.instance_id
++        )
++        with pytest.raises(RecoveryError, match="backup_manifest_digest_mismatch"):
++            restore(
++                target_endpoint,
++                dump,
++                package,
++                target,
++                manifest_sha256="0" * 64,
++                host_config_sha256=_CONFIG,
++            )
++        with pytest.raises(RecoveryError, match="configuration_mismatch"):
++            restore(
++                target_endpoint,
++                dump,
++                package,
++                target,
++                manifest_sha256=manifest_sha,
++                host_config_sha256="0" * 64,
++            )
++        existing = tmp_path / "existing"
++        existing.mkdir(mode=0o700)
++        with pytest.raises(RecoveryError, match="output_directory_must_be_new"):
++            restore(
++                target_endpoint,
++                dump,
++                package,
++                existing,
++                manifest_sha256=manifest_sha,
++                host_config_sha256=_CONFIG,
++            )
++        tampered = copytree(package, tmp_path / "tampered")
++        with (tampered / RESOURCES).open("ab") as ledger:
++            ledger.write(b"changed")
++        rejected = tmp_path / "rejected-tampered"
++        with pytest.raises(RecoveryError, match="backup_file_digest_mismatch"):
++            restore(
++                target_endpoint,
++                dump,
++                tampered,
++                rejected,
++                manifest_sha256=manifest_sha,
++                host_config_sha256=_CONFIG,
++            )
++        assert not (rejected / "restore-verified.json").exists()
++        with _owner(fresh) as owner:
++            assert owner.execute(
++                "SELECT to_regnamespace('jimu_workflow') IS NULL"
++            ).fetchone() == (True,)
++        forged = copytree(package, tmp_path / "traversal")
++        malformed = json.loads((forged / MANIFEST).read_bytes())
++        malformed["files"]["../outside"] = {"sha256": "0" * 64, "size": 0}
++        manifest_bytes = (
++            json.dumps(malformed, separators=(",", ":"), sort_keys=True) + "\n"
++        ).encode()
++        (forged / MANIFEST).write_bytes(manifest_bytes)
++        with pytest.raises(RecoveryError, match="manifest_contains_unsupported_paths"):
++            restore(
++                target_endpoint,
++                dump,
++                forged,
++                tmp_path / "rejected-traversal",
++                manifest_sha256=sha256(manifest_bytes).hexdigest(),
++                host_config_sha256=_CONFIG,
++            )
++        witness = restore(
++            target_endpoint,
++            dump,
++            package,
++            target,
++            manifest_sha256=manifest_sha,
++            host_config_sha256=_CONFIG,
++        )
++        assert witness.logical_database_id == original.target.instance_id
++        assert (target / "restore-verified.json").exists()
++        assert (target / asset.storage.object_key).stat().st_mode & 0o777 == 0o400
++        assert (target / "media-v1" / ".database").stat().st_mode & 0o777 == 0o600
++        with sqlite3.connect(target / RESOURCES) as restored:
++            assert restored.execute(
++                "SELECT lease_id, owner_id, owner_generation FROM leases",
++            ).fetchall() == [(lease.lease_id, lease.owner_id, lease.owner_generation)]
++        ResourceAdmission(target / RESOURCES, inventory)
++        with pytest.raises(RecoveryError, match="target_database_not_empty"):
++            restore(
++                target_endpoint,
++                dump,
++                package,
++                tmp_path / "again",
++                manifest_sha256=manifest_sha,
++                host_config_sha256=_CONFIG,
++            )
++        _fence(fresh, on=False)
++        asyncio.run(_verify(fresh, target, accepted, host, final, asset, raw))

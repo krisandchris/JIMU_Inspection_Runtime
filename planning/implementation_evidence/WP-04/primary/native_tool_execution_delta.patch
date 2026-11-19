@@ -1,0 +1,3118 @@
+--- /dev/null
++++ b/src/jimu_runtime/tools/executor.py
+@@ -0,0 +1,1628 @@
++"""Execute one pinned Tool origin and return immutable invocation candidates."""
++
++import asyncio
++import json
++from collections.abc import Awaitable, Callable, Mapping, Sequence
++from dataclasses import dataclass, replace
++from datetime import UTC, datetime, timedelta
++from hashlib import sha256
++from math import isfinite
++from typing import NoReturn
++
++from pydantic import TypeAdapter
++
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.bundle.trust import TrustPin
++from jimu_runtime.domain.definition_enums import (
++    EvidenceType,
++    FactScope,
++    ProducerCardinality,
++    ProducerKind,
++)
++from jimu_runtime.domain.definitions.capabilities import (
++    ProfileDefinition,
++    ToolGroundingBinding,
++)
++from jimu_runtime.domain.definitions.tools import (
++    ToolDefinition,
++    ToolPlanDefinition,
++    ToolStep,
++)
++from jimu_runtime.domain.enums import (
++    ArtifactKind,
++    AttemptStatus,
++    ExecutionStatus,
++    FactStatus,
++    NodeRunStatus,
++    RuntimeRecordKind,
++)
++from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
++from jimu_runtime.domain.fact_selectors import ProducerCatalogueContentRef
++from jimu_runtime.domain.nodes.envelopes import NodeInputEnvelope
++from jimu_runtime.domain.nodes.grounding import GroundingInput
++from jimu_runtime.domain.nodes.tool_execution import ToolNodeInput, ToolNodeOutput
++from jimu_runtime.domain.policies import (
++    EvidencePolicy,
++    EvidencePolicyArtifact,
++    ResourceRequirements,
++    ResourceRequirementsArtifact,
++    ToolExecutionPolicy,
++    ToolExecutionPolicyArtifact,
++)
++from jimu_runtime.domain.primitives import Digest
++from jimu_runtime.domain.producers import (
++    FactProducerDeclaration,
++    ProducerCatalogue,
++    ToolStepProducer,
++)
++from jimu_runtime.domain.runtime.evidence import (
++    DerivedImageEvidence,
++    EvidenceAsset,
++    ObjectEvidenceScope,
++    OriginalImageEvidence,
++    TaskEvidenceAccess,
++)
++from jimu_runtime.domain.runtime.executions import (
++    Attempt,
++    ConfiguredToolPin,
++    ExecutionRecord,
++    NodeRun,
++)
++from jimu_runtime.domain.runtime.facts import (
++    ApplicabilityBasisRef,
++    AttemptRef,
++    EvidenceRef,
++    FactDiagnostic,
++    FactErrorReason,
++    FactNotApplicableReason,
++    FactReason,
++    FactRecord,
++    FactRef,
++    NodeRunRef,
++    ObjectRef,
++    ProfileContentRef,
++    ToolExecutionRef,
++)
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.runtime.media import (
++    BBoxXYXY,
++    CoordinateSystem,
++    FinalizedAsset,
++    MediaAsset,
++)
++from jimu_runtime.domain.runtime.perception import ObjectRecord
++from jimu_runtime.domain.runtime.tool_executions import (
++    FailedToolAttempt,
++    FailedToolResult,
++    GroundingBindingOrigin,
++    KnownToolOutputState,
++    NonKnownToolOutputState,
++    ReturnedToolAttempt,
++    ToolArtifactRecordRef,
++    ToolArtifactRef,
++    ToolArtifactRefs,
++    ToolAttemptResult,
++    ToolAuthorityObservation,
++    ToolError,
++    ToolExecution,
++    ToolInvocationOrigin,
++    ToolOutputState,
++    ToolPlanStepOrigin,
++    ToolResourceUsage,
++    ToolResult,
++    UndispatchedToolAttempt,
++)
++from jimu_runtime.domain.schema_types import (
++    RawDtoSchemaDescriptor,
++    ToolInputRecordDescriptor,
++    ToolResultSchemaDescriptor,
++    TypedValueSchemaDescriptor,
++)
++from jimu_runtime.domain.tool_outputs import ToolFactOutputDeclaration
++from jimu_runtime.domain.validation.authority_inputs import (
++    AttemptDescriptor,
++    EmittedOutput,
++    MappedOutputResult,
++    NodeRunDescriptor,
++    ObjectDescriptor,
++    OptionalAbsentOutput,
++)
++from jimu_runtime.domain.validation.definition_inputs import (
++    ProfileRegistration,
++    ToolPlanRegistration,
++)
++from jimu_runtime.domain.validation.invocations import validate_tool_execution
++from jimu_runtime.domain.validation.issues import ValidationIssue
++from jimu_runtime.domain.validation.schema_descriptors import resolve_descriptor
++from jimu_runtime.domain.validation.tool_plans import ToolRegistration
++from jimu_runtime.domain.values import (
++    ListTypeDefinition,
++    NumberValue,
++    RecordTypeDefinition,
++    RecordValue,
++    TypeDefinition,
++    Value,
++    validate_typed_value,
++)
++from jimu_runtime.tools.audit import (
++    TOOL_INVALID_OUTPUT_CODE,
++    TOOL_INVALID_OUTPUT_DIAGNOSTIC,
++    TOOL_NON_KNOWN_DIAGNOSTIC,
++    TOOL_REPORTED_DIAGNOSTIC_CODE,
++    TOOL_REPORTED_FAILURE_CODE,
++    TOOL_UNVERIFIED_VERSION_DIAGNOSTIC,
++    TOOL_VALIDATION_DIAGNOSTIC,
++)
++from jimu_runtime.tools.registry import (
++    BeforeDispatch,
++    ToolDispatch,
++    ToolWorkerFailure,
++    ToolWorkerRegistry,
++    ToolWorkerResponse,
++)
++from jimu_runtime.workers.resources import ResourceLease
++from jimu_runtime.workflow.pins import ResolvedExecutionPins
++
++K = RuntimeRecordKind
++_RESULT = TypeAdapter[ToolResult](ToolResult)
++_FACT = TypeAdapter[FactRecord](FactRecord)
++_RESOURCES = TypeAdapter[ResourceRequirements](ResourceRequirements)
++_MAX_JSON_DEPTH = 32
++
++
++@dataclass(frozen=True, slots=True)
++class GroundingCall:
++    inputs: GroundingInput
++    profile_ref: ProfileContentRef
++
++
++@dataclass(frozen=True, slots=True)
++class PlanStepCall:
++    inputs: ToolNodeInput
++    step_id: str
++
++
++type ToolCall = GroundingCall | PlanStepCall
++type Clock = Callable[[], datetime]
++type RecordResponse = Callable[[ToolDispatch, bytes], Awaitable[EvidenceAsset | None]]
++
++
++@dataclass(frozen=True, slots=True)
++class ToolCallResult:
++    execution: ToolExecution
++    facts: tuple[FactRecord, ...]
++    evidence: tuple[EvidenceAsset, ...]
++    nested_invocations: tuple[ModelInvocation, ...] = ()
++    retryable: bool = False
++    response_digest: Digest | None = None
++    response_byte_count: int | None = None
++    request_digest: Digest | None = None
++
++
++@dataclass(frozen=True, slots=True)
++class _Site:
++    profile: ProfileRegistration
++    tool: ToolRegistration
++    origin: ToolInvocationOrigin
++    coordinates: CoordinateSystem
++    object_record: ObjectRecord | None = None
++    plan: ToolPlanRegistration | None = None
++    step: ToolStep | None = None
++    producer_catalogue_ref: ProducerCatalogueContentRef | None = None
++    producer_catalogue: ProducerCatalogue | None = None
++    producers: tuple[FactProducerDeclaration, ...] = ()
++
++    @property
++    def profile_ref(self) -> ProfileContentRef:
++        return ProfileContentRef.model_validate(self.profile.ref.model_dump())
++
++    @property
++    def object_ref(self) -> ObjectRef | None:
++        if self.object_record is None:
++            return None
++        return ObjectRef(record_kind=K.OBJECT, record_id=self.object_record.object_id)
++
++
++def _now() -> datetime:
++    return datetime.now(UTC)
++
++
++def _associate(
++    resolved: ResolvedExecutionPins,
++    execution: ExecutionRecord,
++    node: NodeRun,
++    attempt: Attempt,
++    envelope: NodeInputEnvelope,
++) -> None:
++    if (
++        resolved.pins != execution.pins
++        or envelope.execution_id != execution.execution_id
++        or (envelope.task_id, envelope.release_id, envelope.bundle_digest)
++        != (execution.task_id, resolved.pins.release_id, resolved.pins.bundle_digest)
++        or (envelope.node_run_id, envelope.node_id, envelope.attempt_id)
++        != (node.node_run_id, node.node_id, attempt.attempt_id)
++        or envelope.node_config_ref.stable_json() != node.config_ref.stable_json()
++        or envelope.trace != node.trace
++        or node.trace.trace_id != execution.trace.trace_id
++        or envelope.upstream_artifacts != node.upstream_inputs
++        or not attempt.belongs_to_node(node)
++        or execution.status is not ExecutionStatus.RUNNING
++        or node.status is not NodeRunStatus.RUNNING
++        or attempt.status is not AttemptStatus.RUNNING
++        or not node.attempt_history
++        or (
++            node.attempt_history[-1].attempt_ref.record_id,
++            node.attempt_history[-1].attempt_number,
++        )
++        != (attempt.attempt_id, attempt.attempt_number)
++    ):
++        raise ValueError("Tool call requires the exact live pinned node Attempt")
++
++
++def _site(resolved: ResolvedExecutionPins, call: ToolCall, media: MediaAsset) -> _Site:
++    catalog = resolved.catalogue
++    if isinstance(call, GroundingCall):
++        profile_ref = call.profile_ref
++        profile = require_definition(catalog, profile_ref, ProfileDefinition)
++        binding = profile.grounding_binding
++        if (
++            not isinstance(binding, ToolGroundingBinding)
++            or not any(
++                item.hit.profile_ref == profile_ref
++                and item.grounding_binding == binding
++                for item in call.inputs.profiles
++            )
++            or call.inputs.original_media_ref != media.media_ref
++        ):
++            raise ValueError(
++                "N03 Tool must use the exact Profile hit, binding and media"
++            )
++        coordinates = call.inputs.original_coordinate_system
++        tool_ref = binding.tool_ref
++        site = _Site(
++            profile=ProfileRegistration.model_validate(
++                {
++                    "registration_kind": "profile",
++                    "ref": profile_ref.model_dump(),
++                    "definition": profile,
++                }
++            ),
++            tool=ToolRegistration(
++                ref=tool_ref,
++                definition=require_definition(catalog, tool_ref, ToolDefinition),
++            ),
++            origin=GroundingBindingOrigin(
++                kind="grounding_binding", node_id="N03", grounding_binding=binding
++            ),
++            coordinates=coordinates,
++        )
++    else:
++        inputs, obj = call.inputs, call.inputs.object_record
++        profile_ref = obj.profile_ref
++        profile = require_definition(catalog, profile_ref, ProfileDefinition)
++        plan = require_definition(catalog, inputs.tool_plan_ref, ToolPlanDefinition)
++        inputs.check_plan(profile, plan)
++        step = next((step for step in plan.steps if step.step_id == call.step_id), None)
++        if step is None or obj.source_media_ref != media.media_ref:
++            raise ValueError("N05 Tool must use the exact bound step and media")
++        (producer_entry,) = catalog.of_kind(ArtifactKind.FACT_PRODUCER_CATALOG)
++        producer_catalogue = require_definition(
++            catalog, producer_entry.ref, ProducerCatalogue
++        )
++        producer_ref = ProducerCatalogueContentRef.model_validate(
++            producer_entry.ref.model_dump()
++        )
++        producers = tuple(
++            item
++            for item in producer_catalogue.declarations
++            if isinstance(item.producer, ToolStepProducer)
++            and item.profile_ref is not None
++            and item.profile_ref.stable_json() == profile_ref.stable_json()
++            and item.producer.tool_plan_ref == inputs.tool_plan_ref
++            and item.producer.step_id == step.step_id
++            and item.producer.tool_ref == step.tool_ref
++        )
++        if {entry.output_name: entry.fact_key for entry in producers} != {
++            mapping.output_name: mapping.target_fact_key
++            for mapping in step.fact_output_mappings
++        }:
++            raise ValueError("N05 Tool must pin every mapped output producer")
++        site = _Site(
++            profile=ProfileRegistration.model_validate(
++                {
++                    "registration_kind": "profile",
++                    "ref": profile_ref.model_dump(),
++                    "definition": profile,
++                }
++            ),
++            tool=ToolRegistration(
++                ref=step.tool_ref,
++                definition=require_definition(catalog, step.tool_ref, ToolDefinition),
++            ),
++            origin=ToolPlanStepOrigin(
++                kind="tool_plan_step",
++                node_id="N05",
++                tool_plan_ref=inputs.tool_plan_ref,
++                step_id=step.step_id,
++                producer_declaration_ids=tuple(
++                    item.declaration_id for item in producers
++                ),
++            ),
++            coordinates=obj.coordinate_system,
++            object_record=obj,
++            plan=ToolPlanRegistration(
++                registration_kind="tool_plan", ref=inputs.tool_plan_ref, definition=plan
++            ),
++            step=step,
++            producer_catalogue_ref=producer_ref,
++            producer_catalogue=producer_catalogue,
++            producers=producers,
++        )
++    if (
++        not isinstance(media.stage, FinalizedAsset)
++        or site.coordinates.frame != "original_image"
++        or site.coordinates.dimensions != media.dimensions
++    ):
++        raise ValueError(
++            "Tool coordinate basis requires exact finalized original media"
++        )
++    return site
++
++
++def _tool_error(error_class: str, code: str) -> ToolError:
++    return ToolError.model_validate(
++        {"error_class": error_class, "code": code, "diagnostic_refs": ()}
++    )
++
++
++def _tool_input_refs(envelope: NodeInputEnvelope) -> ToolArtifactRefs:
++    kinds = {
++        K.CONTEXT_SNAPSHOT,
++        K.EVIDENCE,
++        K.FACT,
++        K.MODEL_INVOCATION,
++        K.OBJECT,
++        K.TOOL_EXECUTION,
++    }
++    return tuple(
++        ToolArtifactRef(
++            artifact_ref=ToolArtifactRecordRef.model_validate(item.ref.model_dump()),
++            digest=item.digest,
++        )
++        for item in envelope.upstream_artifacts
++        if item.ref.record_kind in kinds
++    )
++
++
++def _raw_value(definition: TypeDefinition, raw: object) -> object:
++    if isinstance(definition, RecordTypeDefinition):
++        if not isinstance(raw, dict):
++            raise ValueError("Tool input requires a record")
++        columns = {item.name: item.type_definition for item in definition.fields}
++        if not raw.keys() <= columns.keys():
++            raise ValueError("Tool input contains an undeclared field")
++        raw = {name: _raw_value(columns[name], raw[name]) for name in raw}
++    elif isinstance(definition, ListTypeDefinition):
++        if (
++            not isinstance(raw, (tuple, list))
++            or not definition.min_items <= len(raw) <= definition.max_items
++        ):
++            raise ValueError("Tool input array does not satisfy the declared bound")
++        raw = tuple(_raw_value(definition.item_type, item) for item in raw)
++    return {"kind": definition.kind, "value": raw}
++
++
++def _bounded_request(
++    resolved: ResolvedExecutionPins,
++    site: _Site,
++    value: Mapping[str, object],
++    limit: int,
++) -> bytes:
++    descriptor = resolve_descriptor(
++        site.tool.definition.input_schema_ref, resolved.schema_descriptors
++    )
++    if len(value) > 64:
++        raise ValueError("Tool input contains too many root fields")
++    body: object = dict(value)
++    if isinstance(descriptor, ToolInputRecordDescriptor):
++        declared = {column.name: column for column in descriptor.fields}
++        if not value.keys() <= declared.keys() or any(
++            column.required and column.name not in value for column in descriptor.fields
++        ):
++            raise ValueError("Tool input fields must match the pinned shape")
++        fields: dict[str, object] = {}
++        for name, field_data in value.items():
++            column = declared[name]
++            checked = validate_typed_value(
++                column.type_definition,
++                _raw_value(column.type_definition, field_data)
++                if column.representation == "raw_dto"
++                else field_data,
++            )
++            fields[name] = (
++                field_data
++                if column.representation == "raw_dto"
++                else checked.model_dump(mode="json")
++            )
++        body = fields
++    elif isinstance(descriptor, RawDtoSchemaDescriptor):
++        validate_typed_value(
++            descriptor.type_definition,
++            _raw_value(descriptor.type_definition, dict(value)),
++        )
++    elif isinstance(descriptor, TypedValueSchemaDescriptor):
++        body = validate_typed_value(descriptor.type_definition, body).model_dump(
++            mode="json"
++        )
++    else:
++        raise ValueError("Tool input does not resolve a normalized input contract")
++    output = bytearray()
++    encoder = json.JSONEncoder(
++        ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":")
++    )
++    for piece in encoder.iterencode(body):
++        data = piece.encode("utf-8")
++        if len(output) + len(data) > limit:
++            raise ValueError("Tool input exceeds the configured byte limit")
++        output.extend(data)
++    return bytes(output)
++
++
++def _no_duplicate_fields(entries: list[tuple[str, object]]) -> dict[str, object]:
++    result = dict(entries)
++    if len(entries) != len(result):
++        raise ValueError("Tool response contains duplicate fields")
++    return result
++
++
++def _reject_constant(_: str) -> NoReturn:
++    raise ValueError("Tool response contains a nonfinite number")
++
++
++def _finite_float(text: str) -> float:
++    value = float(text)
++    if not isfinite(value):
++        _reject_constant(text)
++    return value
++
++
++def _validate_json_depth(text: str) -> None:
++    inside_string = escaped = False
++    depth = 0
++    for character in text:
++        if inside_string:
++            if escaped:
++                escaped = False
++            elif character == "\\":
++                escaped = True
++            elif character == '"':
++                inside_string = False
++        elif character == '"':
++            inside_string = True
++        elif character in "[{":
++            depth += 1
++            if depth > _MAX_JSON_DEPTH:
++                raise ValueError("Tool response exceeds the JSON nesting limit")
++        elif character in "]}":
++            depth -= 1
++
++
++def _decode_result(content: bytes) -> ToolResult:
++    text = content.decode("utf-8")
++    _validate_json_depth(text)
++    raw = json.loads(
++        text,
++        object_pairs_hook=_no_duplicate_fields,
++        parse_constant=_reject_constant,
++        parse_float=_finite_float,
++    )
++    return _RESULT.validate_python(raw)
++
++
++def original_xyxy(coords: Sequence[float], coordinates: CoordinateSystem) -> BBoxXYXY:
++    """Validate a registered grounding field against the original pixel frame."""
++    if coordinates.frame != "original_image" or len(coords) != 4:
++        raise ValueError("grounding requires original-image XYXY")
++    result = BBoxXYXY.model_validate({"xyxy": tuple(coords)})
++    result.validate_bounds(coordinates.dimensions)
++    return result
++
++
++def _read_value(payload: Value | None, path: tuple[str, ...]) -> Value | None:
++    for name in path:
++        if not isinstance(payload, RecordValue):
++            return None
++        payload = payload.value.get(name)
++    return payload
++
++
++def _remove_value(payload: Value | None, path: tuple[str, ...]) -> Value | None:
++    if not path:
++        return None
++    if not isinstance(payload, RecordValue) or path[0] not in payload.value:
++        return payload
++    values = dict(payload.value)
++    child = _remove_value(values[path[0]], path[1:])
++    if child is None:
++        del values[path[0]]
++    else:
++        values[path[0]] = child
++    return RecordValue(kind="record", value=values)
++
++
++def _evidence_ref(asset: EvidenceAsset) -> EvidenceRef:
++    return EvidenceRef(record_kind=K.EVIDENCE, record_id=asset.evidence_id)
++
++
++def _verify_evidence(
++    execution: ExecutionRecord,
++    site: _Site,
++    media: MediaAsset,
++    policy: EvidencePolicy,
++    supplied: tuple[EvidenceAsset, ...],
++    *,
++    audit_response: EvidenceAsset | None,
++) -> dict[EvidenceRef, EvidenceAsset]:
++    all_evidence = (
++        *supplied,
++        *((audit_response,) if audit_response is not None else ()),
++    )
++    by_ref = {_evidence_ref(asset): asset for asset in all_evidence}
++    if len(by_ref) != len(all_evidence):
++        raise ValueError("Tool evidence IDs must be unique")
++    for asset in all_evidence:
++        original = isinstance(asset.spatial, OriginalImageEvidence)
++        if (
++            not isinstance(asset.stage, FinalizedAsset)
++            or asset.scope.execution_id != execution.execution_id
++            or (
++                isinstance(asset.access_scope, TaskEvidenceAccess)
++                and asset.access_scope.task_id != execution.task_id
++            )
++            or (
++                isinstance(asset.scope, ObjectEvidenceScope)
++                and (
++                    asset.scope.object_ref != site.object_ref
++                    or asset.scope.profile_ref != site.profile_ref
++                )
++            )
++            or (
++                site.object_ref is not None
++                and not original
++                and not isinstance(asset.scope, ObjectEvidenceScope)
++            )
++            or (
++                asset is not audit_response
++                and asset.evidence_type not in policy.allowed_evidence_types
++            )
++        ):
++            raise ValueError("Tool evidence is unavailable in the exact required scope")
++        if isinstance(asset.spatial, (OriginalImageEvidence, DerivedImageEvidence)):
++            asset.validate_original_media(media)
++            source = (
++                asset.spatial.coordinate_system
++                if isinstance(asset.spatial, OriginalImageEvidence)
++                else asset.spatial.transforms[0].source
++            )
++            if source != site.coordinates:
++                raise ValueError(
++                    "Tool evidence must keep the exact original coordinate frame"
++                )
++        if not original and (
++            asset.retention.evidence_policy_ref.stable_json()
++            != site.tool.definition.evidence_policy_ref.stable_json()
++            or asset.retention.retention_class != policy.retention_class
++            or asset.access_scope.scope != policy.access_scope
++        ):
++            raise ValueError(
++                "Tool evidence must match the pinned retention and access policy"
++            )
++    return by_ref
++
++
++def _require_result_evidence(
++    result: ToolResult,
++    evidence: Mapping[EvidenceRef, EvidenceAsset],
++    policy: EvidencePolicy,
++) -> None:
++    refs = set(result.evidence_refs)
++    diagnostic_refs = {
++        ref
++        for state in result.output_states
++        if isinstance(state, NonKnownToolOutputState)
++        for ref in state.reason.diagnostic_refs
++    }
++    if isinstance(result, FailedToolResult):
++        diagnostic_refs.update(result.error.diagnostic_refs)
++    if not refs | diagnostic_refs <= evidence.keys():
++        raise ValueError("Tool result referenced unavailable evidence")
++    if not isinstance(result, FailedToolResult):
++        present = {evidence[ref].evidence_type for ref in refs}
++        required = set(policy.required_evidence_types)
++        if policy.original_media_required:
++            required.add(EvidenceType.ORIGINAL_IMAGE)
++        if not required <= present:
++            raise ValueError("Tool result lacks required validated evidence")
++
++
++def _normalize_diagnostics(result: ToolResult) -> ToolResult:
++    raw = result.model_dump()
++    raw["diagnostics"] = tuple(
++        ValidationIssue(
++            code=TOOL_REPORTED_DIAGNOSTIC_CODE,
++            message=TOOL_VALIDATION_DIAGNOSTIC,
++            path=(),
++            related_refs=(),
++        )
++        for _ in result.diagnostics
++    )
++    raw["output_states"] = tuple(
++        {
++            **state.model_dump(),
++            "reason": FactReason(
++                reason_code=f"tool_reported_{state.fact_status.value}",
++                message=TOOL_NON_KNOWN_DIAGNOSTIC,
++                diagnostic_refs=state.reason.diagnostic_refs,
++            ),
++        }
++        if isinstance(state, NonKnownToolOutputState)
++        else state
++        for state in result.output_states
++    )
++    if isinstance(result, FailedToolResult):
++        raw["error"] = ToolError(
++            error_class=result.error.error_class,
++            code=TOOL_REPORTED_FAILURE_CODE,
++            diagnostic_refs=result.error.diagnostic_refs,
++        )
++    return _RESULT.validate_python(raw)
++
++
++def _check_named_outputs(
++    result: ToolResult,
++    site: _Site,
++    schema: ToolResultSchemaDescriptor,
++    resolved: ResolvedExecutionPins,
++) -> ToolResult:
++    if isinstance(result, FailedToolResult):
++        return result
++    contract = {item.output_name: item for item in site.tool.definition.fact_outputs}
++    states = {item.output_name: item for item in result.output_states}
++    if states.keys() - contract.keys():
++        raise ValueError("Tool result contains an undeclared output state")
++    payload = result.payload
++    if site.step is None:
++        if payload is not None:
++            validate_typed_value(schema.payload_type, payload)
++        return result
++
++    def failed(state: ToolOutputState | None, name: str) -> NonKnownToolOutputState:
++        return NonKnownToolOutputState(
++            output_name=name,
++            fact_status=FactStatus.ERROR,
++            evidence_refs=() if state is None else state.evidence_refs,
++            reason=FactReason(
++                reason_code=TOOL_INVALID_OUTPUT_CODE,
++                message=TOOL_INVALID_OUTPUT_DIAGNOSTIC,
++                diagnostic_refs=(),
++            ),
++        )
++
++    mappings = {item.output_name for item in site.step.fact_output_mappings}
++    requires_partial = False
++    for name in sorted(mappings | states.keys()):
++        state = states.get(name)
++        declaration = contract[name]
++        value = _read_value(payload, declaration.value_path)
++        acceptable = state is not None and (
++            isinstance(state, KnownToolOutputState) == (value is not None)
++        )
++        if (
++            isinstance(state, NonKnownToolOutputState)
++            and state.fact_status is FactStatus.NOT_APPLICABLE
++        ):
++            acceptable &= bool(state.reason.diagnostic_refs)
++        if value is not None and acceptable:
++            try:
++                resolved.fact_schemas.validate_payload(
++                    declaration.fact_schema_ref, value
++                )
++            except ValueError:
++                acceptable = False
++        if not acceptable:
++            states[name] = failed(state, name)
++            payload = _remove_value(payload, declaration.value_path)
++            requires_partial = True
++        elif state is not None and state.fact_status is FactStatus.ERROR:
++            requires_partial |= declaration.required
++    if payload is not None:
++        validate_typed_value(schema.payload_type, payload)
++    if not requires_partial:
++        return result
++    return _RESULT.validate_python(
++        {
++            "status": "partial",
++            "output_states": tuple(states.values()),
++            "evidence_refs": result.evidence_refs,
++            "evidence": result.evidence,
++            "diagnostics": result.diagnostics,
++            **({"payload": payload} if payload is not None else {}),
++        }
++    )
++
++
++def _fact_reason(state: NonKnownToolOutputState) -> FactReason:
++    reason = state.reason
++    if state.fact_status is FactStatus.ERROR:
++        return FactErrorReason(
++            **reason.model_dump(),
++            diagnostics=(
++                FactDiagnostic(
++                    code=reason.reason_code, message=reason.message, path=()
++                ),
++            ),
++        )
++    if state.fact_status is FactStatus.NOT_APPLICABLE:
++        return FactNotApplicableReason(
++            **reason.model_dump(),
++            basis_refs=tuple(
++                ApplicabilityBasisRef(record_kind=K.EVIDENCE, record_id=ref.record_id)
++                for ref in reason.diagnostic_refs
++            ),
++        )
++    return reason
++
++
++def _fact_candidates(
++    result: ToolResult,
++    site: _Site,
++    execution: ExecutionRecord,
++    attempt: Attempt,
++    execution_id: str,
++    at: datetime,
++) -> tuple[tuple[FactRecord, ...], tuple[MappedOutputResult, ...]]:
++    if (
++        site.object_ref is None
++        or site.producer_catalogue_ref is None
++        or site.step is None
++    ):
++        return (), ()
++    declarations = {
++        item.output_name: item for item in site.tool.definition.fact_outputs
++    }
++    by_name = {state.output_name: state for state in result.output_states}
++    evidence = {entry.name: entry.evidence_refs for entry in result.evidence}
++    facts: list[FactRecord] = []
++    outputs: list[MappedOutputResult] = []
++    for producer in site.producers:
++        name = producer.output_name
++        state = by_name.get(name)
++        if state is None:
++            continue
++        declaration = declarations[name]
++        if (
++            producer.cardinality is ProducerCardinality.ZERO_OR_ONE
++            and isinstance(state, NonKnownToolOutputState)
++            and state.fact_status is FactStatus.NOT_EVALUATED
++        ):
++            outputs.append(
++                OptionalAbsentOutput(
++                    disposition="optional_absence",
++                    output_name=name,
++                    reason=state.reason,
++                )
++            )
++            continue
++        generated = _project_fact(
++            execution,
++            attempt,
++            site,
++            execution_id,
++            at,
++            result,
++            producer,
++            declaration,
++            state,
++            evidence,
++        )
++        facts.append(generated)
++        outputs.append(
++            EmittedOutput(
++                disposition="emitted",
++                output_name=name,
++                fact_status=state.fact_status,
++                fact_ref=FactRef(record_kind=K.FACT, record_id=generated.fact_id),
++            )
++        )
++    return tuple(facts), tuple(outputs)
++
++
++def _project_fact(
++    execution: ExecutionRecord,
++    attempt: Attempt,
++    site: _Site,
++    tool_execution_id: str,
++    at: datetime,
++    result: ToolResult,
++    producer: FactProducerDeclaration,
++    declaration: ToolFactOutputDeclaration,
++    state: ToolOutputState,
++    evidence: Mapping[str, tuple[EvidenceRef, ...]],
++) -> FactRecord:
++    assert (
++        site.object_ref is not None and site.plan is not None and site.step is not None
++    )
++    ref = site.tool.ref
++    payload = None if isinstance(result, FailedToolResult) else result.payload
++    fields: dict[str, object] = {}
++    if isinstance(state, NonKnownToolOutputState):
++        fields["reason"] = _fact_reason(state)
++    else:
++        fields["value"] = _read_value(payload, declaration.value_path)
++        if declaration.confidence_path is not None:
++            confidence = _read_value(payload, declaration.confidence_path)
++            if confidence is not None:
++                assert isinstance(confidence, NumberValue)
++                fields["confidence"] = confidence.value
++    refs = tuple(
++        dict.fromkeys(
++            (
++                *state.evidence_refs,
++                *(
++                    ref
++                    for path in (declaration.evidence_paths or ())
++                    for ref in evidence.get(path[0], ())
++                ),
++            )
++        )
++    )
++    return _FACT.validate_python(
++        {
++            **fields,
++            "schema_version": "1.0.0",
++            "fact_id": _stable_id(
++                "tool-fact", tool_execution_id, producer.declaration_id
++            ),
++            "fact_key": producer.fact_key,
++            "fact_schema_ref": producer.fact_schema_ref,
++            "producer_catalogue_ref": site.producer_catalogue_ref,
++            "producer_declaration_id": producer.declaration_id,
++            "producer_kind": ProducerKind.TOOL,
++            "producer_id": ref.artifact_id,
++            "producer_version": ref.version,
++            "attempt_id": attempt.attempt_id,
++            "execution_id": execution.execution_id,
++            "scope": FactScope.OBJECT,
++            "object_id": site.object_ref.record_id,
++            "profile_ref": site.profile_ref,
++            "status": state.fact_status,
++            "source": {
++                "source_kind": ProducerKind.TOOL,
++                "tool_execution_ref": ToolExecutionRef(
++                    record_kind=K.TOOL_EXECUTION, record_id=tool_execution_id
++                ),
++                "tool_plan_ref": site.plan.ref,
++                "step_id": site.step.step_id,
++                "tool_ref": ref,
++                "output_name": producer.output_name,
++            },
++            "evidence_refs": refs,
++            "created_at": at,
++            "trace_id": execution.trace.trace_id,
++        }
++    )
++
++
++def _stable_id(prefix: str, *parts: str) -> str:
++    return f"{prefix}:{sha256(json.dumps(parts, separators=(',', ':')).encode()).hexdigest()}"
++
++
++def _check_record(
++    resolved: ResolvedExecutionPins,
++    site: _Site,
++    node: NodeRun,
++    attempt: Attempt,
++    result: ToolCallResult,
++    peers: tuple[ToolExecution, ...],
++) -> None:
++    obj = site.object_record
++    object_view = None
++    if obj is not None and site.object_ref is not None:
++        object_view = ObjectDescriptor(
++            object_ref=site.object_ref,
++            execution_id=obj.execution_id,
++            profile_ref=obj.profile_ref,
++        )
++    schema = resolve_descriptor(
++        site.tool.definition.output_schema_ref, resolved.schema_descriptors
++    )
++    if not isinstance(schema, ToolResultSchemaDescriptor):
++        raise ValueError("the pinned Tool output must be a ToolResult")
++    nested_ids = {
++        ref.artifact_ref.record_id
++        for ref in result.execution.output_refs
++        if ref.artifact_ref.record_kind is K.MODEL_INVOCATION
++    }
++    validate_tool_execution(
++        result.execution,
++        node_run=NodeRunDescriptor.model_validate(
++            {
++                "node_run_ref": NodeRunRef(
++                    record_kind=K.NODE_RUN, record_id=node.node_run_id
++                ),
++                "execution_id": node.execution_id,
++                "node_id": node.node_id.value,
++                "status": node.status,
++            }
++        ),
++        attempt=AttemptDescriptor(
++            attempt_ref=AttemptRef(record_kind=K.ATTEMPT, record_id=attempt.attempt_id),
++            execution_id=attempt.execution_id,
++            attempt_number=attempt.attempt_number,
++            owner=attempt.owner,
++            status=attempt.status,
++        ),
++        profile=site.profile,
++        tool=site.tool,
++        object_record=object_view,
++        plan=site.plan,
++        output_schema=schema,
++        producer_catalogue_ref=site.producer_catalogue_ref,
++        producer_catalogue=site.producer_catalogue,
++        generated_facts=result.facts,
++        fact_schemas=resolved.fact_schemas,
++        peer_executions=peers,
++        nested_invocations=tuple(
++            item
++            for item in result.nested_invocations
++            if item.model_invocation_id in nested_ids
++        ),
++    )
++
++
++def _check_nested_response(
++    response: ToolWorkerResponse,
++    dispatch: ToolDispatch,
++    definition: ToolDefinition,
++    started_at: datetime,
++    received_at: datetime,
++) -> tuple[ModelInvocation, ...]:
++    invocations = response.nested_invocations
++    expected = {
++        invocation.model_invocation_id: sha256(
++            canonical_bytes(invocation.model_dump(mode="json"))
++        ).hexdigest()
++        for invocation in invocations
++    }
++    actual = {
++        ref.artifact_ref.record_id: ref.digest
++        for ref in response.invocation_refs
++        if ref.artifact_ref.record_kind is K.MODEL_INVOCATION
++    }
++    if (
++        len(actual) != len(response.invocation_refs)
++        or len(expected) != len(invocations)
++        or expected != actual
++        or any(
++            definition.model_binding_ref is None
++            or invocation.configured_provider.binding_ref.stable_json()
++            != definition.model_binding_ref.stable_json()
++            or (
++                invocation.execution_id,
++                invocation.node_id,
++                invocation.node_run_ref.record_id,
++                invocation.attempt_ref.record_id,
++                invocation.trace_id,
++                invocation.profile_refs,
++                invocation.object_ref,
++            )
++            != (
++                dispatch.execution_id,
++                dispatch.origin.node_id,
++                dispatch.node_run_id,
++                dispatch.attempt_id,
++                dispatch.trace_id,
++                (dispatch.profile_ref,),
++                dispatch.object_ref,
++            )
++            or not started_at
++            <= invocation.started_at
++            <= invocation.completed_at
++            <= received_at
++            for invocation in invocations
++        )
++    ):
++        raise ValueError("nested Tool invocation lacks an exact causal record")
++    return invocations
++
++
++@dataclass(frozen=True, slots=True)
++class _Audit:
++    execution: ExecutionRecord
++    node: NodeRun
++    attempt: Attempt
++    site: _Site
++    invocation_id: str
++    input_refs: ToolArtifactRefs
++    policy: ToolExecutionPolicy
++    started_at: datetime
++    request_digest: Digest | None = None
++
++    def outcome(
++        self,
++        result: ToolAttemptResult,
++        finished_at: datetime,
++        *,
++        version: str | None = None,
++        evidence: tuple[EvidenceAsset, ...] = (),
++        output_refs: ToolArtifactRefs = (),
++        usage: ToolResourceUsage | None = None,
++        facts: tuple[FactRecord, ...] = (),
++        observation: ToolAuthorityObservation | None = None,
++        nested_invocations: tuple[ModelInvocation, ...] = (),
++        response_identity: tuple[Digest, int] | None = None,
++        retryable: bool = False,
++    ) -> ToolCallResult:
++        site = self.site
++        status = (
++            result.result.status
++            if isinstance(result, ReturnedToolAttempt)
++            else result.disposition
++        )
++        resolution = (
++            "not_dispatched"
++            if isinstance(result, UndispatchedToolAttempt)
++            else "resolved"
++            if version is not None
++            else "unavailable"
++        )
++        record = ToolExecution.model_validate(
++            {
++                "schema_version": "1.0.0",
++                "tool_execution_id": self.invocation_id,
++                "execution_id": self.execution.execution_id,
++                "profile_ref": site.profile_ref,
++                "tool_ref": site.tool.ref,
++                "node_run_ref": NodeRunRef(
++                    record_kind=K.NODE_RUN, record_id=self.node.node_run_id
++                ),
++                "attempt_ref": AttemptRef(
++                    record_kind=K.ATTEMPT, record_id=self.attempt.attempt_id
++                ),
++                "invocation_origin": site.origin,
++                "scope": FactScope.EXECUTION
++                if site.object_ref is None
++                else FactScope.OBJECT,
++                **(
++                    {"object_ref": site.object_ref}
++                    if site.object_ref is not None
++                    else {}
++                ),
++                "input_refs": self.input_refs,
++                "output_refs": output_refs,
++                "implementation_version_resolution": resolution,
++                **(
++                    {"actual_implementation_version": version}
++                    if version is not None
++                    else {}
++                ),
++                **(
++                    {
++                        "implementation_version_unavailable_reason": TOOL_UNVERIFIED_VERSION_DIAGNOSTIC
++                    }
++                    if resolution == "unavailable"
++                    else {}
++                ),
++                "status": status,
++                "attempt_result": result,
++                "started_at": self.started_at,
++                "completed_at": max(self.started_at, finished_at),
++                **({"resource_usage": usage} if usage is not None else {}),
++                **(
++                    {"authority_observation": observation}
++                    if observation is not None
++                    else {}
++                ),
++                "generated_fact_refs": tuple(
++                    FactRef(record_kind=K.FACT, record_id=fact.fact_id)
++                    for fact in facts
++                ),
++                "evidence_refs": tuple(_evidence_ref(asset) for asset in evidence),
++                "trace_id": self.execution.trace.trace_id,
++            }
++        )
++        return ToolCallResult(
++            execution=record,
++            facts=facts,
++            evidence=evidence,
++            nested_invocations=nested_invocations,
++            retryable=retryable,
++            response_digest=None if response_identity is None else response_identity[0],
++            response_byte_count=None
++            if response_identity is None
++            else response_identity[1],
++            request_digest=self.request_digest,
++        )
++
++    def failure(
++        self,
++        error: ToolError,
++        at: datetime,
++        *,
++        dispatched: bool,
++        version: str | None = None,
++        evidence: tuple[EvidenceAsset, ...] = (),
++        response_identity: tuple[Digest, int] | None = None,
++        usage: ToolResourceUsage | None = None,
++        nested_invocations: tuple[ModelInvocation, ...] = (),
++    ) -> ToolCallResult:
++        result: ToolAttemptResult
++        if dispatched:
++            result = FailedToolAttempt(disposition="failed", error=error)
++        else:
++            result = UndispatchedToolAttempt(disposition="not_dispatched", error=error)
++        return self.outcome(
++            result,
++            at,
++            version=version,
++            evidence=evidence,
++            response_identity=response_identity,
++            usage=usage,
++            nested_invocations=nested_invocations,
++            retryable=(
++                self.attempt.attempt_number < self.policy.max_attempts
++                and error.error_class in self.policy.retryable_error_classes
++            ),
++        )
++
++
++class ToolCancelled(asyncio.CancelledError):
++    """Cancellation propagates while carrying the truthful partial audit."""
++
++    def __init__(self, result: ToolCallResult) -> None:
++        super().__init__("Tool call cancelled")
++        self.result = result
++
++
++@dataclass(frozen=True, slots=True)
++class ToolExecutor:
++    registry: ToolWorkerRegistry
++    clock: Clock = _now
++
++    def prepare_step_input(
++        self,
++        resolved: ResolvedExecutionPins,
++        call: PlanStepCall,
++        media: MediaAsset,
++        input_fields: Mapping[str, object],
++    ) -> bytes:
++        """Encode the exact step request before claiming its durable child Attempt."""
++        site = _site(resolved, call, media)
++        tool = site.tool.definition
++        policy = require_definition(
++            resolved.catalogue, tool.execution_policy_ref, ToolExecutionPolicyArtifact
++        ).policy
++        resources = require_definition(
++            resolved.catalogue,
++            tool.resource_requirements_ref,
++            ResourceRequirementsArtifact,
++        ).policy
++        return _bounded_request(
++            resolved,
++            site,
++            input_fields,
++            min(policy.input_byte_limit, resources.input_byte_limit),
++        )
++
++    async def execute(
++        self,
++        *,
++        resolved: ResolvedExecutionPins,
++        execution: ExecutionRecord,
++        node: NodeRun,
++        attempt: Attempt,
++        call: ToolCall,
++        media: MediaAsset,
++        input_fields: Mapping[str, object],
++        implementation_proof: TrustPin,
++        deadline: datetime,
++        before_dispatch: BeforeDispatch,
++        peers: tuple[ToolExecution, ...] = (),
++        record_response: RecordResponse | None = None,
++    ) -> ToolCallResult:
++        """Execute a single Tool call with an admitted shape and truthful audit.
++
++        Input field projection belongs to the application producing the pinned
++        node inputs. This boundary validates the projected wire fields against
++        the admitted Tool schema. The worker reserves resources and calls
++        before_dispatch before starting a process or sending a remote request.
++        """
++        envelope = call.inputs.envelope
++        _associate(resolved, execution, node, attempt, envelope)
++        site = _site(resolved, call, media)
++        definition = site.tool.definition
++        catalog = resolved.catalogue
++        policy = require_definition(
++            catalog, definition.execution_policy_ref, ToolExecutionPolicyArtifact
++        ).policy
++        resources = require_definition(
++            catalog, definition.resource_requirements_ref, ResourceRequirementsArtifact
++        ).policy
++        evidence_policy = require_definition(
++            catalog, definition.evidence_policy_ref, EvidencePolicyArtifact
++        ).policy
++        output_schema = resolve_descriptor(
++            definition.output_schema_ref, resolved.schema_descriptors
++        )
++        if not isinstance(output_schema, ToolResultSchemaDescriptor):
++            raise ValueError("the pinned Tool output is not a ToolResult contract")
++        now = self.clock()
++        timeout_ms = min(policy.timeout_ms, resources.timeout_ms)
++        end = (
++            now + timedelta(milliseconds=timeout_ms)
++            if timeout_ms < (deadline - now).total_seconds() * 1000
++            else deadline
++        )
++        limits = _RESOURCES.validate_python(
++            {
++                **resources.model_dump(),
++                "max_concurrency": min(
++                    resources.max_concurrency, policy.max_concurrency
++                ),
++                "timeout_ms": timeout_ms,
++                "input_byte_limit": min(
++                    resources.input_byte_limit, policy.input_byte_limit
++                ),
++            }
++        )
++        invocation_id = _stable_id(
++            "tool",
++            execution.execution_id,
++            node.node_run_id,
++            attempt.attempt_id,
++            site.profile_ref.stable_json(),
++            site.origin.stable_json(),
++            "" if site.object_ref is None else site.object_ref.record_id,
++        )
++        audit = _Audit(
++            execution,
++            node,
++            attempt,
++            site,
++            invocation_id,
++            _tool_input_refs(envelope),
++            policy,
++            now,
++        )
++        preliminary = audit.failure(
++            _tool_error("internal", "tool_validation"), now, dispatched=False
++        )
++        _check_record(resolved, site, node, attempt, preliminary, peers)
++
++        def stopped(error_class: str, code: str) -> ToolCallResult:
++            return audit.failure(
++                _tool_error(error_class, code), self.clock(), dispatched=False
++            )
++
++        pin = next(
++            (pin for pin in resolved.pins.tool_pins if pin.tool_ref == site.tool.ref),
++            None,
++        )
++        if pin is None:
++            return stopped("unavailable", "tool_pin_unavailable")
++        try:
++            implementation = self.registry.resolve(
++                site.tool.ref,
++                definition,
++                pin,
++                resources.resource_class,
++                implementation_proof,
++            )
++        except LookupError:
++            return stopped("unavailable", "tool_implementation_unavailable")
++        if (
++            isinstance(call, GroundingCall)
++            and implementation.spatial_result_check is None
++        ):
++            return stopped("validation", "tool_grounding_coordinate_contract")
++        try:
++            request = _bounded_request(
++                resolved, site, input_fields, limits.input_byte_limit
++            )
++        except ValueError:
++            return stopped("validation", "tool_input_invalid")
++        audit = replace(audit, request_digest=sha256(request).hexdigest())
++        if end <= self.clock():
++            return stopped("timeout", "tool_deadline_elapsed")
++        dispatch = ToolDispatch(
++            invocation_id,
++            execution.execution_id,
++            node.node_run_id,
++            attempt.attempt_id,
++            execution.trace.trace_id,
++            site.profile_ref,
++            site.object_ref,
++            site.tool.ref,
++            site.origin,
++            implementation.capability_id,
++            implementation.contract_version,
++            implementation.version,
++            implementation.proof,
++            definition.input_schema_ref,
++            definition.output_schema_ref,
++            audit.input_refs,
++            limits,
++            request,
++            end,
++        )
++        clearance_requested = False
++        cleared = False
++
++        async def guarded_begin(candidate: ToolDispatch, lease: ResourceLease) -> bool:
++            nonlocal clearance_requested, cleared
++            if (
++                clearance_requested
++                or candidate is not dispatch
++                or (
++                    lease.resource_class != limits.resource_class
++                    or lease.input_byte_limit < len(request)
++                )
++            ):
++                raise ValueError("Tool worker presented an invalid dispatch clearance")
++            clearance_requested = True
++            if self.clock() >= end:
++                return False
++            cleared = await before_dispatch(dispatch, lease)
++            return cleared and self.clock() < end
++
++        failure: ToolError | None = None
++        observed_implementation: tuple[str, TrustPin] | None = None
++        response: ToolWorkerResponse | None
++        try:
++            async with asyncio.timeout(max(0.0, (end - self.clock()).total_seconds())):
++                response = await implementation.worker.run(dispatch, guarded_begin)
++        except ToolWorkerFailure as exc:
++            if not exc.dispatched:
++                return stopped(exc.error.error_class, exc.error.code)
++            failure = _tool_error(exc.error.error_class, exc.error.code)
++            observed_implementation = exc.observed_implementation
++            response = exc.response
++        except TimeoutError:
++            return audit.failure(
++                _tool_error("timeout", "tool_deadline_elapsed"),
++                self.clock(),
++                dispatched=cleared,
++            )
++        except asyncio.CancelledError as exc:
++            result = audit.failure(
++                _tool_error("cancelled", "tool_cancelled"),
++                self.clock(),
++                dispatched=cleared,
++            )
++            raise ToolCancelled(result) from exc
++        except Exception:
++            return audit.failure(
++                _tool_error("internal", "tool_worker_failure"),
++                self.clock(),
++                dispatched=cleared,
++            )
++
++        if not cleared:
++            return audit.failure(
++                _tool_error("association", "tool_dispatch_clearance_missing"),
++                self.clock(),
++                dispatched=True,
++            )
++        if response is None:
++            assert failure is not None
++            return audit.failure(
++                failure,
++                self.clock(),
++                dispatched=True,
++                version=(
++                    pin.implementation_version
++                    if observed_implementation
++                    == (pin.implementation_version, implementation_proof)
++                    else None
++                ),
++            )
++        if (
++            not isinstance(response.content, bytes)
++            or len(response.content) > limits.output_byte_limit
++        ):
++            return audit.failure(
++                _tool_error("validation", "tool_output_limit"),
++                self.clock(),
++                dispatched=True,
++            )
++        received_at = self.clock()
++        digest = sha256(response.content).hexdigest()
++        response_identity = digest, len(response.content)
++        version = _actual_version(response, pin, implementation_proof)
++        raw_asset: EvidenceAsset | None = None
++        saved: tuple[EvidenceAsset, ...] = ()
++        nested_invocations: tuple[ModelInvocation, ...] = ()
++        try:
++            if (
++                record_response is not None
++                and response.content
++                and EvidenceType.TOOL_OUTPUT in evidence_policy.allowed_evidence_types
++            ):
++                raw_asset = await record_response(dispatch, response.content)
++                if raw_asset is not None and (
++                    raw_asset.evidence_type is not EvidenceType.TOOL_OUTPUT
++                    or raw_asset.sha256 != digest
++                    or raw_asset.byte_size != len(response.content)
++                ):
++                    raise ValueError("Tool response evidence must preserve exact bytes")
++                saved = tuple(
++                    _verify_evidence(
++                        execution,
++                        site,
++                        media,
++                        evidence_policy,
++                        (),
++                        audit_response=raw_asset,
++                    ).values()
++                )
++            nested_invocations = _check_nested_response(
++                response,
++                dispatch,
++                definition,
++                audit.started_at,
++                received_at,
++            )
++            assets = _verify_evidence(
++                execution,
++                site,
++                media,
++                evidence_policy,
++                response.evidence,
++                audit_response=raw_asset,
++            )
++            saved = tuple(assets.values())
++            if failure is not None:
++                return audit.failure(
++                    failure,
++                    self.clock(),
++                    dispatched=True,
++                    version=version,
++                    evidence=saved,
++                    response_identity=response_identity,
++                    usage=response.resource_usage,
++                    nested_invocations=nested_invocations,
++                )
++            if version is None:
++                return audit.failure(
++                    _tool_error("unavailable", "tool_actual_implementation_unverified"),
++                    self.clock(),
++                    dispatched=True,
++                    evidence=saved,
++                    response_identity=response_identity,
++                    usage=response.resource_usage,
++                    nested_invocations=nested_invocations,
++                )
++            normalized = _decode_result(response.content)
++            _require_result_evidence(normalized, assets, evidence_policy)
++            normalized = _normalize_diagnostics(normalized)
++            normalized = _check_named_outputs(normalized, site, output_schema, resolved)
++            if implementation.spatial_result_check is not None and not isinstance(
++                normalized, FailedToolResult
++            ):
++                implementation.spatial_result_check(
++                    dispatch, normalized, site.coordinates
++                )
++            at = self.clock()
++            facts, outputs = _fact_candidates(
++                normalized, site, execution, attempt, invocation_id, at
++            )
++            observation = None
++            if site.step is not None and not isinstance(normalized, FailedToolResult):
++                observation = ToolAuthorityObservation(
++                    arrival_qualification="late" if received_at > end else "unresolved",
++                    envelope_validation="trusted",
++                    association_validation="trusted",
++                    mapped_outputs=outputs,
++                )
++            output_refs: ToolArtifactRefs = (
++                *response.invocation_refs,
++                *(
++                    ToolArtifactRef(
++                        artifact_ref=ToolArtifactRecordRef(
++                            record_kind=K.EVIDENCE, record_id=asset.evidence_id
++                        ),
++                        digest=asset.sha256,
++                    )
++                    for asset in assets.values()
++                ),
++            )
++            result = audit.outcome(
++                ReturnedToolAttempt(disposition="returned", result=normalized),
++                at,
++                version=version,
++                evidence=saved,
++                output_refs=output_refs,
++                usage=response.resource_usage,
++                facts=facts,
++                observation=observation,
++                nested_invocations=nested_invocations,
++                response_identity=response_identity,
++                retryable=(
++                    isinstance(normalized, FailedToolResult)
++                    and attempt.attempt_number < policy.max_attempts
++                    and normalized.error.error_class in policy.retryable_error_classes
++                ),
++            )
++            _check_record(resolved, site, node, attempt, result, peers)
++        except ValueError:
++            result = audit.failure(
++                _tool_error("validation", "tool_result_invalid"),
++                self.clock(),
++                dispatched=True,
++                version=version,
++                evidence=saved,
++                response_identity=response_identity,
++                usage=response.resource_usage,
++                nested_invocations=nested_invocations,
++            )
++        except asyncio.CancelledError as exc:
++            result = audit.failure(
++                _tool_error("cancelled", "tool_cancelled"),
++                self.clock(),
++                dispatched=True,
++                version=version,
++                evidence=saved,
++                response_identity=response_identity,
++                usage=response.resource_usage,
++                nested_invocations=nested_invocations,
++            )
++            raise ToolCancelled(result) from exc
++        return result
++
++
++def _actual_version(
++    response: ToolWorkerResponse,
++    pin: ConfiguredToolPin,
++    expected_proof: TrustPin,
++) -> str | None:
++    if (
++        response.actual_implementation_version != pin.implementation_version
++        or response.actual_implementation_proof != expected_proof
++    ):
++        return None
++    return response.actual_implementation_version
++
++
++def validate_tool_round(
++    *,
++    resolved: ResolvedExecutionPins,
++    node: NodeRun,
++    attempt: Attempt,
++    inputs: ToolNodeInput,
++    output: ToolNodeOutput,
++    media: MediaAsset,
++    calls: tuple[ToolCallResult, ...],
++) -> None:
++    """Validate a single parent round with complete peers and N05 step summary."""
++    records = tuple(call.execution for call in calls)
++    facts = tuple(fact for call in calls for fact in call.facts)
++    profile = require_definition(
++        resolved.catalogue, inputs.object_record.profile_ref, ProfileDefinition
++    )
++    plan = require_definition(
++        resolved.catalogue, inputs.tool_plan_ref, ToolPlanDefinition
++    )
++    output.check_steps(inputs, profile, plan, records, facts)
++    for index, result in enumerate(calls):
++        origin = result.execution.invocation_origin
++        if not isinstance(origin, ToolPlanStepOrigin):
++            raise ValueError("N05 round contains a non-step Tool invocation")
++        site = _site(resolved, PlanStepCall(inputs, origin.step_id), media)
++        _check_record(
++            resolved,
++            site,
++            node,
++            attempt,
++            result,
++            (*records[:index], *records[index + 1 :]),
++        )
+--- /dev/null
++++ b/src/jimu_runtime/tools/registry.py
+@@ -0,0 +1,428 @@
++"""Host-managed executable bindings for already admitted Tool definitions."""
++
++import asyncio
++from collections.abc import Awaitable, Callable
++from contextlib import suppress
++from dataclasses import dataclass
++from datetime import UTC, datetime
++from hashlib import file_digest
++from math import floor
++from os.path import isabs
++from pathlib import Path
++from types import MappingProxyType
++from typing import Protocol
++
++from jimu_runtime.bundle.trust import TrustPin
++from jimu_runtime.domain.definition_enums import ToolProviderKind
++from jimu_runtime.domain.definitions.tools import ToolDefinition
++from jimu_runtime.domain.fact_selectors import ToolContentRef
++from jimu_runtime.domain.policies import ResourceRequirements
++from jimu_runtime.domain.primitives import ArtifactId, RecordId, Version
++from jimu_runtime.domain.runtime.evidence import EvidenceAsset
++from jimu_runtime.domain.runtime.executions import ConfiguredToolPin
++from jimu_runtime.domain.runtime.facts import ObjectRef, ProfileContentRef
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.runtime.media import CoordinateSystem
++from jimu_runtime.domain.runtime.tool_executions import (
++    ToolArtifactRefs,
++    ToolError,
++    ToolInvocationOrigin,
++    ToolResourceUsage,
++    ToolResult,
++)
++from jimu_runtime.domain.schema_types import ToolInputSchemaRef, ToolOutputSchemaRef
++from jimu_runtime.workers.lifecycle import (
++    IsolatedWorker,
++    WorkerFailure,
++    WorkerProcessError,
++    WorkerStart,
++)
++from jimu_runtime.workers.resource_inventory import ResourceClass
++from jimu_runtime.workers.resources import (
++    ResourceAdmission,
++    ResourceLease,
++    ResourceUnavailable,
++)
++
++type BeforeDispatch = Callable[["ToolDispatch", ResourceLease], Awaitable[bool]]
++type SpatialResultCheck = Callable[["ToolDispatch", ToolResult, CoordinateSystem], None]
++type RemoteToolTransport = Callable[["ToolDispatch"], Awaitable["ToolWorkerResponse"]]
++
++
++@dataclass(frozen=True, slots=True)
++class ToolDispatch:
++    tool_execution_id: RecordId
++    execution_id: RecordId
++    node_run_id: RecordId
++    attempt_id: RecordId
++    trace_id: RecordId
++    profile_ref: ProfileContentRef
++    object_ref: ObjectRef | None
++    tool_ref: ToolContentRef
++    origin: ToolInvocationOrigin
++    capability_id: ArtifactId
++    contract_version: Version
++    implementation_version: Version
++    implementation_proof_ref: TrustPin
++    input_schema_ref: ToolInputSchemaRef
++    output_schema_ref: ToolOutputSchemaRef
++    input_refs: ToolArtifactRefs
++    resources: ResourceRequirements
++    request: bytes
++    deadline: datetime
++
++
++@dataclass(frozen=True, slots=True)
++class ToolWorkerResponse:
++    """A full bounded worker response, with independently attributable metadata."""
++
++    content: bytes
++    actual_implementation_version: Version | None
++    actual_implementation_proof: TrustPin | None
++    evidence: tuple[EvidenceAsset, ...] = ()
++    nested_invocations: tuple[ModelInvocation, ...] = ()
++    invocation_refs: ToolArtifactRefs = ()
++    resource_usage: ToolResourceUsage | None = None
++    terminal_evidence_id: RecordId | None = None
++
++
++class ToolWorkerFailure(Exception):
++    """A normalized worker failure with the observed dispatch boundary."""
++
++    def __init__(
++        self,
++        error: ToolError,
++        *,
++        dispatched: bool,
++        response: ToolWorkerResponse | None = None,
++        observed_implementation: tuple[Version, TrustPin] | None = None,
++    ) -> None:
++        super().__init__(error.code)
++        self.error = error
++        self.dispatched = dispatched
++        self.response = response
++        self.observed_implementation = observed_implementation
++
++
++class ToolWorkerPort(Protocol):
++    async def run(
++        self, dispatch: ToolDispatch, before_dispatch: BeforeDispatch
++    ) -> ToolWorkerResponse:
++        """Reserve, obtain journal clearance, and dispatch once.
++
++        The worker owns bounded reading and cleanup of occupied resources.
++        Full response bytes can accompany an observed process/protocol failure.
++        """
++        ...
++
++
++async def _reserve(
++    admission: ResourceAdmission,
++    dispatch: ToolDispatch,
++    scope_id: str,
++    owner_id: str,
++) -> ResourceLease:
++    pending = asyncio.create_task(
++        asyncio.to_thread(
++            admission.reserve,
++            dispatch.resources,
++            scope_id,
++            owner_id=owner_id,
++        )
++    )
++    try:
++        return await asyncio.shield(pending)
++    except asyncio.CancelledError:
++
++        def release_later(completed: asyncio.Task[ResourceLease]) -> None:
++            if not completed.cancelled() and completed.exception() is None:
++                asyncio.create_task(
++                    _release(admission, completed.result(), started=False)
++                )
++
++        pending.add_done_callback(release_later)
++        raise
++    except ResourceUnavailable:
++        raise ToolWorkerFailure(
++            ToolError(
++                error_class="resource_exhausted",
++                code="tool_resource_unavailable",
++                diagnostic_refs=(),
++            ),
++            dispatched=False,
++        ) from None
++
++
++async def _release(
++    admission: ResourceAdmission,
++    lease: ResourceLease,
++    *,
++    started: bool,
++) -> None:
++    with suppress(ResourceUnavailable):
++        await asyncio.to_thread(
++            admission.release if started else admission.release_reserved, lease
++        )
++
++
++class IsolatedCPUWorker:
++    """Host-configured command with a supervised, byte-bounded process exchange."""
++
++    def __init__(
++        self,
++        admission: ResourceAdmission,
++        argv: tuple[str, ...],
++        scope_id: str,
++        owner_id: str,
++        version: Version,
++        proof: TrustPin,
++        implementation_path: Path,
++    ) -> None:
++        if (
++            not argv
++            or not isabs(argv[0])
++            or any("\x00" in argument for argument in argv)
++        ):
++            raise ValueError("CPU Tool requires a trusted absolute command")
++        self._admission = admission
++        self._runner = IsolatedWorker(admission)
++        self._argv = argv
++        self._scope_id = scope_id
++        self._owner_id = owner_id
++        self._version = version
++        self._proof = proof
++        if (
++            str(implementation_path) not in argv
++            or not implementation_path.is_absolute()
++        ):
++            raise ValueError(
++                "CPU Tool proof must name an exact absolute command artifact"
++            )
++        self._implementation_path = implementation_path
++
++    async def run(
++        self, dispatch: ToolDispatch, before_dispatch: BeforeDispatch
++    ) -> ToolWorkerResponse:
++        if dispatch.resources.resource_class != "cpu" or (
++            dispatch.implementation_version,
++            dispatch.implementation_proof_ref,
++        ) != (self._version, self._proof):
++            raise ToolWorkerFailure(
++                ToolError(
++                    error_class="association", code="tool_cpu_pin", diagnostic_refs=()
++                ),
++                dispatched=False,
++            )
++        current_sha256 = await asyncio.to_thread(self._artifact_digest)
++        if current_sha256 != self._proof.sha256:
++            raise ToolWorkerFailure(
++                ToolError(
++                    error_class="unavailable",
++                    code="tool_cpu_artifact_changed",
++                    diagnostic_refs=(),
++                ),
++                dispatched=False,
++            )
++        lease = await _reserve(
++            self._admission, dispatch, self._scope_id, self._owner_id
++        )
++        try:
++            if not await before_dispatch(dispatch, lease):
++                raise ToolWorkerFailure(
++                    ToolError(
++                        error_class="cancelled",
++                        code="tool_dispatch_denied",
++                        diagnostic_refs=(),
++                    ),
++                    dispatched=False,
++                )
++            remaining_ms = floor(
++                (dispatch.deadline - datetime.now(UTC)).total_seconds() * 1000
++            )
++            if remaining_ms <= 0:
++                raise ToolWorkerFailure(
++                    ToolError(
++                        error_class="timeout",
++                        code="tool_deadline_elapsed",
++                        diagnostic_refs=(),
++                    ),
++                    dispatched=False,
++                )
++            content = await self._runner.run(
++                lease,
++                self._argv,
++                dispatch.request,
++                timeout_ms=min(remaining_ms, lease.timeout_ms),
++                output_byte_limit=lease.output_byte_limit,
++            )
++        except WorkerProcessError as exc:
++            error = ToolError.model_validate(
++                {
++                    "error_class": {
++                        WorkerFailure.TIMEOUT: "timeout",
++                        WorkerFailure.INTERRUPTED: "transport",
++                        WorkerFailure.OUTPUT_LIMIT: "validation",
++                        WorkerFailure.INVALID_BUDGET: "validation",
++                        WorkerFailure.START_FAILED: "unavailable",
++                        WorkerFailure.PROCESS_FAILED: "internal",
++                    }[exc.reason],
++                    "code": f"tool_worker_{exc.reason.value}",
++                    "diagnostic_refs": (),
++                }
++            )
++            observed = (
++                (self._version, self._proof)
++                if exc.start_state is WorkerStart.STARTED
++                else None
++            )
++            raise ToolWorkerFailure(
++                error,
++                dispatched=exc.dispatched,
++                response=(
++                    None
++                    if exc.output is None
++                    else ToolWorkerResponse(
++                        exc.output,
++                        self._version if observed else None,
++                        self._proof if observed else None,
++                    )
++                ),
++                observed_implementation=observed,
++            ) from None
++        finally:
++            # A reservation without a physical launch can be abandoned here.
++            # Active process capacity remains the supervisor's responsibility.
++            await _release(self._admission, lease, started=False)
++        return ToolWorkerResponse(content, self._version, self._proof)
++
++    def _artifact_digest(self) -> str | None:
++        try:
++            with self._implementation_path.open("rb") as artifact:
++                return file_digest(artifact, "sha256").hexdigest()
++        except OSError:
++            return None
++
++
++@dataclass(frozen=True, slots=True)
++class RemoteToolWorker:
++    """Reserve a remote Tool through the host's bounded transport callback."""
++
++    admission: ResourceAdmission
++    scope_id: str
++    owner_id: str
++    send: RemoteToolTransport
++
++    async def run(
++        self, dispatch: ToolDispatch, before_dispatch: BeforeDispatch
++    ) -> ToolWorkerResponse:
++        if dispatch.resources.resource_class != "remote":
++            raise ToolWorkerFailure(
++                ToolError(
++                    error_class="association",
++                    code="tool_remote_resource",
++                    diagnostic_refs=(),
++                ),
++                dispatched=False,
++            )
++        lease = await _reserve(self.admission, dispatch, self.scope_id, self.owner_id)
++        activated = False
++        try:
++            if not await before_dispatch(dispatch, lease):
++                raise ToolWorkerFailure(
++                    ToolError(
++                        error_class="cancelled",
++                        code="tool_dispatch_denied",
++                        diagnostic_refs=(),
++                    ),
++                    dispatched=False,
++                )
++            try:
++                self.admission.activate_remote(lease, dispatch.tool_execution_id)
++            except ResourceUnavailable:
++                raise ToolWorkerFailure(
++                    ToolError(
++                        error_class="resource_exhausted",
++                        code="tool_remote_lease_inactive",
++                        diagnostic_refs=(),
++                    ),
++                    dispatched=False,
++                ) from None
++            activated = True
++            # The trusted transport owns streaming bounds and cancellation.
++            response = await self.send(dispatch)
++            if response.terminal_evidence_id is not None:
++                await asyncio.to_thread(
++                    self.admission.settle_provider,
++                    lease.lease_id,
++                    dispatch.tool_execution_id,
++                    response.terminal_evidence_id,
++                )
++            return response
++        finally:
++            await _release(self.admission, lease, started=activated)
++
++
++@dataclass(frozen=True, slots=True)
++class ToolImplementation:
++    capability_id: ArtifactId
++    contract_version: Version
++    version: Version
++    proof: TrustPin
++    provider_kind: ToolProviderKind
++    input_schema_ref: ToolInputSchemaRef
++    output_schema_ref: ToolOutputSchemaRef
++    resource_class: ResourceClass
++    worker: ToolWorkerPort
++    spatial_result_check: SpatialResultCheck | None = None
++
++
++class ToolWorkerRegistry:
++    """An immutable registry constructed by the host rather than from Bundle data."""
++
++    def __init__(self, entries: tuple[ToolImplementation, ...]) -> None:
++        index: dict[tuple[str, ...], ToolImplementation] = {}
++        for entry in entries:
++            key = (entry.capability_id, entry.contract_version, entry.version)
++            if key in index:
++                raise ValueError("ambiguous Tool implementation registration")
++            index[key] = entry
++        self._entries = MappingProxyType(index)
++
++    def resolve(
++        self,
++        tool_ref: ToolContentRef,
++        definition: ToolDefinition,
++        pin: ConfiguredToolPin,
++        resource_class: ResourceClass,
++        expected_proof: TrustPin,
++    ) -> ToolImplementation:
++        requirement = definition.implementation_requirement
++        key = (
++            requirement.capability_id,
++            requirement.contract_version,
++            pin.implementation_version,
++        )
++        entry = self._entries.get(key)
++        if (
++            pin.tool_ref != tool_ref
++            or (tool_ref.artifact_id, tool_ref.version)
++            != (definition.tool_id, definition.version)
++            or pin.implementation_version
++            not in requirement.allowed_implementation_versions
++            or entry is None
++            or entry.proof != expected_proof
++            or (
++                entry.provider_kind,
++                entry.input_schema_ref,
++                entry.output_schema_ref,
++                entry.resource_class,
++            )
++            != (
++                definition.provider_kind,
++                definition.input_schema_ref,
++                definition.output_schema_ref,
++                resource_class,
++            )
++        ):
++            raise LookupError("the exact pinned Tool implementation is unavailable")
++        return entry
+--- /dev/null
++++ b/src/jimu_runtime/tools/audit.py
+@@ -0,0 +1,51 @@
++"""Shared vocabulary for Tool diagnostics safe to retain in scoped evidence."""
++
++from jimu_runtime.domain.runtime.tool_executions import (
++    FailedToolResult,
++    NonKnownToolOutputState,
++    ReturnedToolAttempt,
++    ToolExecution,
++)
++
++TOOL_VALIDATION_DIAGNOSTIC = "Tool reported a validation diagnostic."
++TOOL_NON_KNOWN_DIAGNOSTIC = "Tool reported a non-known output."
++TOOL_INVALID_OUTPUT_DIAGNOSTIC = "Tool output was missing or invalid."
++TOOL_UNVERIFIED_VERSION_DIAGNOSTIC = (
++    "The actual pinned implementation could not be verified."
++)
++TOOL_REPORTED_DIAGNOSTIC_CODE = "tool_reported_diagnostic"
++TOOL_REPORTED_FAILURE_CODE = "tool_reported_failure"
++TOOL_INVALID_OUTPUT_CODE = "invalid_named_output"
++
++
++def tool_diagnostics_are_normalized(execution: ToolExecution) -> bool:
++    reason = execution.implementation_version_unavailable_reason
++    if reason is not None and reason != TOOL_UNVERIFIED_VERSION_DIAGNOSTIC:
++        return False
++    attempt = execution.attempt_result
++    if not isinstance(attempt, ReturnedToolAttempt):
++        return True
++    result = attempt.result
++    if (
++        isinstance(result, FailedToolResult)
++        and result.error.code != TOOL_REPORTED_FAILURE_CODE
++    ):
++        return False
++    if any(
++        issue.code != TOOL_REPORTED_DIAGNOSTIC_CODE
++        or issue.message != TOOL_VALIDATION_DIAGNOSTIC
++        or issue.path
++        or issue.related_refs
++        for issue in result.diagnostics
++    ):
++        return False
++    for state in result.output_states:
++        if not isinstance(state, NonKnownToolOutputState):
++            continue
++        evidence = state.reason
++        if (evidence.reason_code, evidence.message) not in {
++            (f"tool_reported_{state.fact_status.value}", TOOL_NON_KNOWN_DIAGNOSTIC),
++            (TOOL_INVALID_OUTPUT_CODE, TOOL_INVALID_OUTPUT_DIAGNOSTIC),
++        }:
++            return False
++    return True
+--- /dev/null
++++ b/tests/contract/test_wp04_tool_executor.py
+@@ -0,0 +1,999 @@
++"""Exercise both Tool origins using the admitted Bundle and a supervised worker."""
++
++import asyncio
++import json
++import sys
++from copy import deepcopy
++from dataclasses import replace
++from datetime import UTC, datetime, timedelta
++
++import pytest
++
++from jimu_runtime.bundle.compiler import ReferenceSlot
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.bundle.trust import TrustPin
++from jimu_runtime.domain.definition_enums import (
++    CapabilityFamily,
++    CapabilityFeature,
++    EvidenceType,
++)
++from jimu_runtime.domain.definitions.capabilities import ProfileDefinition
++from jimu_runtime.domain.definitions.tools import ToolDefinition
++from jimu_runtime.domain.enums import (
++    ArtifactKind,
++    AttemptStatus,
++    ExecutionStatus,
++    FactStatus,
++    NodeRunStatus,
++    RuntimeRecordKind,
++)
++from jimu_runtime.domain.nodes.discovery import ProfileHit
++from jimu_runtime.domain.nodes.envelopes import NodeInputEnvelope, SucceededNodeOutput
++from jimu_runtime.domain.nodes.grounding import GroundingInput, GroundingProfileInput
++from jimu_runtime.domain.nodes.observation import ObjectImageView
++from jimu_runtime.domain.nodes.tool_execution import (
++    InvokedToolStep,
++    ToolNodeInput,
++    ToolNodeOutput,
++    ToolPlanRunSummary,
++)
++from jimu_runtime.domain.policies import (
++    EvidencePolicyArtifact,
++    RemoteResourceRequirements,
++)
++from jimu_runtime.domain.runtime.applicability import ContextSnapshotRef
++from jimu_runtime.domain.runtime.evidence import (
++    EvidenceAsset,
++    NonSpatialEvidence,
++    ObjectEvidenceScope,
++    RetentionPolicyRef,
++    TaskEvidenceAccess,
++)
++from jimu_runtime.domain.runtime.executions import (
++    Attempt,
++    AttemptLink,
++    ExecutionRecord,
++    NodeId,
++    NodeRun,
++)
++from jimu_runtime.domain.runtime.facts import (
++    AttemptRef,
++    FactRef,
++    ModelInvocationRef,
++    NodeRunRef,
++    ObjectRef,
++    PolicyContentRef,
++    ProfileContentRef,
++    QuestionSelectionRef,
++    ToolExecutionRef,
++)
++from jimu_runtime.domain.runtime.media import (
++    BBoxXYXY,
++    CoordinateSystem,
++    FinalizedAsset,
++    ImageDimensions,
++    MediaAsset,
++    StorageReference,
++)
++from jimu_runtime.domain.runtime.perception import (
++    GroundingRecordRef,
++    ObjectRecord,
++    ToolGroundingProvenance,
++)
++from jimu_runtime.domain.runtime.tool_executions import (
++    ReturnedToolAttempt,
++    ToolExecution,
++)
++from jimu_runtime.domain.validation.authority_inputs import NodeAttemptOwner
++from jimu_runtime.domain.values import ListValue, RecordValue
++from jimu_runtime.tools import (
++    GroundingCall,
++    IsolatedCPUWorker,
++    PlanStepCall,
++    RemoteToolWorker,
++    ToolCancelled,
++    ToolExecutor,
++    ToolImplementation,
++    ToolWorkerFailure,
++    ToolWorkerRegistry,
++    ToolWorkerResponse,
++    original_xyxy,
++    validate_tool_round,
++)
++from jimu_runtime.workers.resource_inventory import (
++    HostInventory,
++    RemoteCapacity,
++    RemoteQuota,
++    ResourceScope,
++)
++from jimu_runtime.workers.resources import ResourceAdmission
++from tests.fixtures.wp02.compiler.scenario import (
++    TOOL,
++    TOOL_CAPABILITY,
++    VERSION,
++    approve_source_bytes,
++    capability_snapshot,
++    source_scenario,
++)
++from tests.fixtures.wp03.pins.support import accepted_scenario
++
++K = RuntimeRecordKind
++_WORKER_BODY = """
++import json
++import sys
++import time
++
++case = json.load(sys.stdin)["image"]
++if case == "timeout":
++    time.sleep(5)
++if case == "output-limit":
++    print("x" * 5000)
++    raise SystemExit
++if case == "invalid":
++    print('{"status":"succeeded","status":"failed"}')
++    raise SystemExit
++payload = {}
++states = []
++if case == "ground":
++    payload["boxes"] = {"kind": "list", "value": [
++        {"kind": "integer", "value": n} for n in (0, 1, 5, 7)
++    ]}
++elif case != "missing":
++    payload["outside"] = {"kind": "bool", "value": True}
++    states.append({"output_name": "outside", "fact_status": "known", "evidence_refs": []})
++if case != "ground":
++    payload["other"] = {"kind": "bool", "value": False}
++    states.append({"output_name": "other", "fact_status": "known", "evidence_refs": []})
++print(json.dumps({
++    "status": "succeeded",
++    "payload": {"kind": "record", "value": payload},
++    "output_states": states,
++    "evidence": [],
++    "evidence_refs": [],
++    "diagnostics": [],
++}))
++"""
++
++
++def _source():
++    source = source_scenario()
++    patched = []
++    features = ("geometry_output", "rgb_image", "original_xyxy")
++    (plan_source,) = tuple(
++        item for item in source.artifacts if item.kind is ArtifactKind.TOOL_PLAN
++    )
++    grounding_inputs = json.loads(plan_source.content)["steps"][0]["input_bindings"]
++    for entry in source.artifacts:
++        value = json.loads(entry.content)
++        slots = entry.reference_slots
++        if entry.kind is ArtifactKind.PROFILE:
++            old = value["grounding_binding"]
++            assert old["kind"] == "model"
++            value["grounding_binding"] = {
++                "kind": "tool",
++                "tool_ref": None,
++                "input_bindings": grounding_inputs,
++            }
++            slots = tuple(
++                slot for slot in slots if slot.location[:1] != ("grounding_binding",)
++            ) + (
++                ReferenceSlot(
++                    location=("grounding_binding", "tool_ref"),
++                    target=(ArtifactKind.TOOL, TOOL, VERSION),
++                ),
++                *(
++                    replace(slot, location=("grounding_binding", *slot.location[2:]))
++                    for slot in plan_source.reference_slots
++                    if slot.location[:3] == ("steps", 0, "input_bindings")
++                ),
++            )
++        elif entry.kind is ArtifactKind.TOOL:
++            value["capability_tags"].append("object_grounding")
++            value["implementation_requirement"]["required_features"] = list(features)
++            value["fact_outputs"][0]["value_path"] = ["outside"]
++            value["fact_outputs"].append(
++                {
++                    **value["fact_outputs"][0],
++                    "output_name": "other",
++                    "fact_key": "parking.other",
++                    "value_path": ["other"],
++                }
++            )
++            slots = (
++                *slots,
++                ReferenceSlot(
++                    location=("fact_outputs", 1, "fact_schema_ref"),
++                    target=(ArtifactKind.FACT_SCHEMA, "other", VERSION),
++                ),
++            )
++        elif entry.kind is ArtifactKind.TOOL_PLAN:
++            value["steps"][0]["fact_output_mappings"].append(
++                {
++                    "output_name": "other",
++                    "target_fact_key": "parking.other",
++                }
++            )
++            extra = deepcopy(value["steps"][0])
++            extra["step_id"] = "evidence"
++            extra["fact_output_mappings"] = []
++            value["steps"].append(extra)
++            slots = (
++                *slots,
++                *(
++                    replace(slot, location=("steps", 1, *slot.location[2:]))
++                    for slot in slots
++                    if slot.location[:2] == ("steps", 0)
++                    and slot.location[2] != "fact_output_mappings"
++                ),
++            )
++        elif entry.kind is ArtifactKind.TOOL_OUTPUT_SCHEMA:
++            for label in ("SucceededToolResult", "PartialToolResult"):
++                props = value["$defs"][label]["properties"]
++                props["payload"] = {
++                    "type": "object",
++                    "properties": {
++                        "kind": {"const": "record"},
++                        "value": {
++                            "type": "object",
++                            "properties": {
++                                "outside": props["payload"],
++                                "other": props["payload"],
++                                "boxes": {
++                                    "type": "object",
++                                    "properties": {
++                                        "kind": {"const": "list"},
++                                        "value": {
++                                            "type": "array",
++                                            "minItems": 4,
++                                            "maxItems": 4,
++                                            "items": {
++                                                "type": "object",
++                                                "additionalProperties": False,
++                                                "properties": {
++                                                    "kind": {"const": "integer"},
++                                                    "value": {
++                                                        "type": "integer",
++                                                        "minimum": 0,
++                                                        "maximum": 8,
++                                                    },
++                                                },
++                                                "required": ["kind", "value"],
++                                            },
++                                        },
++                                    },
++                                    "required": ["kind", "value"],
++                                    "additionalProperties": False,
++                                },
++                            },
++                            "additionalProperties": False,
++                        },
++                    },
++                    "required": ["kind", "value"],
++                    "additionalProperties": False,
++                }
++        elif entry.kind is ArtifactKind.POLICY:
++            if entry.artifact_id == "evidence":
++                value["policy"]["original_media_required"] = False
++                value["policy"]["allowed_evidence_types"].append("tool_output")
++            if entry.artifact_id in ("resources", "execution"):
++                value["policy"]["timeout_ms"] = 2000
++                if entry.artifact_id == "resources":
++                    value["policy"]["output_byte_limit"] = 4096
++        patched.append(
++            replace(entry, content=json.dumps(value).encode(), reference_slots=slots)
++        )
++        if entry.kind is ArtifactKind.FACT_SCHEMA and entry.artifact_id == "outside":
++            value.update(schema_id="other", semantic_key="parking.other")
++            patched.append(
++                replace(
++                    entry,
++                    artifact_id="other",
++                    path="schemas/facts/definitions/other.json",
++                    content=json.dumps(value).encode(),
++                    origin=replace(entry.origin, artifact_id="fact_schema:other"),
++                )
++            )
++        if entry.kind is ArtifactKind.PROFILE:
++            second_id = "other_profile"
++            value["profile_id"] = second_id
++            patched.append(
++                replace(
++                    entry,
++                    artifact_id=second_id,
++                    content=json.dumps(value).encode(),
++                    origin=replace(entry.origin, artifact_id=f"profile:{second_id}"),
++                    reference_slots=slots,
++                )
++            )
++    metadata = replace(
++        source.metadata,
++        required_capabilities=tuple(
++            entry.model_copy(
++                update={
++                    "required_features": tuple(
++                        CapabilityFeature(feature) for feature in features
++                    )
++                }
++            )
++            if entry.family is CapabilityFamily.TOOL_IMPLEMENTATION
++            else entry
++            for entry in source.metadata.required_capabilities
++        ),
++    )
++    host = capability_snapshot()
++    capabilities = tuple(
++        entry.model_copy(
++            update={
++                "supported_features": tuple(
++                    CapabilityFeature(feature) for feature in features
++                )
++            }
++        )
++        if entry.capability_id == TOOL_CAPABILITY
++        else entry
++        for entry in host.capabilities
++    )
++    protocols = tuple(host.runtime_protocols)
++    (tool_protocol,) = tuple(
++        item for item in protocols if item.role == "tool_execution"
++    )
++    from jimu_runtime.bundle.integrity import canonicalize_json
++
++    output_bytes = next(
++        entry.content
++        for entry in patched
++        if entry.kind is ArtifactKind.TOOL_OUTPUT_SCHEMA
++    )
++    digest = sha256_digest(
++        canonicalize_json(output_bytes, max_bytes=256_000, max_depth=48)
++    )
++    tool_protocol = tool_protocol.model_copy(
++        update={
++            "output_schema_ref": tool_protocol.output_schema_ref.model_copy(
++                update={"digest": digest}
++            ),
++        }
++    )
++    host = host.model_copy(
++        update={
++            "capabilities": capabilities,
++            "runtime_protocols": (
++                *(
++                    protocol
++                    for protocol in protocols
++                    if protocol.role != "tool_execution"
++                ),
++                tool_protocol,
++                tool_protocol.model_copy(update={"role": "tool_grounding"}),
++            ),
++        }
++    )
++    return approve_source_bytes(
++        replace(source, metadata=metadata, artifacts=tuple(patched))
++    ), host
++
++
++@pytest.fixture
++def tool_fixture(tmp_path):
++    source, host = _source()
++    return accepted_scenario(tmp_path, source=source, host=host)
++
++
++def _run_objects(scenario, node_id):
++    resolved = scenario.resolve()
++    task = scenario.task
++    at = datetime.now(UTC)
++    exe = ExecutionRecord(
++        schema_version=VERSION,
++        execution_id="wp04-test-execution",
++        task_id=task.task_id,
++        pins=resolved.pins,
++        trace=task.trace,
++        status=ExecutionStatus.RUNNING,
++        created_at=at,
++        started_at=at,
++        model_invocation_refs=(),
++    )
++    node_ref = NodeRunRef(record_kind=K.NODE_RUN, record_id=f"test-{node_id.value}")
++    attempt_ref = AttemptRef(
++        record_kind=K.ATTEMPT, record_id=f"test-{node_id.value}-attempt"
++    )
++    attempt = Attempt(
++        schema_version=VERSION,
++        attempt_id=attempt_ref.record_id,
++        execution_id=exe.execution_id,
++        owner=NodeAttemptOwner(owner_kind="node", node_run_ref=node_ref),
++        attempt_number=1,
++        status=AttemptStatus.RUNNING,
++        created_at=at,
++        started_at=at,
++    )
++    node = NodeRun(
++        schema_version=VERSION,
++        node_run_id=node_ref.record_id,
++        execution_id=exe.execution_id,
++        node_id=node_id,
++        trace=exe.trace,
++        config_ref=resolved.policy_ref,
++        upstream_inputs=(),
++        input_digest=exe.pins.input_digest,
++        status=NodeRunStatus.RUNNING,
++        created_at=at,
++        started_at=at,
++        attempt_history=(AttemptLink(attempt_ref=attempt_ref, attempt_number=1),),
++        output_refs=(),
++    )
++    envelope = NodeInputEnvelope(
++        schema_version=VERSION,
++        node_id=node_id,
++        task_id=task.task_id,
++        execution_id=exe.execution_id,
++        release_id=task.release_id,
++        bundle_digest=task.bundle_digest,
++        node_run_id=node.node_run_id,
++        attempt_id=attempt.attempt_id,
++        trace=exec_trace(exe),
++        upstream_artifacts=(),
++        node_config_ref=resolved.policy_ref,
++    )
++    dimensions = ImageDimensions(width=8, height=8)
++    coordinates = CoordinateSystem(
++        coordinate_system_id="image-frame",
++        frame="original_image",
++        dimensions=dimensions,
++    )
++    media = MediaAsset(
++        schema_version=VERSION,
++        media_ref=task.media_ref,
++        storage=StorageReference(store_id="fixture", object_key="test/image.png"),
++        stage=FinalizedAsset(
++            stage="finalized",
++            staged_at=at,
++            verified_at=at,
++            verified_sha256=task.media_ref.sha256,
++            object_version=VERSION,
++        ),
++        color_space="RGB",
++        mime_type="image/png",
++        byte_size=10,
++        dimensions=dimensions,
++    )
++    profiles = tuple(
++        (
++            ProfileContentRef.model_validate(entry.ref.model_dump()),
++            require_definition(resolved.catalogue, entry.ref, ProfileDefinition),
++        )
++        for entry in resolved.catalogue.of_kind(ArtifactKind.PROFILE)
++    )
++    profile_ref, profile = profiles[0]
++    selected = dict(
++        profile_ref=profile_ref,
++        question_selection_ref=QuestionSelectionRef(
++            record_kind=K.QUESTION_SELECTION_RECORD, record_id="question"
++        ),
++        effective_question_refs=profile.question_refs,
++    )
++    if node_id is NodeId.N03:
++        site = GroundingCall(
++            GroundingInput(
++                schema_version=VERSION,
++                envelope=envelope,
++                original_media_ref=media.media_ref,
++                original_coordinate_system=coordinates,
++                profiles=tuple(
++                    GroundingProfileInput(
++                        hit=ProfileHit.model_validate(
++                            {
++                                **selected,
++                                "profile_ref": ref,
++                                "effective_question_refs": row.question_refs,
++                                "model_invocation_ref": ModelInvocationRef(
++                                    record_kind=K.MODEL_INVOCATION,
++                                    record_id="discovery",
++                                ),
++                            }
++                        ),
++                        grounding_binding=row.grounding_binding,
++                    )
++                    for ref, row in profiles
++                ),
++            ),
++            profile_ref,
++        )
++    else:
++        obj = ObjectRecord(
++            **selected,
++            schema_version=VERSION,
++            object_id="object",
++            execution_id=exe.execution_id,
++            entity_ref=profile.entity_ref,
++            grounding_record_ref=GroundingRecordRef(
++                record_kind=K.GROUNDING_RECORD, record_id="grounding"
++            ),
++            source_media_ref=media.media_ref,
++            coordinate_system=coordinates,
++            bbox=BBoxXYXY(xyxy=(0.0, 1.0, 5.0, 7.0)),
++            grounding_producer=ToolGroundingProvenance(
++                kind="tool",
++                tool_ref=resolved.pins.tool_pins[0].tool_ref,
++                tool_execution_ref=ToolExecutionRef(
++                    record_kind=K.TOOL_EXECUTION, record_id="grounding-tool"
++                ),
++                actual_implementation_version=VERSION,
++                nested_model_invocation_refs=(),
++            ),
++            visibility="visible",
++            localization_status="localized",
++            evidence_refs=(),
++        )
++        site = PlanStepCall(
++            ToolNodeInput(
++                schema_version=VERSION,
++                envelope=envelope,
++                object_record=obj,
++                image_view=ObjectImageView(roi=obj.bbox, transforms=()),
++                context_snapshot_ref=ContextSnapshotRef(
++                    record_kind=K.CONTEXT_SNAPSHOT, record_id="context"
++                ),
++                tool_plan_ref=profile.tool_plan_ref,
++                validated_observation_fact_refs=(),
++            ),
++            TOOL,
++        )
++    return resolved, exe, node, attempt, site, media
++
++
++def exec_trace(execution):
++    return execution.trace
++
++
++def _worker(tmp_path, resolved, *, expected_capacity=True):
++    worker_script = tmp_path / "isolated-worker.py"
++    worker_script.write_text(_WORKER_BODY)
++    resource = ResourceAdmission.provision(
++        tmp_path / "local-resources.sqlite3",
++        HostInventory(
++            "wp04-tools",
++            lease_ttl_ms=5000,
++            cpu_slots=int(expected_capacity),
++            scopes=(ResourceScope("wp04-testing", "cpu", 1),),
++        ),
++    )
++    (pin,) = resolved.pins.tool_pins
++    definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
++    proof = TrustPin(
++        identity="test-tool",
++        version=VERSION,
++        sha256=sha256_digest(worker_script.read_bytes()),
++    )
++
++    def check_spatial(dispatch, result, coordinate_system):
++        payload = result.payload
++        assert isinstance(payload, RecordValue)
++        boxes = payload.value.get("boxes")
++        if dispatch.origin.kind == "grounding_binding":
++            if not isinstance(boxes, ListValue):
++                raise ValueError("missing bounds")
++            original_xyxy(
++                tuple(float(item.value) for item in boxes.value), coordinate_system
++            )
++
++    registration = ToolImplementation(
++        capability_id=definition.implementation_requirement.capability_id,
++        contract_version=definition.implementation_requirement.contract_version,
++        version=pin.implementation_version,
++        proof=proof,
++        provider_kind=definition.provider_kind,
++        input_schema_ref=definition.input_schema_ref,
++        output_schema_ref=definition.output_schema_ref,
++        resource_class="cpu",
++        worker=IsolatedCPUWorker(
++            resource,
++            (sys.executable, "-I", str(worker_script)),
++            "wp04-testing",
++            "test-worker",
++            VERSION,
++            proof,
++            worker_script,
++        ),
++        spatial_result_check=check_spatial,
++    )
++    return ToolExecutor(ToolWorkerRegistry((registration,))), proof
++
++
++async def _allow(dispatch, lease):
++    assert dispatch.request and lease.lease_id
++    return True
++
++
++def _invoke(
++    executor,
++    proof,
++    args,
++    case,
++    *,
++    peers=(),
++    time_limit=3.0,
++    before_dispatch=_allow,
++    record_response=None,
++):
++    resolved, execution, node, attempt, call, media = args
++    return asyncio.run(
++        executor.execute(
++            resolved=resolved,
++            execution=execution,
++            node=node,
++            attempt=attempt,
++            call=call,
++            media=media,
++            input_fields={"image": case},
++            implementation_proof=proof,
++            deadline=datetime.now(UTC) + timedelta(seconds=time_limit),
++            before_dispatch=before_dispatch,
++            peers=peers,
++            record_response=record_response,
++        )
++    )
++
++
++def test_isolated_cpu_same_tool_and_same_round_siblings(tool_fixture, tmp_path):
++    n05 = _run_objects(tool_fixture, NodeId.N05)
++    resolved, _, node, attempt, call, media = n05
++    executor, proof = _worker(tmp_path, resolved)
++    one = _invoke(executor, proof, n05, "step")
++    assert one.request_digest == sha256_digest(
++        executor.prepare_step_input(resolved, call, media, {"image": "step"})
++    )
++    two = _invoke(
++        executor,
++        proof,
++        (*n05[:4], replace(call, step_id="evidence"), media),
++        "step",
++        peers=(one.execution,),
++    )
++    n03 = _run_objects(tool_fixture, NodeId.N03)
++    grounded = _invoke(
++        executor, proof, n03, "ground", peers=(one.execution, two.execution)
++    )
++    assert grounded.execution.status == "succeeded", (
++        grounded.execution.model_dump_json()
++    )
++    assert grounded.execution.tool_ref == one.execution.tool_ref
++    assert not grounded.facts and grounded.execution.object_ref is None
++    second_profile = n03[4].inputs.profiles[1].hit.profile_ref
++    grounded_sibling = _invoke(
++        executor,
++        proof,
++        (*n03[:4], replace(n03[4], profile_ref=second_profile), n03[5]),
++        "ground",
++        peers=(one.execution, two.execution, grounded.execution),
++    )
++    assert grounded_sibling.execution.status == "succeeded"
++    assert grounded.execution.attempt_ref == grounded_sibling.execution.attempt_ref
++    assert grounded.execution.profile_ref != grounded_sibling.execution.profile_ref
++    assert one.execution.status == two.execution.status == "succeeded"
++    assert one.execution.attempt_ref == two.execution.attempt_ref
++    assert one.execution.tool_execution_id != two.execution.tool_execution_id
++    assert one.facts[0].status is FactStatus.KNOWN and not two.facts
++    for item in (one, two, grounded):
++        assert item.execution == ToolExecution.model_validate_json(
++            item.execution.model_dump_json()
++        )
++    outputs = (one.execution, two.execution)
++    now = datetime.now(UTC)
++    summary = ToolNodeOutput(
++        schema_version=VERSION,
++        envelope=SucceededNodeOutput(
++            schema_version=VERSION,
++            status=NodeRunStatus.SUCCEEDED,
++            node_id=NodeId.N05,
++            node_run_id=node.node_run_id,
++            attempt_id=attempt.attempt_id,
++            trace=node.trace,
++            output_artifacts=(),
++            started_at=now,
++            finished_at=now,
++            duration_ms=0,
++        ),
++        summary=ToolPlanRunSummary(
++            tool_plan_ref=call.inputs.tool_plan_ref,
++            object_ref=ObjectRef(
++                record_kind=K.OBJECT, record_id=call.inputs.object_record.object_id
++            ),
++            status="succeeded",
++            steps=tuple(
++                InvokedToolStep(
++                    disposition="invoked",
++                    step_id=item.invocation_origin.step_id,
++                    tool_execution_ref=ToolExecutionRef(
++                        record_kind=K.TOOL_EXECUTION, record_id=item.tool_execution_id
++                    ),
++                )
++                for item in outputs
++            ),
++            validation_issues=(),
++        ),
++        tool_fact_refs=tuple(
++            FactRef(record_kind=K.FACT, record_id=fact.fact_id) for fact in one.facts
++        ),
++        evidence_refs=(),
++    )
++    validate_tool_round(
++        resolved=resolved,
++        node=node,
++        attempt=attempt,
++        inputs=call.inputs,
++        output=summary,
++        media=media,
++        calls=(one, two),
++    )
++    with pytest.raises(ValueError, match="duplicated or mismatched"):
++        _invoke(
++            executor,
++            proof,
++            n05,
++            "step",
++            peers=(
++                one.execution.model_copy(update={"tool_execution_id": "different-id"}),
++            ),
++        )
++
++
++@pytest.mark.parametrize(
++    ("case", "status", "error_code"),
++    [
++        ("invalid", "failed", "tool_result_invalid"),
++        ("missing", "partial", None),
++        ("too-long" * 300, "not_dispatched", "tool_input_invalid"),
++    ],
++)
++def test_bounded_output_failures_preserve_audit(
++    tool_fixture, tmp_path, case, status, error_code
++):
++    args = _run_objects(tool_fixture, NodeId.N05)
++    executor, proof = _worker(tmp_path, args[0])
++    result = _invoke(executor, proof, args, case)
++    assert result.execution.status == status
++    if error_code:
++        assert result.execution.attempt_result.error.code == error_code
++        assert not result.facts
++    else:
++        assert isinstance(result.execution.attempt_result, ReturnedToolAttempt)
++        assert {fact.fact_key: fact.status for fact in result.facts} == {
++            "parking.outside": FactStatus.ERROR,
++            "parking.other": FactStatus.KNOWN,
++        }
++    assert (result.response_digest is not None) == (status != "not_dispatched")
++
++
++def test_unavailable_capacity_never_calls_start_hook(tool_fixture, tmp_path):
++    args = _run_objects(tool_fixture, NodeId.N05)
++    executor, proof = _worker(tmp_path, args[0], expected_capacity=False)
++
++    async def unexpected(*_):
++        pytest.fail("resource rejection must precede dispatch")
++
++    result = _invoke(executor, proof, args, "step", before_dispatch=unexpected)
++    assert result.execution.status == "not_dispatched"
++    assert result.execution.attempt_result.error.error_class == "resource_exhausted"
++
++
++def test_implementation_pin_mismatch_rejects_dispatch(tool_fixture, tmp_path):
++    args = _run_objects(tool_fixture, NodeId.N05)
++    executor, proof = _worker(tmp_path, args[0])
++    result = _invoke(
++        executor, proof.model_copy(update={"sha256": "0" * 64}), args, "step"
++    )
++    assert result.execution.status == "not_dispatched"
++    assert (
++        result.execution.attempt_result.error.code == "tool_implementation_unavailable"
++    )
++
++
++def test_raw_failed_response_keeps_exact_evidence(tool_fixture, tmp_path):
++    args = _run_objects(tool_fixture, NodeId.N05)
++    resolved, execution, _, _, call, _ = args
++    executor, proof = _worker(tmp_path, resolved)
++    (pin,) = resolved.pins.tool_pins
++    tool = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
++    policy = require_definition(
++        resolved.catalogue, tool.evidence_policy_ref, EvidencePolicyArtifact
++    ).policy
++    body_path = tmp_path / "raw-evidence.json"
++
++    async def save_raw(dispatch, content):
++        body_path.write_bytes(content)
++        digest = sha256_digest(content)
++        now = datetime.now(UTC)
++        return EvidenceAsset(
++            schema_version=VERSION,
++            evidence_id="raw-response",
++            evidence_type=EvidenceType.TOOL_OUTPUT,
++            scope=ObjectEvidenceScope(
++                scope="object",
++                execution_id=execution.execution_id,
++                object_ref=dispatch.object_ref,
++                profile_ref=call.inputs.object_record.profile_ref,
++            ),
++            storage=StorageReference(store_id="fixture", object_key=body_path.name),
++            sha256=digest,
++            mime_type="application/json",
++            byte_size=len(content),
++            stage=FinalizedAsset(
++                stage="finalized",
++                staged_at=now,
++                verified_at=now,
++                verified_sha256=digest,
++                object_version=VERSION,
++            ),
++            spatial=NonSpatialEvidence(kind="non_spatial"),
++            producer_id="tool-audit",
++            producer_version=VERSION,
++            access_scope=TaskEvidenceAccess(
++                scope="task", project_id="fixture-project", task_id=execution.task_id
++            ),
++            retention=RetentionPolicyRef(
++                evidence_policy_ref=PolicyContentRef.model_validate(
++                    tool.evidence_policy_ref.model_dump()
++                ),
++                retention_class=policy.retention_class,
++            ),
++            created_at=now,
++        )
++
++    result = _invoke(executor, proof, args, "invalid", record_response=save_raw)
++    assert result.execution.status == "failed"
++    assert result.execution.attempt_result.error.code == "tool_result_invalid"
++    assert result.response_digest == sha256_digest(body_path.read_bytes())
++    assert result.response_byte_count == body_path.stat().st_size
++    assert result.execution.evidence_refs[0].record_id == result.evidence[0].evidence_id
++    assert not result.execution.output_refs and not result.facts
++
++
++@pytest.mark.parametrize(
++    ("case", "time_limit", "error_class"),
++    [
++        ("output-limit", 3.0, "validation"),
++        ("timeout", 0.7, "timeout"),
++    ],
++)
++def test_isolated_process_releases_after_timeout_or_oversize(
++    tool_fixture, tmp_path, case, time_limit, error_class
++):
++    args = _run_objects(tool_fixture, NodeId.N05)
++    executor, proof = _worker(tmp_path, args[0])
++    result = _invoke(executor, proof, args, case, time_limit=time_limit)
++    assert result.execution.status == "failed"
++    assert result.execution.attempt_result.error.error_class == error_class
++    assert result.response_digest is None and result.response_byte_count is None
++    assert result.request_digest == sha256_digest(
++        json.dumps({"image": case}, separators=(",", ":")).encode()
++    )
++    fresh = _run_objects(tool_fixture, NodeId.N05)
++    assert _invoke(executor, proof, fresh, "step").execution.status == "succeeded"
++
++
++def test_cancelled_process_does_not_keep_slot(tool_fixture, tmp_path):
++    args = _run_objects(tool_fixture, NodeId.N05)
++    resolved, execution, node, attempt, call, media = args
++    executor, proof = _worker(tmp_path, resolved)
++
++    async def invoke_cancel():
++        accepted = asyncio.Event()
++
++        async def allow_and_signal(dispatch, lease):
++            accepted.set()
++            return await _allow(dispatch, lease)
++
++        task = asyncio.create_task(
++            executor.execute(
++                resolved=resolved,
++                execution=execution,
++                node=node,
++                attempt=attempt,
++                call=call,
++                media=media,
++                input_fields={"image": "timeout"},
++                implementation_proof=proof,
++                deadline=datetime.now(UTC) + timedelta(seconds=3),
++                before_dispatch=allow_and_signal,
++            )
++        )
++        await asyncio.wait_for(accepted.wait(), 2)
++        await asyncio.sleep(0.15)
++        task.cancel()
++        with pytest.raises(ToolCancelled) as caught:
++            await task
++        result = caught.value.result
++        assert result.execution.status == "failed" and not result.facts
++        assert result.execution.attempt_result.error.error_class == "cancelled"
++
++    asyncio.run(invoke_cancel())
++    assert (
++        _invoke(
++            executor, proof, _run_objects(tool_fixture, NodeId.N05), "step"
++        ).execution.status
++        == "succeeded"
++    )
++
++
++def test_artifact_content_changed_after_host_pin(tool_fixture, tmp_path):
++    args = _run_objects(tool_fixture, NodeId.N05)
++    executor, proof = _worker(tmp_path, args[0])
++    script = tmp_path / "isolated-worker.py"
++    script.write_text(_WORKER_BODY + "\n# different bytes\n")
++    result = _invoke(executor, proof, args, "step")
++    assert result.execution.status == "not_dispatched"
++    assert result.execution.attempt_result.error.code == "tool_cpu_artifact_changed"
++
++
++def test_remote_worker_retains_capacity_until_provider_terminal_proof(
++    tool_fixture, tmp_path
++):
++    args = _run_objects(tool_fixture, NodeId.N05)
++    executor, proof = _worker(tmp_path, args[0])
++    sent = []
++
++    async def capture(dispatch, lease):
++        sent.append(dispatch)
++        return await _allow(dispatch, lease)
++
++    _invoke(executor, proof, args, "step", before_dispatch=capture)
++    remote_dispatch = replace(
++        sent[0],
++        resources=RemoteResourceRequirements.model_validate(
++            {
++                **sent[0].resources.model_dump(),
++                "resource_class": "remote",
++                "remote_quota_id": "test-quota",
++            }
++        ),
++    )
++    admission = ResourceAdmission.provision(
++        tmp_path / "remote-resources.sqlite3",
++        HostInventory(
++            "wp04-remote-tests",
++            lease_ttl_ms=5000,
++            cpu_slots=0,
++            scopes=(
++                ResourceScope(
++                    "test-remotes", "remote", 1, pool_or_quota_id="test-quota"
++                ),
++            ),
++            remote_quotas=(
++                RemoteQuota("test-quota", 1, RemoteCapacity.PROVIDER_INFLIGHT),
++            ),
++        ),
++        provider_terminal_verifier=lambda scope, dispatch_id, evidence_id: (
++            scope,
++            dispatch_id,
++            evidence_id,
++        )
++        == ("test-remotes", remote_dispatch.tool_execution_id, "terminal"),
++    )
++    transmissions = []
++    reservations = []
++
++    async def allow_remote(dispatch, lease):
++        assert dispatch is remote_dispatch
++        reservations.append(lease)
++        return True
++
++    async def bounded_send(dispatch):
++        transmissions.append(dispatch.request)
++        return ToolWorkerResponse(b"{}", VERSION, proof)
++
++    worker = RemoteToolWorker(admission, "test-remotes", "test-owner", bounded_send)
++    assert asyncio.run(worker.run(remote_dispatch, allow_remote)).content == b"{}"
++    assert len(transmissions) == len(reservations) == 1
++    with pytest.raises(ToolWorkerFailure) as caught:
++        asyncio.run(worker.run(remote_dispatch, allow_remote))
++    assert not caught.value.dispatched
++    assert caught.value.error.error_class == "resource_exhausted"
++    assert not admission.settle_provider(
++        reservations[0].lease_id, remote_dispatch.tool_execution_id, "wrong"
++    )
++    assert admission.settle_provider(
++        reservations[0].lease_id, remote_dispatch.tool_execution_id, "terminal"
++    )

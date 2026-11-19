@@ -1,0 +1,9 @@
+application image sha256:d18eaf435118a142313d17e8f8e1c861fc8b87b32e0d58ef81fb5003eb64a401
+NAME                                IMAGE                                                                              COMMAND                  SERVICE    CREATED          STATUS                      PORTS
+jimu-wp07-6d5e7ee5bb9d-database-1   postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae   "docker-entrypoint.s…"   database   21 seconds ago   Up 20 seconds (healthy)     5432/tcp
+jimu-wp07-6d5e7ee5bb9d-migrate-1    jimu-wp07-local:6d5e7ee5bb9d                                                       "python -m jimu_runt…"   migrate    21 seconds ago   Exited (0) 16 seconds ago   
+jimu-wp07-6d5e7ee5bb9d-runtime-1    jimu-wp07-local:6d5e7ee5bb9d                                                       "python /opt/jimu/ho…"   runtime    21 seconds ago   Up 16 seconds (healthy)     127.0.0.1:34901->8080/tcp
+execution=execution.5fdd8504c8d5cc0d798ad42d673e12154a816eeff76ad764014971507d3dedcc outcome=violation events=51 model_receipts=4 tool_receipts=3 raw_sha256=bcbb657634cfec8f287ed565f5d7d131c0f6c96949d4f953650c8ebc65424dcd
+runtime and database restarted, identical task, result, trace, and raw evidence
+.
+1 passed in 57.57s

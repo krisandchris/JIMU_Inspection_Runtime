@@ -1,0 +1,173 @@
+from datetime import datetime, timezone
+from hashlib import sha256
+from pathlib import Path
+from tempfile import TemporaryDirectory, mkdtemp
+import json
+import os
+import subprocess
+import sys
+import time
+import xml.etree.ElementTree as ET
+
+root = Path.cwd()
+evidence = Path('planning/implementation_evidence/WP-01C/independent')
+freeze = evidence.parent / 'primary_freeze_a1aec5dc27cc' / 'product_sha256.json'
+expected_manifest_digest = 'a1aec5dc27cc99fa86c1efcfdfc9c026951e865b3e47a5f2a16eeaef4049a4d2'
+expected_index_digest = '843f08cd7810b6313113f1dc1b8444f63a23a148b268d0a37a4ef26ceaf8cdb0'
+baseline = '2552affeb69fbc2594fe70724f895b0db0967d47'
+run = Path(mkdtemp(prefix='final_', dir=evidence))
+print(run, flush=True)
+(run / 'run_acceptance.py').write_bytes(Path(sys.argv[0]).read_bytes())
+
+def utc():
+    return datetime.now(timezone.utc).isoformat()
+
+def digest(data):
+    return sha256(data).hexdigest()
+
+def encode(data):
+    return (json.dumps(data, sort_keys=True, ensure_ascii=False, indent=2) + '\n').encode()
+
+def save(name, data):
+    (run / name).write_bytes(encode(data))
+
+def snapshot():
+    files = [Path('pyproject.toml'), Path('uv.lock')]
+    for folder in ('src', 'tests', 'scripts', 'schemas/generated'):
+        for path in Path(folder).rglob('*'):
+            if path.is_file() and not any(
+                part.startswith('.') or part == '__pycache__' for part in path.parts
+            ) and path.suffix != '.pyc':
+                files.append(path)
+    return {p.as_posix(): digest(p.read_bytes()) for p in sorted(files)}
+
+frozen_bytes = freeze.read_bytes()
+frozen = json.loads(frozen_bytes)
+assert digest(frozen_bytes) == expected_manifest_digest
+assert frozen['schemas/generated/index.json'] == expected_index_digest
+
+def compare():
+    current = snapshot()
+    return {
+        'count': len(current),
+        'manifest_sha256': digest(encode(current)),
+        'added': sorted(current.keys() - frozen.keys()),
+        'deleted': sorted(frozen.keys() - current.keys()),
+        'changed': sorted(p for p in current.keys() & frozen.keys() if current[p] != frozen[p]),
+        'matches_frozen': current == frozen,
+    }
+
+initial = compare()
+save('pre_run.json', initial)
+save('actual_product_before.json', snapshot())
+if not initial['matches_frozen']:
+    raise SystemExit('worktree differs from primary freeze before validation')
+
+results = []
+with TemporaryDirectory(prefix='jimu-c-accept-') as temp:
+    temp = Path(temp)
+    env = os.environ.copy()
+    updates = {
+        'UV_CACHE_DIR': str(temp / 'uv'),
+        'RUFF_CACHE_DIR': str(temp / 'ruff'),
+        'MYPY_CACHE_DIR': str(temp / 'mypy'),
+        'PYTHONDONTWRITEBYTECODE': '1',
+    }
+    env.update(updates)
+    save('run_context.json', {'cwd': str(root), 'start_utc': utc(), 'overrides': updates,
+        'primary_freeze': str(freeze), 'frozen_manifest_sha256': expected_manifest_digest,
+        'frozen_index_sha256': expected_index_digest, 'baseline_git_head': baseline})
+
+    def step(label, command):
+        start = utc()
+        clock = time.monotonic()
+        before = compare()
+        with (run / f'{label}.stdout').open('wb') as stdout, (run / f'{label}.stderr').open('wb') as stderr:
+            completed = subprocess.run(command, env=env, stdout=stdout, stderr=stderr, check=False)
+        after = compare()
+        info = {'label': label, 'argv': command, 'exit_code': completed.returncode,
+            'start_utc': start, 'end_utc': utc(), 'duration_seconds': round(time.monotonic() - clock, 6),
+            'product_before': before, 'product_after': after,
+            'stdout': f'{label}.stdout', 'stderr': f'{label}.stderr'}
+        save(f'{label}.json', info)
+        results.append(info)
+        save('commands.json', results)
+        print(label, completed.returncode, flush=True)
+        return completed.returncode
+
+    uv = ['uv', 'run', '--locked', '--no-sync']
+    step('git_head', ['git', 'rev-parse', 'HEAD'])
+    step('git_status_before', ['git', 'status', '--porcelain=v1', '--branch', '--untracked-files=all'])
+    step('host', ['uname', '-a'])
+    step('os_release', ['cat', '/etc/os-release'])
+    step('uv_version', ['uv', '--version'])
+    versions = """import importlib.metadata as m,json,platform,sys; print(json.dumps({'python': sys.version, 'executable': sys.executable, 'platform': platform.platform(), 'packages': {d.metadata['Name']: d.version for d in m.distributions()}}, indent=2, sort_keys=True))"""
+    step('environment', [*uv, 'python', '-c', versions])
+    step('pytest', [*uv, 'python', '-m', 'pytest', 'tests/unit', 'tests/contract', 'tests/negative',
+        '-q', '-o', f'cache_dir={temp / "pytest-cache"}', f'--basetemp={temp / "pytest-tmp"}',
+        f'--junitxml={run / "pytest.xml"}'])
+    step('ruff_lint', [*uv, 'ruff', 'check', '.'])
+    step('ruff_format', [*uv, 'ruff', 'format', '--check', 'src', 'tests', 'scripts'])
+    step('mypy', [*uv, 'mypy', 'src/jimu_runtime'])
+    exporter = [*uv, 'python', 'scripts/generate_schemas.py']
+    first = temp / 'first'
+    second = temp / 'second'
+    step('export_first', [*exporter, '--output', str(first)])
+    step('export_second', [*exporter, '--output', str(second)])
+    step('export_diff', ['diff', '-qr', str(first), str(second)])
+    step('export_check', [*exporter, '--check'])
+
+    for label, directory in (('first', first), ('second', second)):
+        save(f'export_{label}_sha256.json', {
+            path.name: digest(path.read_bytes())
+            for path in sorted(directory.glob('*')) if path.is_file()
+        })
+
+    legacy_source = """
+from hashlib import sha256
+from pathlib import Path
+import json
+import subprocess
+import sys
+
+baseline, first, second = sys.argv[1:]
+dirs = [Path('schemas/generated'), Path(first), Path(second)]
+sub = lambda args: subprocess.check_output(['git', *args])
+paths = sub(['ls-tree', '-r', '--name-only', baseline, '--', 'schemas/generated']).decode().splitlines()
+schemas = sorted(path for path in paths if path.endswith('.schema.json'))
+report = {'baseline': baseline, 'count': len(schemas), 'schemas': {}}
+for path in schemas:
+    name = Path(path).name
+    old = sha256(sub(['show', baseline + ':' + path])).hexdigest()
+    actual = {label: sha256((directory/name).read_bytes()).hexdigest() if (directory/name).is_file() else None
+        for label, directory in zip(('worktree', 'first', 'second'), dirs, strict=True)}
+    report['schemas'][name] = {'baseline': old, **actual, 'unchanged': all(value == old for value in actual.values())}
+old_index = sub(['show', baseline + ':schemas/generated/index.json'])
+report['baseline_index_sha256'] = sha256(old_index).hexdigest()
+report['current_index_sha256'] = sha256((dirs[0] / 'index.json').read_bytes()).hexdigest()
+report['mismatches'] = [name for name, item in report['schemas'].items() if not item['unchanged']]
+report['all_162_preserved'] = len(schemas) == 162 and not report['mismatches']
+print(json.dumps(report, indent=2, sort_keys=True))
+sys.exit(0 if report['all_162_preserved'] else 1)
+"""
+    step('legacy_b_schema_bytes', ['python3', '-c', legacy_source, baseline, str(first), str(second)])
+    step('git_status_after', ['git', 'status', '--porcelain=v1', '--branch', '--untracked-files=all'])
+
+if (run / 'pytest.xml').exists():
+    suites = ET.parse(run / 'pytest.xml').getroot()
+    entries = [suites] if suites.tag == 'testsuite' else suites.findall('testsuite')
+    save('junit_summary.json', {'suites': [dict(entry.attrib) for entry in entries],
+        'nonpassing': [{**case.attrib, 'result': child.tag, 'message': child.get('message')}
+            for case in suites.iter('testcase') for child in case if child.tag in {'failure', 'error', 'skipped'}]})
+
+final = compare()
+save('post_run.json', final)
+save('actual_product_after.json', snapshot())
+all_exact = final['matches_frozen'] and all(
+    result[key]['matches_frozen'] for result in results
+    for key in ('product_before', 'product_after')
+)
+exit_code = 0 if all_exact and all(result['exit_code'] == 0 for result in results) else 1
+save('run_result.json', {'exit_code': exit_code, 'end_utc': utc(),
+    'product_unchanged': all_exact, 'failed_commands': [result['label'] for result in results if result['exit_code']]})
+raise SystemExit(exit_code)

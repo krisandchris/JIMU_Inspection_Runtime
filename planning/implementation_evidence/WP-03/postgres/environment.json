@@ -1,0 +1,35 @@
+{
+  "os": "Linux",
+  "kernel": "6.8.0-149-generic",
+  "architecture": "x86_64",
+  "python": "3.12.3",
+  "uv": "uv 0.9.15",
+  "docker/client/server": "29.9.3 / 29.9.3",
+  "postgres_image_id": "sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae",
+  "database_server_version": "16.14 (Debian 16.14-1.pgdg13+1)",
+  "psycopg_libpq_implementation": "binary",
+  "psycopg_libpq_version_num": 180006,
+  "dependency_versions": {
+    "sqlalchemy": "2.0.52",
+    "psycopg": "3.3.5",
+    "psycopg-binary": "3.3.5",
+    "greenlet": "3.5.6",
+    "pytest": "8.4.2",
+    "ruff": "0.14.14",
+    "mypy": "1.18.2"
+  },
+  "prior_lock_sha256": "30153c6ba64dc40126ad34059bd7c47cf95622d321a2b6b02bf31f54af378fdb",
+  "current_lock_sha256": "89b79940788ecf8df037e7204f877941cf9b966cbaaef56167e7a1933b467c80",
+  "existing_packages_with_changed_records": [
+    "jimu-runtime"
+  ],
+  "removed_lock_packages": [],
+  "added_lock_packages": {
+    "greenlet": "3.5.6",
+    "psycopg": "3.3.5",
+    "psycopg-binary": "3.3.5",
+    "sqlalchemy": "2.0.52",
+    "tzdata": "2026.6"
+  },
+  "remaining_owned_containers": []
+}

@@ -1,0 +1,30 @@
+{"check": "worker_process_ready", "pid": 471450, "runtime_install": "/tmp/jimu-wp07-pgrestore-jSvY0yfy/env/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 471450, "signal": null}
+{"check": "artifact_replay", "concurrent_same_key": true, "elapsed_ms": 515, "historical_dispatches": 7, "physical_cpu": 0, "physical_http": 0, "runs": 2, "source_equal": true}
+{"check": "worker_process_ready", "pid": 473288, "runtime_install": "/tmp/jimu-wp07-pgrestore-jSvY0yfy/env/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 473288, "signal": null}
+{"check": "inference_replay", "cpu": 3, "current_bundle": "0678d11ba393fff1d09c816be6d93e9233cb7141449de7778cb061f855614dfd", "elapsed_ms": 12534, "http": {"candidate": 1, "discovery": 1, "grounding": 1, "observation": 1}, "pinned_bundle": "b1f82d065512717eee16eabb3a4368221d1ef140a036e55b9bc99209b8de0cf5", "source_equal": true, "target_execution": "execution.replay.ee43fa10a92640dc8cef7afa715b2393"}
+{"check": "worker_process_ready", "pid": 474603, "runtime_install": "/tmp/jimu-wp07-pgrestore-jSvY0yfy/env/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 474603, "signal": "SIGKILL"}
+{"acknowledged": 0, "attempt": "e95fac4d59e543799245627323910dca", "check": "process_death_at_unacknowledged_dispatch", "dispatch": "dispatch.efb9e7af2e8943dca3c2851abbfc239d", "execution": "execution.replay.1529317173ca4824932017c47a518851", "fence": 1, "observed_http": 1, "owner": "wp07.interrupted", "request_sha256": "1d6dbadb05460e7f0426cf17a356f42ee776da0f2be8c930e31b2d6a68e9bcc4"}
+{"check": "physical_transport_reaped", "dispatch": "dispatch.efb9e7af2e8943dca3c2851abbfc239d", "lease": "9fa96e31cfa24a66b310acc64e0139c5"}
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/recovery/combined_recovery_probe.py", line 744, in <module>
+    asyncio.run(main(Path(sys.argv[1]).resolve()))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/recovery/combined_recovery_probe.py", line 740, in main
+    await drill(source, fresh, Path(path), output, provider, frame)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/recovery/combined_recovery_probe.py", line 529, in drill
+    assert_forgery_rejections(
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/recovery/combined_recovery_probe.py", line 327, in assert_forgery_rejections
+    verify_media(connection, names, evidence)
+TypeError: verify_media() missing 1 required positional argument: 'bundle_db'
+exit=1

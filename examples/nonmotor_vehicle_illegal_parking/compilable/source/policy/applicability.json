@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "applicability",
+  "policy": {
+    "policy_kind": "applicability",
+    "input_domain": "rule_applicability",
+    "context_allowlist": [],
+    "identity_constraints": [],
+    "condition_ast": {
+      "kind": "literal",
+      "constant": {
+        "type_definition": {
+          "kind": "bool"
+        },
+        "value": {
+          "kind": "bool",
+          "value": true
+        }
+      }
+    },
+    "on_unknown": "block"
+  }
+}

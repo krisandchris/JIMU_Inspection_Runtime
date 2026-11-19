@@ -1,0 +1,11 @@
+Command env PYTHONPATH=. .venv/bin/python planning/implementation_evidence/WP-04/independent/probe_bridge.py revocation ceilings
+Repository HEAD 2552affeb69fbc2594fe70724f895b0db0967d47 (detached, with WP-04 worktree changes)
+Start 2026-11-18T05:03:44.542621+00:00
+End 2026-11-18T05:03:54.974223+00:00
+Exit 0
+Python 3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]
+Platform Linux-6.8.0-149-generic-x86_64-with-glibc2.39
+Dependencies {'pytest': '8.4.2', 'ruff': '0.14.14', 'mypy': '1.18.2', 'pydantic': '2.12.5', 'httpx': '0.28.1', 'sqlalchemy': '2.0.52', 'psycopg': '3.3.5'}
+
+{"actual_posts": 1, "attempts": {"1": ["acknowledged", null], "2": ["not_dispatched", "model.ownership_unavailable"]}, "check": "revocation", "journal_rows": [["dispatch.e990711b4e9349e389fc17c861e31784", "operation.model.ece13da68c80c6392741a034a21988c24da3034f77570f7766ca43709f9374f0", "acknowledged"], ["dispatch.35be2daf2a39479098ad14c737c56f29", "operation.model.c610b3db0edc71e7a1265f6a2652dc0c7e9ecbd37e04e3a56c82752451adab77", "not_dispatched"]], "registry_calls": 6}
+{"actual_posts": 1, "attempts": {"1": ["acknowledged", null], "2": ["not_dispatched", "model.node_budget_exhausted"]}, "check": "ceilings", "journal_rows": [["dispatch.ac9f3da709664d62824a3a00813c5d04", "operation.model.ff6d243dadecfa2095a45aa5d8984478d35c5dd177ba8577b74954fb2efe43d4", "acknowledged"], ["dispatch.8872bec6de2a4ac3aa6b5a879011cc83", "operation.model.1a32738494646fb241bdcdd9282e021f00c98d25e51eee3cb61c7a610bb10b65", "not_dispatched"]], "registry_calls": 6}

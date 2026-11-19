@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "prompt_template_id": "parking_state",
+  "purpose": "object_observation",
+  "template_text": "Identify whether the vehicle is parked or unparked.",
+  "variables": [],
+  "response_schema_ref": {
+    "$pin": [
+      "response_schema",
+      "parking_state-result",
+      "1.0.0"
+    ]
+  },
+  "rendering_policy": "literal_substitution"
+}

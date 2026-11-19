@@ -1,0 +1,81 @@
+{
+  "workdir": "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan",
+  "revision": "2552affeb69fbc2594fe70724f895b0db0967d47",
+  "checkout": "detached",
+  "scope": "WP-01C C2 declaration contracts only",
+  "started_utc": "2026-11-18T01:54:15.370940+00:00",
+  "ended_utc": "2026-11-18T01:54:25.139018+00:00",
+  "platform": "Linux-6.8.0-149-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "uv": "uv 0.9.15",
+  "packages": {
+    "pydantic": "2.12.5",
+    "pydantic-core": "2.41.5",
+    "pytest": "8.4.2",
+    "jsonschema": "4.25.1",
+    "ruff": "0.14.14",
+    "mypy": "1.18.2",
+    "rfc8785": "0.1.4"
+  },
+  "uv_lock_sha256": "10d7ad828a27a9ea35326ad95f73becedfdc9237bde8fc746a119833191062eb",
+  "legacy_b_ast_fixture_sha256": "25417c448a0dd780f737e850bac1a6df6724357489e8b4c896b56286caf381f2",
+  "checks": {
+    "targeted": {
+      "command": "uv run --locked --no-sync python -m pytest -q -o cache_dir=/tmp/jimu-wp01c-c2-y9onzikz/pytest-cache --basetemp=/tmp/jimu-wp01c-c2-y9onzikz/pytest-tmp --junitxml=planning/implementation_evidence/WP-01C/c2/pytest.xml tests/unit/test_c_rule_declarations.py tests/contract/test_c_rule_declarations_schema.py tests/negative/test_c_rule_declarations_invalid.py tests/unit/test_b_conditions.py tests/contract/test_b_conditions_schema.py tests/negative/test_b_conditions_invalid.py tests/unit/test_b_condition_bindings.py tests/contract/test_b_condition_bindings_schema.py tests/negative/test_b_condition_bindings_invalid.py",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "UV_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/uv",
+        "RUFF_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/ruff",
+        "MYPY_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/mypy"
+      },
+      "started_utc": "2026-11-18T01:54:15.371359+00:00",
+      "ended_utc": "2026-11-18T01:54:23.036593+00:00",
+      "exit_code": 0,
+      "stdout": "........................................................................ [ 36%]\n........................................................................ [ 72%]\n......................................................                   [100%]\n- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-01C/c2/pytest.xml -\n198 passed in 7.20s\n",
+      "stderr": ""
+    },
+    "lint": {
+      "command": "uv run --locked --no-sync ruff check src/jimu_runtime/domain/rules tests/unit/test_c_rule_declarations.py tests/contract/test_c_rule_declarations_schema.py tests/negative/test_c_rule_declarations_invalid.py",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "UV_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/uv",
+        "RUFF_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/ruff",
+        "MYPY_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/mypy"
+      },
+      "started_utc": "2026-11-18T01:54:23.036609+00:00",
+      "ended_utc": "2026-11-18T01:54:23.050058+00:00",
+      "exit_code": 0,
+      "stdout": "All checks passed!\n",
+      "stderr": ""
+    },
+    "format_check": {
+      "command": "uv run --locked --no-sync ruff format --check src/jimu_runtime/domain/rules tests/unit/test_c_rule_declarations.py tests/contract/test_c_rule_declarations_schema.py tests/negative/test_c_rule_declarations_invalid.py",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "UV_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/uv",
+        "RUFF_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/ruff",
+        "MYPY_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/mypy"
+      },
+      "started_utc": "2026-11-18T01:54:23.050076+00:00",
+      "ended_utc": "2026-11-18T01:54:23.063602+00:00",
+      "exit_code": 0,
+      "stdout": "7 files already formatted\n",
+      "stderr": ""
+    },
+    "mypy": {
+      "command": "uv run --locked --no-sync mypy src/jimu_runtime/domain/rules",
+      "environment_overrides": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "UV_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/uv",
+        "RUFF_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/ruff",
+        "MYPY_CACHE_DIR": "/tmp/jimu-wp01c-c2-y9onzikz/mypy"
+      },
+      "started_utc": "2026-11-18T01:54:23.063624+00:00",
+      "ended_utc": "2026-11-18T01:54:25.127340+00:00",
+      "exit_code": 0,
+      "stdout": "Success: no issues found in 4 source files\n",
+      "stderr": ""
+    }
+  },
+  "runtime_evidence": "RUNTIME_NOT_RUN"
+}

@@ -1,0 +1,219 @@
+uv run --locked --offline --no-sync python -m pytest -q tests/contract/test_wp04_dispatch_journal.py::test_concurrent_distinct_operations_recheck_node_and_deployment_send_budgets tests/contract/test_wp04_dispatch_journal.py::test_unselected_model_is_a_rejection_without_inventing_a_provider_route tests/contract/test_wp04_dispatch_journal.py::test_cancelled_tool_late_receipt_retains_normalized_execution_and_original_owner 'tests/unit/test_b_schema_export.py::test_cli_check_is_read_only_and_detects_mismatch[valid]' tests/unit/test_wp04_resource_inventory.py::test_admission_is_atomic_between_two_independent_processes tests/unit/test_wp04_tool_step_attempts_postgres.py::test_cross_round_tool_step_authority --junitxml planning/implementation_evidence/WP-04/primary/integration_failed_recheck.xml
+FF.F..                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_concurrent_distinct_operations_recheck_node_and_deployment_send_budgets _
+  + Exception Group Traceback (most recent call last):
+  |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/contract/test_wp04_dispatch_journal.py", line 629, in test_concurrent_distinct_operations_recheck_node_and_deployment_send_budgets
+  |     asyncio.run(run())
+  |   File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+  |     return runner.run(main)
+  |            ^^^^^^^^^^^^^^^^
+  |   File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+  |     return self._loop.run_until_complete(task)
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+  |     return future.result()
+  |            ^^^^^^^^^^^^^^^
+  |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/contract/test_wp04_dispatch_journal.py", line 587, in run
+  |     async with asyncio.timeout(8), asyncio.TaskGroup() as tasks:
+  |   File "/usr/lib/python3.12/asyncio/taskgroups.py", line 145, in __aexit__
+  |     raise me from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/gateway/journal.py", line 289, in begin
+    |     return await self._begin(
+    |            ^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/gateway/journal.py", line 373, in _begin
+    |     if await _internal_child(connection, params):
+    |              ^^^^^^^^^^^^^^^
+    | NameError: name '_internal_child' is not defined
+    +------------------------------------
+___ test_unselected_model_is_a_rejection_without_inventing_a_provider_route ____
+
+    def test_unselected_model_is_a_rejection_without_inventing_a_provider_route():
+        async def run():
+            async with database() as (engine, _):
+                jobs, scope, execution_id = await _ready(engine)
+                claim, attempt, node = await _start(
+                    engine, jobs, scope, execution_id, "worker"
+                )
+                journal = DispatchJournal(engine)
+                selected = _intent(node.trace.trace_id, "selected")
+                target = selected.target
+                assert isinstance(target, ModelDispatchTarget)
+                pending = selected.model_copy(
+                    update={
+                        "dispatch_id": "unselected",
+                        "target": UnselectedModelDispatchTarget(
+                            node_id=target.node_id,
+                            configured_provider=target.configured_provider,
+                            purposes=target.purposes,
+                            profile_refs=target.profile_refs,
+                        ),
+                    },
+                )
+                with pytest.raises(ValueError, match="requires a selected model route"):
+                    await journal.begin(claim, attempt.attempt_id, pending)
+                assert await journal.reject(
+                    claim,
+                    attempt.attempt_id,
+                    pending,
+                    ModelDispatchResult(boundary="not_dispatched", error=_ERROR),
+                )
+                assert await journal.begin(claim, attempt.attempt_id, selected)
+                saved = await journal.get_operation(
+                    scope, execution_id, node.node_run_id, _KEY
+                )
+                assert len(saved) == 2
+                assert saved[0].send_admitted and not saved[1].send_admitted
+                refused = saved[1].results[0].result
+                assert isinstance(refused, ModelDispatchResult)
+                assert refused.invocation is None and refused.actual_provider is None
+    
+>       asyncio.run(run())
+
+tests/contract/test_wp04_dispatch_journal.py:672: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/asyncio/runners.py:194: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/contract/test_wp04_dispatch_journal.py:656: in run
+    assert await journal.reject(
+src/jimu_runtime/gateway/journal.py:303: in reject
+    return await self._begin(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <jimu_runtime.gateway.journal.DispatchJournal object at 0x770c9a674d40>
+claim = JobClaim(scope=IdempotencyScope(project_id='demo', client_id='edge-1'), execution_id='exec-1', node_run_id='node-dispa... fence=1, owner='worker', lease_until=datetime.datetime(2026, 11, 18, 4, 37, 58, 758234, tzinfo=datetime.timezone.utc))
+attempt_id = '1988503219da4b9abf570d8123d73b48'
+intent = DispatchIntent(schema_version='1.0.0', dispatch_id='unselected', operation_id='joint-discovery', trace_id='trace-1', r...igest='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),), object_ref=None, kind='model_unselected'))
+rejection = ModelDispatchResult(schema_version='1.0.0', boundary='not_dispatched', response_digest=None, observed_response_bytes=0...ovider=None, provider_request_id=None, provider_observation=None, invocation=None, response_bytes_omission_reason=None)
+live_guard = None, budget_guard = None
+
+    async def _begin(
+        self,
+        claim: JobClaim,
+        attempt_id: str,
+        intent: DispatchIntent,
+        rejection: DispatchResult | None,
+        live_guard: DispatchLiveGuard | None,
+        budget_guard: DispatchBudgetGuard | None,
+    ) -> bool:
+        intent = DispatchIntent.model_validate(intent)
+        recording_rejection = rejection is not None
+        target = intent.target
+        if (
+            isinstance(target, (ToolDispatchTarget, *_NESTED_MODELS))
+            and target.parent_attempt_id is not None
+            and live_guard is None
+        ):
+            raise ValueError("nested Tool dispatch requires its live parent guard")
+        if rejection is not None:
+            _match_result(claim, attempt_id, intent, rejection)
+        params = {
+            **_claim(claim, attempt_id),
+            "operation": intent.operation_id,
+            "operation_node": (
+                target.parent_node_run_id
+                if isinstance(target, (ToolDispatchTarget, *_NESTED_MODELS))
+                and target.parent_node_run_id is not None
+                else claim.node_run_id
+            ),
+            "dispatch": intent.dispatch_id,
+            "record": intent.stable_json(),
+            "input_digest": intent.input_digest,
+            "response_contract_digest": intent.response_contract_digest,
+            "target_digest": _target_key(target),
+        }
+        async with self._engine.begin() as connection:
+            if not await _lock_execution(connection, params):
+                return False
+            await _lock_dispatch(connection, claim.execution_id, intent.dispatch_id)
+            existing = await _read_intents(connection, params, _SINGLE_DISPATCH)
+            if existing:
+                _check_owner(existing[0], claim, attempt_id)
+                if existing[0].intent != intent:
+                    raise DispatchConflict(
+                        "dispatch identity has different intent data"
+                    )
+                if rejection is not None and not any(
+                    not item.late and item.result == rejection
+                    for item in existing[0].results
+                ):
+                    raise DispatchConflict(
+                        "dispatch identity has different rejection evidence"
+                    )
+                return False
+            if not await _lock_current_job(connection, params):
+                return False
+            node_kind = (
+                target.node_id
+                if isinstance(target, _MODELS)
+                else target.invocation_origin.node_id
+            )
+            if not await _match_node(connection, params, node_kind, intent.trace_id):
+                raise DispatchConflict(
+                    "dispatch target or trace differs from the persisted NodeRun"
+                )
+            if isinstance(target, _MODELS) and not isinstance(target, _NESTED_MODELS):
+>               if await _internal_child(connection, params):
+                         ^^^^^^^^^^^^^^^
+E               NameError: name '_internal_child' is not defined
+
+src/jimu_runtime/gateway/journal.py:373: NameError
+___________ test_cli_check_is_read_only_and_detects_mismatch[valid] ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-289/test_cli_check_is_read_only_an0')
+rendered = {'conditions.ConditionExpr.schema.json': b'{\n  "$defs": {\n    "AbsentOptional_ReviewReportRef_": {\n      "$ref": "#...ne",\n    "lt",\n    "le",\n    "gt",\n    "ge"\n  ],\n  "title": "ComparisonOperator",\n  "type": "string"\n}\n', ...}
+change = 'valid'
+
+    @pytest.mark.parametrize("change", ["valid", "missing", "stale", "additional"])
+    def test_cli_check_is_read_only_and_detects_mismatch(
+        tmp_path: Path, rendered: dict[str, bytes], change: str
+    ) -> None:
+        output = tmp_path / "generated"
+        seed(output, rendered)
+        chosen = next(name for name in rendered if name != "index.json")
+        if change == "missing":
+            (output / chosen).unlink()
+        elif change == "stale":
+            (output / chosen).write_bytes(b"{}\n")
+        elif change == "additional":
+            (output / "unknown.txt").write_text("preserve")
+        before = tree(tmp_path)
+        sources = tree(ROOT / "src")
+        source_imports = imported_source_tree()
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), "--check", "--output", str(output)],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+        )
+        assert completed.returncode == (0 if change == "valid" else 1), completed.stderr
+        assert tree(tmp_path) == before
+>       assert (
+            tree(ROOT / "src") == sources
+        )  # Run only after all source writers are quiescent.
+E       AssertionError: assert {'jimu_runtim...15, 293), ...} == {'jimu_runtim...15, 293), ...}
+E         
+E         Omitting 322 identical items, use -vv to show
+E         Differing items:
+E         {'jimu_runtime/gateway/journal.py': ('aa324b077874d145cecf98e6d081019f1cd565f8a3d29c9254e13c9d43bfa9c5', 1794976686449088333, 41632)} != {'jimu_runtime/gateway/journal.py': ('6053c66dbd9909b391629cada20aa781a268e12ed594ef4ac10b1f7b0090fed8', 1794976652425651538, 36019)}
+E         {'jimu_runtime/gateway/invocation.py': ('8cbb8da51db7f23262226151dbca0493a46b3bf34c3f016d675858c715640ff1', 1794976688216059567, 16618)} != {'jimu_runtime/gateway/invocation.py': ('c6e9b4b400ff21f5ec7af0279175d4ac721345d82f9215cc738bfe873253d7cd...
+E         
+E         ...Full output truncated (3 lines hidden), use '-vv' to show
+
+tests/unit/test_b_schema_export.py:133: AssertionError
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/primary/integration_failed_recheck.xml -
+=========================== short test summary info ============================
+FAILED tests/contract/test_wp04_dispatch_journal.py::test_concurrent_distinct_operations_recheck_node_and_deployment_send_budgets
+FAILED tests/contract/test_wp04_dispatch_journal.py::test_unselected_model_is_a_rejection_without_inventing_a_provider_route
+FAILED tests/unit/test_b_schema_export.py::test_cli_check_is_read_only_and_detects_mismatch[valid]
+3 failed, 3 passed in 33.28s

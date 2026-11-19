@@ -1,0 +1,372 @@
+{
+  "$defs": {
+    "AbsentOptional_ActivationRef_": {
+      "$ref": "#/$defs/ActivationRef"
+    },
+    "ActivationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "activation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ActivationRef",
+      "type": "object"
+    },
+    "ActivationScope": {
+      "discriminator": {
+        "mapping": {
+          "device": "#/$defs/DeviceActivationScope",
+          "global": "#/$defs/GlobalActivationScope",
+          "region": "#/$defs/RegionActivationScope",
+          "scene": "#/$defs/SceneActivationScope"
+        },
+        "propertyName": "scope"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/GlobalActivationScope"
+        },
+        {
+          "$ref": "#/$defs/SceneActivationScope"
+        },
+        {
+          "$ref": "#/$defs/RegionActivationScope"
+        },
+        {
+          "$ref": "#/$defs/DeviceActivationScope"
+        }
+      ]
+    },
+    "ActorRef": {
+      "additionalProperties": false,
+      "properties": {
+        "actor_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "actor_kind": {
+          "enum": [
+            "service",
+            "human"
+          ],
+          "title": "Actor Kind",
+          "type": "string"
+        },
+        "identity_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Identity Registry Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor_kind",
+        "actor_id",
+        "identity_registry_id"
+      ],
+      "title": "ActorRef",
+      "type": "object"
+    },
+    "BundleRef": {
+      "additionalProperties": false,
+      "description": "Identity of one immutable logical Bundle, separate from artifact references.",
+      "properties": {
+        "bundle_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Digest",
+          "type": "string"
+        },
+        "bundle_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Bundle Id",
+          "type": "string"
+        },
+        "bundle_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Bundle Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "bundle_id",
+        "bundle_version",
+        "bundle_digest"
+      ],
+      "title": "BundleRef",
+      "type": "object"
+    },
+    "DeviceActivationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "device_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Device Id",
+          "type": "string"
+        },
+        "scope": {
+          "const": "device",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "device_id"
+      ],
+      "title": "DeviceActivationScope",
+      "type": "object"
+    },
+    "GlobalActivationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "const": "global",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope"
+      ],
+      "title": "GlobalActivationScope",
+      "type": "object"
+    },
+    "RegionActivationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "region_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Region Id",
+          "type": "string"
+        },
+        "scope": {
+          "const": "region",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "region_id"
+      ],
+      "title": "RegionActivationScope",
+      "type": "object"
+    },
+    "ReleaseRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "release",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ReleaseRef",
+      "type": "object"
+    },
+    "SceneActivationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "scene_type": {
+          "$ref": "#/$defs/VocabularyMemberRef"
+        },
+        "scope": {
+          "const": "scene",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "scene_type"
+      ],
+      "title": "SceneActivationScope",
+      "type": "object"
+    },
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "UTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    },
+    "VocabularyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "vocabulary",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "VocabularyContentRef",
+      "type": "object"
+    },
+    "VocabularyMemberRef": {
+      "additionalProperties": false,
+      "properties": {
+        "member": {
+          "$ref": "#/$defs/ShortText"
+        },
+        "vocabulary_ref": {
+          "$ref": "#/$defs/VocabularyContentRef"
+        }
+      },
+      "required": [
+        "vocabulary_ref",
+        "member"
+      ],
+      "title": "VocabularyMemberRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Append-only selection of a Release for a scope, including rollback.",
+  "properties": {
+    "activated_at": {
+      "$ref": "#/$defs/UTCDateTime"
+    },
+    "activated_by": {
+      "$ref": "#/$defs/ActorRef"
+    },
+    "activation_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Activation Id",
+      "type": "string"
+    },
+    "bundle_ref": {
+      "$ref": "#/$defs/BundleRef"
+    },
+    "previous_activation_ref": {
+      "$ref": "#/$defs/AbsentOptional_ActivationRef_"
+    },
+    "release_ref": {
+      "$ref": "#/$defs/ReleaseRef"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/ActivationScope"
+    }
+  },
+  "required": [
+    "schema_version",
+    "activation_id",
+    "release_ref",
+    "bundle_ref",
+    "scope",
+    "activated_by",
+    "activated_at"
+  ],
+  "title": "ActivationRecord",
+  "type": "object"
+}

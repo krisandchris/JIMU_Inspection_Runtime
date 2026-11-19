@@ -1,0 +1,82 @@
+2026-11-18T11:14:24Z
+ops/compose/build.sh jimu-wp07-local:monitor-lkpjWzkU 
+Using CPython 3.12.12
+Creating virtual environment at: /tmp/tmp.m49VpJaJrB/venv
+Resolved 41 packages in 0.51ms
+Installed 27 packages in 5ms
+ + annotated-doc==0.0.4
+ + annotated-types==0.8.0
+ + anyio==4.16.0
+ + attrs==26.1.0
+ + certifi==2026.10.23
+ + click==8.5.0
+ + fastapi==0.141.1
+ + greenlet==3.5.6
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.20
+ + jsonschema==4.25.1
+ + jsonschema-specifications==2025.9.1
+ + pillow==12.3.0
+ + psycopg==3.3.5
+ + psycopg-binary==3.3.5
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + referencing==0.37.0
+ + rfc8785==0.1.4
+ + rpds-py==2026.9.1
+ + sqlalchemy==2.0.52
+ + starlette==1.6.0
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
+ + uvicorn==0.52.4
+Building wheel (uv build backend)...
+Successfully built /tmp/tmp.m49VpJaJrB/wheel/jimu_runtime-0.1.0-py3-none-any.whl
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            BuildKit is currently disabled; enable it by removing the DOCKER_BUILDKIT=0
+            environment-variable.
+
+Sending build context to Docker daemon  70.66MB
+Step 1/11 : ARG PYTHON_IMAGE
+Step 2/11 : FROM ${PYTHON_IMAGE}
+ ---> 78387bc3881b
+Step 3/11 : ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ ---> Running in f6f8cd43c361
+ ---> Removed intermediate container f6f8cd43c361
+ ---> 23c4fa2afaf4
+Step 4/11 : COPY vendor/ /usr/local/lib/python3.12/site-packages/
+ ---> b0a90cc98632
+Step 5/11 : COPY wheel/ /tmp/jimu-wheel/
+ ---> 0ef9fc1f6a4b
+Step 6/11 : RUN python -m pip install --no-index --no-deps --no-cache-dir /tmp/jimu-wheel/*.whl     && rm -rf /tmp/jimu-wheel     && install -d -m 0700 -o 10001 -g 10001 /var/lib/jimu
+ ---> Running in 52bbdb4b1b8b
+Processing /tmp/jimu-wheel/jimu_runtime-0.1.0-py3-none-any.whl
+Installing collected packages: jimu-runtime
+Successfully installed jimu-runtime-0.1.0
+[91mWARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+[0m ---> Removed intermediate container 52bbdb4b1b8b
+ ---> 94161eac41a6
+Step 7/11 : COPY host/ /opt/jimu/host/
+ ---> 5dbd25500e05
+Step 8/11 : RUN chmod -R a+rX /opt/jimu/host /usr/local/lib/python3.12/site-packages
+ ---> Running in b987797b26be
+ ---> Removed intermediate container b987797b26be
+ ---> 4c227f1c2460
+Step 9/11 : WORKDIR /opt/jimu/host
+ ---> Running in 1feb98b13583
+ ---> Removed intermediate container 1feb98b13583
+ ---> 3b291a46efff
+Step 10/11 : USER 10001:10001
+ ---> Running in d09eb2596453
+ ---> Removed intermediate container d09eb2596453
+ ---> a2371b97f044
+Step 11/11 : RUN python -I -c 'import greenlet, PIL._imaging, psycopg, pydantic_core, rpds; from jimu_runtime.deployment import service; assert psycopg.pq.__impl__ == "binary"'
+ ---> Running in 015260a8ba57
+ ---> Removed intermediate container 015260a8ba57
+ ---> da4ea3e2a292
+Successfully built da4ea3e2a292
+Successfully tagged jimu-wp07-local:monitor-lkpjWzkU
+sha256:da4ea3e2a2921e1e4d918bee3c243f7b6ad978b0adb2fdc096068ae402cc663c
+2026-11-18T11:14:37Z
+exit=0

@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "prompt_template_id": "candidate_prediction",
+  "purpose": "candidate_prediction",
+  "template_text": "Return suggested violation categories as objects with category_id and your actual finite floating-point score. Return an empty array when there is no suggestion. The deterministic mandatory scan evaluates rules independently of candidates.",
+  "variables": [],
+  "response_schema_ref": {
+    "$pin": [
+      "response_schema",
+      "candidate_prediction-result",
+      "1.0.0"
+    ]
+  },
+  "rendering_policy": "literal_substitution"
+}

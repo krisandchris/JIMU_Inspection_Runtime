@@ -1,19 +1,20 @@
-"""Engineering Schema inventory of complete WP01B contracts; no runtime admission proof."""
+"""Engineering Schema inventory for the WP-01 domain contracts."""
 
 import sys
+from collections.abc import Callable
 
 # This must precede every source import: --check is read-only, including pyc.
 sys.dont_write_bytecode = True
 
 
-def _bootstrap() -> tuple[object, ...]:
+def _bootstrap() -> tuple[tuple[object, ...], Callable[[], int]]:
     """Import/generate only after the CLI no-bytecode precondition is installed."""
     import argparse
     import hashlib
     import json
     import os
     import re
-    from dataclasses import dataclass
+    from dataclasses import dataclass, replace
     from pathlib import Path
     from types import ModuleType
     from typing import Literal, cast
@@ -21,6 +22,8 @@ def _bootstrap() -> tuple[object, ...]:
 
     from jsonschema import Draft202012Validator
     from pydantic import TypeAdapter
+    from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
+    from pydantic_core import core_schema
 
     from jimu_runtime.domain import (
         conditions,
@@ -38,6 +41,7 @@ def _bootstrap() -> tuple[object, ...]:
     )
     from jimu_runtime.domain.definitions import (
         capabilities,
+        geometry,
         models,
         ontology,
         prompts,
@@ -45,27 +49,64 @@ def _bootstrap() -> tuple[object, ...]:
         tools,
     )
     from jimu_runtime.domain.fact_schemas import models as fact_schemas
-    from jimu_runtime.domain.runtime import authority, candidates, facts
+    from jimu_runtime.domain.nodes import (
+        context,
+        decision,
+        discovery,
+        envelopes,
+        grounding,
+        observation,
+    )
+    from jimu_runtime.domain.nodes import tool_execution as tool_node
+    from jimu_runtime.domain.rules import definitions as rule_definitions
+    from jimu_runtime.domain.rules import operators, type_results
+    from jimu_runtime.domain.runtime import (
+        applicability,
+        authority,
+        bundle_manifest,
+        candidates,
+        coverage,
+        decisions,
+        evidence,
+        executions,
+        facts,
+        intake,
+        invocations,
+        media,
+        observations,
+        perception,
+        releases,
+        replay,
+        selection,
+        tool_executions,
+    )
+    from jimu_runtime.domain.validation import applicability as applicability_inputs
     from jimu_runtime.domain.validation import authority as authority_checks
     from jimu_runtime.domain.validation import (
         authority_inputs,
         condition_inputs,
+        coverage_sources,
+        decision_coverage,
         definition_inputs,
         issues,
         producer_authority_inputs,
         producer_inputs,
         review_inputs,
+        rule_type_inputs,
+        runtime_authority,
         tool_plans,
     )
     from jimu_runtime.domain.validation import policies as policy_inputs
 
     DIALECT = "https://json-schema.org/draft/2020-12/schema"
+    STATUS = "COMPLETE_WP01C_CONTRACTS"
     REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
     type Role = Literal[
         "foundation",
         "definition_root",
         "runtime_root",
         "definition_component",
+        "runtime_component",
         "named_union",
         "nonpersistent_input",
         "nonpersistent_output",
@@ -77,6 +118,7 @@ def _bootstrap() -> tuple[object, ...]:
         symbol: str
         filename: str
         role: Role
+        revision: Literal["1.0.0", "1.1.0"] | None = None
 
         @property
         def source_symbol(self) -> str:
@@ -90,7 +132,7 @@ def _bootstrap() -> tuple[object, ...]:
             for name in names.split()
         )
 
-    INVENTORY: tuple[Export, ...] = (
+    WP01B_INVENTORY: tuple[Export, ...] = (
         *_group(primitives, "ArtifactId RecordId Version Digest", "foundation"),
         *_group(
             references,
@@ -236,6 +278,293 @@ def _bootstrap() -> tuple[object, ...]:
         ),
     )
 
+    WP01C_INVENTORY: tuple[Export, ...] = (
+        *_group(
+            rule_definitions, "RuleDefinition RuleSetDefinition", "definition_root"
+        ),
+        *_group(rule_definitions, "RuleContentRef", "foundation"),
+        *_group(operators, "OperatorDescriptor", "definition_component"),
+        *_group(operators, "OperatorId", "named_union"),
+        *_group(type_results, "TypeCheckResult", "named_union"),
+        *_group(
+            rule_type_inputs,
+            "RuleConditionContext RuleTypeBindings",
+            "nonpersistent_input",
+        ),
+        *_group(rule_type_inputs, "RuleTypeUseContext", "named_union"),
+        *_group(geometry, "GeometryResourceDefinition", "definition_root"),
+        *_group(geometry, "GeometryCoordinate", "named_union"),
+        *_group(
+            geometry,
+            "GeometryPoint PolygonGeometry GeometryProvenance",
+            "definition_component",
+        ),
+        *_group(bundle_manifest, "BundleManifest ChecksumManifest", "runtime_root"),
+        *_group(bundle_manifest, "BundleRef", "foundation"),
+        *_group(
+            bundle_manifest,
+            "ArtifactInventoryEntry SourceProvenance SourceArtifactRef CompatibilityRequirement IntegrityEnvelope DetachedSignatureRef ChecksumEntry",
+            "runtime_component",
+        ),
+        *_group(
+            releases,
+            "AdmissionReceipt ApprovalReceipt ReleaseRecord ActivationRecord",
+            "runtime_root",
+        ),
+        *_group(releases, "ReleaseRef ReleaseStatus ActivationRef", "foundation"),
+        *_group(releases, "CapabilityReport", "runtime_component"),
+        *_group(releases, "CapabilityAssessment ActivationScope", "named_union"),
+        *_group(intake, "TaskSubmission AcceptedTask ContextSnapshot", "runtime_root"),
+        *_group(
+            intake, "TaskContext ClockProvenance ContextValue", "runtime_component"
+        ),
+        *_group(intake, "CaptureClockSource", "foundation"),
+        *_group(intake, "ContextValueProvenance", "named_union"),
+        *_group(media, "MediaAsset", "runtime_root"),
+        *_group(
+            media,
+            "MediaRef BBoxXYXY CoordinateSystem TransformRecord StorageReference",
+            "runtime_component",
+        ),
+        *_group(media, "AssetStage", "named_union"),
+        *_group(evidence, "EvidenceAsset", "runtime_root"),
+        *_group(evidence, "RetentionPolicyRef", "runtime_component"),
+        *_group(
+            evidence,
+            "EvidenceScope EvidenceAccessScope EvidenceSpatialProvenance",
+            "named_union",
+        ),
+        *_group(
+            executions, "ExecutionRecord NodeRun Attempt ExecutionEvent", "runtime_root"
+        ),
+        *_group(
+            executions,
+            "ExecutionPins ConfiguredModelPin ConfiguredToolPin ContextSnapshotPin TraceContext SystemOutputAuthorityWitness",
+            "runtime_component",
+        ),
+        *_group(executions, "NodeId", "foundation"),
+        *_group(executions, "ExecutionEventPayload", "named_union"),
+        *_group(invocations, "ModelInvocation", "runtime_root"),
+        *_group(
+            invocations,
+            "InvocationIdentity InvocationContractSnapshot ConfiguredProviderIdentity InvocationError UsageRecord",
+            "runtime_component",
+        ),
+        *_group(
+            invocations,
+            "ActualProviderIdentity ProviderRouteTrace InvocationOutcome InvocationPurpose",
+            "named_union",
+        ),
+        *_group(
+            invocations,
+            "ProviderRoutingMode RouteKind ProviderVersionResolution",
+            "foundation",
+        ),
+        *_group(
+            selection,
+            "AllDeclaredSelectionRecord ContextRuleSelectionRecord ModelAdvisorySelectionRecord FallbackSelectionRecord",
+            "runtime_root",
+        ),
+        *_group(
+            selection,
+            "QuestionSelectionRecord FallbackSelectionEvidence",
+            "named_union",
+        ),
+        *_group(selection, "ExcludedQuestionReason", "runtime_component"),
+        *_group(selection, "SelectionInvocationMode", "foundation"),
+        *_group(tool_executions, "ToolExecution", "runtime_root"),
+        *_group(
+            tool_executions,
+            "GroundingBindingOrigin ToolPlanStepOrigin ToolError ToolResourceUsage ToolAuthorityObservation",
+            "runtime_component",
+        ),
+        *_group(
+            tool_executions,
+            "ToolInvocationOrigin ToolResult ToolOutputState ToolAttemptResult",
+            "named_union",
+        ),
+        *_group(
+            tool_executions,
+            "ToolInvocationOriginKind ImplementationVersionResolution",
+            "foundation",
+        ),
+        *_group(
+            applicability,
+            "ProfileEligibilityEvaluation RuleSetApplicabilityEvaluation RuleApplicabilityEvaluation ApplicabilityTrace UnresolvedObligation",
+            "runtime_root",
+        ),
+        *_group(
+            applicability,
+            "RuleTruth ApplicabilityLevel ApplicabilityEvaluationStatus ApplicabilityDisposition ApplicabilityEvaluationOwner ApplicabilityReason",
+            "foundation",
+        ),
+        *_group(
+            applicability,
+            "ApplicabilityLevelTrace ApplicabilityAncestorRef ApplicabilityEvaluationRef ApplicabilityTargetRef ApplicabilityReasonEvidenceRef",
+            "named_union",
+        ),
+        *_group(
+            applicability_inputs,
+            "ApplicabilityScope ApplicabilityRecordSet",
+            "nonpersistent_input",
+        ),
+        *_group(coverage, "ExecutionCoverage ProfileCoverage", "runtime_root"),
+        *_group(
+            coverage,
+            "MandatoryRuleCoverage MandatoryRuleObligation",
+            "runtime_component",
+        ),
+        *_group(coverage, "CoverageStatus CoverageReason", "foundation"),
+        *_group(
+            coverage,
+            "ObligationTarget ObligationDisposition CoverageScope",
+            "named_union",
+        ),
+        *_group(decisions, "CandidatePrediction DecisionRecord", "runtime_root"),
+        *_group(
+            decisions,
+            "RuleEvaluation CandidateCategory ConflictResolutionTrace ExplanationTrace",
+            "runtime_component",
+        ),
+        *_group(
+            decisions, "RuleEvaluationOutcome RequiredEvidenceGuard", "named_union"
+        ),
+        *_group(decision_coverage, "DecisionCoverageRecords", "nonpersistent_input"),
+        *_group(coverage_sources, "CoverageSources", "nonpersistent_input"),
+        *_group(runtime_authority, "RuntimeAuthorityRecords", "nonpersistent_input"),
+        *_group(perception, "ObjectRecord GroundingRecord", "runtime_root"),
+        *_group(perception, "DiscoveryOutcome GroundingOutcome", "foundation"),
+        *_group(
+            perception,
+            "EffectiveQuestionSelection ProfileGroundingResult ModelGroundingProvenance ToolGroundingProvenance",
+            "runtime_component",
+        ),
+        *_group(perception, "GroundingProvenance", "named_union"),
+        *_group(observations, "ObservationBatch", "runtime_root"),
+        *_group(observations, "QuestionResult", "runtime_component"),
+        *_group(observations, "QuestionValidationResult", "named_union"),
+        *_group(
+            context,
+            "ContextBuildInput SuccessfulContextBuild FailedContextBuild",
+            "runtime_root",
+        ),
+        *_group(context, "ContextBuildOutput ContextValidationReport", "named_union"),
+        *_group(
+            discovery,
+            "DiscoveryInput DiscoveryProfileDiagnostic DiscoveryAttemptOutput SkippedDiscoveryOutput",
+            "runtime_root",
+        ),
+        *_group(discovery, "ProfileHit", "runtime_component"),
+        *_group(discovery, "DiscoveryOutput", "named_union"),
+        *_group(grounding, "GroundingInput GroundingOutput", "runtime_root"),
+        *_group(observation, "ObservationInput", "runtime_root"),
+        *_group(tool_node, "ToolNodeInput ToolNodeOutput", "runtime_root"),
+        *_group(tool_node, "ToolPlanRunSummary", "runtime_component"),
+        *_group(tool_node, "ToolPlanStepResult", "named_union"),
+        *_group(decision, "DecisionInput DecisionOutput", "runtime_root"),
+        *_group(
+            envelopes,
+            "NodeInputEnvelope SucceededNodeOutput FailedNodeOutput CancelledNodeOutput",
+            "runtime_root",
+        ),
+        *_group(
+            envelopes,
+            "NodeError ArtifactOutputRef NodeInputs NodeOutputs",
+            "runtime_component",
+        ),
+        *_group(envelopes, "NodeOutputEnvelope", "named_union"),
+        *_group(replay, "ReplayKind", "foundation"),
+        *_group(
+            replay,
+            "ArtifactReplayRequest InferenceReplayRequest",
+            "nonpersistent_input",
+        ),
+        *_group(replay, "ReplayRequest ReplayRun", "named_union"),
+        *_group(replay, "ArtifactReplayRun InferenceReplayRun", "runtime_root"),
+    )
+    # Revisions describe the engineering JSON Schema files. The optional grounding
+    # fields and expanded N05 history keep the persisted 1.0.0 wire version.
+    REVISED_EXPORTS = {
+        "definitions.capabilities.ProfileDefinition",
+        "nodes.decision.DecisionInput",
+        "nodes.observation.ObservationInput",
+        "nodes.tool_execution.ToolNodeInput",
+        "runtime.executions.NodeRun",
+        "runtime.perception.ObjectRecord",
+        "validation.coverage_sources.CoverageSources",
+        "validation.definition_inputs.DefinitionRegistration",
+        "validation.definition_inputs.DefinitionValidationInput",
+        "validation.producer_authority_inputs.ProducerAuthorityValidationInput",
+        "validation.producer_inputs.ProducerCatalogueContext",
+        "validation.producer_inputs.ProducerValidationContext",
+        "validation.rule_type_inputs.RuleTypeBindings",
+        "validation.runtime_authority.RuntimeAuthorityRecords",
+    }
+
+    def _published(entries: tuple[Export, ...]) -> tuple[Export, ...]:
+        return tuple(
+            replace(entry, revision="1.0.0")
+            if entry.filename.removesuffix(".schema.json") in REVISED_EXPORTS
+            else entry
+            for entry in entries
+        )
+
+    WP01B_INVENTORY = _published(WP01B_INVENTORY)
+    WP01C_INVENTORY = _published(WP01C_INVENTORY)
+    REVISED_INVENTORY = tuple(
+        replace(
+            entry,
+            filename=entry.filename.removesuffix(".schema.json")
+            + ".v1.1.0.schema.json",
+            revision="1.1.0",
+        )
+        for entry in (*WP01B_INVENTORY, *WP01C_INVENTORY)
+        if entry.revision == "1.0.0"
+    )
+    INVENTORY = (
+        *WP01B_INVENTORY,
+        *WP01C_INVENTORY,
+        *REVISED_INVENTORY,
+        *_group(capabilities, "GroundingGrouping", "named_union"),
+    )
+
+    class PublishedSchemaGenerator(GenerateJsonSchema):
+        """Generate the frozen validation shape from the shared Pydantic contracts."""
+
+        _grouping_fields: dict[type[object], set[str]] = {
+            capabilities.ProfileDefinition: {"grounding_grouping"},
+            perception.ObjectRecord: {"grounding_member_boxes", "marked_frame"},
+            observation.ObjectImageView: {"marked_media_ref"},
+        }
+
+        def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
+            if schema["cls"] is executions.NodeRun:
+                document = super().model_schema(schema)
+                document["properties"]["attempt_history"]["maxItems"] = 1024
+                del document["if"], document["then"]
+                return document
+            fields_added_by_grouping = self._grouping_fields.get(schema["cls"])
+            if fields_added_by_grouping is None:
+                return super().model_schema(schema)
+            fields_schema = schema["schema"]
+            if fields_schema["type"] != "model-fields" or (
+                not fields_added_by_grouping <= fields_schema["fields"].keys()
+            ):
+                raise ValueError("Current model no longer supports its published shape")
+            return super().model_schema(
+                {
+                    **schema,
+                    "schema": {
+                        **fields_schema,
+                        "fields": {
+                            name: field
+                            for name, field in fields_schema["fields"].items()
+                            if name not in fields_added_by_grouping
+                        },
+                    },
+                }
+            )
+
     LIMITATIONS = {
         "numeric": "JSON Schema mathematical integer/number do not enforce A strict Python int/float representation or all dynamic bounds.",
         "utc": "Schema states normalized UTC lexical support; Pydantic checks calendar/aware semantics. No leap-second support; -00:00 provenance is not normalized away.",
@@ -245,8 +574,7 @@ def _bootstrap() -> tuple[object, ...]:
         "digest": "Engineering file SHA256 is not RFC8785 child projection or parent/Bundle digest; F1 owns value_schema derivation.",
     }
     DEFERRED_GROUPS = (
-        "expression TypeChecker",
-        "RuleDefinition and Rule evaluation",
+        "deterministic Rule evaluation",
         "dynamic condition activation",
         "Release and Bundle admission",
         "external authenticity and history completeness",
@@ -301,17 +629,18 @@ def _bootstrap() -> tuple[object, ...]:
 
     def render_exports(inventory: tuple[Export, ...] = INVENTORY) -> dict[str, bytes]:
         names: set[str] = set()
-        symbols: set[str] = set()
+        symbols: set[tuple[str, str | None]] = set()
         # Check source and filename collisions before generating any Schema.
         for entry in inventory:
             if not re.fullmatch(
                 r"[A-Za-z0-9][A-Za-z0-9_.-]*\.schema\.json", entry.filename
             ):
                 raise ValueError("Schema filename must be a unique safe basename")
-            if entry.filename in names or entry.source_symbol in symbols:
+            identity = (entry.source_symbol, entry.revision)
+            if entry.filename in names or identity in symbols:
                 raise ValueError("Duplicate Schema filename or source symbol")
             names.add(entry.filename)
-            symbols.add(entry.source_symbol)
+            symbols.add(identity)
             source = Path(cast(str, entry.module.__file__)).resolve()
             expected = (
                 REPOSITORY_ROOT
@@ -335,25 +664,37 @@ def _bootstrap() -> tuple[object, ...]:
             document = {
                 "$schema": DIALECT,
                 **TypeAdapter(target).json_schema(
-                    mode="validation", by_alias=True, union_format="any_of"
+                    mode="validation",
+                    by_alias=True,
+                    union_format="any_of",
+                    schema_generator=(
+                        PublishedSchemaGenerator
+                        if entry.revision == "1.0.0"
+                        else GenerateJsonSchema
+                    ),
                 ),
             }
             validate_document(document)
             encoded = _json_bytes(document)
             rendered[entry.filename] = encoded
-            index.append(
-                {
-                    "source_symbol": entry.source_symbol,
-                    "role": entry.role,
-                    "filename": entry.filename,
-                    "sha256": hashlib.sha256(encoded).hexdigest(),
-                    "limitations": list(LIMITATIONS),
-                }
-            )
+            item: dict[str, object] = {
+                "source_symbol": entry.source_symbol,
+                "role": entry.role,
+                "filename": entry.filename,
+                "sha256": hashlib.sha256(encoded).hexdigest(),
+                "limitations": list(LIMITATIONS),
+            }
+            if entry.revision is not None:
+                item["export_revision"] = entry.revision
+            if entry.revision == "1.1.0":
+                item["supersedes"] = entry.filename.replace(
+                    ".v1.1.0.schema.json", ".schema.json"
+                )
+            index.append(item)
         rendered["index.json"] = _json_bytes(
             {
                 "schema_version": "1.0.0",
-                "status": "COMPLETE_WP01B_CONTRACTS",
+                "status": STATUS,
                 "export_kind": "engineering_pydantic_schemas",
                 "generation": {
                     "mode": "validation",
@@ -449,13 +790,34 @@ def _bootstrap() -> tuple[object, ...]:
         print(
             "Schema export matches"
             if args.check
-            else "Schema export written; COMPLETE_WP01B_CONTRACTS"
+            else f"Schema export written; {STATUS}"
         )
         return 0
 
     return (
+        (
+            Export,
+            INVENTORY,
+            WP01B_INVENTORY,
+            WP01C_INVENTORY,
+            DIALECT,
+            LIMITATIONS,
+            DEFERRED_GROUPS,
+            REPOSITORY_ROOT,
+            render_exports,
+            validate_document,
+            export_schemas,
+        ),
+        main,
+    )
+
+
+(
+    (
         Export,
         INVENTORY,
+        WP01B_INVENTORY,
+        WP01C_INVENTORY,
         DIALECT,
         LIMITATIONS,
         DEFERRED_GROUPS,
@@ -463,20 +825,7 @@ def _bootstrap() -> tuple[object, ...]:
         render_exports,
         validate_document,
         export_schemas,
-        main,
-    )
-
-
-(
-    Export,
-    INVENTORY,
-    DIALECT,
-    LIMITATIONS,
-    DEFERRED_GROUPS,
-    REPOSITORY_ROOT,
-    render_exports,
-    validate_document,
-    export_schemas,
+    ),
     main,
 ) = _bootstrap()
 

@@ -1,0 +1,77 @@
+{
+  "$defs": {
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "evidence",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "EvidenceRefs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "code": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Code",
+      "type": "string"
+    },
+    "diagnostic_refs": {
+      "$ref": "#/$defs/EvidenceRefs"
+    },
+    "error_class": {
+      "enum": [
+        "transport",
+        "timeout",
+        "rate_limit",
+        "resource_exhausted",
+        "validation",
+        "association",
+        "unavailable",
+        "cancelled",
+        "internal"
+      ],
+      "title": "Error Class",
+      "type": "string"
+    }
+  },
+  "required": [
+    "error_class",
+    "code",
+    "diagnostic_refs"
+  ],
+  "title": "ToolError",
+  "type": "object"
+}

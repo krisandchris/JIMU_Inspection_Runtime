@@ -1,0 +1,13 @@
+2026-11-18T06:16:28Z
++ /tmp/jimu-wp05-wheel-y34ALniO/dev/bin/python scripts/generate_schemas.py --check
+Schema export matches
++ /tmp/jimu-wp05-wheel-y34ALniO/dev/bin/python -m pytest -q -ra --junitxml /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_2b1lL22r/predicates.xml tests/unit/test_wp05_predicates.py tests/unit/test_wp05_predicates_bundle.py tests/negative/test_wp05_predicates_rejections.py
+...............................................................          [100%]
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/wheel_preflight_2b1lL22r/predicates.xml -
+63 passed in 3.52s
++ result=0
++ date -u +%FT%TZ
+2026-11-18T06:16:45Z
++ printf 'exit=%s\n' 0
+exit=0
++ exit 0

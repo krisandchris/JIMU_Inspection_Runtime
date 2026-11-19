@@ -1,0 +1,10 @@
+# Optional trusted fixture input. The host must approve the file itself.
+services:
+  runtime:
+    environment:
+      JIMU_SYNTHETIC_FRAME_MODE: approved
+    secrets: [app_password, fixture_token, approved_frame]
+
+secrets:
+  approved_frame:
+    file: "${JIMU_APPROVED_FRAME:?supply the host-approved synthetic RGB PNG}"

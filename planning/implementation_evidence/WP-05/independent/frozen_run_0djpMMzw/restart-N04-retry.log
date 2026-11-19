@@ -1,0 +1,12 @@
+2026-11-18T07:11:42Z
+env PYTHONPATH=/tmp/jimu-wp05-acceptance-k3f6cDyI/product WP05_PROBE_DIAGNOSTICS=0 /tmp/jimu-wp05-acceptance-k3f6cDyI/wheel-env/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/run_cases.py --installed --trace-dir /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent/frozen_run_0djpMMzw/exec-restart-N04-retry --restart-at N04_RETRY whole_batch_retry 
+{"check": "worker_process_ready", "pid": 3834964, "runtime_install": "/tmp/jimu-wp05-acceptance-k3f6cDyI/wheel-env/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3834964, "signal": "SIGKILL"}
+{"check": "worker_process_ready", "pid": 3836135, "runtime_install": "/tmp/jimu-wp05-acceptance-k3f6cDyI/wheel-env/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3836135, "signal": null}
+{"check": "release_switched", "new_device_and_camera_revision": "1.1.0", "newly_active": "0678d11ba393fff1d09c816be6d93e9233cb7141449de7778cb061f855614dfd", "phase": "N04_RETRY", "pinned_original": "f6a825e932cd78f321524175729bba3d82f3b10a69cb1e1376c78a1c685aa021"}
+{"check": "worker_process_ready", "pid": 3836544, "runtime_install": "/tmp/jimu-wp05-acceptance-k3f6cDyI/wheel-env/lib/python3.12/site-packages/jimu_runtime/__init__.py"}
+{"check": "worker_process_closed", "pid": 3836544, "signal": null}
+{"after_release_switch": "N04_RETRY", "authority_count": 6, "check": "scenario_terminal_audit", "context": "perception.context.241da11fb1738a15c1e16791dc059e0fcf7b083334afb3c6a35a79b5238bbf04", "coverage": "complete", "decisions": {"outside": "violation"}, "device_and_camera_revision": "1.0.0", "name": "whole_batch_retry", "objects": 1, "observed_cpu_execve": 3, "post": {"candidate": 1, "discovery": 1, "grounding": 1, "observation": 2}, "product_steps": ["applied", "applied", "applied", "retry_scheduled", "applied", "applied", "staged", "finalized"], "summary": "violation", "tool_sidecars": 3}
+2026-11-18T07:12:17Z
+exit=0

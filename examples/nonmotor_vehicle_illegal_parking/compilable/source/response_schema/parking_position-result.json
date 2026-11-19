@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:jimu:synthetic:parking:parking_position-result:1.0.0",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "enum"
+    },
+    "value": {
+      "type": "string",
+      "enum": [
+        "inside_parking_area",
+        "outside_parking_area",
+        "over_boundary"
+      ]
+    }
+  },
+  "required": [
+    "kind",
+    "value"
+  ],
+  "additionalProperties": false
+}

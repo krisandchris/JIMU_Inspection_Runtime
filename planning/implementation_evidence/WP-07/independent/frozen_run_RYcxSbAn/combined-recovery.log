@@ -1,0 +1,10 @@
+2026-11-18T11:16:43Z
+env PYTHONPATH=/tmp/jimu-wp07-acceptance-lkpjWzkU/product:/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-05/independent:/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-06/independent /tmp/jimu-wp07-acceptance-lkpjWzkU/wheel-env/bin/python /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/../recovery/combined_recovery_probe.py /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/frozen_run_RYcxSbAn/combined 
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-07/independent/../recovery/combined_recovery_probe.py", line 47, in <module>
+    from tests.contract.test_wp07_recovery import _endpoint, _fence, _owner
+  File "/tmp/jimu-wp07-acceptance-lkpjWzkU/product/tests/contract/test_wp07_recovery.py", line 17, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+2026-11-18T11:16:46Z
+exit=1

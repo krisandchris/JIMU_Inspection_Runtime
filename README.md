@@ -4,6 +4,15 @@
 **Version:** `1.0.0`  
 **Status:** Architecture baseline for independent review; not implementation authorization.
 
+## Current implementation
+
+For the current development state, test evidence and acceptance scope, see the [work package ledger](planning/WORK_PACKAGE_STATUS.md). The original starter-pack baseline is recorded below.
+
+- [Run the local CPU inspection scenario with Docker Compose](ops/compose/README.md)
+- [Query scoped metrics and provision the local dashboard](ops/observability/README.md)
+- [Back up and restore an isolated deployment](ops/recovery/README.md)
+- [Replay and evaluate historical executions](src/jimu_runtime/evaluation/README.md)
+
 ## 1. Mission
 
 Build a new, independent, configuration-driven multimodal inspection runtime. The runtime is built first. The existing JIMU requirements platform is explicitly out of scope for modification in this project phase. A future adapter may translate approved upstream configurations into this runtime's native contract; V4 is not the runtime domain model.

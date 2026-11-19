@@ -1,0 +1,11 @@
+# B2.3 Producer catalogue and Rule use evidence
+
+`producer_rules.py` derives Question and mapped Tool outputs from exact Profile memberships, Tool definitions, and ToolSkipPolicy artifacts. Each derived declaration ID is the producer-kind prefix and SHA-256 of the JCS array containing the exact Profile reference, tagged producer slot, and output name. The catalogue sorts by declaration ID. Admission reconstructs this sequence from its independently parsed artifacts and compares the catalogue's canonical bytes.
+
+System outputs require matching manifest requirements, deployment registration, and an independently supplied grant for the complete declaration. A Tool use also pins the grant to the exact Profile, ToolPlan, and step. A selected deployment implementation can satisfy an allowed list with one matching version and all declared features. The existing finite domain API keeps its complete-directory default.
+
+The checks cover all three condition domains at their pinned use sites. A mandatory Rule receives availability credit only for an expressly mandatory Question or an always active exactly-one output from an applicable guaranteed producer. A required Tool input also requires prior availability and a strict local Tool ancestor where applicable. Literal-false applicability removes mandatory availability obligations while preserving validation of Fact bindings and operand types for the identity-matched scope. A Rule or RuleSet with no type-checkable Profile use rejects with a named diagnostic.
+
+System grant provenance is supplied through the trusted host environment. Exact cross-artifact pins inside the Bundle come from the independently verified catalogue. The static checks do not establish particular runtime Tool or model successes. The compiler uses a conservative availability proof for Tool guards and checks typed StepOutputInput independently of Tool Fact selectors. An exact same-Plan Fact selector embedded directly in ToolPlan would be a digest cycle under the current wire contract.
+
+See [checks.json](checks.json) for command arguments, versions, exit codes and output. The two JUnit files record the finite tests and the signed-byte integration. All fixtures are synthetic. `RUNTIME_NOT_RUN`.

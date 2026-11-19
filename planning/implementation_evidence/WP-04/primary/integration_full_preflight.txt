@@ -1,0 +1,1215 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+........................................................................ [ 10%]
+........................................................................ [ 12%]
+........................................................................ [ 14%]
+..............................................FFF....................... [ 16%]
+........................................................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 28%]
+........................................................................ [ 30%]
+........................................................................ [ 32%]
+........................................................................ [ 34%]
+........................................................................ [ 36%]
+........................................................................ [ 38%]
+........................................................................ [ 40%]
+........................................................................ [ 42%]
+........................................................................ [ 45%]
+........................................................................ [ 47%]
+........................................................................ [ 49%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 59%]
+........................................................................ [ 61%]
+........................................................................ [ 63%]
+........................................................................ [ 65%]
+........................................................................ [ 67%]
+........................................................................ [ 69%]
+........................................................................ [ 71%]
+........................................................................ [ 73%]
+........................................................................ [ 75%]
+.........F.............................................................. [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 87%]
+........................................................................ [ 90%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 96%]
+........................................................................ [ 98%]
+......................................................F.....F...         [100%]
+=================================== FAILURES ===================================
+_ test_concurrent_distinct_operations_recheck_node_and_deployment_send_budgets _
+  + Exception Group Traceback (most recent call last):
+  |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/contract/test_wp04_dispatch_journal.py", line 629, in test_concurrent_distinct_operations_recheck_node_and_deployment_send_budgets
+  |     asyncio.run(run())
+  |   File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+  |     return runner.run(main)
+  |            ^^^^^^^^^^^^^^^^
+  |   File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+  |     return self._loop.run_until_complete(task)
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+  |     return future.result()
+  |            ^^^^^^^^^^^^^^^
+  |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/contract/test_wp04_dispatch_journal.py", line 587, in run
+  |     async with asyncio.timeout(8), asyncio.TaskGroup() as tasks:
+  |   File "/usr/lib/python3.12/asyncio/taskgroups.py", line 145, in __aexit__
+  |     raise me from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    |     self.dialect.do_execute(
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    |     cursor.execute(statement, parameters)
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py", line 642, in execute
+    |     result = self.await_(self._cursor.execute(query, params, **kw))
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    |     return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    |     value = await result
+    |             ^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/psycopg/cursor_async.py", line 117, in execute
+    |     raise ex.with_traceback(None)
+    | psycopg.errors.NotNullViolation: null value in column "operation_node_run_id" of relation "dispatch_intents" violates not-null constraint
+    | DETAIL:  Failing row contains (demo, edge-1, exec-1, node-dispatch, null, op-1, budget-1, afd0cf386c714d2093f43b42c4751c77, job-dispatch, 1, worker, t, {"dispatch_id":"budget-1","input_digest":"1111111111111111111111..., 2026-11-18 04:28:23.682875+00).
+    | 
+    | The above exception was the direct cause of the following exception:
+    | 
+    | Traceback (most recent call last):
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/gateway/journal.py", line 280, in begin
+    |     *,
+    |        
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/gateway/journal.py", line 373, in _begin
+    |     )
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 659, in execute
+    |     result = await greenlet_spawn(
+    |              ^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 201, in greenlet_spawn
+    |     result = context.throw(*sys.exc_info())
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    |     return meth(
+    |            ^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    |     return connection._execute_clauseelement(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    |     ret = self._execute_context(
+    |           ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    |     return self._exec_single_context(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    |     self._handle_dbapi_exception(
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2365, in _handle_dbapi_exception
+    |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    |     self.dialect.do_execute(
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    |     cursor.execute(statement, parameters)
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py", line 642, in execute
+    |     result = self.await_(self._cursor.execute(query, params, **kw))
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    |     return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    |     value = await result
+    |             ^^^^^^^^^^^^
+    |   File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/.venv/lib/python3.12/site-packages/psycopg/cursor_async.py", line 117, in execute
+    |     raise ex.with_traceback(None)
+    | sqlalchemy.exc.IntegrityError: (psycopg.errors.NotNullViolation) null value in column "operation_node_run_id" of relation "dispatch_intents" violates not-null constraint
+    | DETAIL:  Failing row contains (demo, edge-1, exec-1, node-dispatch, null, op-1, budget-1, afd0cf386c714d2093f43b42c4751c77, job-dispatch, 1, worker, t, {"dispatch_id":"budget-1","input_digest":"1111111111111111111111..., 2026-11-18 04:28:23.682875+00).
+    | [SQL: 
+    |                 INSERT INTO jimu_workflow.dispatch_intents
+    |                     (project_id, client_id, execution_id, node_run_id, operation_id,
+    |                      dispatch_id, attempt_id, job_id, fence, lease_owner, send_admitted, record)
+    |                 VALUES (%(project)s, %(client)s, %(execution)s, %(node)s, %(operation)s,
+    |                         %(dispatch)s, %(attempt)s, %(job)s, %(fence)s, %(owner)s, %(admitted)s, CAST(%(record)s AS json))
+    |             ]
+    | [SQL parameters hidden due to hide_parameters=True]
+    | (Background on this error at: https://sqlalche.me/e/20/gkpj)
+    +------------------------------------
+___ test_unselected_model_is_a_rejection_without_inventing_a_provider_route ____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7ad2a3994410>
+dialect = <sqlalchemy.dialects.postgresql.psycopg.PGDialectAsync_psycopg object at 0x7ad2a394a8a0>
+context = <sqlalchemy.dialects.postgresql.psycopg.PGExecutionContext_psycopg object at 0x7ad2a3a252b0>
+statement = <sqlalchemy.dialects.postgresql.psycopg.PGCompiler_psycopg object at 0x7ad2a3a27590>
+parameters = [{'admitted': False, 'attempt': '5c92ee446809486ab01e2a0aa029f30c', 'client': 'edge-1', 'dispatch': 'unselected', ...}]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py:642: in execute
+    result = self.await_(self._cursor.execute(query, params, **kw))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:132: in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:196: in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.AsyncCursor [closed] [BAD] at 0x7ad2a3ad9190>
+query = '\n                INSERT INTO jimu_workflow.dispatch_intents\n                    (project_id, client_id, execution_i...       %(dispatch)s, %(attempt)s, %(job)s, %(fence)s, %(owner)s, %(admitted)s, CAST(%(record)s AS json))\n            '
+params = {'admitted': False, 'attempt': '5c92ee446809486ab01e2a0aa029f30c', 'client': 'edge-1', 'dispatch': 'unselected', ...}
+
+    async def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            async with self._conn.lock:
+                await self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.NotNullViolation: null value in column "operation_node_run_id" of relation "dispatch_intents" violates not-null constraint
+E           DETAIL:  Failing row contains (demo, edge-1, exec-1, node-dispatch, null, joint-discovery, unselected, 5c92ee446809486ab01e2a0aa029f30c, job-dispatch, 1, worker, f, {"dispatch_id":"unselected","input_digest":"11111111111111111111..., 2026-11-18 04:28:24.831176+00).
+
+.venv/lib/python3.12/site-packages/psycopg/cursor_async.py:117: NotNullViolation
+
+The above exception was the direct cause of the following exception:
+
+    def test_unselected_model_is_a_rejection_without_inventing_a_provider_route():
+        async def run():
+            async with database() as (engine, _):
+                jobs, scope, execution_id = await _ready(engine)
+                claim, attempt, node = await _start(
+                    engine, jobs, scope, execution_id, "worker"
+                )
+                journal = DispatchJournal(engine)
+                selected = _intent(node.trace.trace_id, "selected")
+                target = selected.target
+                assert isinstance(target, ModelDispatchTarget)
+                pending = selected.model_copy(
+                    update={
+                        "dispatch_id": "unselected",
+                        "target": UnselectedModelDispatchTarget(
+                            node_id=target.node_id,
+                            configured_provider=target.configured_provider,
+                            purposes=target.purposes,
+                            profile_refs=target.profile_refs,
+                        ),
+                    },
+                )
+                with pytest.raises(ValueError, match="requires a selected model route"):
+                    await journal.begin(claim, attempt.attempt_id, pending)
+                assert await journal.reject(
+                    claim,
+                    attempt.attempt_id,
+                    pending,
+                    ModelDispatchResult(boundary="not_dispatched", error=_ERROR),
+                )
+                assert await journal.begin(claim, attempt.attempt_id, selected)
+                saved = await journal.get_operation(
+                    scope, execution_id, node.node_run_id, _KEY
+                )
+                assert len(saved) == 2
+                assert saved[0].send_admitted and not saved[1].send_admitted
+                refused = saved[1].results[0].result
+                assert isinstance(refused, ModelDispatchResult)
+                assert refused.invocation is None and refused.actual_provider is None
+    
+>       asyncio.run(run())
+
+tests/contract/test_wp04_dispatch_journal.py:672: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/asyncio/runners.py:194: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/contract/test_wp04_dispatch_journal.py:656: in run
+    assert await journal.reject(
+src/jimu_runtime/gateway/journal.py:294: in reject
+    claim, attempt_id, intent, None, live_guard, budget_guard
+src/jimu_runtime/gateway/journal.py:373: in _begin
+    )
+.venv/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py:659: in execute
+    result = await greenlet_spawn(
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:201: in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py:642: in execute
+    result = self.await_(self._cursor.execute(query, params, **kw))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:132: in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:196: in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.AsyncCursor [closed] [BAD] at 0x7ad2a3ad9190>
+query = '\n                INSERT INTO jimu_workflow.dispatch_intents\n                    (project_id, client_id, execution_i...       %(dispatch)s, %(attempt)s, %(job)s, %(fence)s, %(owner)s, %(admitted)s, CAST(%(record)s AS json))\n            '
+params = {'admitted': False, 'attempt': '5c92ee446809486ab01e2a0aa029f30c', 'client': 'edge-1', 'dispatch': 'unselected', ...}
+
+    async def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            async with self._conn.lock:
+                await self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           sqlalchemy.exc.IntegrityError: (psycopg.errors.NotNullViolation) null value in column "operation_node_run_id" of relation "dispatch_intents" violates not-null constraint
+E           DETAIL:  Failing row contains (demo, edge-1, exec-1, node-dispatch, null, joint-discovery, unselected, 5c92ee446809486ab01e2a0aa029f30c, job-dispatch, 1, worker, f, {"dispatch_id":"unselected","input_digest":"11111111111111111111..., 2026-11-18 04:28:24.831176+00).
+E           [SQL: 
+E                           INSERT INTO jimu_workflow.dispatch_intents
+E                               (project_id, client_id, execution_id, node_run_id, operation_id,
+E                                dispatch_id, attempt_id, job_id, fence, lease_owner, send_admitted, record)
+E                           VALUES (%(project)s, %(client)s, %(execution)s, %(node)s, %(operation)s,
+E                                   %(dispatch)s, %(attempt)s, %(job)s, %(fence)s, %(owner)s, %(admitted)s, CAST(%(record)s AS json))
+E                       ]
+E           [SQL parameters hidden due to hide_parameters=True]
+E           (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+.venv/lib/python3.12/site-packages/psycopg/cursor_async.py:117: IntegrityError
+_ test_cancelled_tool_late_receipt_retains_normalized_execution_and_original_owner _
+
+self = <sqlalchemy.engine.base.Connection object at 0x7ad2a3c96960>
+dialect = <sqlalchemy.dialects.postgresql.psycopg.PGDialectAsync_psycopg object at 0x7ad2a24a8560>
+context = <sqlalchemy.dialects.postgresql.psycopg.PGExecutionContext_psycopg object at 0x7ad2a3793b00>
+statement = <sqlalchemy.dialects.postgresql.psycopg.PGCompiler_psycopg object at 0x7ad2a3793620>
+parameters = [{'admitted': True, 'attempt': '35f560f594c9490da9b3afdf948919ff', 'client': 'edge-1', 'dispatch': 'cpu-dispatch', ...}]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py:642: in execute
+    result = self.await_(self._cursor.execute(query, params, **kw))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:132: in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:196: in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.AsyncCursor [closed] [BAD] at 0x7ad2a1cb3a10>
+query = '\n                INSERT INTO jimu_workflow.dispatch_intents\n                    (project_id, client_id, execution_i...       %(dispatch)s, %(attempt)s, %(job)s, %(fence)s, %(owner)s, %(admitted)s, CAST(%(record)s AS json))\n            '
+params = {'admitted': True, 'attempt': '35f560f594c9490da9b3afdf948919ff', 'client': 'edge-1', 'dispatch': 'cpu-dispatch', ...}
+
+    async def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            async with self._conn.lock:
+                await self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.NotNullViolation: null value in column "operation_node_run_id" of relation "dispatch_intents" violates not-null constraint
+E           DETAIL:  Failing row contains (demo, edge-1, exec-1, node-dispatch, null, run-cpu-tool, cpu-dispatch, 35f560f594c9490da9b3afdf948919ff, job-dispatch, 1, tool-worker, t, {"dispatch_id":"cpu-dispatch","input_digest":"666666666666666666..., 2026-11-18 04:28:26.296865+00).
+
+.venv/lib/python3.12/site-packages/psycopg/cursor_async.py:117: NotNullViolation
+
+The above exception was the direct cause of the following exception:
+
+    def test_cancelled_tool_late_receipt_retains_normalized_execution_and_original_owner():
+        async def run():
+            async with database() as (engine, _):
+                scope_node = NodeId.N03
+                jobs, scope, execution_id = await _ready(engine, node_id=scope_node)
+                claim, attempt, node = await _start(
+                    engine,
+                    jobs,
+                    scope,
+                    execution_id,
+                    "tool-worker",
+                    node_id=scope_node,
+                )
+                journal = DispatchJournal(engine)
+                data = json.loads(_FIXTURE.read_bytes())
+                template = ToolExecution.model_validate_json(
+                    json.dumps(data["tools"]["grounding"])
+                )
+                input_schema = ToolInputSchemaRef.model_validate(
+                    data["tool"]["definition"]["input_schema_ref"]
+                )
+                output_schema = ToolOutputSchemaRef.model_validate(
+                    data["tool"]["definition"]["output_schema_ref"]
+                )
+                proof = TrustPin(identity="cpu-test", version="1.0.0", sha256="a" * 64)
+                execution = template.model_copy(
+                    update={
+                        "tool_execution_id": "cpu-dispatch",
+                        "execution_id": execution_id,
+                        "node_run_ref": NodeRunRef(
+                            record_kind=RuntimeRecordKind.NODE_RUN,
+                            record_id=node.node_run_id,
+                        ),
+                        "attempt_ref": AttemptRef(
+                            record_kind=RuntimeRecordKind.ATTEMPT,
+                            record_id=attempt.attempt_id,
+                        ),
+                        "trace_id": node.trace.trace_id,
+                        "started_at": attempt.started_at,
+                        "completed_at": attempt.started_at,
+                    }
+                )
+                intent = DispatchIntent(
+                    dispatch_id=execution.tool_execution_id,
+                    operation_id="run-cpu-tool",
+                    trace_id=node.trace.trace_id,
+                    request_digest=sha256(b"cpu-test").hexdigest(),
+                    input_digest="6" * 64,
+                    response_contract_digest=output_schema.digest,
+                    resource_lease=DispatchLease(
+                        lease_id="cpu-lease", owner_id="tool-worker", scope_id="cpu"
+                    ),
+                    target=ToolDispatchTarget(
+                        tool_ref=execution.tool_ref,
+                        invocation_origin=execution.invocation_origin,
+                        profile_ref=execution.profile_ref,
+                        capability_id="cpu-inspection",
+                        contract_version="1.0.0",
+                        implementation_version="1.0.0",
+                        implementation_proof_ref=proof,
+                        input_schema_ref=input_schema,
+                        output_schema_ref=output_schema,
+                        input_refs=execution.input_refs,
+                    ),
+                )
+                assert await journal.begin(claim, attempt.attempt_id, intent)
+                assert await jobs.request_cancel(scope, execution_id)
+                assert await jobs.reconcile(scope, execution_id)
+                response = await asyncio.to_thread(
+                    execution.attempt_result.result.model_dump_json
+                )
+                wire = response.encode()
+                receipt = ToolDispatchResult(
+                    boundary="acknowledged",
+                    acknowledgement="tool_process",
+                    observed_response_bytes=len(wire),
+                    response_digest=sha256(wire).hexdigest(),
+                    implementation=ToolImplementationObservation(
+                        implementation_version="1.0.0", proof_ref=proof
+                    ),
+                    execution=execution,
+                    tool_execution_digest=tool_receipt_digest(execution),
+                )
+                foreign = replace(
+                    claim, scope=scope.model_copy(update={"project_id": "outside"})
+                )
+                with pytest.raises(DispatchConflict, match="original dispatch intent"):
+                    await journal.append_result(
+                        foreign, attempt.attempt_id, intent.dispatch_id, receipt
+                    )
+                assert await journal.append_result(
+                    claim, attempt.attempt_id, intent.dispatch_id, receipt
+                )
+                saved = await journal.get_dispatch(scope, execution_id, intent.dispatch_id)
+                assert saved is not None and saved.results[0].late
+                assert saved.results[0].result == receipt
+                assert (node.node_run_id, attempt.attempt_id) not in (
+                    await inspect(engine, scope, execution_id)
+                )["authority"]
+    
+>       asyncio.run(run())
+
+tests/contract/test_wp04_dispatch_journal.py:775: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/asyncio/runners.py:194: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/contract/test_wp04_dispatch_journal.py:740: in run
+    assert await journal.begin(claim, attempt.attempt_id, intent)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/jimu_runtime/gateway/journal.py:280: in begin
+    *,
+src/jimu_runtime/gateway/journal.py:373: in _begin
+    )
+.venv/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py:659: in execute
+    result = await greenlet_spawn(
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:201: in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py:642: in execute
+    result = self.await_(self._cursor.execute(query, params, **kw))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:132: in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:196: in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.AsyncCursor [closed] [BAD] at 0x7ad2a1cb3a10>
+query = '\n                INSERT INTO jimu_workflow.dispatch_intents\n                    (project_id, client_id, execution_i...       %(dispatch)s, %(attempt)s, %(job)s, %(fence)s, %(owner)s, %(admitted)s, CAST(%(record)s AS json))\n            '
+params = {'admitted': True, 'attempt': '35f560f594c9490da9b3afdf948919ff', 'client': 'edge-1', 'dispatch': 'cpu-dispatch', ...}
+
+    async def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            async with self._conn.lock:
+                await self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           sqlalchemy.exc.IntegrityError: (psycopg.errors.NotNullViolation) null value in column "operation_node_run_id" of relation "dispatch_intents" violates not-null constraint
+E           DETAIL:  Failing row contains (demo, edge-1, exec-1, node-dispatch, null, run-cpu-tool, cpu-dispatch, 35f560f594c9490da9b3afdf948919ff, job-dispatch, 1, tool-worker, t, {"dispatch_id":"cpu-dispatch","input_digest":"666666666666666666..., 2026-11-18 04:28:26.296865+00).
+E           [SQL: 
+E                           INSERT INTO jimu_workflow.dispatch_intents
+E                               (project_id, client_id, execution_id, node_run_id, operation_id,
+E                                dispatch_id, attempt_id, job_id, fence, lease_owner, send_admitted, record)
+E                           VALUES (%(project)s, %(client)s, %(execution)s, %(node)s, %(operation)s,
+E                                   %(dispatch)s, %(attempt)s, %(job)s, %(fence)s, %(owner)s, %(admitted)s, CAST(%(record)s AS json))
+E                       ]
+E           [SQL parameters hidden due to hide_parameters=True]
+E           (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+.venv/lib/python3.12/site-packages/psycopg/cursor_async.py:117: IntegrityError
+___________ test_cli_check_is_read_only_and_detects_mismatch[valid] ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-268/test_cli_check_is_read_only_an0')
+rendered = {'conditions.ConditionExpr.schema.json': b'{\n  "$defs": {\n    "AbsentOptional_ReviewReportRef_": {\n      "$ref": "#...ne",\n    "lt",\n    "le",\n    "gt",\n    "ge"\n  ],\n  "title": "ComparisonOperator",\n  "type": "string"\n}\n', ...}
+change = 'valid'
+
+    @pytest.mark.parametrize("change", ["valid", "missing", "stale", "additional"])
+    def test_cli_check_is_read_only_and_detects_mismatch(
+        tmp_path: Path, rendered: dict[str, bytes], change: str
+    ) -> None:
+        output = tmp_path / "generated"
+        seed(output, rendered)
+        chosen = next(name for name in rendered if name != "index.json")
+        if change == "missing":
+            (output / chosen).unlink()
+        elif change == "stale":
+            (output / chosen).write_bytes(b"{}\n")
+        elif change == "additional":
+            (output / "unknown.txt").write_text("preserve")
+        before = tree(tmp_path)
+        sources = tree(ROOT / "src")
+        source_imports = imported_source_tree()
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), "--check", "--output", str(output)],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+        )
+        assert completed.returncode == (0 if change == "valid" else 1), completed.stderr
+        assert tree(tmp_path) == before
+>       assert (
+            tree(ROOT / "src") == sources
+        )  # Run only after all source writers are quiescent.
+E       AssertionError: assert {'jimu_runtim...15, 293), ...} == {'jimu_runtim...15, 293), ...}
+E         
+E         Omitting 320 identical items, use -vv to show
+E         Differing items:
+E         {'jimu_runtime/tools/__pycache__': ('directory', 1794976304879728770, 4096)} != {'jimu_runtime/tools/__pycache__': ('directory', 1794976208981262480, 4096)}
+E         {'jimu_runtime/workflow/__pycache__/worker_poll.cpython-312.pyc': ('732fcc181749fd97322adaccb72c43cb97d85dd559d53ae11bbf20d638c93950', 1794976305029725048, 2633)} != {'jimu_runtime/workflow/__pycache__/worker_poll.cpython-312.pyc': ('8fc74830df7d3b724a8891669d7a136d3153b125e0235ac4dcc95b2fb52e3241', 1794973411071831677, 2535)}
+E         {'jimu_runtime/workflow/__pycac...
+E         
+E         ...Full output truncated (3 lines hidden), use '-vv' to show
+
+tests/unit/test_b_schema_export.py:133: AssertionError
+__________ test_admission_is_atomic_between_two_independent_processes __________
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-268/test_admission_is_atomic_betwe0')
+
+    
+    
+    def test_admission_is_atomic_between_two_independent_processes(tmp_path):
+        inventory = worker_inventory(ttl=10_000)
+        path = tmp_path / "resources.db"
+        admission = ResourceAdmission.provision(path, inventory)
+        ctx = get_context("spawn")
+        start, release = ctx.Event(), ctx.Event()
+        output = ctx.Queue()
+        workers = [
+            ctx.Process(
+                target=_compete, args=(path, inventory, start, release, output, str(index))
+            )
+            for index in range(2)
+        ]
+        try:
+            for worker in workers:
+>               worker.start()
+                   ^^^^^^^^^^^^
+
+tests/unit/test_wp04_resource_inventory.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_wp04_resource_inventory.py:56: in <genexpr>
+    worker.start()
+              ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <multiprocessing.queues.Queue object at 0x7ad2a09bf5f0>, block = True
+timeout = 9.99999808499706
+
+    def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
+        if block and timeout is None:
+            with self._rlock:
+                res = self._recv_bytes()
+            self._sem.release()
+        else:
+            if block:
+                deadline = time.monotonic() + timeout
+            if not self._rlock.acquire(block, timeout):
+                raise Empty
+            try:
+                if block:
+                    timeout = deadline - time.monotonic()
+                    if not self._poll(timeout):
+>                       raise Empty
+E                       _queue.Empty
+
+/usr/lib/python3.12/multiprocessing/queues.py:114: Empty
+----------------------------- Captured stderr call -----------------------------
+Process SpawnProcess-14:
+Process SpawnProcess-13:
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/unit/test_wp04_resource_inventory.py", line 27, in _compete
+    admission = ResourceAdmission(path, inventory)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/unit/test_wp04_resource_inventory.py", line 27, in _compete
+    admission = ResourceAdmission(path, inventory)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workers/resources.py", line 154, in __init__
+    with self._transaction():
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workers/resources.py", line 154, in __init__
+    with self._transaction():
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workers/resources.py", line 201, in _transaction
+    raise ResourceUnavailable("inventory_mismatch")
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/workers/resources.py", line 201, in _transaction
+    raise ResourceUnavailable("inventory_mismatch")
+jimu_runtime.workers.resources.ResourceUnavailable: inventory_mismatch
+jimu_runtime.workers.resources.ResourceUnavailable: inventory_mismatch
+_____________________ test_cross_round_tool_step_authority _____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-268/test_cross_round_tool_step_aut0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ad2a3996cf0>
+
+    def test_cross_round_tool_step_authority(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(fixtures, "parking_source", _two_step_source)
+    
+        async def run() -> None:
+            async with migrated_application() as engine:
+                scope, eid, opened, obj, snapshot, profile, plan = await _setup(
+                    engine, tmp_path
+                )
+                a, b = plan.steps
+                jobs = DurableJobs(engine)
+    
+                claim_1, inputs_1, started_1 = await _claim_parent(
+                    engine,
+                    jobs,
+                    scope,
+                    eid,
+                    opened,
+                    obj,
+                    snapshot,
+                    profile,
+                    "first",
+                )
+                store = StepAttemptStore(engine, actor=_ACTOR)
+                one_a = await store.begin(claim_1, inputs_1, a, _INPUT, timeout_ms=3000)
+                one_b = await store.begin(claim_1, inputs_1, b, _INPUT, timeout_ms=3000)
+                assert isinstance(one_a, StepAttempt) and isinstance(one_b, StepAttempt)
+                assert await jobs.start(one_a.claim) is None
+                assert await jobs.claim(scope, "generic", 500, execution_id=eid) is None
+                async with engine.connect() as connection:
+                    nodes = await load_child_nodes(connection, scope, eid)
+                    assert {node.node_run_id for node in nodes} == {
+                        one_a.node.node_run_id,
+                        one_b.node.node_run_id,
+                    }
+                    assert all(node.status is NodeRunStatus.RUNNING for node in nodes)
+                candidate_a = _result(opened, one_a, a, succeeded=True)
+                (asset,) = candidate_a.evidence
+                other_digest = sha256_digest(b"tampered fixture evidence")
+                bad_asset = asset.model_copy(
+                    update={
+                        "sha256": other_digest,
+                        "stage": asset.stage.model_copy(
+                            update={"verified_sha256": other_digest}
+                        ),
+                    }
+                )
+                with pytest.raises(ValueError, match="exact original Fact, evidence"):
+                    await store.complete(
+                        one_a, candidate_a.model_copy(update={"evidence": (bad_asset,)})
+                    )
+                original_a = await store.complete(one_a, candidate_a)
+                failed_b = await store.complete(
+                    one_b, _result(opened, one_b, b, succeeded=False)
+                )
+                assert original_a is not None and original_a.selection is not None
+                assert failed_b is not None and failed_b.selection is None
+                output_1 = _node_output(
+                    inputs_1, (original_a, failed_b), started_at=started_1, failed=True
+                )
+                assert (
+                    await jobs.complete(claim_1, output_1.envelope)
+                    is CompletionDisposition.RETRY_SCHEDULED
+                )
+                await asyncio.sleep(0.04)
+    
+                claim_2, inputs_2, started_2 = await _claim_parent(
+                    engine,
+                    jobs,
+                    scope,
+                    eid,
+                    opened,
+                    obj,
+                    snapshot,
+                    profile,
+                    "restarted",
+                )
+                restarted = StepAttemptStore(engine, actor=_ACTOR)
+                with pytest.raises(ValueError, match="explicit new NodeRun"):
+                    await restarted.begin(
+                        claim_2, inputs_2, a, sha256_digest(b"changed"), timeout_ms=3000
+                    )
+                reused_a = await restarted.begin(
+                    claim_2, inputs_2, a, _INPUT, timeout_ms=3000
+                )
+                with pytest.raises(StepAttemptBudgetExhausted):
+                    await restarted.begin(
+                        claim_2, inputs_2, b, _INPUT, timeout_ms=3000, max_attempts=1
+                    )
+                two_b = await restarted.begin(
+                    claim_2, inputs_2, b, _INPUT, timeout_ms=3000, max_attempts=2
+                )
+                assert reused_a == original_a and isinstance(two_b, StepAttempt)
+                assert two_b.attempt.attempt_id != one_b.attempt.attempt_id
+                assert two_b.previous == failed_b
+                assert (
+                    await restarted.complete(
+                        one_b, _result(opened, one_b, b, succeeded=True)
+                    )
+                    is None
+                )
+                with pytest.raises(ValueError, match="immutable scope"):
+                    await restarted.complete(
+                        two_b, _result(opened, one_b, b, succeeded=True)
+                    )
+                final_b = await restarted.complete(
+                    two_b, _result(opened, two_b, b, succeeded=True)
+                )
+                assert final_b is not None
+                output_2 = _node_output(
+                    inputs_2, (original_a, final_b), started_at=started_2, failed=False
+                )
+                executions = (original_a.result.execution, final_b.result.execution)
+                facts = original_a.result.facts
+                async with engine.connect() as connection:
+                    history = await load_parent_step_history(connection, scope, inputs_2)
+                    assert history is not None and len(history.entries) == 2
+                    statuses = await connection.execute(
+                        text(
+                            "SELECT attempt_status FROM jimu_workflow.tool_step_completions ORDER BY attempt_status"
+                        )
+                    )
+                    assert tuple(statuses.scalars()) == ("failed", "succeeded", "succeeded")
+                    assert all(
+                        entry.child_attempt.status is AttemptStatus.SUCCEEDED
+                        for entry in history.entries
+                    )
+                    assert (
+                        sum(
+                            entry.original_parent_attempt.status is AttemptStatus.FAILED
+                            for entry in history.entries
+                        )
+                        == 1
+                    )
+                output_2.check_steps(
+                    inputs_2, profile, plan, executions, facts, history=history
+                )
+                with pytest.raises(ValueError, match="actual bound"):
+                    output_2.check_steps(inputs_2, profile, plan, executions, facts)
+                forged = facts[0].model_copy(
+                    update={"value": BooleanValue(kind="bool", value=False)}
+                )
+                with pytest.raises(ValueError, match="original child result"):
+                    output_2.check_steps(
+                        inputs_2, profile, plan, executions, (forged,), history=history
+                    )
+                assert (
+>                   await jobs.complete(claim_2, output_2.envelope)
+        ^^^^^^^^^^^^^^^^^^
+                    is CompletionDisposition.APPLIED
+                )
+
+tests/unit/test_wp04_tool_step_attempts_postgres.py:577: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/asyncio/runners.py:194: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/asyncio/base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/unit/test_wp04_tool_step_attempts_postgres.py:541: in run
+    )
+      
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+connection = <sqlalchemy.ext.asyncio.engine.AsyncConnection object at 0x7ad2a1f6e4e0>
+scope = IdempotencyScope(project_id='demo', client_id='edge-1')
+inputs = ToolNodeInput(schema_version='1.0.0', envelope=NodeInputEnvelope(schema_version='1.0.0', node_id=<NodeId.N05: 'N05'>, ...0dd4b1ae5f44ed206b0fb651f224b50731295f6124605d94'), validated_observation_fact_refs=(), observation_authority_ref=None)
+
+        if pin.ref.record_kind in _TOOL_INPUT_KINDS
+    )
+    if (
+        not isinstance(origin, ToolPlanStepOrigin)
+        or (origin.tool_plan_ref, origin.step_id, tool.tool_ref)
+        != (inputs.tool_plan_ref, bound.step.step_id, bound.step.tool_ref)
+        or (
+            tool.execution_id,
+            tool.profile_ref,
+            tool.object_ref,
+            tool.trace_id,
+            tool.node_run_ref.record_id,
+            tool.attempt_ref.record_id,
+        )
+        != (
+            env.execution_id,
+            obj.profile_ref,
+            ObjectRef(record_kind=RuntimeRecordKind.OBJECT, record_id=obj.object_id),
+            env.trace.trace_id,
+            child.node_run_id,
+            attempt.attempt_id,
+        )
+        or attempt.started_at is None
+        or tool.started_at < attempt.started_at
+        or tool.input_refs != expected_inputs
+        or any(
+            item.access_scope.project_id != scope.project_id
+            or isinstance(item.access_scope, TaskEvidenceAccess)
+            and item.access_scope.task_id != env.task_id
+            for item in result.evidence
+        )
+        or tool.actual_implementation_version is not None
+        and tool.actual_implementation_version != implementation_version
+    ):
+        raise ValueError(
+            "tool result differs from its immutable scope, configuration or child owner"
+        )
+    qualification = tool.authority_observation
+    if tool.status == "succeeded" and (
+        qualification is None
+        or (
+            qualification.arrival_qualification,
+            qualification.envelope_validation,
+            qualification.association_validation,
+        )
+        != ("on_time", "trusted", "trusted")
+        or tool.actual_implementation_version != implementation_version
+    ):
+        raise ValueError(
+            "successful tool step requires a trusted on-time result from the pinned implementation"
+        )
+    mapped = {
+        mapping.output_name: mapping.target_fact_key
+        for mapping in bound.step.fact_output_mappings
+    }
+    names = set()
+    for fact in result.facts:
+        source = fact.source
+        if (
+            not isinstance(source, ToolFactSource)
+            or (
+                source.tool_execution_ref,
+                source.tool_plan_ref,
+                source.step_id,
+                source.tool_ref,
+            )
+            != (_tool_ref(tool), origin.tool_plan_ref, origin.step_id, tool.tool_ref)
+            or (
+                fact.execution_id,
+                fact.object_id,
+                fact.profile_ref,
+                fact.attempt_id,
+                fact.trace_id,
+            )
+            != (
+                tool.execution_id,
+                obj.object_id,
+                tool.profile_ref,
+                attempt.attempt_id,
+                tool.trace_id,
+            )
+            or fact.producer_declaration_id not in origin.producer_declaration_ids
+            or mapped.get(source.output_name) != fact.fact_key
+            or source.output_name in names
+        ):
+            raise ValueError(
+                "tool Fact does not resolve to the exact original step producer and mapping"
+>           )
+E           ValueError: tool step history references missing owners, pins, or exact input
+
+src/jimu_runtime/tools/step_attempts.py:1228: ValueError
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/primary/integration_full_preflight.xml -
+=========================== short test summary info ============================
+FAILED tests/contract/test_wp04_dispatch_journal.py::test_concurrent_distinct_operations_recheck_node_and_deployment_send_budgets
+FAILED tests/contract/test_wp04_dispatch_journal.py::test_unselected_model_is_a_rejection_without_inventing_a_provider_route
+FAILED tests/contract/test_wp04_dispatch_journal.py::test_cancelled_tool_late_receipt_retains_normalized_execution_and_original_owner
+FAILED tests/unit/test_b_schema_export.py::test_cli_check_is_read_only_and_detects_mismatch[valid]
+FAILED tests/unit/test_wp04_resource_inventory.py::test_admission_is_atomic_between_two_independent_processes
+FAILED tests/unit/test_wp04_tool_step_attempts_postgres.py::test_cross_round_tool_step_authority
+6 failed, 3514 passed in 533.65s (0:08:53)

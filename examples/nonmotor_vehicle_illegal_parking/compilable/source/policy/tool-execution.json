@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "tool-execution",
+  "policy": {
+    "policy_kind": "tool_execution",
+    "max_concurrency": 1,
+    "timeout_ms": 5000,
+    "input_byte_limit": 262144,
+    "max_attempts": 1,
+    "retryable_error_classes": [],
+    "whole_step_retry": true
+  }
+}

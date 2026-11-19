@@ -1,0 +1,19 @@
+
+==================================== ERRORS ====================================
+________ ERROR collecting tests/contract/test_wp04_dispatch_journal.py _________
+ImportError while importing test module '/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/tests/contract/test_wp04_dispatch_journal.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/contract/test_wp04_dispatch_journal.py:28: in <module>
+    from jimu_runtime.gateway.journal import (
+src/jimu_runtime/gateway/journal.py:14: in <module>
+    from jimu_runtime.bundle.integrity import canonical_bytes
+E   ImportError: cannot import name 'canonical_bytes' from 'jimu_runtime.bundle.integrity' (/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/src/jimu_runtime/bundle/integrity.py)
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/primary/persistence_tools_04.xml -
+=========================== short test summary info ============================
+ERROR tests/contract/test_wp04_dispatch_journal.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 2.05s

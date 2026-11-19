@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "profile_discovery": {
+    "profile_hits": [
+      "nonmotor_vehicle"
+    ]
+  },
+  "object_grounding": {
+    "boxes": [
+      {
+        "xyxy": [
+          40,
+          23,
+          52,
+          33
+        ]
+      }
+    ]
+  },
+  "object_observation": {
+    "vehicle_type": "electric_bicycle",
+    "parking_state": "parked",
+    "parking_position": "outside_parking_area"
+  },
+  "object_observation_insufficient_visibility": {
+    "vehicle_type": "electric_bicycle",
+    "parking_state": "parked",
+    "parking_position": "insufficient_visibility"
+  },
+  "candidate_prediction": {
+    "categories": []
+  },
+  "candidate_prediction_scored": {
+    "categories": [
+      {
+        "category_id": "nonmotor_vehicle_illegal_parking",
+        "score": 1.25
+      }
+    ]
+  }
+}

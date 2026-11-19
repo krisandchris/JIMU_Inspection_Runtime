@@ -1,0 +1,2289 @@
+--- /dev/null
++++ b/src/jimu_runtime/gateway/routing.py
+@@ -0,0 +1,904 @@
++"""Select a deployment from immutable Execution pins and current host evidence."""
++
++from dataclasses import dataclass
++from datetime import datetime
++from typing import Annotated, NoReturn, Self, cast
++
++from pydantic import Field, TypeAdapter, model_validator
++
++from jimu_runtime.bundle.capabilities import CapabilitySnapshot, DeploymentContract
++from jimu_runtime.bundle.semantic_inputs import require_definition
++from jimu_runtime.bundle.trust import TrustPin
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_enums import ModelCapability
++from jimu_runtime.domain.definition_support import (
++    NonNegativeBudget,
++    ReviewReportRef,
++    ShortText,
++    UTCDateTime,
++    require_unique_references,
++)
++from jimu_runtime.domain.definitions.models import ModelBinding, ModelBindingContentRef
++from jimu_runtime.domain.enums import AttemptStatus, NodeRunStatus, RuntimeRecordKind
++from jimu_runtime.domain.policies import (
++    EvaluatedFallbackPolicy,
++    FallbackPolicy,
++    FallbackPolicyArtifact,
++    LocalPrimaryProviderPolicy,
++    ProviderPolicy,
++    ProviderPolicyArtifact,
++    ResourceRequirements,
++    ResourceRequirementsArtifact,
++    TriggerError,
++)
++from jimu_runtime.domain.primitives import ArtifactId, Digest, RecordId
++from jimu_runtime.domain.runtime.executions import ConfiguredModelPin
++from jimu_runtime.domain.runtime.facts import (
++    ModelInvocationRef,
++    ObjectRef,
++    ProfileContentRef,
++)
++from jimu_runtime.domain.runtime.invocations import (
++    ConfiguredProviderIdentity,
++    FailedInvocation,
++    FallbackProviderRoute,
++    InvocationContractSnapshot,
++    InvocationPurpose,
++    LocalPrimaryExceptionIdentity,
++    ModelInvocation,
++    PrimaryProviderRoute,
++    ProviderRouteTrace,
++    UnavailableProviderIdentity,
++    UndispatchedInvocation,
++)
++from jimu_runtime.domain.tool_mappings import (
++    ProfileContentRef as ReviewProfileContentRef,
++)
++from jimu_runtime.domain.tool_mappings import RegionContentRef
++from jimu_runtime.domain.validation.authority_inputs import (
++    AttemptDescriptor,
++    NodeAttemptOwner,
++    NodeRunDescriptor,
++)
++from jimu_runtime.domain.validation.policies import (
++    ModelBindingRegistration,
++    PolicyRegistration,
++    _deployment_matches,
++    _scope_covers,
++)
++from jimu_runtime.domain.validation.review_inputs import (
++    FallbackTransitionAssessment,
++    LocalExceptionAssessment,
++    ReviewedDeployment,
++    ReviewMetadata,
++    ReviewScope,
++)
++from jimu_runtime.workflow.pins import ResolvedExecutionPins, ResolvedModelDeployments
++
++_UTC = TypeAdapter[UTCDateTime](UTCDateTime)
++_FAILURE_STATES = {AttemptStatus.FAILED, AttemptStatus.TIMED_OUT}
++_PURPOSE_NODE = {
++    ModelCapability.PROFILE_DISCOVERY: "N02",
++    "optional_question_proposal": "N02",
++    ModelCapability.OBJECT_GROUNDING: "N03",
++    ModelCapability.OBJECT_OBSERVATION: "N04",
++    ModelCapability.CANDIDATE_PREDICTION: "N06",
++}
++
++
++class RouteRejected(ValueError):
++    """One stable routing reason safe to retain in local diagnostics."""
++
++    def __init__(self, code: ArtifactId, message: str) -> None:
++        super().__init__(message)
++        self.code = code
++
++
++def _reject(code: ArtifactId, message: str) -> NoReturn:
++    raise RouteRejected(code, message)
++
++
++class DeploymentOwnership(ContractModel):
++    """Exact, authenticated host routing data; carries no endpoint URL or secret."""
++
++    deployment: ReviewedDeployment
++    owner_ref: TrustPin
++    endpoint_descriptor_ref: TrustPin
++    model_id: ShortText
++    version_evidence: ReviewReportRef | None
++
++
++class DeploymentOwnershipRegistration(ContractModel):
++    ownership: DeploymentOwnership
++    valid_from: UTCDateTime
++    valid_until: UTCDateTime
++    revoked_at: UTCDateTime | None
++
++    @model_validator(mode="after")
++    def ordered_window(self) -> Self:
++        if self.valid_from >= self.valid_until:
++            raise ValueError("deployment ownership needs an ordered validity window")
++        return self
++
++    def is_current(self, at: datetime) -> bool:
++        return self.valid_from <= at < self.valid_until and (
++            self.revoked_at is None or at < self.revoked_at
++        )
++
++
++class CurrentRoutingState(ContractModel):
++    """A trusted current registry view of availability, reviews and ownership."""
++
++    capabilities: CapabilitySnapshot
++    ownership: Annotated[
++        tuple[DeploymentOwnershipRegistration, ...], Field(max_length=1024)
++    ]
++
++    @model_validator(mode="after")
++    def unique_owners(self) -> Self:
++        keys = {
++            (
++                row.ownership.deployment.provider_id,
++                row.ownership.deployment.deployment_id,
++            )
++            for row in self.ownership
++        }
++        if len(keys) != len(self.ownership):
++            raise ValueError("current deployment ownership must be unique")
++        return self
++
++
++class RoutePolicy(ContractModel):
++    """Historical route configuration resolved from the job's trusted Execution."""
++
++    execution_input_digest: Digest
++    binding: ModelBindingRegistration
++    configured_pin: ConfiguredModelPin
++    resolved: ResolvedModelDeployments
++    provider_registration: PolicyRegistration
++    fallback_registration: PolicyRegistration
++    resource_registration: PolicyRegistration
++    ownership: Annotated[tuple[DeploymentOwnership, ...], Field(max_length=1024)]
++
++    @classmethod
++    def from_execution(
++        cls,
++        execution: ResolvedExecutionPins,
++        binding_ref: ModelBindingContentRef,
++        ownership: tuple[DeploymentOwnership, ...],
++    ) -> Self:
++        """Read pinned artifacts and deployments from already authenticated inputs."""
++        binding = require_definition(execution.catalogue, binding_ref, ModelBinding)
++        configured = next(
++            (
++                pin
++                for pin in execution.pins.model_pins
++                if pin.binding_ref == binding_ref
++            ),
++            None,
++        )
++        resolved = next(
++            (
++                row
++                for row in execution.model_deployments
++                if row.binding_ref == binding_ref
++            ),
++            None,
++        )
++        if configured is None or resolved is None:
++            _reject(
++                "model.binding_not_pinned", "Execution has no exact model binding pin."
++            )
++        return cls(
++            execution_input_digest=execution.pins.input_digest,
++            binding=ModelBindingRegistration(ref=binding_ref, definition=binding),
++            configured_pin=configured,
++            resolved=resolved,
++            provider_registration=PolicyRegistration(
++                ref=binding.provider_policy_ref,
++                artifact=require_definition(
++                    execution.catalogue,
++                    binding.provider_policy_ref,
++                    ProviderPolicyArtifact,
++                ),
++            ),
++            fallback_registration=PolicyRegistration(
++                ref=binding.fallback_policy_ref,
++                artifact=require_definition(
++                    execution.catalogue,
++                    binding.fallback_policy_ref,
++                    FallbackPolicyArtifact,
++                ),
++            ),
++            resource_registration=PolicyRegistration(
++                ref=binding.resource_requirements_ref,
++                artifact=require_definition(
++                    execution.catalogue,
++                    binding.resource_requirements_ref,
++                    ResourceRequirementsArtifact,
++                ),
++            ),
++            ownership=ownership,
++        )
++
++    @model_validator(mode="after")
++    def exact_pins(self) -> Self:
++        definition = self.binding.definition
++        pin = self.configured_pin
++        provider = self.provider_registration.artifact
++        fallback = self.fallback_registration.artifact
++        if (
++            not isinstance(provider, ProviderPolicyArtifact)
++            or not isinstance(fallback, FallbackPolicyArtifact)
++            or not isinstance(
++                self.resource_registration.artifact, ResourceRequirementsArtifact
++            )
++            or (pin.binding_ref, self.resolved.binding_ref)
++            != (self.binding.ref, self.binding.ref)
++            or (pin.provider_policy_ref, self.provider_registration.ref)
++            != (definition.provider_policy_ref, definition.provider_policy_ref)
++            or (pin.fallback_policy_ref, self.fallback_registration.ref)
++            != (definition.fallback_policy_ref, definition.fallback_policy_ref)
++            or self.resource_registration.ref != definition.resource_requirements_ref
++            or (pin.primary_deployment_id, pin.deployments)
++            != (provider.policy.primary_deployment_id, provider.policy.deployments)
++        ):
++            raise ValueError("route policy differs from the immutable Execution pins")
++        if len(self.resolved.deployments) != len(pin.deployments):
++            raise ValueError("each configured deployment needs an exact resolved pin")
++        for requirement, deployment in zip(
++            pin.deployments, self.resolved.deployments, strict=True
++        ):
++            if not _deployment_matches(deployment, requirement, definition):
++                raise ValueError(
++                    "resolved deployment differs from its configured requirement"
++                )
++        owned = {row.deployment for row in self.ownership}
++        if not owned <= set(self.resolved.deployments) or len(owned) != len(
++            self.ownership
++        ):
++            raise ValueError(
++                "historical ownership must refer to unique resolved deployments"
++            )
++        known = {row.deployment_id for row in pin.deployments}
++        if any(
++            edge.from_deployment_id not in known or edge.to_deployment_id not in known
++            for edge in fallback.policy.allowed_transitions
++        ):
++            raise ValueError("fallback endpoints must be configured deployments")
++        return self
++
++    @property
++    def provider(self) -> ProviderPolicy:
++        return cast(ProviderPolicyArtifact, self.provider_registration.artifact).policy
++
++    @property
++    def fallback(self) -> FallbackPolicy:
++        return cast(FallbackPolicyArtifact, self.fallback_registration.artifact).policy
++
++    @property
++    def resources(self) -> ResourceRequirements:
++        return cast(
++            ResourceRequirementsArtifact, self.resource_registration.artifact
++        ).policy
++
++
++class RouteOperation(ContractModel):
++    """Identifies one logical call across Attempts and wire encodings."""
++
++    operation_id: RecordId
++    execution_input_digest: Digest
++    node_run: NodeRunDescriptor
++    binding_ref: ModelBindingContentRef
++    input_digest: Digest
++    response_contract_digest: Digest
++    trace_id: RecordId
++    purposes: Annotated[
++        tuple[InvocationPurpose, ...], Field(min_length=1, max_length=2)
++    ]
++    profile_refs: Annotated[tuple[ProfileContentRef, ...], Field(max_length=1024)]
++    region_ref: RegionContentRef | None = None
++    object_ref: ObjectRef | None = None
++    source_discovery_invocation_ref: ModelInvocationRef | None = None
++    contract_snapshot: InvocationContractSnapshot | None = None
++
++    @model_validator(mode="after")
++    def checked_shape(self) -> Self:
++        require_unique_references(self.profile_refs)
++        purposes = set(self.purposes)
++        if len(purposes) != len(self.purposes) or (
++            len(purposes) > 1
++            and purposes
++            != {ModelCapability.PROFILE_DISCOVERY, "optional_question_proposal"}
++        ):
++            raise ValueError("invalid operation purposes")
++        if (
++            any(
++                purpose in _PURPOSE_NODE
++                and _PURPOSE_NODE[purpose] != self.node_run.node_id
++                for purpose in purposes
++            )
++            or self.node_run.node_id == "N01"
++        ):
++            raise ValueError("operation purpose does not belong to its node")
++        if (self.source_discovery_invocation_ref is not None) != (
++            purposes == {"optional_question_proposal"}
++        ):
++            raise ValueError(
++                "only separate Question proposals pin a discovery invocation"
++            )
++        if ModelCapability.OBJECT_GROUNDING in purposes and len(self.profile_refs) != 1:
++            raise ValueError("grounding must pin one Profile")
++        if self.node_run.node_id in {"N02", "N03"} and self.object_ref is not None:
++            raise ValueError("discovery and grounding do not take an Object")
++        if ModelCapability.OBJECT_OBSERVATION in purposes:
++            if (
++                len(self.profile_refs) != 1
++                or self.object_ref is None
++                or self.contract_snapshot is None
++                or self.contract_snapshot.response_schema_sha256
++                != self.response_contract_digest
++            ):
++                raise ValueError(
++                    "observation needs an Object, Profile and exact joint response contract"
++                )
++        elif self.contract_snapshot is not None:
++            raise ValueError("only observation pins a joint response contract")
++        return self
++
++
++class DeploymentBudget(ContractModel):
++    deployment_id: ArtifactId
++    remaining: NonNegativeBudget
++
++
++class RouteBudget(ContractModel):
++    """Remaining physical-call budgets obtained from the trusted scheduler."""
++
++    node_remaining: NonNegativeBudget
++    operation_remaining: NonNegativeBudget
++    deployments: Annotated[tuple[DeploymentBudget, ...], Field(max_length=1024)]
++
++    @model_validator(mode="after")
++    def unique_deployments(self) -> Self:
++        if len({row.deployment_id for row in self.deployments}) != len(
++            self.deployments
++        ):
++            raise ValueError("duplicate deployment budget")
++        return self
++
++    def permits(self, deployment_id: ArtifactId) -> bool:
++        return (
++            self.node_remaining > 0
++            and self.operation_remaining > 0
++            and any(
++                row.deployment_id == deployment_id and row.remaining > 0
++                for row in self.deployments
++            )
++        )
++
++
++@dataclass(frozen=True, slots=True)
++class RecordedInvocation:
++    """Independently recovered operation association and terminal Attempt witness."""
++
++    operation: RouteOperation
++    attempt: AttemptDescriptor
++    invocation: ModelInvocation
++
++
++@dataclass(frozen=True, slots=True)
++class PlannedRoute:
++    policy: RoutePolicy
++    operation: RouteOperation
++    attempt: AttemptDescriptor
++    configured: ConfiguredProviderIdentity
++    selected: ReviewedDeployment
++    trace: ProviderRouteTrace
++    ownership: DeploymentOwnership
++    reviews: tuple[ReviewMetadata, ...]
++    history: tuple[RecordedInvocation, ...]
++    approved_at: datetime
++
++    @property
++    def binding(self) -> ModelBinding:
++        return self.policy.binding.definition
++
++    @property
++    def resource_requirements(self) -> ResourceRequirements:
++        return self.policy.resources
++
++
++def _history_matches(
++    entry: RecordedInvocation,
++    operation: RouteOperation,
++    configured: ConfiguredProviderIdentity,
++    deployment: ReviewedDeployment | None,
++) -> bool:
++    invocation = entry.invocation
++    return (
++        entry.operation == operation
++        and _attempt_matches(operation, entry.attempt)
++        and entry.attempt.status in _FAILURE_STATES
++        and invocation.attempt_ref == entry.attempt.attempt_ref
++        and invocation.execution_id == operation.node_run.execution_id
++        and invocation.node_run_ref == operation.node_run.node_run_ref
++        and invocation.node_id == operation.node_run.node_id
++        and invocation.configured_provider == configured
++        and invocation.trace_id == operation.trace_id
++        and set(invocation.purposes) == set(operation.purposes)
++        and invocation.profile_refs == operation.profile_refs
++        and invocation.object_ref == operation.object_ref
++        and invocation.source_discovery_invocation_ref
++        == operation.source_discovery_invocation_ref
++        and invocation.contract_snapshot == operation.contract_snapshot
++        and isinstance(invocation.outcome, (FailedInvocation, UndispatchedInvocation))
++        and deployment is not None
++    )
++
++
++def _attempt_matches(operation: RouteOperation, attempt: AttemptDescriptor) -> bool:
++    return (
++        isinstance(attempt.owner, NodeAttemptOwner)
++        and attempt.owner.node_run_ref == operation.node_run.node_run_ref
++        and attempt.execution_id == operation.node_run.execution_id
++    )
++
++
++class _Routing:
++    def __init__(
++        self,
++        policy: RoutePolicy,
++        operation: RouteOperation,
++        attempt: AttemptDescriptor,
++        state: CurrentRoutingState,
++        budget: RouteBudget,
++        at: datetime,
++    ) -> None:
++        at = _UTC.validate_python(at)
++        self.policy = policy
++        self.operation = operation
++        self.attempt = attempt
++        self.state = state
++        self.budget = budget
++        self.at = at
++        self.deployment_pins = {
++            row.deployment_id: row for row in policy.resolved.deployments
++        }
++        self.requirements = {
++            row.deployment_id: row for row in policy.configured_pin.deployments
++        }
++        primary = self.requirements[policy.configured_pin.primary_deployment_id]
++        self.configured = ConfiguredProviderIdentity(
++            binding_ref=policy.binding.ref,
++            provider_policy_ref=policy.provider_registration.ref,
++            primary_deployment_id=primary.deployment_id,
++            provider_id=primary.provider_id,
++            provider_kind=primary.provider_kind,
++            logical_model_id=primary.logical_model_id,
++        )
++        binding = policy.binding.definition
++        allowed = (
++            {ModelCapability.PROFILE_DISCOVERY, "optional_question_proposal"}
++            if binding.capability is ModelCapability.PROFILE_DISCOVERY
++            else {binding.capability}
++        )
++        snapshot = operation.contract_snapshot
++        expected_response = (
++            snapshot.response_schema_sha256
++            if snapshot is not None
++            else binding.output_schema_ref.digest
++        )
++        if (
++            operation.binding_ref != policy.binding.ref
++            or operation.execution_input_digest != policy.execution_input_digest
++            or not set(operation.purposes) <= allowed
++            or operation.response_contract_digest != expected_response
++            or (
++                snapshot is not None
++                and snapshot.configured_output_schema_ref != binding.output_schema_ref
++            )
++            or not _attempt_matches(operation, attempt)
++            or attempt.status is not AttemptStatus.RUNNING
++            or operation.node_run.status is not NodeRunStatus.RUNNING
++        ):
++            _reject(
++                "model.operation_pin_mismatch",
++                "Operation must match its immutable binding and live Attempt.",
++            )
++        if not state.capabilities.is_current(at):
++            _reject(
++                "model.capability_snapshot_expired",
++                "No current trusted capability snapshot is available.",
++            )
++        if budget.node_remaining == 0 or budget.operation_remaining == 0:
++            _reject(
++                "model.call_budget_exhausted",
++                "Node or operation has exhausted its physical call budget.",
++            )
++        self.reviews = {
++            review.report_ref: review
++            for review in state.capabilities.reviews_at(at)
++            if review.verdict == "approved"
++            and review.valid_from <= at < review.valid_until
++        }
++        self.local_exception = self._local_exception()
++
++    def _scope(self, scope: ReviewScope) -> bool:
++        return all(
++            _scope_covers(
++                scope,
++                self.policy.binding.ref,
++                ReviewProfileContentRef.model_validate(profile.model_dump())
++                if profile is not None
++                else None,
++                self.operation.region_ref,
++            )
++            is True
++            for profile in self.operation.profile_refs or (None,)
++        )
++
++    def _local_exception(self) -> LocalPrimaryExceptionIdentity | None:
++        provider = self.policy.provider
++        if not isinstance(provider, LocalPrimaryProviderPolicy):
++            return None
++        exception = provider.local_primary_exception
++        review = self.reviews.get(exception.approval_ref)
++        capability = self.policy.binding.definition.capability
++        if (
++            not exception.valid_from <= self.at < exception.valid_until
++            or capability not in exception.applicable_capabilities
++            or review is None
++            or not any(
++                isinstance(check, LocalExceptionAssessment)
++                and (check.exception_id, check.exception_version, check.reason)
++                == (exception.exception_id, exception.version, exception.reason)
++                and check.primary.model_dump()
++                == self.deployment_pins[provider.primary_deployment_id].model_dump()
++                and capability in check.applicable_capabilities
++                and self._scope(check.scope)
++                for check in review.assessments
++            )
++        ):
++            _reject(
++                "model.local_primary_unapproved",
++                "Local primary has no current exact approval for this scope.",
++            )
++        return LocalPrimaryExceptionIdentity(
++            exception_id=exception.exception_id,
++            version=exception.version,
++            approval_ref=exception.approval_ref,
++        )
++
++    def _ownership(self, selected: ReviewedDeployment) -> DeploymentOwnership:
++        ownership = next(
++            (item for item in self.policy.ownership if item.deployment == selected),
++            None,
++        )
++        if ownership is None or not any(
++            row.ownership == ownership and row.is_current(self.at)
++            for row in self.state.ownership
++        ):
++            _reject(
++                "model.ownership_unavailable",
++                "Exact pinned deployment ownership is unavailable or revoked.",
++            )
++        definition = self.policy.binding.definition
++        contract = DeploymentContract(
++            capability=definition.capability,
++            input_schema_ref=definition.input_schema_ref,
++            output_schema_ref=definition.output_schema_ref,
++        )
++        features = set(self.requirements[selected.deployment_id].required_features)
++        if not any(
++            row.identity == selected
++            and row.is_current(self.at)
++            and features.issubset(row.supported_features)
++            and contract in row.contracts
++            for row in self.state.capabilities.model_deployments
++        ):
++            _reject(
++                "model.deployment_unavailable",
++                "Current host does not offer the pinned deployment, features and exact contracts.",
++            )
++        return ownership
++
++    def _plan(
++        self,
++        trace: ProviderRouteTrace,
++        history: tuple[RecordedInvocation, ...],
++    ) -> PlannedRoute:
++        selected = self.deployment_pins[trace.selected_deployment_id]
++        if not self.budget.permits(selected.deployment_id):
++            _reject(
++                "model.call_budget_exhausted",
++                "Selected deployment has no remaining physical call budget.",
++            )
++        return PlannedRoute(
++            self.policy,
++            self.operation,
++            self.attempt,
++            self.configured,
++            selected,
++            trace,
++            self._ownership(selected),
++            tuple(self.reviews.values()),
++            history,
++            self.at,
++        )
++
++    def primary(self) -> PlannedRoute:
++        trace = PrimaryProviderRoute(
++            route_kind="primary",
++            routing_mode=self.policy.provider.routing_mode,
++            selected_deployment_id=self.configured.primary_deployment_id,
++            fallback_policy_ref=self.policy.fallback_registration.ref,
++            **self._exception_field(),
++        )
++        return self._plan(trace, ())
++
++    def _exception_field(self) -> dict[str, LocalPrimaryExceptionIdentity]:
++        if self.local_exception is None:
++            return {}
++        return {"local_primary_exception": self.local_exception}
++
++    def _validate_history(self, history: tuple[RecordedInvocation, ...]) -> None:
++        if not history:
++            _reject(
++                "model.fallback_history_invalid",
++                "A subsequent call needs its prior terminal invocation history.",
++            )
++        prior_number = 0
++        invocation_ids: set[RecordId] = set()
++        attempt_ids = {self.attempt.attempt_ref}
++        visited: set[ArtifactId] = set()
++        previous: ModelInvocation | None = None
++        for entry in history:
++            inv = entry.invocation
++            route = inv.route_trace
++            selected = route.selected_deployment_id
++            deployment = self.deployment_pins.get(selected)
++            if (
++                not _history_matches(entry, self.operation, self.configured, deployment)
++                or not prior_number
++                < entry.attempt.attempt_number
++                < self.attempt.attempt_number
++                or entry.attempt.attempt_ref in attempt_ids
++                or inv.model_invocation_id in invocation_ids
++                or inv.completed_at > self.at
++                or route.routing_mode != self.policy.provider.routing_mode
++                or route.fallback_policy_ref != self.policy.fallback_registration.ref
++                or route.local_primary_exception != self.local_exception
++                or (previous is not None and previous.completed_at > inv.started_at)
++                or (
++                    deployment is not None
++                    and not self._compatible_actual(inv, deployment)
++                )
++            ):
++                _reject(
++                    "model.fallback_history_invalid",
++                    "Prior invocation does not belong to this exact operation and ordered Attempt history.",
++                )
++            if previous is None:
++                if not isinstance(route, PrimaryProviderRoute):
++                    _reject(
++                        "model.fallback_history_invalid",
++                        "Invocation history must begin at the pinned primary.",
++                    )
++            elif route != previous.route_trace:
++                if (
++                    not isinstance(route, FallbackProviderRoute)
++                    or selected in visited
++                    or route.from_deployment_id
++                    != previous.route_trace.selected_deployment_id
++                    or route.trigger_invocation_ref.record_id
++                    != previous.model_invocation_id
++                    or not isinstance(
++                        previous.outcome, (FailedInvocation, UndispatchedInvocation)
++                    )
++                    or route.trigger_error != previous.outcome.error.error_class
++                    or not isinstance(self.policy.fallback, EvaluatedFallbackPolicy)
++                    or route.trigger_error not in self.policy.fallback.trigger_errors
++                    or not set(route.evaluation_refs).issubset(
++                        self.policy.fallback.evaluation_refs
++                    )
++                    or not any(
++                        (edge.from_deployment_id, edge.to_deployment_id)
++                        == (route.from_deployment_id, selected)
++                        for edge in self.policy.fallback.allowed_transitions
++                    )
++                ):
++                    _reject(
++                        "model.fallback_history_invalid",
++                        "Invocation history changes deployment without a new declared hop.",
++                    )
++            visited.add(selected)
++            invocation_ids.add(inv.model_invocation_id)
++            attempt_ids.add(entry.attempt.attempt_ref)
++            previous = inv
++            prior_number = entry.attempt.attempt_number
++
++    def _compatible_actual(
++        self, prior: ModelInvocation, deployment: ReviewedDeployment
++    ) -> bool:
++        actual = prior.actual_provider
++        if actual is None:
++            return True
++        ownership = next(
++            (item for item in self.policy.ownership if item.deployment == deployment),
++            None,
++        )
++        return (
++            ownership is not None
++            and (
++                actual.provider_id,
++                actual.deployment_id,
++                actual.provider_kind,
++                actual.model_id,
++            )
++            == (
++                deployment.provider_id,
++                deployment.deployment_id,
++                deployment.provider_kind,
++                ownership.model_id,
++            )
++            and (
++                isinstance(actual, UnavailableProviderIdentity)
++                or (actual.deployment_version, actual.model_version)
++                == (deployment.deployment_version, deployment.model_version)
++            )
++        )
++
++    def _evaluation_refs(
++        self,
++        source: ReviewedDeployment,
++        target: ReviewedDeployment,
++        trigger: TriggerError,
++    ) -> tuple[ReviewReportRef, ...]:
++        fallback = self.policy.fallback
++        if not isinstance(fallback, EvaluatedFallbackPolicy):
++            return ()
++        binding = self.policy.binding.definition
++        covered = []
++        for reference in fallback.evaluation_refs:
++            review = self.reviews.get(reference)
++            if review is not None and any(
++                isinstance(check, FallbackTransitionAssessment)
++                and check.source == source
++                and check.target == target
++                and trigger in check.trigger_errors
++                and check.capability == binding.capability
++                and check.input_schema_ref == binding.input_schema_ref
++                and check.output_schema_ref == binding.output_schema_ref
++                and self._scope(check.scope)
++                for check in review.assessments
++            ):
++                covered.append(reference)
++        return tuple(covered)
++
++    def retry(
++        self,
++        history: tuple[RecordedInvocation, ...],
++        retryable_errors: tuple[TriggerError, ...],
++    ) -> PlannedRoute:
++        self._validate_history(history)
++        prior = history[-1].invocation
++        if (
++            not isinstance(prior.outcome, (FailedInvocation, UndispatchedInvocation))
++            or prior.outcome.error.error_class not in retryable_errors
++        ):
++            _reject(
++                "model.retry_not_permitted",
++                "The actual failure was not configured for retry.",
++            )
++        route = prior.route_trace
++        if isinstance(route, FallbackProviderRoute):
++            covered = self._evaluation_refs(
++                self.deployment_pins[route.from_deployment_id],
++                self.deployment_pins[route.to_deployment_id],
++                route.trigger_error,
++            )
++            if not set(route.evaluation_refs) <= set(covered):
++                _reject(
++                    "model.fallback_review_unavailable",
++                    "The prior fallback's exact authorization is unavailable.",
++                )
++        return self._plan(route, history)
++
++    def fallback(self, history: tuple[RecordedInvocation, ...]) -> PlannedRoute:
++        self._validate_history(history)
++        prior = history[-1].invocation
++        fallback = self.policy.fallback
++        if (
++            not isinstance(fallback, EvaluatedFallbackPolicy)
++            or not isinstance(prior.outcome, (FailedInvocation, UndispatchedInvocation))
++            or prior.outcome.error.error_class not in fallback.trigger_errors
++        ):
++            _reject(
++                "model.fallback_not_permitted",
++                "The actual failure does not allow a fallback.",
++            )
++        trigger = cast(TriggerError, prior.outcome.error.error_class)
++        source = self.deployment_pins[prior.route_trace.selected_deployment_id]
++        visited = {row.invocation.route_trace.selected_deployment_id for row in history}
++        plans = []
++        for edge in fallback.allowed_transitions:
++            if (
++                edge.from_deployment_id != source.deployment_id
++                or edge.to_deployment_id in visited
++            ):
++                continue
++            target = self.deployment_pins[edge.to_deployment_id]
++            refs = self._evaluation_refs(source, target, trigger)
++            if not refs:
++                continue
++            trace = FallbackProviderRoute(
++                route_kind="fallback",
++                routing_mode=self.policy.provider.routing_mode,
++                selected_deployment_id=target.deployment_id,
++                fallback_policy_ref=self.policy.fallback_registration.ref,
++                from_deployment_id=source.deployment_id,
++                to_deployment_id=target.deployment_id,
++                trigger_error=trigger,
++                trigger_invocation_ref=ModelInvocationRef(
++                    record_kind=RuntimeRecordKind.MODEL_INVOCATION,
++                    record_id=prior.model_invocation_id,
++                ),
++                evaluation_refs=refs,
++                **self._exception_field(),
++            )
++            try:
++                plans.append(self._plan(trace, history))
++            except RouteRejected:
++                continue
++        if len(plans) > 1:
++            _reject(
++                "model.fallback_ambiguous",
++                "More than one legal fallback edge is available.",
++            )
++        if not plans:
++            _reject(
++                "model.fallback_unavailable",
++                "No legal, reviewed and currently available fallback edge remains.",
++            )
++        return plans[0]
++
++
++def plan_primary(
++    policy: RoutePolicy,
++    operation: RouteOperation,
++    attempt: AttemptDescriptor,
++    current: CurrentRoutingState,
++    budget: RouteBudget,
++    at: datetime,
++) -> PlannedRoute:
++    return _Routing(policy, operation, attempt, current, budget, at).primary()
++
++
++def plan_retry(
++    policy: RoutePolicy,
++    operation: RouteOperation,
++    attempt: AttemptDescriptor,
++    current: CurrentRoutingState,
++    budget: RouteBudget,
++    at: datetime,
++    *,
++    history: tuple[RecordedInvocation, ...],
++    retryable_errors: tuple[TriggerError, ...],
++) -> PlannedRoute:
++    return _Routing(policy, operation, attempt, current, budget, at).retry(
++        history, retryable_errors
++    )
++
++
++def plan_fallback(
++    policy: RoutePolicy,
++    operation: RouteOperation,
++    attempt: AttemptDescriptor,
++    current: CurrentRoutingState,
++    budget: RouteBudget,
++    at: datetime,
++    *,
++    history: tuple[RecordedInvocation, ...],
++) -> PlannedRoute:
++    return _Routing(policy, operation, attempt, current, budget, at).fallback(history)
+--- /dev/null
++++ b/src/jimu_runtime/gateway/invocation.py
+@@ -0,0 +1,356 @@
++"""Transport contract and audit projection for one physical model dispatch."""
++
++from dataclasses import dataclass, field
++from math import isfinite
++from typing import Literal, Protocol, cast
++
++from pydantic import TypeAdapter
++
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_support import ShortText, UTCDateTime
++from jimu_runtime.domain.primitives import ArtifactId, Digest, RecordId, Version
++from jimu_runtime.domain.runtime.facts import EvidenceRef
++from jimu_runtime.domain.runtime.invocations import (
++    ActualProviderIdentity,
++    FailedInvocation,
++    InvocationError,
++    InvocationNodeId,
++    InvocationOutcome,
++    ModelInvocation,
++    RegistryVerifiedProviderIdentity,
++    ReportedProviderIdentity,
++    SucceededInvocation,
++    UnavailableProviderIdentity,
++    UndispatchedInvocation,
++)
++from jimu_runtime.domain.validation.invocations import validate_model_invocation
++from jimu_runtime.gateway.routing import PlannedRoute
++
++type DispatchBoundary = Literal["not_dispatched", "sent_unknown", "acknowledged"]
++
++_RECORD_ID = TypeAdapter[RecordId](RecordId)
++_DIGEST = TypeAdapter[Digest](Digest)
++_UTC = TypeAdapter[UTCDateTime](UTCDateTime)
++
++
++@dataclass(frozen=True, slots=True)
++class DispatchRequest:
++    dispatch_id: RecordId
++    route: PlannedRoute
++    payload: bytes = field(repr=False)
++
++    def __post_init__(self) -> None:
++        _RECORD_ID.validate_python(self.dispatch_id)
++        if type(self.payload) is not bytes:
++            raise ValueError("dispatch needs immutable exact wire bytes")
++        if any(
++            self.dispatch_id == entry.invocation.model_invocation_id
++            for entry in self.route.history
++        ):
++            raise ValueError("dispatch ID must differ from all previous invocations")
++
++    @property
++    def request_digest(self) -> Digest:
++        return sha256_digest(self.payload)
++
++
++class ProviderObservation(ContractModel):
++    """Bounded, sanitized fields observed by the trusted transport."""
++
++    provider_request_id: RecordId | None = None
++    model_id: ShortText | None = None
++    deployment_version: Version | None = None
++    model_version: Version | None = None
++
++
++@dataclass(frozen=True, slots=True)
++class TransportResult:
++    """Physical transport observation; incomplete bodies have no response digest."""
++
++    dispatched: bool
++    error: InvocationError | None = None
++    observation: ProviderObservation | None = None
++    response_bytes: bytes | None = field(default=None, repr=False)
++    parsed_content: bytes | None = field(default=None, repr=False)
++    retry_after_seconds: float | None = None
++    response_status: int | None = None
++    observed_response_bytes: int | None = None
++    response_digest: Digest | None = None
++    response_bytes_omission_reason: (
++        Literal["incomplete", "policy_disabled", "credential_echo", "unvalidated"]
++        | None
++    ) = None
++
++    def __post_init__(self) -> None:
++        if type(self.dispatched) is not bool:
++            raise ValueError("physical dispatch flag must be explicit")
++        if any(
++            value is not None and type(value) is not bytes
++            for value in (self.response_bytes, self.parsed_content)
++        ):
++            raise ValueError("response bytes must be immutable")
++        if self.retry_after_seconds is not None and (
++            not isfinite(self.retry_after_seconds) or self.retry_after_seconds < 0
++        ):
++            raise ValueError("retry delay must be finite and nonnegative")
++        if self.response_digest is not None:
++            _DIGEST.validate_python(self.response_digest)
++        if (
++            self.response_bytes is not None
++            and self.response_bytes_omission_reason is not None
++        ):
++            raise ValueError("retained response bytes have no omission reason")
++        if (
++            self.response_bytes_omission_reason == "incomplete"
++            and self.response_digest is not None
++        ):
++            raise ValueError("incomplete response cannot have a complete digest")
++        if self.response_bytes is not None and (
++            self.response_digest is not None
++            and sha256_digest(self.response_bytes) != self.response_digest
++        ):
++            raise ValueError("complete response digest disagrees with response bytes")
++        if (
++            self.observed_response_bytes is not None
++            and self.observed_response_bytes < 0
++        ):
++            raise ValueError("observed response length must be nonnegative")
++        if self.response_status is not None and not 100 <= self.response_status <= 599:
++            raise ValueError("observed response status is invalid")
++        if not self.dispatched and (
++            self.error is None
++            or any(
++                value is not None
++                for value in (
++                    self.observation,
++                    self.response_bytes,
++                    self.parsed_content,
++                    self.retry_after_seconds,
++                    self.response_status,
++                    self.observed_response_bytes,
++                    self.response_digest,
++                    self.response_bytes_omission_reason,
++                )
++            )
++        ):
++            raise ValueError(
++                "pre-send rejection requires an error and has no physical response"
++            )
++
++
++class ModelTransport(Protocol):
++    """Exactly one transport attempt; cancellation propagates to the journal owner."""
++
++    async def dispatch(self, request: DispatchRequest) -> TransportResult: ...
++
++
++@dataclass(frozen=True, slots=True)
++class DispatchOutcome:
++    request_digest: Digest
++    response_digest: Digest | None
++    boundary: DispatchBoundary
++    error: InvocationError | None
++    transport_result: TransportResult
++    invocation: ModelInvocation | None
++    output: bytes | None = field(default=None, repr=False)
++
++
++def _error(
++    error_class: Literal["association", "validation", "internal"], code: ArtifactId
++) -> InvocationError:
++    return InvocationError(error_class=error_class, code=code, diagnostic_refs=())
++
++
++def _identity(
++    route: PlannedRoute,
++    seen: ProviderObservation | None,
++) -> tuple[ActualProviderIdentity | None, InvocationError | None]:
++    selected = route.selected
++    expected = route.ownership
++    if seen is not None and any(
++        actual is not None and actual != pinned
++        for actual, pinned in (
++            (seen.model_id, expected.model_id),
++            (seen.deployment_version, selected.deployment_version),
++            (seen.model_version, selected.model_version),
++        )
++    ):
++        return None, _error("association", "model.actual_identity_mismatch")
++    observed_id = seen.model_id if seen is not None else None
++    if (
++        seen is not None
++        and observed_id is not None
++        and seen.provider_request_id is not None
++        and seen.deployment_version is not None
++        and seen.model_version is not None
++    ):
++        return ReportedProviderIdentity(
++            provider_kind=selected.provider_kind,
++            provider_id=selected.provider_id,
++            deployment_id=selected.deployment_id,
++            model_id=observed_id,
++            version_resolution="reported",
++            version_evidence=seen.provider_request_id,
++            deployment_version=seen.deployment_version,
++            model_version=seen.model_version,
++        ), None
++    if expected.version_evidence is not None:
++        return RegistryVerifiedProviderIdentity(
++            provider_kind=selected.provider_kind,
++            provider_id=selected.provider_id,
++            deployment_id=selected.deployment_id,
++            model_id=expected.model_id,
++            version_resolution="registry_verified",
++            version_evidence=expected.version_evidence,
++            deployment_version=selected.deployment_version,
++            model_version=selected.model_version,
++        ), None
++    if observed_id is not None:
++        return UnavailableProviderIdentity(
++            provider_kind=selected.provider_kind,
++            provider_id=selected.provider_id,
++            deployment_id=selected.deployment_id,
++            model_id=observed_id,
++            version_resolution="unavailable",
++            version_unavailable_reason="Exact actual provider versions lack trusted evidence.",
++        ), _error("association", "model.actual_version_unavailable")
++    return None, _error("association", "model.actual_identity_unavailable")
++
++
++def _model_record(
++    request: DispatchRequest,
++    outcome: InvocationOutcome,
++    actual: ActualProviderIdentity | None,
++    observation: ProviderObservation | None,
++    started_at: UTCDateTime,
++    completed_at: UTCDateTime,
++    evidence_refs: tuple[EvidenceRef, ...],
++) -> ModelInvocation:
++    route = request.route
++    operation = route.operation
++    optional = {
++        key: value
++        for key, value in (
++            ("actual_provider", actual),
++            (
++                "provider_request_id",
++                observation.provider_request_id if observation is not None else None,
++            ),
++            ("object_ref", operation.object_ref),
++            (
++                "source_discovery_invocation_ref",
++                operation.source_discovery_invocation_ref,
++            ),
++            ("contract_snapshot", operation.contract_snapshot),
++        )
++        if value is not None
++    }
++    record = ModelInvocation.model_validate(
++        {
++            "schema_version": "1.0.0",
++            "model_invocation_id": request.dispatch_id,
++            "execution_id": operation.node_run.execution_id,
++            "node_id": cast(InvocationNodeId, operation.node_run.node_id),
++            "node_run_ref": operation.node_run.node_run_ref,
++            "attempt_ref": route.attempt.attempt_ref,
++            "configured_provider": route.configured,
++            "route_trace": route.trace,
++            "purposes": operation.purposes,
++            "profile_refs": operation.profile_refs,
++            "outcome": outcome,
++            "request_digest": request.request_digest,
++            "started_at": started_at,
++            "completed_at": completed_at,
++            "evidence_refs": evidence_refs,
++            "trace_id": operation.trace_id,
++            **optional,
++        }
++    )
++    validate_model_invocation(
++        record,
++        node_run=operation.node_run,
++        attempt=route.attempt,
++        binding=route.policy.binding,
++        provider_policy=route.policy.provider_registration,
++        fallback_policy=route.policy.fallback_registration,
++        prior_invocations=tuple(entry.invocation for entry in route.history),
++        reviews=route.reviews,
++        region_ref=operation.region_ref,
++        resolved_deployments=route.policy.resolved.deployments,
++    )
++    return record
++
++
++def project_dispatch(
++    request: DispatchRequest,
++    result: TransportResult,
++    *,
++    started_at: UTCDateTime,
++    completed_at: UTCDateTime,
++    evidence_refs: tuple[EvidenceRef, ...] = (),
++) -> DispatchOutcome:
++    """Build the immutable audit record; only validated, versioned output is usable."""
++    response_digest = result.response_digest
++    if result.response_bytes is not None and response_digest is None:
++        response_digest = sha256_digest(result.response_bytes)
++    observation = result.observation
++    error = result.error
++    actual = None
++    if not result.dispatched:
++        boundary: DispatchBoundary = "not_dispatched"
++    else:
++        boundary = (
++            "acknowledged"
++            if result.response_status is not None
++            or response_digest is not None
++            or (observation is not None and observation.provider_request_id is not None)
++            else "sent_unknown"
++        )
++        actual, identity_error = _identity(request.route, observation)
++        if error is None:
++            error = identity_error
++        if error is None and (response_digest is None or result.parsed_content is None):
++            error = _error("validation", "model.validated_output_missing")
++    invocation = None
++    if not result.dispatched:
++        assert error is not None
++        outcome: InvocationOutcome = UndispatchedInvocation(
++            status="not_dispatched", error=error
++        )
++    elif error is not None:
++        outcome = FailedInvocation(status="failed", error=error)
++    else:
++        assert response_digest is not None
++        outcome = SucceededInvocation(
++            status="succeeded", response_digest=response_digest
++        )
++    if not result.dispatched or actual is not None:
++        try:
++            started_at = _UTC.validate_python(started_at)
++            completed_at = _UTC.validate_python(completed_at)
++            if started_at < request.route.approved_at:
++                raise ValueError("physical dispatch cannot precede its route approval")
++            invocation = _model_record(
++                request,
++                outcome,
++                actual,
++                observation,
++                started_at,
++                completed_at,
++                evidence_refs,
++            )
++        except ValueError:
++            # A physical observation can outlive incompatible or revoked audit inputs.
++            if error is None:
++                error = _error("association", "model.invocation_association_invalid")
++    retain_output = invocation is not None and error is None
++    return DispatchOutcome(
++        request_digest=request.request_digest,
++        response_digest=response_digest,
++        boundary=boundary,
++        error=error,
++        transport_result=result,
++        invocation=invocation,
++        output=result.parsed_content if retain_output else None,
++    )
+--- a/src/jimu_runtime/domain/validation/invocations.py
++++ b/src/jimu_runtime/domain/validation/invocations.py
+@@ -51,12 +51,13 @@
+ )
+ from jimu_runtime.domain.runtime.tool_executions import (
+     FailedToolResult,
+     GroundingBindingOrigin,
+     ReturnedToolAttempt,
+     ToolExecution,
++    ToolPlanStepOrigin,
+ )
+ from jimu_runtime.domain.schema_types import ToolResultSchemaDescriptor
+ from jimu_runtime.domain.tool_mappings import ProfileContentRef, RegionContentRef
+ from jimu_runtime.domain.validation.authority_inputs import (
+     AttemptDescriptor,
+     NodeAttemptOwner,
+@@ -67,12 +68,13 @@
+     ProfileRegistration,
+     ToolPlanRegistration,
+ )
+ from jimu_runtime.domain.validation.policies import (
+     ModelBindingRegistration,
+     PolicyRegistration,
++    _deployment_matches,
+     _scope_covers,
+ )
+ from jimu_runtime.domain.validation.review_inputs import (
+     FallbackTransitionAssessment,
+     LocalExceptionAssessment,
+     ReviewedDeployment,
+@@ -154,14 +156,15 @@
+     binding: ModelBindingRegistration,
+     provider_policy: PolicyRegistration,
+     fallback_policy: PolicyRegistration,
+     prior_invocations: tuple[ModelInvocation, ...] = (),
+     reviews: tuple[ReviewMetadata, ...] = (),
+     region_ref: RegionContentRef | None = None,
++    resolved_deployments: tuple[ReviewedDeployment, ...] = (),
+ ) -> None:
+-    """Check exact route evidence against supplied pins and bounded review metadata."""
++    """Check route evidence. Resolved Execution pins only witness review endpoints."""
+     validate_attempt_owner(
+         execution_id=invocation.execution_id,
+         node_run_id=invocation.node_run_ref.record_id,
+         node_id=invocation.node_id,
+         attempt_id=invocation.attempt_ref.record_id,
+         node_run=node_run,
+@@ -204,12 +207,22 @@
+     ):
+         _fail(
+             "routing mode and primary deployment must match the pinned provider policy"
+         )
+     deployments = {item.deployment_id: item for item in provider.deployments}
+     primary = deployments[provider.primary_deployment_id]
++    pinned = {identity.deployment_id: identity for identity in resolved_deployments}
++    if resolved_deployments and (
++        len(pinned) != len(resolved_deployments)
++        or pinned.keys() != deployments.keys()
++        or any(
++            not _deployment_matches(identity, deployments[deployment_id], definition)
++            for deployment_id, identity in pinned.items()
++        )
++    ):
++        _fail("resolved deployment pins must match the complete configured binding")
+     if (primary.provider_id, primary.provider_kind, primary.logical_model_id) != (
+         configured.provider_id,
+         configured.provider_kind,
+         configured.logical_model_id,
+     ):
+         _fail("configured provider identity does not match the pinned primary")
+@@ -247,12 +260,13 @@
+             and _review_deployment_matches(
+                 assessment.primary,
+                 primary,
+                 invocation.actual_provider
+                 if not isinstance(route, FallbackProviderRoute)
+                 else None,
++                pinned.get(primary.deployment_id),
+             )
+             for assessment in review.assessments
+         ):
+             _fail(
+                 "local primary review does not cover exact deployment, capability and scope"
+             )
+@@ -261,12 +275,13 @@
+     if selected is None:
+         _fail("selected model deployment is unregistered")
+     if actual is not None:
+         _validate_actual_deployment(
+             actual, selected.provider_id, selected.provider_kind
+         )
++        _validate_observed_pin(actual, pinned.get(selected.deployment_id))
+         if not isinstance(actual, UnavailableProviderIdentity) and (
+             actual.model_version
+             not in selected.actual_version_constraints.allowed_model_versions
+             or actual.deployment_version
+             not in selected.actual_version_constraints.allowed_deployment_versions
+         ):
+@@ -307,12 +322,14 @@
+             _fail(
+                 "fallback trigger must resolve a distinct earlier failed Attempt of the same operation"
+             )
+         source = deployments.get(route.from_deployment_id)
+         if source is None:
+             _fail("fallback source is not registered")
++        source_pin = pinned.get(source.deployment_id)
++        _validate_observed_pin(prior.actual_provider, source_pin)
+         for reference in route.evaluation_refs:
+             review = _one(
+                 (review for review in reviews if review.report_ref == reference),
+                 "fallback requires its exact independent evaluation",
+             )
+             if not _active_review(review, invocation) or not any(
+@@ -320,16 +337,19 @@
+                 and assessment.capability is definition.capability
+                 and route.trigger_error in assessment.trigger_errors
+                 and assessment.input_schema_ref == definition.input_schema_ref
+                 and assessment.output_schema_ref == definition.output_schema_ref
+                 and _scope_matches(assessment, invocation, region_ref)
+                 and _review_deployment_matches(
+-                    assessment.source, source, prior.actual_provider
++                    assessment.source, source, prior.actual_provider, source_pin
+                 )
+                 and _review_deployment_matches(
+-                    assessment.target, selected, invocation.actual_provider
++                    assessment.target,
++                    selected,
++                    actual,
++                    pinned.get(selected.deployment_id),
+                 )
+                 for assessment in review.assessments
+             ):
+                 _fail(
+                     "fallback review does not cover exact transition, contracts and scope"
+                 )
+@@ -362,13 +382,19 @@
+ 
+ 
+ def _review_deployment_matches(
+     reviewed: ReviewedDeployment,
+     requirement: DeploymentRequirement,
+     actual: ActualProviderIdentity | None,
++    pinned: ReviewedDeployment | None,
+ ) -> bool:
++    witness = (
++        pinned
++        if isinstance(actual, UnavailableProviderIdentity) or actual is None
++        else actual
++    )
+     return (
+         (
+             reviewed.provider_id,
+             reviewed.deployment_id,
+             reviewed.provider_kind,
+             reviewed.logical_model_id,
+@@ -379,34 +405,48 @@
+             requirement.provider_kind,
+             requirement.logical_model_id,
+         )
+         and _review_version_matches(
+             reviewed.deployment_version,
+             requirement.actual_version_constraints.allowed_deployment_versions,
+-            actual.deployment_version
+-            if actual is not None
+-            and not isinstance(actual, UnavailableProviderIdentity)
+-            else None,
++            witness.deployment_version if witness is not None else None,
+         )
+         and _review_version_matches(
+             reviewed.model_version,
+             requirement.actual_version_constraints.allowed_model_versions,
+-            actual.model_version
+-            if actual is not None
+-            and not isinstance(actual, UnavailableProviderIdentity)
+-            else None,
++            witness.model_version if witness is not None else None,
+         )
+     )
+ 
+ 
+ def _review_version_matches(
+-    reviewed: str, allowed: tuple[str, ...], actual: str | None
++    reviewed: str, allowed: tuple[str, ...], witness: str | None
+ ) -> bool:
+-    if actual is None:
++    if witness is None:
+         return allowed == (reviewed,)
+-    return reviewed == actual and reviewed in allowed
++    return reviewed == witness and reviewed in allowed
++
++
++def _validate_observed_pin(
++    actual: ActualProviderIdentity | None,
++    pinned: ReviewedDeployment | None,
++) -> None:
++    if actual is None or pinned is None:
++        return
++    if (actual.provider_id, actual.provider_kind, actual.deployment_id) != (
++        pinned.provider_id,
++        pinned.provider_kind,
++        pinned.deployment_id,
++    ) or (
++        not isinstance(actual, UnavailableProviderIdentity)
++        and (actual.deployment_version, actual.model_version)
++        != (pinned.deployment_version, pinned.model_version)
++    ):
++        _fail(
++            "observed provider identity must agree with the exact resolved deployment pin"
++        )
+ 
+ 
+ def _validate_actual_deployment(
+     actual: ActualProviderIdentity,
+     provider_id: str,
+     provider_kind: str,
+@@ -718,12 +758,33 @@
+         if isinstance(fact, KnownFact) and fact.value != output_values.get(
+             source.output_name
+         ):
+             _fail("known Tool Fact must match the validated named output payload")
+ 
+ 
++def _conflicting_tool_peer(execution: ToolExecution, peer: ToolExecution) -> bool:
++    if peer.execution_id != execution.execution_id:
++        return False
++    if peer.tool_execution_id == execution.tool_execution_id:
++        return True
++    if peer.attempt_ref != execution.attempt_ref:
++        return False
++    origin, other = execution.invocation_origin, peer.invocation_origin
++    if peer.node_run_ref != execution.node_run_ref or origin.node_id != other.node_id:
++        return True
++    if isinstance(origin, GroundingBindingOrigin):
++        return _same_ref(execution.profile_ref, peer.profile_ref)
++    assert isinstance(other, ToolPlanStepOrigin)
++    return (
++        not _same_ref(execution.profile_ref, peer.profile_ref)
++        or execution.object_ref != peer.object_ref
++        or origin.tool_plan_ref != other.tool_plan_ref
++        or origin.step_id == other.step_id
++    )
++
++
+ def validate_tool_execution(
+     execution: ToolExecution,
+     *,
+     node_run: NodeRunDescriptor,
+     attempt: AttemptDescriptor,
+     profile: ProfileRegistration,
+@@ -779,24 +840,14 @@
+     if (
+         actual is not None
+         and actual
+         not in tool.definition.implementation_requirement.allowed_implementation_versions
+     ):
+         _fail("actual Tool implementation is outside the pinned allowlist")
+-    if any(
+-        peer.execution_id == execution.execution_id
+-        and (
+-            peer.tool_execution_id == execution.tool_execution_id
+-            or (
+-                peer.attempt_ref == execution.attempt_ref
+-                and peer.invocation_origin != origin
+-            )
+-        )
+-        for peer in peer_executions
+-    ):
+-        _fail("Tool invocation or Attempt identity cannot be shared across origins")
++    if any(_conflicting_tool_peer(execution, peer) for peer in peer_executions):
++        _fail("Tool invocation identity or Attempt source is duplicated or mismatched")
+     result = (
+         execution.attempt_result.result
+         if isinstance(execution.attempt_result, ReturnedToolAttempt)
+         else None
+     )
+     payload = (
+--- /dev/null
++++ b/tests/unit/test_wp04_gateway_routing.py
+@@ -0,0 +1,509 @@
++"""Current evidence may decline, but cannot replace, an immutable route."""
++
++import pytest
++from fixtures.wp04.routing_support import (
++    AT,
++    DIGEST,
++    LOCAL,
++    OTHER,
++    REMOTE,
++    finish_call,
++    routing_fixture,
++)
++
++from jimu_runtime.domain.enums import AttemptStatus
++from jimu_runtime.domain.runtime.invocations import FallbackProviderRoute
++from jimu_runtime.gateway.routing import (
++    RouteRejected,
++    plan_fallback,
++    plan_primary,
++    plan_retry,
++)
++
++
++def _next(
++    case, history, *, at=AT, current=None, budget=None, operation=None, attempt=None
++):
++    return plan_fallback(
++        case.policy,
++        operation or case.operation,
++        attempt or case.attempt_at(len(history) + 1),
++        current or case.current,
++        budget or case.budget,
++        at,
++        history=history,
++    )
++
++
++def test_first_call_selects_explicit_remote_primary_and_rejects_changed_operation():
++    case = routing_fixture(edges=())
++    route = case.primary_route()
++    assert route.selected.deployment_id == REMOTE
++    assert route.configured.primary_deployment_id == REMOTE
++    assert route.trace.route_kind == "primary"
++    assert route.binding == case.policy.binding.definition
++    assert route.resource_requirements.input_byte_limit == 65536
++    altered = case.operation.model_copy(update={"execution_input_digest": "f" * 64})
++    with pytest.raises(RouteRejected) as rejected:
++        plan_primary(
++            case.policy, altered, case.attempt_at(1), case.current, case.budget, AT
++        )
++    assert rejected.value.code == "model.operation_pin_mismatch"
++
++
++@pytest.mark.parametrize(
++    "fault", ["missing", "revoked", "endpoint_changed", "owner_changed"]
++)
++def test_primary_checks_authoritative_ownership_at_dispatch(fault):
++    case = routing_fixture()
++    primary, *rest = case.current.ownership
++    if fault == "missing":
++        rows = tuple(rest)
++    elif fault == "revoked":
++        rows = (primary.model_copy(update={"revoked_at": AT}), *rest)
++    else:
++        field = (
++            "endpoint_descriptor_ref" if fault == "endpoint_changed" else "owner_ref"
++        )
++        changed = getattr(primary.ownership, field).model_copy(
++            update={"sha256": "a" * 64}
++        )
++        proof = primary.ownership.model_copy(update={field: changed})
++        rows = (primary.model_copy(update={"ownership": proof}), *rest)
++    current = case.current.model_copy(update={"ownership": rows})
++    with pytest.raises(RouteRejected, match="ownership"):
++        plan_primary(
++            case.policy, case.operation, case.attempt_at(1), current, case.budget, AT
++        )
++
++
++@pytest.mark.parametrize(
++    "fault", ["version", "contract", "feature", "revoked", "snapshot"]
++)
++def test_current_registration_may_not_replace_pinned_deployment(fault):
++    case = routing_fixture()
++    primary, *rest = case.current.capabilities.model_deployments
++    if fault == "version":
++        entries = {
++            "identity": primary.identity.model_copy(update={"model_version": "2.0.0"})
++        }
++    elif fault == "contract":
++        (contract,) = primary.contracts
++        entries = {
++            "contracts": (
++                contract.model_copy(
++                    update={"output_schema_ref": contract.input_schema_ref}
++                ),
++            )
++        }
++    elif fault == "feature":
++        entries = {"supported_features": ()}
++    elif fault == "revoked":
++        entries = {"revoked_at": AT}
++    else:
++        entries = {}
++    update = {"model_deployments": (primary.model_copy(update=entries), *rest)}
++    if fault == "snapshot":
++        update["valid_until"] = AT
++    current = case.current.model_copy(
++        update={"capabilities": case.current.capabilities.model_copy(update=update)}
++    )
++    with pytest.raises(RouteRejected):
++        plan_primary(
++            case.policy, case.operation, case.attempt_at(1), current, case.budget, AT
++        )
++
++
++def test_local_primary_contains_separate_valid_exception_proof():
++    case = routing_fixture(local_primary=True)
++    route = case.primary_route()
++    assert route.selected.deployment_id == LOCAL
++    assert route.trace.local_primary_exception is not None
++    assert route.trace.routing_mode == "local_primary_exception"
++    assert (
++        finish_call(route).invocation.actual_provider.version_resolution
++        == "registry_verified"
++    )
++
++
++@pytest.mark.parametrize("fault", ["revocation", "expiry", "scope", "version"])
++def test_local_primary_deploys_only_under_exact_current_review(fault):
++    case = routing_fixture(local_primary=True)
++    (row,) = case.current.capabilities.model_reviews
++    approval, *fallbacks = row.metadata.assessments
++    if fault == "revocation":
++        row = row.model_copy(update={"revoked_at": AT})
++    elif fault == "expiry":
++        row = row.model_copy(
++            update={"metadata": row.metadata.model_copy(update={"valid_until": AT})}
++        )
++    else:
++        if fault == "version":
++            updated = {
++                "primary": approval.primary.model_copy(
++                    update={"model_version": "2.0.0"}
++                )
++            }
++        else:
++            wrong = approval.scope.binding_refs[0].model_copy(
++                update={"digest": "f" * 64}
++            )
++            updated = {
++                "scope": approval.scope.model_copy(update={"binding_refs": (wrong,)})
++            }
++        row = row.model_copy(
++            update={
++                "metadata": row.metadata.model_copy(
++                    update={
++                        "assessments": (approval.model_copy(update=updated), *fallbacks)
++                    }
++                )
++            }
++        )
++    current = case.current.model_copy(
++        update={
++            "capabilities": case.current.capabilities.model_copy(
++                update={"model_reviews": (row,)}
++            )
++        }
++    )
++    with pytest.raises(RouteRejected, match="Local primary"):
++        plan_primary(
++            case.policy, case.operation, case.attempt_at(1), current, case.budget, AT
++        )
++
++
++def test_timeout_can_hop_across_exact_independently_evaluated_deployments():
++    case = routing_fixture(
++        edges=((REMOTE, LOCAL), (LOCAL, OTHER), (OTHER, LOCAL), (OTHER, REMOTE))
++    )
++    first = finish_call(case.primary_route())
++    second_route = _next(case, (first,))
++    assert isinstance(second_route.trace, FallbackProviderRoute)
++    assert second_route.selected.deployment_id == LOCAL
++    assert (
++        second_route.selected.model_version
++        == first.invocation.actual_provider.model_version
++    )
++    assert second_route.trace.from_deployment_id == REMOTE
++    assert (
++        second_route.trace.trigger_invocation_ref.record_id
++        == first.invocation.model_invocation_id
++    )
++    second = finish_call(second_route)
++    third = _next(case, (first, second))
++    assert third.selected.deployment_id == OTHER
++    assert third.trace.from_deployment_id == LOCAL
++    assert (
++        third.trace.trigger_invocation_ref.record_id
++        == second.invocation.model_invocation_id
++    )
++    with pytest.raises(RouteRejected) as error:
++        _next(case, (first, second, finish_call(third)))
++    assert error.value.code == "model.fallback_unavailable"
++
++
++@pytest.mark.parametrize(
++    "fault",
++    [
++        "same_attempt",
++        "operation_id",
++        "input_pin",
++        "untrusted_attempt",
++        "foreign_execution",
++    ],
++)
++def test_fallback_requires_earlier_terminal_attempt_of_exact_operation(fault):
++    case = routing_fixture()
++    first = finish_call(case.primary_route())
++    attempt = case.attempt_at(2)
++    operation = case.operation
++    if fault == "same_attempt":
++        attempt = case.attempt_at(1)
++    elif fault == "operation_id":
++        operation = operation.model_copy(update={"operation_id": "other-operation"})
++    elif fault == "input_pin":
++        operation = operation.model_copy(update={"input_digest": DIGEST})
++    elif fault == "untrusted_attempt":
++        first = type(first)(
++            operation,
++            first.attempt.model_copy(update={"status": AttemptStatus.SUPERSEDED}),
++            first.invocation,
++        )
++    else:
++        first = type(first)(
++            operation,
++            first.attempt,
++            first.invocation.model_copy(update={"execution_id": "execution-elsewhere"}),
++        )
++    with pytest.raises(RouteRejected) as error:
++        _next(case, (first,), attempt=attempt, operation=operation)
++    assert error.value.code == "model.fallback_history_invalid"
++
++
++@pytest.mark.parametrize(
++    "fault", ["ambiguous", "disabled", "error", "revoked", "budget", "bad_assessment"]
++)
++def test_fallback_fails_closed_without_one_current_legal_edge(fault):
++    case = routing_fixture(
++        edges=((REMOTE, LOCAL), (REMOTE, OTHER))
++        if fault == "ambiguous"
++        else ()
++        if fault == "disabled"
++        else ((REMOTE, LOCAL),)
++    )
++    first = finish_call(
++        case.primary_route(),
++        error_class="rate_limit" if fault == "error" else "timeout",
++    )
++    current = case.current
++    budget = case.budget
++    if fault in {"revoked", "bad_assessment"}:
++        (row,) = current.capabilities.model_reviews
++        if fault == "revoked":
++            row = row.model_copy(update={"revoked_at": AT})
++        else:
++            approval, evaluation = row.metadata.assessments
++            evaluation = evaluation.model_copy(
++                update={"input_schema_ref": evaluation.output_schema_ref}
++            )
++            row = row.model_copy(
++                update={
++                    "metadata": row.metadata.model_copy(
++                        update={"assessments": (approval, evaluation)}
++                    )
++                }
++            )
++        current = current.model_copy(
++            update={
++                "capabilities": current.capabilities.model_copy(
++                    update={"model_reviews": (row,)}
++                )
++            }
++        )
++    elif fault == "budget":
++        budget = budget.model_copy(update={"operation_remaining": 0})
++    codes = {
++        "ambiguous": "model.fallback_ambiguous",
++        "disabled": "model.fallback_not_permitted",
++        "error": "model.fallback_not_permitted",
++        "revoked": "model.fallback_unavailable",
++        "bad_assessment": "model.fallback_unavailable",
++        "budget": "model.call_budget_exhausted",
++    }
++    with pytest.raises(RouteRejected) as error:
++        _next(case, (first,), current=current, budget=budget)
++    assert error.value.code == codes[fault]
++
++
++def test_explicit_retry_preserves_selected_deployment_and_call_lineage():
++    case = routing_fixture()
++    first = finish_call(case.primary_route())
++    alternative = _next(case, (first,))
++    second = finish_call(alternative)
++    args = (
++        case.policy,
++        case.operation,
++        case.attempt_at(3),
++        case.current,
++        case.budget,
++        AT,
++    )
++    retry = plan_retry(*args, history=(first, second), retryable_errors=("timeout",))
++    assert retry.trace == alternative.trace
++    assert retry.selected == alternative.selected
++    assert retry.attempt != alternative.attempt
++    retried = finish_call(retry)
++    assert (
++        retried.invocation.model_invocation_id != second.invocation.model_invocation_id
++    )
++    with pytest.raises(RouteRejected) as error:
++        plan_retry(*args, history=(first, second), retryable_errors=("transport",))
++    assert error.value.code == "model.retry_not_permitted"
++
++
++def test_load_route_policy_from_a_compiled_admitted_execution(tmp_path):
++    from jimu_runtime.bundle.trust import TrustPin
++    from jimu_runtime.gateway.routing import DeploymentOwnership, RoutePolicy
++    from tests.fixtures.wp03.pins.support import accepted_scenario
++
++    execution = accepted_scenario(tmp_path).resolve()
++    actual = execution.model_deployments[0]
++    owner_ref = TrustPin(identity="fixture-owner", version="1.0.0", sha256=DIGEST)
++    ownership = tuple(
++        DeploymentOwnership(
++            deployment=deployment,
++            owner_ref=owner_ref,
++            endpoint_descriptor_ref=TrustPin(
++                identity=deployment.deployment_id, version="1.0.0", sha256=DIGEST
++            ),
++            model_id="synthetic-model",
++            version_evidence=None,
++        )
++        for deployment in actual.deployments
++    )
++    created = RoutePolicy.from_execution(execution, actual.binding_ref, ownership)
++    assert created.configured_pin in execution.pins.model_pins
++    assert created.execution_input_digest == execution.pins.input_digest
++    assert created.resolved == actual
++    assert created.ownership == ownership
++    assert created.resources.input_byte_limit > 0
++
++
++def test_local_primary_can_use_explicitly_reviewed_remote_fallback_on_rate_limit():
++    case = routing_fixture(
++        local_primary=True, edges=((LOCAL, REMOTE),), triggers=("rate_limit",)
++    )
++    local = finish_call(case.primary_route(), error_class="rate_limit")
++    remote = _next(case, (local,))
++    assert remote.selected.provider_kind == "remote"
++    assert (
++        remote.trace.local_primary_exception
++        == local.invocation.route_trace.local_primary_exception
++    )
++    assert remote.trace.trigger_error == "rate_limit"
++    fallback = finish_call(remote, error_class="rate_limit")
++    assert fallback.invocation.actual_provider.provider_kind == "remote"
++
++
++def test_fallback_considers_only_available_edges_inside_deployment_budget():
++    case = routing_fixture(edges=((REMOTE, LOCAL), (REMOTE, OTHER)))
++    first = finish_call(case.primary_route())
++    remaining = tuple(
++        row.model_copy(update={"remaining": 0}) if row.deployment_id == LOCAL else row
++        for row in case.budget.deployments
++    )
++    limited = case.budget.model_copy(update={"deployments": remaining})
++    assert _next(case, (first,), budget=limited).selected.deployment_id == OTHER
++
++
++def _domain_audit_args(route):
++    return {
++        "node_run": route.operation.node_run,
++        "attempt": route.attempt,
++        "binding": route.policy.binding,
++        "provider_policy": route.policy.provider_registration,
++        "fallback_policy": route.policy.fallback_registration,
++        "prior_invocations": tuple(row.invocation for row in route.history),
++        "reviews": route.reviews,
++        "region_ref": route.operation.region_ref,
++    }
++
++
++def test_local_exception_fallback_preserves_exact_primary_review_with_multiple_allowed_versions():
++    from jimu_runtime.domain.validation.invocations import validate_model_invocation
++
++    case = routing_fixture(
++        local_primary=True,
++        edges=((LOCAL, REMOTE),),
++        multi_version_deployments=(LOCAL,),
++    )
++    prior = finish_call(case.primary_route())
++    route = _next(case, (prior,))
++    fallback = finish_call(route).invocation
++    assert fallback.actual_provider.provider_kind == "remote"
++    assert fallback.route_trace.local_primary_exception is not None
++    args = _domain_audit_args(route)
++    validate_model_invocation(
++        fallback, **args, resolved_deployments=case.policy.resolved.deployments
++    )
++    with pytest.raises(ValueError, match="local primary review does not cover"):
++        validate_model_invocation(fallback, **args)
++
++
++def test_undispatched_fallback_witnesses_never_fabricate_an_actual_provider():
++    from jimu_runtime.domain.runtime.invocations import InvocationError
++    from jimu_runtime.domain.validation.invocations import validate_model_invocation
++    from jimu_runtime.gateway.invocation import (
++        DispatchRequest,
++        TransportResult,
++        project_dispatch,
++    )
++    from jimu_runtime.gateway.routing import RecordedInvocation
++
++    case = routing_fixture(
++        triggers=("unavailable",),
++        multi_version_deployments=(REMOTE, LOCAL),
++        version_evidence=False,
++    )
++    evidence = (case.operation.contract_snapshot.response_schema_evidence_ref,)
++    result = TransportResult(
++        False,
++        error=InvocationError(
++            error_class="unavailable", code="test-unavailable", diagnostic_refs=()
++        ),
++    )
++    primary = case.primary_route()
++    first = project_dispatch(
++        DispatchRequest("first-unsent", primary, b"request"),
++        result,
++        started_at=AT,
++        completed_at=AT,
++        evidence_refs=evidence,
++    )
++    assert first.invocation.outcome.status == "not_dispatched"
++    prior = RecordedInvocation(
++        case.operation,
++        primary.attempt.model_copy(update={"status": AttemptStatus.FAILED}),
++        first.invocation,
++    )
++    fallback = _next(case, (prior,))
++    second = project_dispatch(
++        DispatchRequest("second-unsent", fallback, b"request"),
++        result,
++        started_at=AT,
++        completed_at=AT,
++        evidence_refs=evidence,
++    )
++    assert second.invocation.outcome.status == "not_dispatched"
++    assert second.invocation.actual_provider is prior.invocation.actual_provider is None
++    assert second.output is None
++    with pytest.raises(ValueError, match="fallback review does not cover"):
++        validate_model_invocation(second.invocation, **_domain_audit_args(fallback))
++
++
++@pytest.mark.parametrize(
++    ("field", "value"),
++    [
++        ("provider_id", "wrong-owner"),
++        ("provider_kind", "local"),
++        ("deployment_id", "wrong-deployment"),
++        ("logical_model_id", "wrong-logical-model"),
++        ("deployment_version", "2.0.0"),
++        ("model_version", "3.0.0"),
++    ],
++)
++def test_optional_execution_review_witness_rejects_mismatched_deployment_identity(
++    field, value
++):
++    from jimu_runtime.domain.validation.invocations import validate_model_invocation
++
++    case = routing_fixture(multi_version_deployments=(REMOTE,))
++    route = case.primary_route()
++    invocation = finish_call(route).invocation
++    deployment, *other = case.policy.resolved.deployments
++    altered = deployment.model_copy(update={field: value})
++    with pytest.raises(ValueError, match="resolved deployment pins must match"):
++        validate_model_invocation(
++            invocation,
++            **_domain_audit_args(route),
++            resolved_deployments=(altered, *other),
++        )
++
++
++def test_optional_exact_execution_pin_does_not_override_observed_permitted_version():
++    from jimu_runtime.domain.validation.invocations import validate_model_invocation
++
++    case = routing_fixture(multi_version_deployments=(REMOTE,))
++    route = case.primary_route()
++    invocation = finish_call(route).invocation
++    wrong_actual = invocation.actual_provider.model_copy(
++        update={"model_version": "2.0.0"}
++    )
++    contradicted = invocation.model_copy(update={"actual_provider": wrong_actual})
++    with pytest.raises(ValueError, match="observed provider identity must agree"):
++        validate_model_invocation(
++            contradicted,
++            **_domain_audit_args(route),
++            resolved_deployments=case.policy.resolved.deployments,
++        )
+--- /dev/null
++++ b/tests/unit/test_wp04_gateway_invocation.py
+@@ -0,0 +1,232 @@
++"""Physical responses are auditable independently of usable model output."""
++
++from dataclasses import replace
++
++import pytest
++from fixtures.wp04.routing_support import AT, routing_fixture
++
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.runtime.invocations import (
++    FailedInvocation,
++    InvocationError,
++    ModelInvocation,
++    RegistryVerifiedProviderIdentity,
++    ReportedProviderIdentity,
++    SucceededInvocation,
++    UnavailableProviderIdentity,
++    UndispatchedInvocation,
++)
++from jimu_runtime.gateway.invocation import (
++    DispatchRequest,
++    ProviderObservation,
++    TransportResult,
++    project_dispatch,
++)
++
++WIRE_BODY = b'{"choice":{"value":"synthetic"}}'
++PARSED_OUTPUT = b'{"value":"synthetic"}'
++REQUEST = b'{"model":"synthetic-model","payload":"synthetic"}'
++
++
++def _project(result, *, trusted_version=True):
++    route = routing_fixture(version_evidence=trusted_version).primary_route()
++    request = DispatchRequest("dispatch-1", route, REQUEST)
++    assert route.operation.contract_snapshot is not None
++    return project_dispatch(
++        request,
++        result,
++        started_at=AT,
++        completed_at=AT,
++        evidence_refs=(route.operation.contract_snapshot.response_schema_evidence_ref,),
++    )
++
++
++def _successful_result(observation=None):
++    return TransportResult(
++        dispatched=True,
++        observation=observation,
++        parsed_content=PARSED_OUTPUT,
++        response_status=200,
++        observed_response_bytes=len(WIRE_BODY),
++        response_digest=sha256_digest(WIRE_BODY),
++    )
++
++
++def test_success_uses_observed_identity_and_exact_wire_digest():
++    observation = ProviderObservation(
++        provider_request_id="provider-pid",
++        model_id="synthetic-model",
++        deployment_version="1.0.0",
++        model_version="1.0.0",
++    )
++    result = _project(_successful_result(observation), trusted_version=False)
++    assert result.request_digest == sha256_digest(REQUEST)
++    assert result.response_digest == sha256_digest(WIRE_BODY)
++    assert result.boundary == "acknowledged"
++    assert result.output == PARSED_OUTPUT
++    assert result.error is None
++    invocation = result.invocation
++    assert isinstance(invocation.actual_provider, ReportedProviderIdentity)
++    assert isinstance(invocation.outcome, SucceededInvocation)
++    assert (
++        invocation.actual_provider.version_evidence == observation.provider_request_id
++    )
++    assert invocation.outcome.response_digest == result.response_digest
++    assert invocation.model_invocation_id == "dispatch-1"
++    assert ModelInvocation.model_validate_json(invocation.stable_json()) == invocation
++    assert "payload" not in repr(
++        DispatchRequest("d1", routing_fixture().primary_route(), REQUEST)
++    )
++    assert repr(PARSED_OUTPUT) not in repr(result)
++
++
++def test_model_versions_may_be_resolved_only_by_exact_independent_host_proof():
++    observed = ProviderObservation(model_id="synthetic-model")
++    trusted = _project(_successful_result(observed), trusted_version=True)
++    unresolved = _project(_successful_result(observed), trusted_version=False)
++    assert isinstance(
++        trusted.invocation.actual_provider, RegistryVerifiedProviderIdentity
++    )
++    assert trusted.output == PARSED_OUTPUT
++    assert isinstance(
++        unresolved.invocation.actual_provider, UnavailableProviderIdentity
++    )
++    assert isinstance(unresolved.invocation.outcome, FailedInvocation)
++    assert unresolved.error.code == "model.actual_version_unavailable"
++    assert unresolved.output is None
++    assert unresolved.response_digest == trusted.response_digest
++
++
++@pytest.mark.parametrize(
++    ("observation", "code"),
++    [
++        (None, "model.actual_identity_unavailable"),
++        (
++            ProviderObservation(model_id="different-model"),
++            "model.actual_identity_mismatch",
++        ),
++        (
++            ProviderObservation(model_id="synthetic-model", model_version="2.0.0"),
++            "model.actual_identity_mismatch",
++        ),
++    ],
++)
++def test_wire_identity_absence_or_contradiction_keeps_evidence_without_output(
++    observation, code
++):
++    result = _project(
++        _successful_result(observation), trusted_version=observation is not None
++    )
++    assert result.boundary == "acknowledged"
++    assert result.response_digest == sha256_digest(WIRE_BODY)
++    assert result.transport_result.observation == observation
++    assert result.invocation is None
++    assert result.output is None
++    assert result.error.code == code
++
++
++@pytest.mark.parametrize(
++    ("error_class", "status", "dispatched", "boundary"),
++    [
++        ("timeout", None, True, "sent_unknown"),
++        ("transport", None, True, "sent_unknown"),
++        ("unavailable", None, False, "not_dispatched"),
++        ("rate_limit", 429, True, "acknowledged"),
++        ("validation", 200, True, "acknowledged"),
++    ],
++)
++def test_physical_outcomes_have_distinct_boundaries_and_keep_original_error(
++    error_class, status, dispatched, boundary
++):
++    error = InvocationError(
++        error_class=error_class, code="wire-failure", diagnostic_refs=()
++    )
++    response = WIRE_BODY if status is not None else None
++    result = _project(
++        TransportResult(
++            dispatched=dispatched,
++            error=error,
++            response_status=status,
++            response_bytes=response,
++        )
++    )
++    assert result.boundary == boundary
++    assert result.error == error
++    assert result.output is None
++    assert result.response_digest == (
++        None if response is None else sha256_digest(response)
++    )
++    if dispatched:
++        assert isinstance(result.invocation.outcome, FailedInvocation)
++        assert isinstance(
++            result.invocation.actual_provider, RegistryVerifiedProviderIdentity
++        )
++    else:
++        assert isinstance(result.invocation.outcome, UndispatchedInvocation)
++        assert result.invocation.actual_provider is None
++    assert result.invocation.outcome.error == error
++
++
++def test_a_partial_response_records_observed_bytes_but_no_complete_digest():
++    result = _project(
++        TransportResult(
++            dispatched=True,
++            error=InvocationError(
++                error_class="timeout", code="slow-body", diagnostic_refs=()
++            ),
++            response_status=200,
++            observed_response_bytes=128,
++        )
++    )
++    assert result.boundary == "acknowledged"
++    assert result.transport_result.observed_response_bytes == 128
++    assert result.response_digest is None
++    assert isinstance(result.invocation.outcome, FailedInvocation)
++
++
++def test_success_without_validated_contents_is_a_projection_failure():
++    result = _project(replace(_successful_result(), parsed_content=None))
++    assert result.error.code == "model.validated_output_missing"
++    assert isinstance(result.invocation.outcome, FailedInvocation)
++    assert result.output is None
++    assert result.response_digest == sha256_digest(WIRE_BODY)
++
++
++def test_undispatched_or_contradictory_physical_results_are_rejected():
++    with pytest.raises(ValueError, match="pre-send"):
++        TransportResult(dispatched=False)
++    with pytest.raises(ValueError, match="pre-send"):
++        TransportResult(
++            dispatched=False,
++            error=InvocationError(
++                error_class="unavailable", code="not-sent", diagnostic_refs=()
++            ),
++            response_status=200,
++        )
++    with pytest.raises(ValueError, match="disagrees"):
++        TransportResult(
++            dispatched=True,
++            response_bytes=WIRE_BODY,
++            response_digest=sha256_digest(PARSED_OUTPUT),
++        )
++
++
++def test_omitted_wire_bytes_keep_digest_only_for_a_complete_response():
++    kept = _project(
++        replace(
++            _successful_result(),
++            response_bytes_omission_reason="policy_disabled",
++        )
++    )
++    assert kept.response_digest == sha256_digest(WIRE_BODY)
++    assert kept.transport_result.response_bytes is None
++    assert kept.output == PARSED_OUTPUT
++
++    with pytest.raises(ValueError, match="incomplete response"):
++        replace(_successful_result(), response_bytes_omission_reason="incomplete")
++    with pytest.raises(ValueError, match="retained response"):
++        replace(
++            _successful_result(),
++            response_bytes=WIRE_BODY,
++            response_bytes_omission_reason="policy_disabled",
++        )

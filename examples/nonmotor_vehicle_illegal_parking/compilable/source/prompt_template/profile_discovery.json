@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "prompt_template_id": "profile_discovery",
+  "purpose": "profile_discovery",
+  "template_text": "Identify registered nonmotor_vehicle profile hits in the image. Return only configured profile IDs.",
+  "variables": [],
+  "response_schema_ref": {
+    "$pin": [
+      "response_schema",
+      "profile_discovery-result",
+      "1.0.0"
+    ]
+  },
+  "rendering_policy": "literal_substitution"
+}

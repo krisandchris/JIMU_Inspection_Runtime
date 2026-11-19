@@ -1,0 +1,454 @@
+...............FFFFFF.                                                   [100%]
+=================================== FAILURES ===================================
+_____________ test_isolated_cpu_same_tool_and_same_round_siblings ______________
+
+tool_fixture = AcceptedScenario(store=<jimu_runtime.bundle.store.LocalBundleStore object at 0x752025e3ce60>, manager=<jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_isolated_cpu_same_tool_an0')
+
+    def test_isolated_cpu_same_tool_and_same_round_siblings(tool_fixture, tmp_path):
+        n05 = _run_objects(tool_fixture, NodeId.N05)
+        resolved, _, node, attempt, call, media = n05
+>       executor, proof = _worker(tmp_path, resolved)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:547: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_isolated_cpu_same_tool_an0')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+>           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError
+_ test_bounded_output_failures_preserve_audit[invalid-failed-tool_result_invalid] _
+
+tool_fixture = AcceptedScenario(store=<jimu_runtime.bundle.store.LocalBundleStore object at 0x752026fd65a0>, manager=<jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p0')
+case = 'invalid', status = 'failed', error_code = 'tool_result_invalid'
+
+    @pytest.mark.parametrize(
+        ("case", "status", "error_code"),
+        [
+            ("invalid", "failed", "tool_result_invalid"),
+            ("missing", "partial", None),
+            ("too-long" * 300, "not_dispatched", "tool_input_invalid"),
+        ],
+    )
+    def test_bounded_output_failures_preserve_audit(
+        tool_fixture, tmp_path, case, status, error_code
+    ):
+        args = _run_objects(tool_fixture, NodeId.N05)
+>       executor, proof = _worker(tmp_path, args[0])
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:645: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p0')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+>           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError
+______ test_bounded_output_failures_preserve_audit[missing-partial-None] _______
+
+tool_fixture = AcceptedScenario(store=<jimu_runtime.bundle.store.LocalBundleStore object at 0x752026b714c0>, manager=<jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p1')
+case = 'missing', status = 'partial', error_code = None
+
+    @pytest.mark.parametrize(
+        ("case", "status", "error_code"),
+        [
+            ("invalid", "failed", "tool_result_invalid"),
+            ("missing", "partial", None),
+            ("too-long" * 300, "not_dispatched", "tool_input_invalid"),
+        ],
+    )
+    def test_bounded_output_failures_preserve_audit(
+        tool_fixture, tmp_path, case, status, error_code
+    ):
+        args = _run_objects(tool_fixture, NodeId.N05)
+>       executor, proof = _worker(tmp_path, args[0])
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:645: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p1')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+>           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError
+_ test_bounded_output_failures_preserve_audit[too-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-long-not_dispatched-tool_input_invalid] _
+
+tool_fixture = AcceptedScenario(store=<jimu_runtime.bundle.store.LocalBundleStore object at 0x752026fe6ba0>, manager=<jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p2')
+case = 'too-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-l...o-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-long'
+status = 'not_dispatched', error_code = 'tool_input_invalid'
+
+    @pytest.mark.parametrize(
+        ("case", "status", "error_code"),
+        [
+            ("invalid", "failed", "tool_result_invalid"),
+            ("missing", "partial", None),
+            ("too-long" * 300, "not_dispatched", "tool_input_invalid"),
+        ],
+    )
+    def test_bounded_output_failures_preserve_audit(
+        tool_fixture, tmp_path, case, status, error_code
+    ):
+        args = _run_objects(tool_fixture, NodeId.N05)
+>       executor, proof = _worker(tmp_path, args[0])
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:645: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_bounded_output_failures_p2')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+>           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError
+_______________ test_unavailable_capacity_never_calls_start_hook _______________
+
+tool_fixture = AcceptedScenario(store=<jimu_runtime.bundle.store.LocalBundleStore object at 0x752025e29b20>, manager=<jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_unavailable_capacity_neve0')
+
+    def test_unavailable_capacity_never_calls_start_hook(tool_fixture, tmp_path):
+        args = _run_objects(tool_fixture, NodeId.N05)
+>       executor, proof = _worker(tmp_path, args[0], expected_capacity=False)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:659: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_unavailable_capacity_neve0')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+>           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError
+______________ test_implementation_pin_mismatch_rejects_dispatch _______________
+
+tool_fixture = AcceptedScenario(store=<jimu_runtime.bundle.store.LocalBundleStore object at 0x75202c15c590>, manager=<jimu_runtime.bu...t='https://json-schema.org/draft/2020-12/schema'), protocol_version='1.0.0')), supported_workflow_versions=('1.0.0',)))
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_implementation_pin_mismat0')
+
+    def test_implementation_pin_mismatch_rejects_dispatch(tool_fixture, tmp_path):
+        args = _run_objects(tool_fixture, NodeId.N05)
+>       executor, proof = _worker(tmp_path, args[0])
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/contract/test_wp04_tool_executor.py:671: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-hy/pytest-255/test_implementation_pin_mismat0')
+resolved = ResolvedExecutionPins(pins=ExecutionPins(release_id='release-1', bundle_digest='1b3bcc4e6b033749d9a6bb33ae29267b6b1bf7...g', logical_model_id='fixture.parking', provider_kind='remote', deployment_version='1.0.0', model_version='1.0.0'),))))
+
+    def _worker(tmp_path, resolved, *, expected_capacity=True):
+        worker_script = tmp_path / "isolated-worker.py"
+        worker_script.write_text(_WORKER_BODY)
+        resource = ResourceAdmission.provision(
+            tmp_path / "local-resources.sqlite3",
+            HostInventory(
+                "wp04-tools",
+                lease_ttl_ms=5000,
+                cpu_slots=int(expected_capacity),
+                scopes=(ResourceScope("wp04-testing", "cpu", 1),),
+            ),
+        )
+        (pin,) = resolved.pins.tool_pins
+        definition = require_definition(resolved.catalogue, pin.tool_ref, ToolDefinition)
+        proof = TrustPin(
+            identity="test-tool",
+            version=VERSION,
+            sha256=sha256_digest(worker_script.read_bytes()),
+        )
+    
+        def check_spatial(result, coordinate_system):
+            payload = result.payload
+            assert isinstance(payload, RecordValue)
+            boxes = payload.value.get("boxes")
+            if boxes is not None:
+                assert isinstance(boxes, ListValue)
+                original_xyxy(
+                    tuple(float(item.value) for item in boxes.value), coordinate_system
+                )
+    
+        registration = ToolImplementation(
+            capability_id=definition.implementation_requirement.capability_id,
+            contract_version=definition.implementation_requirement.contract_version,
+            version=pin.implementation_version,
+            proof=proof,
+            provider_kind=definition.provider_kind,
+            input_schema_ref=definition.input_schema_ref,
+            output_schema_ref=definition.output_schema_ref,
+            resource_class="cpu",
+>           worker=IsolatedCPUWorker(
+                resource,
+                (sys.executable, "-I", str(worker_script)),
+                "wp04-testing",
+                "test-worker",
+                VERSION,
+                proof,
+            ),
+            spatial_result_check=check_spatial,
+        )
+E       TypeError: IsolatedCPUWorker.__init__() missing 1 required positional argument: 'implementation_path'
+
+tests/contract/test_wp04_tool_executor.py:505: TypeError
+- generated xml file: /mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_WP01C_Plan/planning/implementation_evidence/WP-04/primary/persistence_tools_05.xml -
+=========================== short test summary info ============================
+FAILED tests/contract/test_wp04_tool_executor.py::test_isolated_cpu_same_tool_and_same_round_siblings
+FAILED tests/contract/test_wp04_tool_executor.py::test_bounded_output_failures_preserve_audit[invalid-failed-tool_result_invalid]
+FAILED tests/contract/test_wp04_tool_executor.py::test_bounded_output_failures_preserve_audit[missing-partial-None]
+FAILED tests/contract/test_wp04_tool_executor.py::test_bounded_output_failures_preserve_audit[too-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-longtoo-long-not_dispatched-tool_input_invalid]
+FAILED tests/contract/test_wp04_tool_executor.py::test_unavailable_capacity_never_calls_start_hook
+FAILED tests/contract/test_wp04_tool_executor.py::test_implementation_pin_mismatch_rejects_dispatch
+6 failed, 16 passed in 52.76s

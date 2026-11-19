@@ -1,0 +1,64 @@
+{
+  "as_of_utc": "2026-11-18T02:06:24.323062+00:00",
+  "baseline_head": "2552affeb69fbc2594fe70724f895b0db0967d47",
+  "product_scope": "Targeted evidence at review time; shared regressions overlap. No whole-package verdict.",
+  "junit_by_batch": {
+    "c2": {
+      "tests": 198,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "c3": {
+      "tests": 323,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "c4_execution": {
+      "tests": 291,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "c4_applicability": {
+      "tests": 86,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "c4_intake": {
+      "tests": 52,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "c4_geometry_replay": {
+      "tests": 420,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "c4_releases": {
+      "tests": 59,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    }
+  },
+  "sha256_entries_verified": {
+    "c2": 14,
+    "c3": 6,
+    "c4_releases": 9,
+    "c4_geometry_replay": 19,
+    "c4_applicability": 9,
+    "c4_execution": 7
+  },
+  "independent_replay_check": {
+    "original_input_accepted": true,
+    "changed_input_errors": [
+      "Value error, Inference Replay must preserve the original Task input digest"
+    ]
+  },
+  "runtime": "RUNTIME_NOT_RUN"
+}

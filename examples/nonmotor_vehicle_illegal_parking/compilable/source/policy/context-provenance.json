@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "policy_id": "context-provenance",
+  "policy": {
+    "policy_kind": "context_provenance",
+    "fields": [
+      {
+        "field_path": [
+          "parking_area"
+        ],
+        "schema_ref": {
+          "$pin": [
+            "context_schema",
+            "parking-context",
+            "1.0.0"
+          ],
+          "schema_ref": true
+        },
+        "required": false,
+        "time_sensitive": false,
+        "allowed_sources": [
+          "region_definition"
+        ]
+      }
+    ],
+    "conflicting_sources": "block",
+    "missing_required": "block",
+    "internal_timezone": "UTC",
+    "naive_time": "reject"
+  }
+}

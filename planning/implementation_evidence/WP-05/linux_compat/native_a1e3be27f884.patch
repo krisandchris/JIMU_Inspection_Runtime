@@ -1,0 +1,190 @@
+--- a/src/jimu_runtime/workers/lifecycle.py
++++ b/src/jimu_runtime/workers/lifecycle.py
+@@ -1,7 +1,6 @@
+ """Run a host-allowlisted command with a durable start and stop boundary."""
+ 
+ import asyncio
+-import fcntl
+ import os
+ import selectors
+ import socket
+@@ -20,14 +19,12 @@
+     ResourceLease,
+     ResourceUnavailable,
+ )
++from jimu_runtime.workers.sealed_memory import require_sealed_artifact_fd
+ 
+ _CHUNK_BYTES = 64 * 1024
+ _POLL_SECONDS = 0.025
+ _EXIT_WAIT_SECONDS = 1.0
+ _GUARDIAN = Path(__file__).with_name("process_guardian.py")
+-_ARTIFACT_SEALS = (
+-    fcntl.F_SEAL_SEAL | fcntl.F_SEAL_SHRINK | fcntl.F_SEAL_GROW | fcntl.F_SEAL_WRITE
+-)
+ 
+ 
+ class WorkerFailure(StrEnum):
+@@ -182,12 +179,8 @@
+         # its descriptor as soon as the awaitable is abandoned.
+         owned = os.dup(source)
+         try:
+-            if (
+-                fcntl.fcntl(owned, fcntl.F_GET_SEALS) & _ARTIFACT_SEALS
+-                != _ARTIFACT_SEALS
+-            ):
+-                raise ValueError("artifact descriptor lacks immutable seals")
+-        except (OSError, ValueError):
++            require_sealed_artifact_fd(owned)
++        except OSError:
+             os.close(owned)
+             raise
+         return tuple(
+--- a/src/jimu_runtime/workers/process_guardian.py
++++ b/src/jimu_runtime/workers/process_guardian.py
+@@ -1,6 +1,7 @@
+ """Private Linux subreaper and durable witness of worker-tree completion."""
+ 
+ import ctypes
++import errno
+ import os
+ import select
+ import signal
+@@ -18,15 +19,58 @@
+ _PR_SET_CHILD_SUBREAPER = 36
+ 
+ 
++class PidfdUnavailable(OSError):
++    """The host cannot provide a kernel-pinned process handle."""
++
++
++def _pidfd_open(pid: int) -> int:
++    native = getattr(os, "pidfd_open", None)
++    if native is not None:
++        return int(native(pid, 0))
++    try:
++        open_pidfd = ctypes.CDLL(None, use_errno=True).pidfd_open
++    except AttributeError:
++        raise PidfdUnavailable(errno.ENOSYS, "pidfd_open unavailable") from None
++    open_pidfd.argtypes = (ctypes.c_int, ctypes.c_uint)
++    open_pidfd.restype = ctypes.c_int
++    fd = int(open_pidfd(pid, 0))
++    if fd < 0:
++        raise OSError(ctypes.get_errno(), "pidfd_open failed")
++    return fd
++
++
++def _pidfd_signal(fd: int, signum: int) -> None:
++    native = getattr(signal, "pidfd_send_signal", None)
++    if native is not None:
++        native(fd, signum)
++        return
++    try:
++        send = ctypes.CDLL(None, use_errno=True).pidfd_send_signal
++    except AttributeError:
++        raise PidfdUnavailable(errno.ENOSYS, "pidfd_send_signal unavailable") from None
++    send.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_uint)
++    send.restype = ctypes.c_int
++    if send(fd, signum, None, 0) < 0:
++        raise OSError(ctypes.get_errno(), "pidfd_send_signal failed")
++
++
++def _probe_pidfd() -> None:
++    fd = _pidfd_open(os.getpid())
++    try:
++        _pidfd_signal(fd, 0)
++    finally:
++        os.close(fd)
++
++
+ def _kill_adopted_children() -> None:
+     # No concurrent waitpid can reap/reuse these PIDs before pidfd_open.
+     guardian = os.getpid()
+     children = Path(f"/proc/self/task/{guardian}/children").read_text(encoding="ascii")
+     for child in children.split():
+         with suppress(ProcessLookupError):
+-            pid_fd = os.pidfd_open(int(child))
++            pid_fd = _pidfd_open(int(child))
+             try:
+-                signal.pidfd_send_signal(pid_fd, signal.SIGKILL)
++                _pidfd_signal(pid_fd, signal.SIGKILL)
+             finally:
+                 os.close(pid_fd)
+ 
+@@ -96,6 +140,7 @@
+             if libc.prctl(_PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) != 0:
+                 raise OSError(ctypes.get_errno(), "cannot supervise descendants")
+             signal.signal(signal.SIGTERM, _ignore_group_term)
++            _probe_pidfd()
+             worker = subprocess.Popen(
+                 argv, pass_fds=() if artifact_fd is None else (artifact_fd,)
+             )
+--- /dev/null
++++ b/src/jimu_runtime/workers/sealed_memory.py
+@@ -0,0 +1,67 @@
++"""Linux sealed anonymous artifact files across CPython build configurations."""
++
++import ctypes
++import errno
++import fcntl
++import os
++import sys
++
++# Linux UAPI: linux/memfd.h, linux/fcntl.h, asm-generic/fcntl.h.
++# Python may omit names unavailable in the headers used to build it.
++_MEMFD_FLAGS = 0x0001 | 0x0002  # MFD_CLOEXEC | MFD_ALLOW_SEALING
++_ADD_SEALS = getattr(fcntl, "F_ADD_SEALS", 1024 + 9)
++_GET_SEALS = getattr(fcntl, "F_GET_SEALS", 1024 + 10)
++_REQUIRED_SEALS = 0x0001 | 0x0002 | 0x0004 | 0x0008  # SEAL, SHRINK, GROW, WRITE
++_ARTIFACT_NAME = "jimu-tool-artifact"
++
++
++class SealedMemoryError(OSError):
++    """The host could not create or verify an immutable anonymous artifact."""
++
++
++def _require_linux() -> None:
++    if sys.platform != "linux":
++        raise SealedMemoryError(errno.ENOTSUP, "sealed artifacts require Linux")
++
++
++def create_artifact_memfd() -> int:
++    """Create an empty, close-on-exec Linux memfd with sealing enabled."""
++    _require_linux()
++    native = getattr(os, "memfd_create", None)
++    try:
++        if native is not None:
++            return int(native(_ARTIFACT_NAME, _MEMFD_FLAGS))
++        create = ctypes.CDLL(None, use_errno=True).memfd_create
++        create.argtypes = (ctypes.c_char_p, ctypes.c_uint)
++        create.restype = ctypes.c_int
++        fd = int(create(_ARTIFACT_NAME.encode("ascii"), _MEMFD_FLAGS))
++        if fd >= 0:
++            return fd
++        raise OSError(ctypes.get_errno(), "memfd_create failed")
++    except AttributeError:
++        raise SealedMemoryError(errno.ENOSYS, "memfd_create unavailable") from None
++    except OSError as error:
++        raise SealedMemoryError(
++            error.errno, "sealed artifact creation failed"
++        ) from None
++
++
++def require_sealed_artifact_fd(fd: int) -> None:
++    """Accept only an fd whose kernel-reported seals prevent mutation."""
++    _require_linux()
++    try:
++        seals = fcntl.fcntl(fd, _GET_SEALS)
++    except OSError as error:
++        raise SealedMemoryError(error.errno, "artifact seals unavailable") from None
++    if seals & _REQUIRED_SEALS != _REQUIRED_SEALS:
++        raise SealedMemoryError(errno.EPERM, "artifact is not fully sealed")
++
++
++def seal_artifact_fd(fd: int) -> None:
++    """Apply all required seals after writing the complete artifact."""
++    _require_linux()
++    try:
++        fcntl.fcntl(fd, _ADD_SEALS, _REQUIRED_SEALS)
++    except OSError as error:
++        raise SealedMemoryError(error.errno, "artifact sealing failed") from None
++    require_sealed_artifact_fd(fd)

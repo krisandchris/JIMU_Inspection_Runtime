@@ -1,0 +1,27 @@
+{
+  "$defs": {
+    "AbsentOptional_NonNegativeBudget_": {
+      "$ref": "#/$defs/NonNegativeBudget"
+    },
+    "NonNegativeBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cpu_time_ms": {
+      "$ref": "#/$defs/AbsentOptional_NonNegativeBudget_"
+    },
+    "peak_gpu_memory_bytes": {
+      "$ref": "#/$defs/AbsentOptional_NonNegativeBudget_"
+    },
+    "peak_memory_bytes": {
+      "$ref": "#/$defs/AbsentOptional_NonNegativeBudget_"
+    }
+  },
+  "title": "ToolResourceUsage",
+  "type": "object"
+}

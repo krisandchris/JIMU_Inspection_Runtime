@@ -1,0 +1,5276 @@
+{
+  "$defs": {
+    "AbsentOptional_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "AbsentOptional_Description_": {
+      "$ref": "#/$defs/Description"
+    },
+    "AbsentOptional_FiniteNumber_": {
+      "$ref": "#/$defs/FiniteNumber"
+    },
+    "AbsentOptional_GroundingInputBindings_": {
+      "$ref": "#/$defs/GroundingInputBindings"
+    },
+    "AbsentOptional_GroundingMemberBoxes_": {
+      "$ref": "#/$defs/GroundingMemberBoxes"
+    },
+    "AbsentOptional_MarkedGroundingFrame_": {
+      "$ref": "#/$defs/MarkedGroundingFrame"
+    },
+    "AbsentOptional_ReviewReportRef_": {
+      "$ref": "#/$defs/ReviewReportRef"
+    },
+    "AbsentOptional_SelectionCallPolicy_": {
+      "$ref": "#/$defs/SelectionCallPolicy"
+    },
+    "AdditionalSelectionCallPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "additional_resource_requirements_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "max_additional_invocations_per_execution": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "mode": {
+          "const": "explicit_additional",
+          "title": "Mode",
+          "type": "string"
+        },
+        "proposal_binding_ref": {
+          "$ref": "#/$defs/ModelBindingContentRef"
+        }
+      },
+      "required": [
+        "mode",
+        "proposal_binding_ref",
+        "additional_resource_requirements_ref",
+        "max_additional_invocations_per_execution"
+      ],
+      "title": "AdditionalSelectionCallPolicy",
+      "type": "object"
+    },
+    "AffineCoefficient": {
+      "maximum": 9007199254740991,
+      "minimum": -9007199254740991,
+      "type": "number"
+    },
+    "AllDeclaredSelectionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "configured_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs",
+          "minLength": 1
+        },
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "discovery_model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "excluded_question_reasons": {
+          "items": {
+            "$ref": "#/$defs/ExcludedQuestionReason"
+          },
+          "maxItems": 1024,
+          "title": "Excluded Question Reasons",
+          "type": "array"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "fallback_applied": {
+          "const": false,
+          "title": "Fallback Applied",
+          "type": "boolean"
+        },
+        "mandatory_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "method": {
+          "const": "all_declared",
+          "title": "Method",
+          "type": "string"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "proposed_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selected_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "selection_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "validation_issues": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Validation Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "selection_id",
+        "execution_id",
+        "profile_ref",
+        "policy_ref",
+        "configured_question_refs",
+        "mandatory_question_refs",
+        "proposed_optional_question_refs",
+        "selected_optional_question_refs",
+        "effective_question_refs",
+        "excluded_question_reasons",
+        "context_snapshot_ref",
+        "context_snapshot_digest",
+        "node_run_id",
+        "attempt_id",
+        "discovery_model_invocation_ref",
+        "validation_issues",
+        "created_at",
+        "method",
+        "fallback_applied"
+      ],
+      "title": "AllDeclaredSelectionRecord",
+      "type": "object"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "entity",
+        "region",
+        "profile",
+        "facet",
+        "question",
+        "tool",
+        "tool_plan",
+        "rule",
+        "rule_set",
+        "model_binding",
+        "fact_schema",
+        "prompt_template",
+        "response_schema",
+        "attribute_schema",
+        "context_schema",
+        "tool_input_schema",
+        "tool_output_schema",
+        "object_schema",
+        "decision_schema",
+        "value_schema",
+        "policy",
+        "vocabulary",
+        "geometry_resource",
+        "static_asset",
+        "fact_producer_catalog"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactOutputRef": {
+      "additionalProperties": false,
+      "description": "Immutable reference and digest of an emitted runtime artifact.",
+      "properties": {
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "ref": {
+          "$ref": "#/$defs/RuntimeRecordRef"
+        }
+      },
+      "required": [
+        "ref",
+        "digest"
+      ],
+      "title": "ArtifactOutputRef",
+      "type": "object"
+    },
+    "AssetDimensions": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "width": {
+          "$ref": "#/$defs/PositiveBudget"
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ],
+      "title": "AssetDimensions",
+      "type": "object"
+    },
+    "Attempt": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "attempt_number": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "ended_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/$defs/AttemptOwner"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LifecycleReason"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "$ref": "#/$defs/AttemptStatus"
+        }
+      },
+      "required": [
+        "schema_version",
+        "attempt_id",
+        "execution_id",
+        "owner",
+        "attempt_number",
+        "status",
+        "created_at"
+      ],
+      "title": "Attempt",
+      "type": "object"
+    },
+    "AttemptLink": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_number": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        }
+      },
+      "required": [
+        "attempt_ref",
+        "attempt_number"
+      ],
+      "title": "AttemptLink",
+      "type": "object"
+    },
+    "AttemptOwner": {
+      "discriminator": {
+        "mapping": {
+          "node": "#/$defs/NodeAttemptOwner",
+          "system": "#/$defs/SystemAttemptOwner"
+        },
+        "propertyName": "owner_kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NodeAttemptOwner"
+        },
+        {
+          "$ref": "#/$defs/SystemAttemptOwner"
+        }
+      ]
+    },
+    "AttemptRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "attempt",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "AttemptRef",
+      "type": "object"
+    },
+    "AttemptStatus": {
+      "enum": [
+        "created",
+        "running",
+        "succeeded",
+        "failed",
+        "timed_out",
+        "cancelled",
+        "superseded"
+      ],
+      "title": "AttemptStatus",
+      "type": "string"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "properties": {
+        "xyxy": {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/PixelCoordinate"
+            },
+            {
+              "$ref": "#/$defs/PixelCoordinate"
+            },
+            {
+              "$ref": "#/$defs/PixelCoordinate"
+            },
+            {
+              "$ref": "#/$defs/PixelCoordinate"
+            }
+          ],
+          "title": "Xyxy",
+          "type": "array"
+        }
+      },
+      "required": [
+        "xyxy"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "BooleanValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanValue",
+      "type": "object"
+    },
+    "BoundedString": {
+      "maxLength": 4096,
+      "type": "string"
+    },
+    "CameraRegistryProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "camera_ref": {
+          "$ref": "#/$defs/RegistryRecordRef"
+        },
+        "source": {
+          "const": "camera_registry",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "camera_ref"
+      ],
+      "title": "CameraRegistryProvenance",
+      "type": "object"
+    },
+    "CancelledNodeOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "duration_ms": {
+          "$ref": "#/$defs/NonNegativeBudget"
+        },
+        "error": {
+          "$ref": "#/$defs/NodeError"
+        },
+        "finished_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "node_id": {
+          "$ref": "#/$defs/NodeId"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "output_artifacts": {
+          "$ref": "#/$defs/NodeOutputs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "status": {
+          "const": "cancelled",
+          "title": "Status",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "node_id",
+        "node_run_id",
+        "attempt_id",
+        "trace",
+        "output_artifacts",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "status",
+        "error"
+      ],
+      "title": "CancelledNodeOutput",
+      "type": "object"
+    },
+    "CapabilityFeature": {
+      "enum": [
+        "rgb_image",
+        "typed_context",
+        "structured_output",
+        "original_xyxy",
+        "mask_output",
+        "geometry_output",
+        "ocr_text"
+      ],
+      "title": "CapabilityFeature",
+      "type": "string"
+    },
+    "CaptureClockSource": {
+      "enum": [
+        "device_clock",
+        "server_clock",
+        "external_reference"
+      ],
+      "title": "CaptureClockSource",
+      "type": "string"
+    },
+    "CaptureTimezone": {
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9_+-]*(?:/[A-Za-z0-9_+-]+)*$(?![\\s\\S])",
+      "type": "string"
+    },
+    "ClockProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "clock_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Clock Id",
+          "type": "string"
+        },
+        "original_timestamp": {
+          "$ref": "#/$defs/OriginalCaptureTimestamp"
+        },
+        "original_timezone": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureTimezone"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source": {
+          "$ref": "#/$defs/CaptureClockSource"
+        },
+        "uncertainty_ms": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NonNegativeBudget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "captured_at",
+        "original_timestamp",
+        "source",
+        "clock_id"
+      ],
+      "title": "ClockProvenance",
+      "type": "object"
+    },
+    "ConfiguredModelPin": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_ref": {
+          "$ref": "#/$defs/ModelBindingContentRef"
+        },
+        "deployments": {
+          "items": {
+            "$ref": "#/$defs/DeploymentRequirement"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Deployments",
+          "type": "array"
+        },
+        "fallback_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "primary_deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Primary Deployment Id",
+          "type": "string"
+        },
+        "provider_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        }
+      },
+      "required": [
+        "binding_ref",
+        "provider_policy_ref",
+        "fallback_policy_ref",
+        "primary_deployment_id",
+        "deployments"
+      ],
+      "title": "ConfiguredModelPin",
+      "type": "object"
+    },
+    "ConfiguredToolPin": {
+      "additionalProperties": false,
+      "properties": {
+        "implementation_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Implementation Version",
+          "type": "string"
+        },
+        "tool_ref": {
+          "$ref": "#/$defs/ToolContentRef"
+        }
+      },
+      "required": [
+        "tool_ref",
+        "implementation_version"
+      ],
+      "title": "ConfiguredToolPin",
+      "type": "object"
+    },
+    "ContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ContentRef",
+      "type": "object"
+    },
+    "ContextBuildOutput": {
+      "discriminator": {
+        "mapping": {
+          "required_context_failure": "#/$defs/FailedContextBuild",
+          "usable": "#/$defs/SuccessfulContextBuild"
+        },
+        "propertyName": "disposition"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SuccessfulContextBuild"
+        },
+        {
+          "$ref": "#/$defs/FailedContextBuild"
+        }
+      ]
+    },
+    "ContextFieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "items": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Field Path",
+          "type": "array"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "$ref": "#/$defs/ContextSource"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "ContextFieldSelector",
+      "type": "object"
+    },
+    "ContextInput": {
+      "additionalProperties": false,
+      "properties": {
+        "selector": {
+          "$ref": "#/$defs/ContextFieldSelector"
+        },
+        "source_kind": {
+          "const": "context",
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_kind",
+        "selector"
+      ],
+      "title": "ContextInput",
+      "type": "object"
+    },
+    "ContextRuleSelectionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "configured_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs",
+          "minLength": 1
+        },
+        "context_selection_rules": {
+          "items": {
+            "$ref": "#/$defs/ContextSelectionRule"
+          },
+          "maxItems": 1024,
+          "title": "Context Selection Rules",
+          "type": "array"
+        },
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "discovery_model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "excluded_question_reasons": {
+          "items": {
+            "$ref": "#/$defs/ExcludedQuestionReason"
+          },
+          "maxItems": 1024,
+          "title": "Excluded Question Reasons",
+          "type": "array"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "fallback_applied": {
+          "const": false,
+          "title": "Fallback Applied",
+          "type": "boolean"
+        },
+        "mandatory_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "method": {
+          "const": "context_rules",
+          "title": "Method",
+          "type": "string"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "proposed_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selected_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "selection_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "validation_issues": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Validation Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "selection_id",
+        "execution_id",
+        "profile_ref",
+        "policy_ref",
+        "configured_question_refs",
+        "mandatory_question_refs",
+        "proposed_optional_question_refs",
+        "selected_optional_question_refs",
+        "effective_question_refs",
+        "excluded_question_reasons",
+        "context_snapshot_ref",
+        "context_snapshot_digest",
+        "node_run_id",
+        "attempt_id",
+        "discovery_model_invocation_ref",
+        "validation_issues",
+        "created_at",
+        "method",
+        "fallback_applied",
+        "context_selection_rules"
+      ],
+      "title": "ContextRuleSelectionRecord",
+      "type": "object"
+    },
+    "ContextSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "context_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ContextSchemaRef",
+      "type": "object"
+    },
+    "ContextSelectionRule": {
+      "additionalProperties": false,
+      "properties": {
+        "applicability_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "question_ref": {
+          "$ref": "#/$defs/QuestionContentRef"
+        }
+      },
+      "required": [
+        "question_ref",
+        "applicability_policy_ref"
+      ],
+      "title": "ContextSelectionRule",
+      "type": "object"
+    },
+    "ContextSnapshot": {
+      "additionalProperties": false,
+      "description": "A successful N01 snapshot pinned to the exact resolved input identities.",
+      "properties": {
+        "bundle_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Digest",
+          "type": "string"
+        },
+        "camera_ref": {
+          "$ref": "#/$defs/RegistryRecordRef"
+        },
+        "clock": {
+          "$ref": "#/$defs/ClockProvenance"
+        },
+        "context_provenance_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "context_schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "context_snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Context Snapshot Id",
+          "type": "string"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "device_ref": {
+          "$ref": "#/$defs/RegistryRecordRef"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "media_ref": {
+          "$ref": "#/$defs/MediaRef"
+        },
+        "region_ref": {
+          "$ref": "#/$defs/RegionContentRef"
+        },
+        "release_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/ContextValue"
+          },
+          "maxItems": 64,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "context_snapshot_id",
+        "execution_id",
+        "task_id",
+        "release_id",
+        "bundle_digest",
+        "media_ref",
+        "device_ref",
+        "camera_ref",
+        "region_ref",
+        "context_schema_ref",
+        "context_provenance_policy_ref",
+        "clock",
+        "values",
+        "created_at"
+      ],
+      "title": "ContextSnapshot",
+      "type": "object"
+    },
+    "ContextSnapshotPin": {
+      "additionalProperties": false,
+      "properties": {
+        "snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Digest",
+          "type": "string"
+        },
+        "snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        }
+      },
+      "required": [
+        "snapshot_ref",
+        "snapshot_digest"
+      ],
+      "title": "ContextSnapshotPin",
+      "type": "object"
+    },
+    "ContextSnapshotRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "context_snapshot",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ContextSnapshotRef",
+      "type": "object"
+    },
+    "ContextSource": {
+      "enum": [
+        "context_snapshot",
+        "region_metadata",
+        "profile_metadata"
+      ],
+      "title": "ContextSource",
+      "type": "string"
+    },
+    "ContextValue": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "$ref": "#/$defs/ContextValuePath"
+        },
+        "provenance": {
+          "$ref": "#/$defs/ContextValueProvenance"
+        },
+        "value": {
+          "$ref": "#/$defs/Value"
+        }
+      },
+      "required": [
+        "field_path",
+        "value",
+        "provenance"
+      ],
+      "title": "ContextValue",
+      "type": "object"
+    },
+    "ContextValuePath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "type": "array"
+    },
+    "ContextValueProvenance": {
+      "discriminator": {
+        "mapping": {
+          "camera_registry": "#/$defs/CameraRegistryProvenance",
+          "declared_derivation": "#/$defs/DeclaredDerivationProvenance",
+          "device_registry": "#/$defs/DeviceRegistryProvenance",
+          "region_definition": "#/$defs/RegionDefinitionProvenance",
+          "trusted_task_metadata": "#/$defs/TaskMetadataProvenance"
+        },
+        "propertyName": "source"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TaskMetadataProvenance"
+        },
+        {
+          "$ref": "#/$defs/DeviceRegistryProvenance"
+        },
+        {
+          "$ref": "#/$defs/CameraRegistryProvenance"
+        },
+        {
+          "$ref": "#/$defs/RegionDefinitionProvenance"
+        },
+        {
+          "$ref": "#/$defs/DeclaredDerivationProvenance"
+        }
+      ]
+    },
+    "CoordinateSystem": {
+      "additionalProperties": false,
+      "description": "Image-plane pixel edges with origin at the top left and axes right/down.",
+      "properties": {
+        "coordinate_system_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Coordinate System Id",
+          "type": "string"
+        },
+        "dimensions": {
+          "$ref": "#/$defs/AssetDimensions"
+        },
+        "frame": {
+          "enum": [
+            "original_image",
+            "derived_image"
+          ],
+          "title": "Frame",
+          "type": "string"
+        }
+      },
+      "required": [
+        "coordinate_system_id",
+        "frame",
+        "dimensions"
+      ],
+      "title": "CoordinateSystem",
+      "type": "object"
+    },
+    "DeclaredDerivationProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "derivation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Derivation Id",
+          "type": "string"
+        },
+        "implementation_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Implementation Digest",
+          "type": "string"
+        },
+        "implementation_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Implementation Version",
+          "type": "string"
+        },
+        "input_selectors": {
+          "items": {
+            "$ref": "#/$defs/ContextFieldSelector"
+          },
+          "maxItems": 64,
+          "title": "Input Selectors",
+          "type": "array"
+        },
+        "source": {
+          "const": "declared_derivation",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "derivation_id",
+        "implementation_version",
+        "implementation_digest",
+        "input_selectors"
+      ],
+      "title": "DeclaredDerivationProvenance",
+      "type": "object"
+    },
+    "DeploymentRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_version_constraints": {
+          "$ref": "#/$defs/VersionConstraint"
+        },
+        "deployment_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Deployment Id",
+          "type": "string"
+        },
+        "logical_model_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Logical Model Id",
+          "type": "string"
+        },
+        "provider_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "provider_kind": {
+          "enum": [
+            "remote",
+            "local"
+          ],
+          "title": "Provider Kind",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "provider_id",
+        "deployment_id",
+        "logical_model_id",
+        "provider_kind",
+        "actual_version_constraints",
+        "required_features"
+      ],
+      "title": "DeploymentRequirement",
+      "type": "object"
+    },
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "DeviceRegistryProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "device_ref": {
+          "$ref": "#/$defs/RegistryRecordRef"
+        },
+        "source": {
+          "const": "device_registry",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "device_ref"
+      ],
+      "title": "DeviceRegistryProvenance",
+      "type": "object"
+    },
+    "DiscoveryAttemptOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/DiscoveryProfileDiagnostic"
+          },
+          "maxItems": 1024,
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "envelope": {
+          "$ref": "#/$defs/NodeOutputEnvelope"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "model_invocation_refs": {
+          "items": {
+            "$ref": "#/$defs/ModelInvocationRef"
+          },
+          "maxItems": 1024,
+          "title": "Model Invocation Refs",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "outcome": {
+          "enum": [
+            "hits",
+            "no_hits",
+            "failed",
+            "partial"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "profile_hits": {
+          "items": {
+            "$ref": "#/$defs/ProfileHit"
+          },
+          "maxItems": 1024,
+          "title": "Profile Hits",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "outcome",
+        "execution_id",
+        "envelope",
+        "profile_hits",
+        "diagnostics",
+        "model_invocation_refs"
+      ],
+      "title": "DiscoveryAttemptOutput",
+      "type": "object"
+    },
+    "DiscoveryInput": {
+      "additionalProperties": false,
+      "properties": {
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/DiscoveryProfileBinding"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Bindings",
+          "type": "array"
+        },
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "eligible_profiles": {
+          "$ref": "#/$defs/ProfileEligibilityScopeRefs",
+          "minLength": 1
+        },
+        "envelope": {
+          "$ref": "#/$defs/NodeInputEnvelope"
+        },
+        "original_media_ref": {
+          "$ref": "#/$defs/MediaRef"
+        },
+        "profile_eligibility_evaluation_ref": {
+          "$ref": "#/$defs/ProfileEligibilityEvaluationRef"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "envelope",
+        "original_media_ref",
+        "context_snapshot_ref",
+        "context_snapshot_digest",
+        "profile_eligibility_evaluation_ref",
+        "eligible_profiles",
+        "bindings"
+      ],
+      "title": "DiscoveryInput",
+      "type": "object"
+    },
+    "DiscoveryOutput": {
+      "discriminator": {
+        "mapping": {
+          "failed": "#/$defs/DiscoveryAttemptOutput",
+          "hits": "#/$defs/DiscoveryAttemptOutput",
+          "no_hits": "#/$defs/DiscoveryAttemptOutput",
+          "not_evaluated": "#/$defs/SkippedDiscoveryOutput",
+          "partial": "#/$defs/DiscoveryAttemptOutput"
+        },
+        "propertyName": "outcome"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/DiscoveryAttemptOutput"
+        },
+        {
+          "$ref": "#/$defs/SkippedDiscoveryOutput"
+        }
+      ]
+    },
+    "DiscoveryProfileBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "discovery_binding_ref": {
+          "$ref": "#/$defs/ModelBindingContentRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "prompt_template_ref": {
+          "$ref": "#/$defs/PromptTemplateContentRef"
+        },
+        "question_selection_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        }
+      },
+      "required": [
+        "profile_ref",
+        "discovery_binding_ref",
+        "prompt_template_ref",
+        "question_selection_policy_ref"
+      ],
+      "title": "DiscoveryProfileBinding",
+      "type": "object"
+    },
+    "DiscoveryProfileDiagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Diagnostic Id",
+          "type": "string"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "raw_response_ref": {
+          "$ref": "#/$defs/EvidenceRef"
+        },
+        "reason_code": {
+          "enum": [
+            "invalid_profile_proposal",
+            "noneligible_profile_proposal"
+          ],
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "validation_issues": {
+          "$ref": "#/$defs/NodeIssues",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "schema_version",
+        "diagnostic_id",
+        "execution_id",
+        "model_invocation_ref",
+        "raw_response_ref",
+        "validation_issues",
+        "reason_code"
+      ],
+      "title": "DiscoveryProfileDiagnostic",
+      "type": "object"
+    },
+    "DispatchedSelectionFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs",
+          "minLength": 1
+        },
+        "dispatched": {
+          "const": true,
+          "title": "Dispatched",
+          "type": "boolean"
+        },
+        "fallback_reason": {
+          "enum": [
+            "invalid_proposal",
+            "selection_transport_failure"
+          ],
+          "title": "Fallback Reason",
+          "type": "string"
+        },
+        "trigger_attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        },
+        "trigger_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "triggered_method": {
+          "const": "model_advisory",
+          "title": "Triggered Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "triggered_method",
+        "trigger_attempt_ref",
+        "fallback_reason",
+        "diagnostic_refs",
+        "dispatched",
+        "trigger_invocation_ref"
+      ],
+      "title": "DispatchedSelectionFailure",
+      "type": "object"
+    },
+    "EntityContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "entity",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "EntityContentRef",
+      "type": "object"
+    },
+    "EnumValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enum",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "EnumValue",
+      "type": "object"
+    },
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "evidence",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "EvidenceRefs": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "ExcludedQuestionReason": {
+      "additionalProperties": false,
+      "properties": {
+        "question_ref": {
+          "$ref": "#/$defs/QuestionContentRef"
+        },
+        "reason_code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "reported_reason": {
+          "$ref": "#/$defs/AbsentOptional_Description_"
+        }
+      },
+      "required": [
+        "question_ref",
+        "reason_code"
+      ],
+      "title": "ExcludedQuestionReason",
+      "type": "object"
+    },
+    "ExecutionPins": {
+      "additionalProperties": false,
+      "properties": {
+        "bundle_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Digest",
+          "type": "string"
+        },
+        "input_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Digest",
+          "type": "string"
+        },
+        "model_pins": {
+          "items": {
+            "$ref": "#/$defs/ConfiguredModelPin"
+          },
+          "maxItems": 1024,
+          "title": "Model Pins",
+          "type": "array"
+        },
+        "release_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "runtime_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Runtime Version",
+          "type": "string"
+        },
+        "tool_pins": {
+          "items": {
+            "$ref": "#/$defs/ConfiguredToolPin"
+          },
+          "maxItems": 1024,
+          "title": "Tool Pins",
+          "type": "array"
+        },
+        "workflow_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Workflow Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "release_id",
+        "bundle_digest",
+        "runtime_version",
+        "workflow_version",
+        "model_pins",
+        "tool_pins",
+        "input_digest"
+      ],
+      "title": "ExecutionPins",
+      "type": "object"
+    },
+    "ExecutionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "context_snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContextSnapshotPin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "ended_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "model_invocation_refs": {
+          "items": {
+            "$ref": "#/$defs/ModelInvocationRef"
+          },
+          "maxItems": 16384,
+          "title": "Model Invocation Refs",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "pins": {
+          "$ref": "#/$defs/ExecutionPins"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "$ref": "#/$defs/ExecutionStatus"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "execution_id",
+        "task_id",
+        "pins",
+        "trace",
+        "status",
+        "created_at",
+        "model_invocation_refs"
+      ],
+      "title": "ExecutionRecord",
+      "type": "object"
+    },
+    "ExecutionStatus": {
+      "enum": [
+        "initialized",
+        "running",
+        "completed",
+        "partial_failed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "ExecutionStatus",
+      "type": "string"
+    },
+    "FailedContextBuild": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "required_context_failure",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "envelope": {
+          "$ref": "#/$defs/NodeOutputEnvelope"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "validation_report": {
+          "$ref": "#/$defs/RequiredContextFailureReport"
+        }
+      },
+      "required": [
+        "schema_version",
+        "envelope",
+        "disposition",
+        "validation_report"
+      ],
+      "title": "FailedContextBuild",
+      "type": "object"
+    },
+    "FailedNodeOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "duration_ms": {
+          "$ref": "#/$defs/NonNegativeBudget"
+        },
+        "error": {
+          "$ref": "#/$defs/NodeError"
+        },
+        "finished_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "node_id": {
+          "$ref": "#/$defs/NodeId"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "output_artifacts": {
+          "$ref": "#/$defs/NodeOutputs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "status": {
+          "const": "failed",
+          "title": "Status",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "node_id",
+        "node_run_id",
+        "attempt_id",
+        "trace",
+        "output_artifacts",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "status",
+        "error"
+      ],
+      "title": "FailedNodeOutput",
+      "type": "object"
+    },
+    "FallbackSelectionEvidence": {
+      "discriminator": {
+        "mapping": {
+          "False": "#/$defs/UndispatchedSelectionFailure",
+          "True": "#/$defs/DispatchedSelectionFailure"
+        },
+        "propertyName": "dispatched"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/UndispatchedSelectionFailure"
+        },
+        {
+          "$ref": "#/$defs/DispatchedSelectionFailure"
+        }
+      ]
+    },
+    "FallbackSelectionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "configured_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs",
+          "minLength": 1
+        },
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "discovery_model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "excluded_question_reasons": {
+          "items": {
+            "$ref": "#/$defs/ExcludedQuestionReason"
+          },
+          "maxItems": 1024,
+          "title": "Excluded Question Reasons",
+          "type": "array"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "fallback_action": {
+          "enum": [
+            "include_all_optional",
+            "block_profile"
+          ],
+          "title": "Fallback Action",
+          "type": "string"
+        },
+        "fallback_applied": {
+          "const": true,
+          "title": "Fallback Applied",
+          "type": "boolean"
+        },
+        "fallback_evidence": {
+          "$ref": "#/$defs/FallbackSelectionEvidence"
+        },
+        "mandatory_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "method": {
+          "const": "fallback",
+          "title": "Method",
+          "type": "string"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "proposed_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selected_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "selection_call_policy": {
+          "$ref": "#/$defs/AbsentOptional_SelectionCallPolicy_"
+        },
+        "selection_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "validation_issues": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Validation Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "selection_id",
+        "execution_id",
+        "profile_ref",
+        "policy_ref",
+        "configured_question_refs",
+        "mandatory_question_refs",
+        "proposed_optional_question_refs",
+        "selected_optional_question_refs",
+        "effective_question_refs",
+        "excluded_question_reasons",
+        "context_snapshot_ref",
+        "context_snapshot_digest",
+        "node_run_id",
+        "attempt_id",
+        "discovery_model_invocation_ref",
+        "validation_issues",
+        "created_at",
+        "method",
+        "fallback_applied",
+        "fallback_action",
+        "fallback_evidence"
+      ],
+      "title": "FallbackSelectionRecord",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FieldPath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "FieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/SchemaRef"
+        }
+      },
+      "required": [
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "FieldSelector",
+      "type": "object"
+    },
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "GroundingBinding": {
+      "discriminator": {
+        "mapping": {
+          "model": "#/$defs/ModelGroundingBinding",
+          "tool": "#/$defs/ToolGroundingBinding"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ModelGroundingBinding"
+        },
+        {
+          "$ref": "#/$defs/ToolGroundingBinding"
+        }
+      ]
+    },
+    "GroundingInputBinding": {
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "required": {
+            "const": true
+          }
+        },
+        "required": [
+          "required"
+        ]
+      },
+      "properties": {
+        "on_missing": {
+          "enum": [
+            "block",
+            "omit"
+          ],
+          "title": "On Missing",
+          "type": "string"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/$defs/GroundingInputSource"
+        },
+        "target": {
+          "$ref": "#/$defs/FieldSelector"
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "required",
+        "on_missing"
+      ],
+      "then": {
+        "properties": {
+          "on_missing": {
+            "const": "block"
+          }
+        }
+      },
+      "title": "GroundingInputBinding",
+      "type": "object"
+    },
+    "GroundingInputBindings": {
+      "items": {
+        "$ref": "#/$defs/GroundingInputBinding"
+      },
+      "maxItems": 64,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "GroundingInputSource": {
+      "discriminator": {
+        "mapping": {
+          "context": "#/$defs/ContextInput",
+          "image": "#/$defs/ImageInput"
+        },
+        "propertyName": "source_kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ContextInput"
+        },
+        {
+          "$ref": "#/$defs/ImageInput"
+        }
+      ]
+    },
+    "GroundingMemberBoxes": {
+      "items": {
+        "$ref": "#/$defs/BBoxXYXY"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "type": "array"
+    },
+    "GroundingOutcome": {
+      "enum": [
+        "objects",
+        "no_target",
+        "failed",
+        "partial",
+        "not_evaluated"
+      ],
+      "title": "GroundingOutcome",
+      "type": "string"
+    },
+    "GroundingProvenance": {
+      "discriminator": {
+        "mapping": {
+          "model": "#/$defs/ModelGroundingProvenance",
+          "tool": "#/$defs/ToolGroundingProvenance"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ModelGroundingProvenance"
+        },
+        {
+          "$ref": "#/$defs/ToolGroundingProvenance"
+        }
+      ]
+    },
+    "GroundingRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "coordinate_system": {
+          "$ref": "#/$defs/CoordinateSystem"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "grounding_binding": {
+          "$ref": "#/$defs/GroundingBinding"
+        },
+        "grounding_record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Grounding Record Id",
+          "type": "string"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "object_refs": {
+          "$ref": "#/$defs/ObjectRefs"
+        },
+        "outcome": {
+          "$ref": "#/$defs/GroundingOutcome"
+        },
+        "producer": {
+          "$ref": "#/$defs/GroundingProvenance"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "question_selection_ref": {
+          "$ref": "#/$defs/QuestionSelectionRef"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_media_ref": {
+          "$ref": "#/$defs/MediaRef"
+        },
+        "transforms": {
+          "$ref": "#/$defs/TransformRecords"
+        },
+        "validation_issues": {
+          "$ref": "#/$defs/PerceptionValidationIssues"
+        }
+      },
+      "required": [
+        "profile_ref",
+        "question_selection_ref",
+        "effective_question_refs",
+        "schema_version",
+        "grounding_record_id",
+        "execution_id",
+        "node_run_id",
+        "attempt_id",
+        "grounding_binding",
+        "source_media_ref",
+        "coordinate_system",
+        "transforms",
+        "outcome",
+        "object_refs",
+        "evidence_refs",
+        "producer",
+        "validation_issues"
+      ],
+      "title": "GroundingRecord",
+      "type": "object"
+    },
+    "GroundingRecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "grounding_record",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "GroundingRecordRef",
+      "type": "object"
+    },
+    "ImageFieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "$ref": "#/$defs/FieldPath"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ImageSchemaRef"
+        }
+      },
+      "required": [
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "ImageFieldSelector",
+      "type": "object"
+    },
+    "ImageInput": {
+      "additionalProperties": false,
+      "properties": {
+        "selector": {
+          "$ref": "#/$defs/ImageFieldSelector"
+        },
+        "source_kind": {
+          "const": "image",
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_kind",
+        "selector"
+      ],
+      "title": "ImageInput",
+      "type": "object"
+    },
+    "ImageSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "attribute_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ImageSchemaRef",
+      "type": "object"
+    },
+    "IntegerValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "IntegerValue",
+      "type": "object"
+    },
+    "IssueIndex": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "IssuePath": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/FieldName"
+          },
+          {
+            "$ref": "#/$defs/IssueIndex"
+          }
+        ]
+      },
+      "maxItems": 32,
+      "type": "array"
+    },
+    "LifecycleReason": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ShortText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "title": "LifecycleReason",
+      "type": "object"
+    },
+    "ListValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "$ref": "#/$defs/Value"
+          },
+          "maxItems": 256,
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "ListValue",
+      "type": "object"
+    },
+    "MarkedGroundingFrame": {
+      "additionalProperties": false,
+      "description": "Full-size RGB PNG annotated by the versioned red outline renderer.",
+      "properties": {
+        "byte_size": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "media_ref": {
+          "$ref": "#/$defs/MediaRef"
+        },
+        "mime_type": {
+          "const": "image/png",
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "renderer_version": {
+          "const": "1.0.0",
+          "title": "Renderer Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_ref",
+        "byte_size",
+        "mime_type",
+        "renderer_version"
+      ],
+      "title": "MarkedGroundingFrame",
+      "type": "object"
+    },
+    "MediaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "media_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Media Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_id",
+        "sha256"
+      ],
+      "title": "MediaRef",
+      "type": "object"
+    },
+    "ModelAdvisorySelectionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "configured_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs",
+          "minLength": 1
+        },
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "discovery_model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "excluded_question_reasons": {
+          "items": {
+            "$ref": "#/$defs/ExcludedQuestionReason"
+          },
+          "maxItems": 1024,
+          "title": "Excluded Question Reasons",
+          "type": "array"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "fallback_applied": {
+          "const": false,
+          "title": "Fallback Applied",
+          "type": "boolean"
+        },
+        "mandatory_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "method": {
+          "const": "model_advisory",
+          "title": "Method",
+          "type": "string"
+        },
+        "model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "proposed_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selected_optional_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "selection_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "selection_invocation_mode": {
+          "$ref": "#/$defs/SelectionInvocationMode"
+        },
+        "validation_issues": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 1024,
+          "title": "Validation Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "selection_id",
+        "execution_id",
+        "profile_ref",
+        "policy_ref",
+        "configured_question_refs",
+        "mandatory_question_refs",
+        "proposed_optional_question_refs",
+        "selected_optional_question_refs",
+        "effective_question_refs",
+        "excluded_question_reasons",
+        "context_snapshot_ref",
+        "context_snapshot_digest",
+        "node_run_id",
+        "attempt_id",
+        "discovery_model_invocation_ref",
+        "validation_issues",
+        "created_at",
+        "method",
+        "fallback_applied",
+        "selection_invocation_mode",
+        "model_invocation_ref"
+      ],
+      "title": "ModelAdvisorySelectionRecord",
+      "type": "object"
+    },
+    "ModelBindingContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "model_binding",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ModelBindingContentRef",
+      "type": "object"
+    },
+    "ModelGroundingBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "input_bindings": {
+          "$ref": "#/$defs/AbsentOptional_GroundingInputBindings_"
+        },
+        "kind": {
+          "const": "model",
+          "title": "Kind",
+          "type": "string"
+        },
+        "model_binding_ref": {
+          "$ref": "#/$defs/ModelBindingContentRef"
+        }
+      },
+      "required": [
+        "kind",
+        "model_binding_ref"
+      ],
+      "title": "ModelGroundingBinding",
+      "type": "object"
+    },
+    "ModelGroundingProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "model",
+          "title": "Kind",
+          "type": "string"
+        },
+        "model_binding_ref": {
+          "$ref": "#/$defs/ModelBindingContentRef"
+        },
+        "model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        }
+      },
+      "required": [
+        "kind",
+        "model_binding_ref",
+        "model_invocation_ref"
+      ],
+      "title": "ModelGroundingProvenance",
+      "type": "object"
+    },
+    "ModelInvocationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "model_invocation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ModelInvocationRef",
+      "type": "object"
+    },
+    "NodeAttemptOwner": {
+      "additionalProperties": false,
+      "properties": {
+        "node_run_ref": {
+          "$ref": "#/$defs/NodeRunRef"
+        },
+        "owner_kind": {
+          "const": "node",
+          "title": "Owner Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner_kind",
+        "node_run_ref"
+      ],
+      "title": "NodeAttemptOwner",
+      "type": "object"
+    },
+    "NodeError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "error_class": {
+          "enum": [
+            "validation",
+            "dependency",
+            "transport",
+            "timeout",
+            "resource",
+            "internal"
+          ],
+          "title": "Error Class",
+          "type": "string"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "validation_issues": {
+          "$ref": "#/$defs/NodeIssues"
+        }
+      },
+      "required": [
+        "code",
+        "error_class",
+        "retryable",
+        "message",
+        "validation_issues"
+      ],
+      "title": "NodeError",
+      "type": "object"
+    },
+    "NodeId": {
+      "enum": [
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "title": "NodeId",
+      "type": "string"
+    },
+    "NodeInputEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "bundle_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Digest",
+          "type": "string"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "node_config_ref": {
+          "$ref": "#/$defs/ContentRef"
+        },
+        "node_id": {
+          "$ref": "#/$defs/NodeId"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "release_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        },
+        "upstream_artifacts": {
+          "$ref": "#/$defs/NodeInputs"
+        }
+      },
+      "required": [
+        "schema_version",
+        "node_id",
+        "task_id",
+        "execution_id",
+        "release_id",
+        "bundle_digest",
+        "node_run_id",
+        "attempt_id",
+        "trace",
+        "upstream_artifacts",
+        "node_config_ref"
+      ],
+      "title": "NodeInputEnvelope",
+      "type": "object"
+    },
+    "NodeInputs": {
+      "items": {
+        "$ref": "#/$defs/PinnedRuntimeInput"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NodeIssues": {
+      "items": {
+        "$ref": "#/$defs/ValidationIssue"
+      },
+      "maxItems": 1024,
+      "type": "array"
+    },
+    "NodeOutputEnvelope": {
+      "discriminator": {
+        "mapping": {
+          "cancelled": "#/$defs/CancelledNodeOutput",
+          "failed": "#/$defs/FailedNodeOutput",
+          "succeeded": "#/$defs/SucceededNodeOutput"
+        },
+        "propertyName": "status"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SucceededNodeOutput"
+        },
+        {
+          "$ref": "#/$defs/FailedNodeOutput"
+        },
+        {
+          "$ref": "#/$defs/CancelledNodeOutput"
+        }
+      ]
+    },
+    "NodeOutputs": {
+      "items": {
+        "$ref": "#/$defs/ArtifactOutputRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NodeRun": {
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "node_id": {
+            "not": {
+              "const": "N05"
+            }
+          }
+        }
+      },
+      "properties": {
+        "attempt_history": {
+          "items": {
+            "$ref": "#/$defs/AttemptLink"
+          },
+          "maxItems": 1025,
+          "title": "Attempt History",
+          "type": "array"
+        },
+        "config_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "ended_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "input_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Digest",
+          "type": "string"
+        },
+        "node_id": {
+          "$ref": "#/$defs/NodeId"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "output_refs": {
+          "items": {
+            "$ref": "#/$defs/RuntimeRecordRef"
+          },
+          "maxItems": 16384,
+          "title": "Output Refs",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "predecessor_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NodeRunRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LifecycleReason"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UTCDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "$ref": "#/$defs/NodeRunStatus"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        },
+        "upstream_inputs": {
+          "items": {
+            "$ref": "#/$defs/PinnedRuntimeInput"
+          },
+          "maxItems": 1024,
+          "title": "Upstream Inputs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "node_run_id",
+        "execution_id",
+        "node_id",
+        "trace",
+        "config_ref",
+        "upstream_inputs",
+        "input_digest",
+        "status",
+        "created_at",
+        "attempt_history",
+        "output_refs"
+      ],
+      "then": {
+        "properties": {
+          "attempt_history": {
+            "maxItems": 1024
+          }
+        }
+      },
+      "title": "NodeRun",
+      "type": "object"
+    },
+    "NodeRunRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "node_run",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "NodeRunRef",
+      "type": "object"
+    },
+    "NodeRunStatus": {
+      "enum": [
+        "pending",
+        "ready",
+        "running",
+        "succeeded",
+        "failed",
+        "blocked",
+        "skipped",
+        "cancelled"
+      ],
+      "title": "NodeRunStatus",
+      "type": "string"
+    },
+    "NonNegativeBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "NumberValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "NumberValue",
+      "type": "object"
+    },
+    "ObjectDecisionBlocker": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AttemptRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "node_run_ref": {
+          "$ref": "#/$defs/NodeRunRef"
+        },
+        "object_ref": {
+          "$ref": "#/$defs/ObjectRef"
+        }
+      },
+      "required": [
+        "object_ref",
+        "node_run_ref"
+      ],
+      "title": "ObjectDecisionBlocker",
+      "type": "object"
+    },
+    "ObjectRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "confidence": {
+          "$ref": "#/$defs/AbsentOptional_FiniteNumber_"
+        },
+        "coordinate_system": {
+          "$ref": "#/$defs/CoordinateSystem"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "entity_ref": {
+          "$ref": "#/$defs/EntityContentRef"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/EvidenceRefs"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "grounding_member_boxes": {
+          "$ref": "#/$defs/AbsentOptional_GroundingMemberBoxes_"
+        },
+        "grounding_producer": {
+          "$ref": "#/$defs/GroundingProvenance"
+        },
+        "grounding_record_ref": {
+          "$ref": "#/$defs/GroundingRecordRef"
+        },
+        "localization_status": {
+          "enum": [
+            "localized",
+            "partial"
+          ],
+          "title": "Localization Status",
+          "type": "string"
+        },
+        "marked_frame": {
+          "$ref": "#/$defs/AbsentOptional_MarkedGroundingFrame_"
+        },
+        "object_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Object Id",
+          "type": "string"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "question_selection_ref": {
+          "$ref": "#/$defs/QuestionSelectionRef"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_media_ref": {
+          "$ref": "#/$defs/MediaRef"
+        },
+        "visibility": {
+          "enum": [
+            "visible",
+            "partially_visible",
+            "unknown"
+          ],
+          "title": "Visibility",
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile_ref",
+        "question_selection_ref",
+        "effective_question_refs",
+        "schema_version",
+        "object_id",
+        "execution_id",
+        "entity_ref",
+        "grounding_record_ref",
+        "source_media_ref",
+        "coordinate_system",
+        "bbox",
+        "grounding_producer",
+        "visibility",
+        "localization_status",
+        "evidence_refs"
+      ],
+      "title": "ObjectRecord",
+      "type": "object"
+    },
+    "ObjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "object",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ObjectRef",
+      "type": "object"
+    },
+    "ObjectRefs": {
+      "items": {
+        "$ref": "#/$defs/ObjectRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "OriginalCaptureTimestamp": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{1,6})?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])$(?![\\s\\S])",
+      "type": "string"
+    },
+    "PerceptionValidationIssues": {
+      "items": {
+        "$ref": "#/$defs/ValidationIssue"
+      },
+      "maxItems": 1024,
+      "type": "array"
+    },
+    "PinnedRuntimeInput": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "ref": {
+          "$ref": "#/$defs/RuntimeRecordRef"
+        }
+      },
+      "required": [
+        "ref",
+        "digest"
+      ],
+      "title": "PinnedRuntimeInput",
+      "type": "object"
+    },
+    "PixelCoordinate": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "number"
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "PositiveBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "ProfileEligibilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "profile_eligibility_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ProfileEligibilityEvaluationRef",
+      "type": "object"
+    },
+    "ProfileEligibilityScopeRefs": {
+      "items": {
+        "$ref": "#/$defs/ProfileContentRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "ProfileHit": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/AbsentOptional_FiniteNumber_"
+        },
+        "effective_question_refs": {
+          "$ref": "#/$defs/QuestionSelectionRefs"
+        },
+        "model_invocation_ref": {
+          "$ref": "#/$defs/ModelInvocationRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "question_selection_ref": {
+          "$ref": "#/$defs/QuestionSelectionRef"
+        }
+      },
+      "required": [
+        "profile_ref",
+        "question_selection_ref",
+        "effective_question_refs",
+        "model_invocation_ref"
+      ],
+      "title": "ProfileHit",
+      "type": "object"
+    },
+    "PromptTemplateContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "prompt_template",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PromptTemplateContentRef",
+      "type": "object"
+    },
+    "QuestionContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "question",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "QuestionContentRef",
+      "type": "object"
+    },
+    "QuestionSelectionRecord": {
+      "discriminator": {
+        "mapping": {
+          "all_declared": "#/$defs/AllDeclaredSelectionRecord",
+          "context_rules": "#/$defs/ContextRuleSelectionRecord",
+          "fallback": "#/$defs/FallbackSelectionRecord",
+          "model_advisory": "#/$defs/ModelAdvisorySelectionRecord"
+        },
+        "propertyName": "method"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AllDeclaredSelectionRecord"
+        },
+        {
+          "$ref": "#/$defs/ContextRuleSelectionRecord"
+        },
+        {
+          "$ref": "#/$defs/ModelAdvisorySelectionRecord"
+        },
+        {
+          "$ref": "#/$defs/FallbackSelectionRecord"
+        }
+      ]
+    },
+    "QuestionSelectionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "question_selection_record",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "QuestionSelectionRef",
+      "type": "object"
+    },
+    "QuestionSelectionRefs": {
+      "items": {
+        "$ref": "#/$defs/QuestionContentRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_Attempt_": {
+      "items": {
+        "$ref": "#/$defs/Attempt"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_GroundingRecord_": {
+      "items": {
+        "$ref": "#/$defs/GroundingRecord"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_NodeRun_": {
+      "items": {
+        "$ref": "#/$defs/NodeRun"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_ObjectDecisionBlocker_": {
+      "items": {
+        "$ref": "#/$defs/ObjectDecisionBlocker"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_ObjectRecord_": {
+      "items": {
+        "$ref": "#/$defs/ObjectRecord"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordList_QuestionSelectionRecord_": {
+      "items": {
+        "$ref": "#/$defs/QuestionSelectionRecord"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RecordValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Value"
+          },
+          "maxProperties": 64,
+          "propertyNames": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "title": "Value",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "RecordValue",
+      "type": "object"
+    },
+    "RegionContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "region",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RegionContentRef",
+      "type": "object"
+    },
+    "RegionDefinitionProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "region_ref": {
+          "$ref": "#/$defs/RegionContentRef"
+        },
+        "source": {
+          "const": "region_definition",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "region_ref"
+      ],
+      "title": "RegionDefinitionProvenance",
+      "type": "object"
+    },
+    "RegistryRecordRef": {
+      "additionalProperties": false,
+      "description": "Reference to exact externally supplied device or camera registry metadata.",
+      "properties": {
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "version",
+        "digest"
+      ],
+      "title": "RegistryRecordRef",
+      "type": "object"
+    },
+    "RequiredContextFailureReport": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "required_context_failure",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "optional_issues": {
+          "$ref": "#/$defs/NodeIssues"
+        },
+        "required_issues": {
+          "$ref": "#/$defs/NodeIssues",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "disposition",
+        "required_issues",
+        "optional_issues"
+      ],
+      "title": "RequiredContextFailureReport",
+      "type": "object"
+    },
+    "ReviewReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "review_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Review Registry Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "version",
+        "sha256",
+        "review_registry_id"
+      ],
+      "title": "ReviewReportRef",
+      "type": "object"
+    },
+    "RuntimeRecordKind": {
+      "enum": [
+        "task",
+        "execution",
+        "node_run",
+        "attempt",
+        "object",
+        "fact",
+        "evidence",
+        "tool_execution",
+        "model_invocation",
+        "decision",
+        "release",
+        "activation",
+        "context_snapshot",
+        "grounding_record",
+        "question_selection_record",
+        "authoritative_result_selection",
+        "execution_coverage",
+        "profile_eligibility_evaluation",
+        "rule_set_applicability_evaluation",
+        "rule_applicability_evaluation",
+        "applicability_trace",
+        "unresolved_obligation",
+        "replay_run",
+        "execution_event",
+        "candidate_prediction",
+        "observation_batch"
+      ],
+      "title": "RuntimeRecordKind",
+      "type": "string"
+    },
+    "RuntimeRecordRef": {
+      "additionalProperties": false,
+      "description": "Record identity, interpreted within its owning root's pinned scope.\n\nIn particular an Object ID is Execution-local: this nested ref must not be\nresolved globally or reused across Executions. Scope/existence checks belong\nto the later owning record contracts, not a hidden resolver in this model.",
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "$ref": "#/$defs/RuntimeRecordKind"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "RuntimeRecordRef",
+      "type": "object"
+    },
+    "SchemaRef": {
+      "additionalProperties": false,
+      "description": "A constrained ContentRef, not a second schema identity system.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "enum": [
+            "fact_schema",
+            "value_schema",
+            "response_schema",
+            "attribute_schema",
+            "context_schema",
+            "tool_input_schema",
+            "tool_output_schema",
+            "object_schema",
+            "decision_schema"
+          ],
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "SchemaRef",
+      "type": "object"
+    },
+    "SelectionCallPolicy": {
+      "discriminator": {
+        "mapping": {
+          "explicit_additional": "#/$defs/AdditionalSelectionCallPolicy",
+          "shared_n02": "#/$defs/SharedN02SelectionCallPolicy"
+        },
+        "propertyName": "mode"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SharedN02SelectionCallPolicy"
+        },
+        {
+          "$ref": "#/$defs/AdditionalSelectionCallPolicy"
+        }
+      ]
+    },
+    "SelectionInvocationMode": {
+      "enum": [
+        "shared_n02",
+        "explicit_additional"
+      ],
+      "type": "string"
+    },
+    "SharedN02SelectionCallPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "shared_n02",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "SharedN02SelectionCallPolicy",
+      "type": "object"
+    },
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "SkippedDiscoveryOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "node_id": {
+          "const": "N02",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "outcome": {
+          "const": "not_evaluated",
+          "title": "Outcome",
+          "type": "string"
+        },
+        "profile_eligibility_evaluation_ref": {
+          "$ref": "#/$defs/ProfileEligibilityEvaluationRef"
+        },
+        "reason_code": {
+          "const": "no_eligible_profiles",
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "const": "skipped",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "outcome",
+        "node_id",
+        "status",
+        "reason_code",
+        "node_run_id",
+        "execution_id",
+        "profile_eligibility_evaluation_ref"
+      ],
+      "title": "SkippedDiscoveryOutput",
+      "type": "object"
+    },
+    "StringValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "StringValue",
+      "type": "object"
+    },
+    "SucceededNodeOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "duration_ms": {
+          "$ref": "#/$defs/NonNegativeBudget"
+        },
+        "finished_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "node_id": {
+          "$ref": "#/$defs/NodeId"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "output_artifacts": {
+          "$ref": "#/$defs/NodeOutputs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "status": {
+          "const": "succeeded",
+          "title": "Status",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "node_id",
+        "node_run_id",
+        "attempt_id",
+        "trace",
+        "output_artifacts",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "status"
+      ],
+      "title": "SucceededNodeOutput",
+      "type": "object"
+    },
+    "SuccessfulContextBuild": {
+      "additionalProperties": false,
+      "properties": {
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "disposition": {
+          "const": "usable",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "envelope": {
+          "$ref": "#/$defs/NodeOutputEnvelope"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "validation_report": {
+          "$ref": "#/$defs/UsableContextReport"
+        }
+      },
+      "required": [
+        "schema_version",
+        "envelope",
+        "disposition",
+        "validation_report",
+        "context_snapshot_ref",
+        "context_snapshot_digest"
+      ],
+      "title": "SuccessfulContextBuild",
+      "type": "object"
+    },
+    "SystemAttemptOwner": {
+      "additionalProperties": false,
+      "properties": {
+        "owner_kind": {
+          "const": "system",
+          "title": "Owner Kind",
+          "type": "string"
+        },
+        "requirement": {
+          "$ref": "#/$defs/SystemProducerRequirement"
+        }
+      },
+      "required": [
+        "owner_kind",
+        "requirement"
+      ],
+      "title": "SystemAttemptOwner",
+      "type": "object"
+    },
+    "SystemProducerRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_implementation_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Implementation Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "capability_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "contract_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "evaluation_ref": {
+          "$ref": "#/$defs/AbsentOptional_ReviewReportRef_"
+        },
+        "family": {
+          "const": "system_fact_producer",
+          "title": "Family",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "family",
+        "capability_id",
+        "contract_version",
+        "allowed_implementation_versions",
+        "required_features"
+      ],
+      "title": "SystemProducerRequirement",
+      "type": "object"
+    },
+    "TaskMetadataProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "const": "trusted_task_metadata",
+          "title": "Source",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "task_id"
+      ],
+      "title": "TaskMetadataProvenance",
+      "type": "object"
+    },
+    "ToolContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ToolContentRef",
+      "type": "object"
+    },
+    "ToolExecutionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "tool_execution",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ToolExecutionRef",
+      "type": "object"
+    },
+    "ToolGroundingBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "input_bindings": {
+          "$ref": "#/$defs/AbsentOptional_GroundingInputBindings_"
+        },
+        "kind": {
+          "const": "tool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "tool_ref": {
+          "$ref": "#/$defs/ToolContentRef"
+        }
+      },
+      "required": [
+        "kind",
+        "tool_ref"
+      ],
+      "title": "ToolGroundingBinding",
+      "type": "object"
+    },
+    "ToolGroundingProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_implementation_version": {
+          "$ref": "#/$defs/AbsentOptional_Annotated_str__StringConstraints__FieldInfo_annotation_NoneType__required_True__json_schema_extra___not_____pattern___"
+        },
+        "kind": {
+          "const": "tool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "nested_model_invocation_refs": {
+          "items": {
+            "$ref": "#/$defs/ModelInvocationRef"
+          },
+          "maxItems": 64,
+          "title": "Nested Model Invocation Refs",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "tool_execution_ref": {
+          "$ref": "#/$defs/ToolExecutionRef"
+        },
+        "tool_ref": {
+          "$ref": "#/$defs/ToolContentRef"
+        }
+      },
+      "required": [
+        "kind",
+        "tool_ref",
+        "tool_execution_ref",
+        "nested_model_invocation_refs"
+      ],
+      "title": "ToolGroundingProvenance",
+      "type": "object"
+    },
+    "TraceContext": {
+      "additionalProperties": false,
+      "properties": {
+        "parent_span_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Span Id"
+        },
+        "span_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Span Id"
+        },
+        "trace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_id"
+      ],
+      "title": "TraceContext",
+      "type": "object"
+    },
+    "TransformRecord": {
+      "additionalProperties": false,
+      "description": "Forward affine mapping from source to target pixel coordinates.\n\nThe six coefficients are [a, b, c, d, e, f], mapping to\nx' = a*x + b*y + c and y' = d*x + e*y + f.",
+      "properties": {
+        "affine": {
+          "maxItems": 6,
+          "minItems": 6,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            },
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            },
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            },
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            },
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            },
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            }
+          ],
+          "title": "Affine",
+          "type": "array"
+        },
+        "implementation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Implementation Id",
+          "type": "string"
+        },
+        "implementation_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Implementation Version",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/CoordinateSystem"
+        },
+        "target": {
+          "$ref": "#/$defs/CoordinateSystem"
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "implementation_id",
+        "implementation_version",
+        "affine"
+      ],
+      "title": "TransformRecord",
+      "type": "object"
+    },
+    "TransformRecords": {
+      "items": {
+        "$ref": "#/$defs/TransformRecord"
+      },
+      "maxItems": 64,
+      "type": "array"
+    },
+    "UTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    },
+    "UndispatchedSelectionFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_refs": {
+          "$ref": "#/$defs/EvidenceRefs",
+          "minLength": 1
+        },
+        "dispatched": {
+          "const": false,
+          "title": "Dispatched",
+          "type": "boolean"
+        },
+        "fallback_reason": {
+          "enum": [
+            "context_unknown",
+            "selection_review_unavailable",
+            "additional_budget_unavailable",
+            "selection_transport_failure"
+          ],
+          "title": "Fallback Reason",
+          "type": "string"
+        },
+        "trigger_attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        },
+        "triggered_method": {
+          "enum": [
+            "context_rules",
+            "model_advisory"
+          ],
+          "title": "Triggered Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "triggered_method",
+        "trigger_attempt_ref",
+        "fallback_reason",
+        "diagnostic_refs",
+        "dispatched"
+      ],
+      "title": "UndispatchedSelectionFailure",
+      "type": "object"
+    },
+    "UsableContextReport": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "usable",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "optional_issues": {
+          "$ref": "#/$defs/NodeIssues"
+        }
+      },
+      "required": [
+        "disposition",
+        "optional_issues"
+      ],
+      "title": "UsableContextReport",
+      "type": "object"
+    },
+    "ValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "path": {
+          "$ref": "#/$defs/IssuePath"
+        },
+        "related_refs": {
+          "items": {
+            "$ref": "#/$defs/ContentRef"
+          },
+          "maxItems": 16,
+          "title": "Related Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "path",
+        "message",
+        "related_refs"
+      ],
+      "title": "ValidationIssue",
+      "type": "object"
+    },
+    "Value": {
+      "discriminator": {
+        "mapping": {
+          "bool": "#/$defs/BooleanValue",
+          "enum": "#/$defs/EnumValue",
+          "integer": "#/$defs/IntegerValue",
+          "list": "#/$defs/ListValue",
+          "number": "#/$defs/NumberValue",
+          "record": "#/$defs/RecordValue",
+          "string": "#/$defs/StringValue"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BooleanValue"
+        },
+        {
+          "$ref": "#/$defs/IntegerValue"
+        },
+        {
+          "$ref": "#/$defs/NumberValue"
+        },
+        {
+          "$ref": "#/$defs/StringValue"
+        },
+        {
+          "$ref": "#/$defs/EnumValue"
+        },
+        {
+          "$ref": "#/$defs/ListValue"
+        },
+        {
+          "$ref": "#/$defs/RecordValue"
+        }
+      ]
+    },
+    "VersionConstraint": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_deployment_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Deployment Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "allowed_model_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Model Versions",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "allowed_deployment_versions",
+        "allowed_model_versions"
+      ],
+      "title": "VersionConstraint",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Explicitly selected sources for one finite coverage check.",
+  "properties": {
+    "attempts": {
+      "$ref": "#/$defs/RecordList_Attempt_"
+    },
+    "context_output": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContextBuildOutput"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "context_snapshot": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContextSnapshot"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "decision_blockers": {
+      "$ref": "#/$defs/RecordList_ObjectDecisionBlocker_"
+    },
+    "discovery_input": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DiscoveryInput"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "discovery_output": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DiscoveryOutput"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "execution": {
+      "$ref": "#/$defs/ExecutionRecord"
+    },
+    "grounding_records": {
+      "$ref": "#/$defs/RecordList_GroundingRecord_"
+    },
+    "node_runs": {
+      "$ref": "#/$defs/RecordList_NodeRun_"
+    },
+    "objects": {
+      "$ref": "#/$defs/RecordList_ObjectRecord_"
+    },
+    "question_selections": {
+      "$ref": "#/$defs/RecordList_QuestionSelectionRecord_"
+    }
+  },
+  "required": [
+    "execution",
+    "context_output",
+    "context_snapshot",
+    "discovery_output",
+    "discovery_input",
+    "question_selections",
+    "grounding_records",
+    "objects",
+    "node_runs",
+    "attempts",
+    "decision_blockers"
+  ],
+  "title": "CoverageSources",
+  "type": "object"
+}

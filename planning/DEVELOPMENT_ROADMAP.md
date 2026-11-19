@@ -2,7 +2,11 @@
 
 ## Delivery strategy
 
-Runtime-first. Contract-first. One WP at a time. Each WP requires explicit user approval before implementation and an acceptance report before the next WP begins.
+Runtime-first. Contract-first. One WP at a time. Each WP requires explicit scope coverage and an acceptance report. The standing grant covers local development and isolated testing for WP-01C through WP-07. Begin each ready package after independent plan review; record technical acceptance at handoff. Apply the actual terms recorded in the [platform authorization register](active/PLATFORM_GOAL.md#当前授权记录) at each transition.
+
+For WP-01C and WP-02 through WP-07, including their subpackages, each new implementation plan must name the development subagent model `gpt-6.2-sol` and reasoning effort `medium` for implementation, testing and fixes. Use the [project dispatch settings](../AGENTS.md#development-subagent-model) when assigning these tasks.
+
+The primary development session defaults to `gpt-6.2-sol` with `xhigh` reasoning. Request the independent read-only `planner` using `gpt-6.2-astra` with `xhigh` reasoning. Record the active session settings and the model used for each review. Existing specialist development assignments retain their recorded configuration.
 
 ## WP-00 — Repository bootstrap and architecture review
 

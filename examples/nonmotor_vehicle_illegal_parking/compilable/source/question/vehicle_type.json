@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "question_id": "vehicle_type",
+  "objective": "Vehicle type",
+  "prompt_template_ref": {
+    "$pin": [
+      "prompt_template",
+      "vehicle_type",
+      "1.0.0"
+    ]
+  },
+  "facet_refs": [
+    {
+      "$pin": [
+        "facet",
+        "parking-observations",
+        "1.0.0"
+      ]
+    }
+  ],
+  "context_allowlist": [],
+  "primary_fact_key": "vehicle_type",
+  "primary_fact_schema_ref": {
+    "$pin": [
+      "fact_schema",
+      "vehicle_type",
+      "1.0.0"
+    ]
+  },
+  "evidence_policy_ref": {
+    "$pin": [
+      "policy",
+      "question-evidence",
+      "1.0.0"
+    ]
+  },
+  "unknown_policy_ref": {
+    "$pin": [
+      "policy",
+      "unknown",
+      "1.0.0"
+    ]
+  },
+  "validation_policy_ref": {
+    "$pin": [
+      "policy",
+      "question-validation",
+      "1.0.0"
+    ]
+  }
+}

@@ -1,0 +1,1279 @@
+{
+  "$defs": {
+    "AbsentOptional_ModelBindingContentRef_": {
+      "$ref": "#/$defs/ModelBindingContentRef"
+    },
+    "AbsentOptional_RegionContentRef_": {
+      "$ref": "#/$defs/RegionContentRef"
+    },
+    "BooleanTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BooleanTypeDefinition",
+      "type": "object"
+    },
+    "BoundedString": {
+      "maxLength": 4096,
+      "type": "string"
+    },
+    "ContextSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "context_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ContextSchemaRef",
+      "type": "object"
+    },
+    "ContextTypeRegistration": {
+      "discriminator": {
+        "mapping": {
+          "context_snapshot": "#/$defs/SnapshotContextRegistration",
+          "profile_metadata": "#/$defs/ProfileContextRegistration",
+          "region_metadata": "#/$defs/RegionContextRegistration"
+        },
+        "propertyName": "source"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SnapshotContextRegistration"
+        },
+        {
+          "$ref": "#/$defs/RegionContextRegistration"
+        },
+        {
+          "$ref": "#/$defs/ProfileContextRegistration"
+        }
+      ]
+    },
+    "Directory_ContextTypeRegistration_": {
+      "items": {
+        "$ref": "#/$defs/ContextTypeRegistration"
+      },
+      "maxItems": 1024,
+      "type": "array"
+    },
+    "Directory_SchemaDescriptor_": {
+      "items": {
+        "$ref": "#/$defs/SchemaDescriptor"
+      },
+      "maxItems": 1024,
+      "type": "array"
+    },
+    "EnumTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enum",
+          "title": "Kind",
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "$ref": "#/$defs/BoundedString"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "members"
+      ],
+      "title": "EnumTypeDefinition",
+      "type": "object"
+    },
+    "EvidenceFieldSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "multiple": {
+          "title": "Multiple",
+          "type": "boolean"
+        },
+        "name": {
+          "$ref": "#/$defs/FieldName"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "required",
+        "multiple"
+      ],
+      "title": "EvidenceFieldSpec",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FieldPath": {
+      "items": {
+        "$ref": "#/$defs/FieldName"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "IntegerTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "IntegerTypeDefinition",
+      "type": "object"
+    },
+    "ListTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "item_type": {
+          "$ref": "#/$defs/TypeDefinition"
+        },
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_items": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__2",
+          "default": 256
+        },
+        "min_items": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__2",
+          "default": 0
+        }
+      },
+      "required": [
+        "kind",
+        "item_type"
+      ],
+      "title": "ListTypeDefinition",
+      "type": "object"
+    },
+    "ModelBindingContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "model_binding",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ModelBindingContentRef",
+      "type": "object"
+    },
+    "NumberTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NumberTypeDefinition",
+      "type": "object"
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "ProfileContextRegistration": {
+      "additionalProperties": false,
+      "properties": {
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "const": "profile_metadata",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref",
+        "profile_ref"
+      ],
+      "title": "ProfileContextRegistration",
+      "type": "object"
+    },
+    "RawDtoSchemaDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "descriptor_kind": {
+          "const": "raw_dto",
+          "title": "Descriptor Kind",
+          "type": "string"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/RawSchemaRef"
+        },
+        "type_definition": {
+          "$ref": "#/$defs/TypeDefinition"
+        }
+      },
+      "required": [
+        "descriptor_kind",
+        "schema_ref",
+        "type_definition"
+      ],
+      "title": "RawDtoSchemaDescriptor",
+      "type": "object"
+    },
+    "RawSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "enum": [
+            "context_schema",
+            "attribute_schema",
+            "response_schema",
+            "tool_input_schema",
+            "object_schema",
+            "decision_schema"
+          ],
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "RawSchemaRef",
+      "type": "object"
+    },
+    "RecordFieldDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/FieldName"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "type_definition": {
+          "$ref": "#/$defs/TypeDefinition"
+        }
+      },
+      "required": [
+        "name",
+        "required",
+        "type_definition"
+      ],
+      "title": "RecordFieldDefinition",
+      "type": "object"
+    },
+    "RecordTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/RecordFieldDefinition"
+          },
+          "maxItems": 64,
+          "title": "Fields",
+          "type": "array"
+        },
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fields"
+      ],
+      "title": "RecordTypeDefinition",
+      "type": "object"
+    },
+    "RegionContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "region",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RegionContentRef",
+      "type": "object"
+    },
+    "RegionContextRegistration": {
+      "additionalProperties": false,
+      "properties": {
+        "region_ref": {
+          "$ref": "#/$defs/RegionContentRef"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "const": "region_metadata",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref",
+        "region_ref"
+      ],
+      "title": "RegionContextRegistration",
+      "type": "object"
+    },
+    "Representation": {
+      "enum": [
+        "raw_dto",
+        "typed_value"
+      ],
+      "type": "string"
+    },
+    "RuleContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "rule",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RuleContentRef",
+      "type": "object"
+    },
+    "RuleSetContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "rule_set",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RuleSetContentRef",
+      "type": "object"
+    },
+    "RuleSetDefinition": {
+      "additionalProperties": false,
+      "description": "Exact Rule membership; applicability and collect-all behavior pin Policies.",
+      "properties": {
+        "applicability_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "candidate_binding_ref": {
+          "$ref": "#/$defs/AbsentOptional_ModelBindingContentRef_"
+        },
+        "conflict_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "rule_refs": {
+          "items": {
+            "$ref": "#/$defs/RuleContentRef"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Rule Refs",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "rule_set_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Rule Set Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "rule_set_id",
+        "version",
+        "rule_refs",
+        "applicability_policy_ref",
+        "conflict_policy_ref"
+      ],
+      "title": "RuleSetDefinition",
+      "type": "object"
+    },
+    "RuleSetTypeRegistration": {
+      "additionalProperties": false,
+      "properties": {
+        "definition": {
+          "$ref": "#/$defs/RuleSetDefinition"
+        },
+        "ref": {
+          "$ref": "#/$defs/RuleSetContentRef"
+        }
+      },
+      "required": [
+        "ref",
+        "definition"
+      ],
+      "title": "RuleSetTypeRegistration",
+      "type": "object"
+    },
+    "SchemaDescriptor": {
+      "discriminator": {
+        "mapping": {
+          "raw_dto": "#/$defs/RawDtoSchemaDescriptor",
+          "tool_input_record": "#/$defs/ToolInputRecordDescriptor",
+          "tool_result": "#/$defs/ToolResultSchemaDescriptor",
+          "typed_value": "#/$defs/TypedValueSchemaDescriptor"
+        },
+        "propertyName": "descriptor_kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RawDtoSchemaDescriptor"
+        },
+        {
+          "$ref": "#/$defs/TypedValueSchemaDescriptor"
+        },
+        {
+          "$ref": "#/$defs/ToolResultSchemaDescriptor"
+        },
+        {
+          "$ref": "#/$defs/ToolInputRecordDescriptor"
+        }
+      ]
+    },
+    "SnapshotContextRegistration": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "const": "context_snapshot",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref"
+      ],
+      "title": "SnapshotContextRegistration",
+      "type": "object"
+    },
+    "StringTypeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_length": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__1",
+          "default": 4096
+        },
+        "min_length": {
+          "$ref": "#/$defs/jimu_runtime__domain__values__Size__1",
+          "default": 0
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "StringTypeDefinition",
+      "type": "object"
+    },
+    "ToolInputFieldSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/FieldName"
+        },
+        "representation": {
+          "$ref": "#/$defs/Representation"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "type_definition": {
+          "$ref": "#/$defs/TypeDefinition"
+        }
+      },
+      "required": [
+        "name",
+        "required",
+        "representation",
+        "type_definition"
+      ],
+      "title": "ToolInputFieldSpec",
+      "type": "object"
+    },
+    "ToolInputRecordDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "descriptor_kind": {
+          "const": "tool_input_record",
+          "title": "Descriptor Kind",
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/ToolInputFieldSpec"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Fields",
+          "type": "array"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ToolInputSchemaRef"
+        }
+      },
+      "required": [
+        "descriptor_kind",
+        "schema_ref",
+        "fields"
+      ],
+      "title": "ToolInputRecordDescriptor",
+      "type": "object"
+    },
+    "ToolInputSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool_input_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ToolInputSchemaRef",
+      "type": "object"
+    },
+    "ToolOutputDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "output_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Output Name",
+          "type": "string"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "value_path": {
+          "$ref": "#/$defs/FieldPath"
+        }
+      },
+      "required": [
+        "output_name",
+        "value_path",
+        "required"
+      ],
+      "title": "ToolOutputDescriptor",
+      "type": "object"
+    },
+    "ToolOutputSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "tool_output_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ToolOutputSchemaRef",
+      "type": "object"
+    },
+    "ToolResultSchemaDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "descriptor_kind": {
+          "const": "tool_result",
+          "title": "Descriptor Kind",
+          "type": "string"
+        },
+        "evidence_fields": {
+          "items": {
+            "$ref": "#/$defs/EvidenceFieldSpec"
+          },
+          "maxItems": 64,
+          "title": "Evidence Fields",
+          "type": "array"
+        },
+        "output_declarations": {
+          "items": {
+            "$ref": "#/$defs/ToolOutputDescriptor"
+          },
+          "maxItems": 64,
+          "title": "Output Declarations",
+          "type": "array"
+        },
+        "payload_representation": {
+          "const": "typed_value",
+          "title": "Payload Representation",
+          "type": "string"
+        },
+        "payload_type": {
+          "$ref": "#/$defs/TypeDefinition"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ToolOutputSchemaRef"
+        }
+      },
+      "required": [
+        "descriptor_kind",
+        "schema_ref",
+        "payload_representation",
+        "payload_type",
+        "evidence_fields",
+        "output_declarations"
+      ],
+      "title": "ToolResultSchemaDescriptor",
+      "type": "object"
+    },
+    "TypeDefinition": {
+      "discriminator": {
+        "mapping": {
+          "bool": "#/$defs/BooleanTypeDefinition",
+          "enum": "#/$defs/EnumTypeDefinition",
+          "integer": "#/$defs/IntegerTypeDefinition",
+          "list": "#/$defs/ListTypeDefinition",
+          "number": "#/$defs/NumberTypeDefinition",
+          "record": "#/$defs/RecordTypeDefinition",
+          "string": "#/$defs/StringTypeDefinition"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BooleanTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/IntegerTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/NumberTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/StringTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/EnumTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/ListTypeDefinition"
+        },
+        {
+          "$ref": "#/$defs/RecordTypeDefinition"
+        }
+      ]
+    },
+    "TypedSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "enum": [
+            "value_schema",
+            "attribute_schema",
+            "tool_input_schema",
+            "response_schema"
+          ],
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "TypedSchemaRef",
+      "type": "object"
+    },
+    "TypedValueSchemaDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "descriptor_kind": {
+          "const": "typed_value",
+          "title": "Descriptor Kind",
+          "type": "string"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/TypedSchemaRef"
+        },
+        "type_definition": {
+          "$ref": "#/$defs/TypeDefinition"
+        }
+      },
+      "required": [
+        "descriptor_kind",
+        "schema_ref",
+        "type_definition"
+      ],
+      "title": "TypedValueSchemaDescriptor",
+      "type": "object"
+    },
+    "jimu_runtime__domain__values__Size__1": {
+      "maximum": 4096,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "jimu_runtime__domain__values__Size__2": {
+      "maximum": 256,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "context_registrations": {
+      "$ref": "#/$defs/Directory_ContextTypeRegistration_"
+    },
+    "descriptors": {
+      "$ref": "#/$defs/Directory_SchemaDescriptor_"
+    },
+    "profile_ref": {
+      "$ref": "#/$defs/ProfileContentRef"
+    },
+    "region_ref": {
+      "$ref": "#/$defs/AbsentOptional_RegionContentRef_"
+    },
+    "rule_ref": {
+      "$ref": "#/$defs/RuleContentRef"
+    },
+    "rule_set": {
+      "$ref": "#/$defs/RuleSetTypeRegistration"
+    },
+    "use_role": {
+      "const": "rule_condition",
+      "title": "Use Role",
+      "type": "string"
+    }
+  },
+  "required": [
+    "use_role",
+    "profile_ref",
+    "rule_ref",
+    "rule_set",
+    "context_registrations",
+    "descriptors"
+  ],
+  "title": "RuleConditionContext",
+  "type": "object"
+}

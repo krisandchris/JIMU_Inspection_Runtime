@@ -1,0 +1,626 @@
+{
+  "schema_version": "1.0.0",
+  "artifacts": [
+    {
+      "file": "vocabulary/entity-type.json",
+      "kind": "vocabulary",
+      "id": "entity-type",
+      "path": "vocabularies/entity-type.json"
+    },
+    {
+      "file": "vocabulary/lifecycle.json",
+      "kind": "vocabulary",
+      "id": "lifecycle",
+      "path": "vocabularies/lifecycle.json"
+    },
+    {
+      "file": "vocabulary/region-type.json",
+      "kind": "vocabulary",
+      "id": "region-type",
+      "path": "vocabularies/region-type.json"
+    },
+    {
+      "file": "vocabulary/scene-type.json",
+      "kind": "vocabulary",
+      "id": "scene-type",
+      "path": "vocabularies/scene-type.json"
+    },
+    {
+      "file": "vocabulary/retention.json",
+      "kind": "vocabulary",
+      "id": "retention",
+      "path": "vocabularies/retention.json"
+    },
+    {
+      "file": "vocabulary/image-frame.json",
+      "kind": "vocabulary",
+      "id": "image-frame",
+      "path": "vocabularies/image-frame.json"
+    },
+    {
+      "file": "vocabulary/geometry-unit.json",
+      "kind": "vocabulary",
+      "id": "geometry-unit",
+      "path": "vocabularies/geometry-unit.json"
+    },
+    {
+      "file": "entity/nonmotor_vehicle.json",
+      "kind": "entity",
+      "id": "nonmotor_vehicle",
+      "path": "ontology/entities.json"
+    },
+    {
+      "file": "static_asset/synthetic-parking-area-source.json",
+      "kind": "static_asset",
+      "id": "synthetic-parking-area-source",
+      "path": "resources/assets/parking-area.json"
+    },
+    {
+      "file": "geometry_resource/synthetic-parking-area.json",
+      "kind": "geometry_resource",
+      "id": "synthetic-parking-area",
+      "path": "resources/geometry/parking-area.json"
+    },
+    {
+      "file": "region/synthetic_nonmotor_parking.json",
+      "kind": "region",
+      "id": "synthetic_nonmotor_parking",
+      "path": "ontology/regions.json"
+    },
+    {
+      "file": "context_schema/parking-context.json",
+      "kind": "context_schema",
+      "id": "parking-context",
+      "path": "schemas/context/parking-context.schema.json"
+    },
+    {
+      "file": "attribute_schema/source-image.json",
+      "kind": "attribute_schema",
+      "id": "source-image",
+      "path": "schemas/attributes/source-image.schema.json"
+    },
+    {
+      "file": "object_schema/source-bbox.json",
+      "kind": "object_schema",
+      "id": "source-bbox",
+      "path": "schemas/objects/source-bbox.schema.json"
+    },
+    {
+      "file": "response_schema/model-input.json",
+      "kind": "response_schema",
+      "id": "model-input",
+      "path": "prompts/response_contracts/model-input.schema.json"
+    },
+    {
+      "file": "response_schema/profile_discovery-result.json",
+      "kind": "response_schema",
+      "id": "profile_discovery-result",
+      "path": "prompts/response_contracts/profile_discovery-result.schema.json"
+    },
+    {
+      "file": "response_schema/object_grounding-result.json",
+      "kind": "response_schema",
+      "id": "object_grounding-result",
+      "path": "prompts/response_contracts/object_grounding-result.schema.json"
+    },
+    {
+      "file": "response_schema/object_observation-result.json",
+      "kind": "response_schema",
+      "id": "object_observation-result",
+      "path": "prompts/response_contracts/object_observation-result.schema.json"
+    },
+    {
+      "file": "response_schema/candidate_prediction-result.json",
+      "kind": "response_schema",
+      "id": "candidate_prediction-result",
+      "path": "prompts/response_contracts/candidate_prediction-result.schema.json"
+    },
+    {
+      "file": "response_schema/vehicle_type-result.json",
+      "kind": "response_schema",
+      "id": "vehicle_type-result",
+      "path": "prompts/response_contracts/vehicle_type-result.schema.json"
+    },
+    {
+      "file": "response_schema/parking_state-result.json",
+      "kind": "response_schema",
+      "id": "parking_state-result",
+      "path": "prompts/response_contracts/parking_state-result.schema.json"
+    },
+    {
+      "file": "response_schema/parking_position-result.json",
+      "kind": "response_schema",
+      "id": "parking_position-result",
+      "path": "prompts/response_contracts/parking_position-result.schema.json"
+    },
+    {
+      "file": "prompt_template/profile_discovery.json",
+      "kind": "prompt_template",
+      "id": "profile_discovery",
+      "path": "prompts/templates/profile_discovery.json"
+    },
+    {
+      "file": "prompt_template/object_grounding.json",
+      "kind": "prompt_template",
+      "id": "object_grounding",
+      "path": "prompts/templates/object_grounding.json"
+    },
+    {
+      "file": "prompt_template/object_observation.json",
+      "kind": "prompt_template",
+      "id": "object_observation",
+      "path": "prompts/templates/object_observation.json"
+    },
+    {
+      "file": "prompt_template/candidate_prediction.json",
+      "kind": "prompt_template",
+      "id": "candidate_prediction",
+      "path": "prompts/templates/candidate_prediction.json"
+    },
+    {
+      "file": "prompt_template/vehicle_type.json",
+      "kind": "prompt_template",
+      "id": "vehicle_type",
+      "path": "prompts/templates/vehicle_type.json"
+    },
+    {
+      "file": "prompt_template/parking_state.json",
+      "kind": "prompt_template",
+      "id": "parking_state",
+      "path": "prompts/templates/parking_state.json"
+    },
+    {
+      "file": "prompt_template/parking_position.json",
+      "kind": "prompt_template",
+      "id": "parking_position",
+      "path": "prompts/templates/parking_position.json"
+    },
+    {
+      "file": "model_binding/profile_discovery.json",
+      "kind": "model_binding",
+      "id": "profile_discovery",
+      "path": "models/bindings.json"
+    },
+    {
+      "file": "model_binding/object_grounding.json",
+      "kind": "model_binding",
+      "id": "object_grounding",
+      "path": "models/bindings.json"
+    },
+    {
+      "file": "model_binding/object_observation.json",
+      "kind": "model_binding",
+      "id": "object_observation",
+      "path": "models/bindings.json"
+    },
+    {
+      "file": "model_binding/candidate_prediction.json",
+      "kind": "model_binding",
+      "id": "candidate_prediction",
+      "path": "models/bindings.json"
+    },
+    {
+      "file": "policy/unknown.json",
+      "kind": "policy",
+      "id": "unknown",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/question-validation.json",
+      "kind": "policy",
+      "id": "question-validation",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/question-evidence.json",
+      "kind": "policy",
+      "id": "question-evidence",
+      "path": "policies/evidence.json"
+    },
+    {
+      "file": "policy/mask-evidence.json",
+      "kind": "policy",
+      "id": "mask-evidence",
+      "path": "policies/evidence.json"
+    },
+    {
+      "file": "policy/geometry-evidence.json",
+      "kind": "policy",
+      "id": "geometry-evidence",
+      "path": "policies/evidence.json"
+    },
+    {
+      "file": "policy/tool-execution.json",
+      "kind": "policy",
+      "id": "tool-execution",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/tool-failure.json",
+      "kind": "policy",
+      "id": "tool-failure",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/skip.json",
+      "kind": "policy",
+      "id": "skip",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/resources.json",
+      "kind": "policy",
+      "id": "resources",
+      "path": "policies/resources.json"
+    },
+    {
+      "file": "policy/remote-resources.json",
+      "kind": "policy",
+      "id": "remote-resources",
+      "path": "policies/resources.json"
+    },
+    {
+      "file": "policy/provider.json",
+      "kind": "policy",
+      "id": "provider",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/fallback.json",
+      "kind": "policy",
+      "id": "fallback",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/selection.json",
+      "kind": "policy",
+      "id": "selection",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/applicability.json",
+      "kind": "policy",
+      "id": "applicability",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/rule.json",
+      "kind": "policy",
+      "id": "rule",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/conflict.json",
+      "kind": "policy",
+      "id": "conflict",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/coverage.json",
+      "kind": "policy",
+      "id": "coverage",
+      "path": "policies/coverage.json"
+    },
+    {
+      "file": "policy/context-provenance.json",
+      "kind": "policy",
+      "id": "context-provenance",
+      "path": "policies/registry.json"
+    },
+    {
+      "file": "policy/workflow.json",
+      "kind": "policy",
+      "id": "workflow",
+      "path": "policies/execution.json"
+    },
+    {
+      "file": "fact_schema/vehicle_type.json",
+      "kind": "fact_schema",
+      "id": "vehicle_type",
+      "path": "schemas/facts/definitions/vehicle_type.json"
+    },
+    {
+      "file": "question/vehicle_type.json",
+      "kind": "question",
+      "id": "vehicle_type",
+      "path": "capabilities/questions.json"
+    },
+    {
+      "file": "fact_schema/parking_state.json",
+      "kind": "fact_schema",
+      "id": "parking_state",
+      "path": "schemas/facts/definitions/parking_state.json"
+    },
+    {
+      "file": "question/parking_state.json",
+      "kind": "question",
+      "id": "parking_state",
+      "path": "capabilities/questions.json"
+    },
+    {
+      "file": "fact_schema/parking_position.json",
+      "kind": "fact_schema",
+      "id": "parking_position",
+      "path": "schemas/facts/definitions/parking_position.json"
+    },
+    {
+      "file": "question/parking_position.json",
+      "kind": "question",
+      "id": "parking_position",
+      "path": "capabilities/questions.json"
+    },
+    {
+      "file": "facet/parking-observations.json",
+      "kind": "facet",
+      "id": "parking-observations",
+      "path": "capabilities/facets.json"
+    },
+    {
+      "file": "fact_schema/wheel_mask.json",
+      "kind": "fact_schema",
+      "id": "wheel_mask",
+      "path": "schemas/facts/definitions/wheel_mask.json"
+    },
+    {
+      "file": "fact_schema/tactile_paving_mask.json",
+      "kind": "fact_schema",
+      "id": "tactile_paving_mask",
+      "path": "schemas/facts/definitions/tactile_paving_mask.json"
+    },
+    {
+      "file": "fact_schema/wheel_boundary_relation.json",
+      "kind": "fact_schema",
+      "id": "wheel_boundary_relation",
+      "path": "schemas/facts/definitions/wheel_boundary_relation.json"
+    },
+    {
+      "file": "tool_input_schema/wheel_segmentation-input.json",
+      "kind": "tool_input_schema",
+      "id": "wheel_segmentation-input",
+      "path": "schemas/tools/inputs/wheel_segmentation-input.schema.json"
+    },
+    {
+      "file": "tool_output_schema/wheel_segmentation-result.json",
+      "kind": "tool_output_schema",
+      "id": "wheel_segmentation-result",
+      "path": "schemas/tools/outputs/wheel_segmentation-result.schema.json"
+    },
+    {
+      "file": "tool/wheel_segmentation.json",
+      "kind": "tool",
+      "id": "wheel_segmentation",
+      "path": "tools/registry.json"
+    },
+    {
+      "file": "tool_input_schema/tactile_paving_segmentation-input.json",
+      "kind": "tool_input_schema",
+      "id": "tactile_paving_segmentation-input",
+      "path": "schemas/tools/inputs/tactile_paving_segmentation-input.schema.json"
+    },
+    {
+      "file": "tool_output_schema/tactile_paving_segmentation-result.json",
+      "kind": "tool_output_schema",
+      "id": "tactile_paving_segmentation-result",
+      "path": "schemas/tools/outputs/tactile_paving_segmentation-result.schema.json"
+    },
+    {
+      "file": "tool/tactile_paving_segmentation.json",
+      "kind": "tool",
+      "id": "tactile_paving_segmentation",
+      "path": "tools/registry.json"
+    },
+    {
+      "file": "tool_input_schema/wheel_boundary_geometry-input.json",
+      "kind": "tool_input_schema",
+      "id": "wheel_boundary_geometry-input",
+      "path": "schemas/tools/inputs/wheel_boundary_geometry-input.schema.json"
+    },
+    {
+      "file": "tool_output_schema/wheel_boundary_geometry-result.json",
+      "kind": "tool_output_schema",
+      "id": "wheel_boundary_geometry-result",
+      "path": "schemas/tools/outputs/wheel_boundary_geometry-result.schema.json"
+    },
+    {
+      "file": "tool/wheel_boundary_geometry.json",
+      "kind": "tool",
+      "id": "wheel_boundary_geometry",
+      "path": "tools/registry.json"
+    },
+    {
+      "file": "tool_plan/nonmotor_vehicle_geometry.json",
+      "kind": "tool_plan",
+      "id": "nonmotor_vehicle_geometry",
+      "path": "tools/plans.json"
+    },
+    {
+      "file": "rule/nonmotor_vehicle_illegal_parking.json",
+      "kind": "rule",
+      "id": "nonmotor_vehicle_illegal_parking",
+      "path": "rules/registry.json"
+    },
+    {
+      "file": "rule_set/parking-rules.json",
+      "kind": "rule_set",
+      "id": "parking-rules",
+      "path": "rules/sets.json"
+    },
+    {
+      "file": "profile/nonmotor_vehicle.json",
+      "kind": "profile",
+      "id": "nonmotor_vehicle",
+      "path": "capabilities/profiles.json"
+    },
+    {
+      "file": "response_schema/object_observation-input.json",
+      "kind": "response_schema",
+      "id": "object_observation-input",
+      "path": "prompts/response_contracts/object_observation-input.schema.json"
+    }
+  ],
+  "raw_assets": [
+    {
+      "id": "synthetic-parking-area-source",
+      "path": "resources/assets/data/parking-area.json",
+      "file": "parking-area.json"
+    }
+  ],
+  "capabilities": [
+    {
+      "family": "model_deployment",
+      "capability_id": "synthetic.nonmotor.parking.loopback",
+      "contract_version": "1.0.0",
+      "allowed_implementation_versions": [
+        "1.0.0"
+      ],
+      "required_features": [
+        "rgb_image",
+        "typed_context",
+        "structured_output",
+        "original_xyxy"
+      ]
+    },
+    {
+      "family": "tool_implementation",
+      "capability_id": "synthetic.cpu.wheel_segmentation",
+      "contract_version": "1.0.0",
+      "allowed_implementation_versions": [
+        "1.0.0"
+      ],
+      "required_features": [
+        "rgb_image",
+        "structured_output",
+        "original_xyxy",
+        "mask_output"
+      ]
+    },
+    {
+      "family": "tool_implementation",
+      "capability_id": "synthetic.cpu.tactile_paving_segmentation",
+      "contract_version": "1.0.0",
+      "allowed_implementation_versions": [
+        "1.0.0"
+      ],
+      "required_features": [
+        "rgb_image",
+        "structured_output",
+        "original_xyxy",
+        "mask_output"
+      ]
+    },
+    {
+      "family": "tool_implementation",
+      "capability_id": "synthetic.cpu.wheel_boundary_geometry",
+      "contract_version": "1.0.0",
+      "allowed_implementation_versions": [
+        "1.0.0"
+      ],
+      "required_features": [
+        "rgb_image",
+        "structured_output",
+        "original_xyxy",
+        "geometry_output"
+      ]
+    }
+  ],
+  "deployment": {
+    "provider_id": "synthetic.loopback",
+    "deployment_id": "synthetic.nonmotor.parking.loopback",
+    "logical_model_id": "synthetic.nonmotor.parking",
+    "provider_kind": "remote",
+    "deployment_version": "1.0.0",
+    "model_version": "1.0.0"
+  },
+  "model_roles": [
+    {
+      "role": "profile_discovery",
+      "input_schema": {
+        "kind": "response_schema",
+        "id": "model-input",
+        "version": "1.0.0"
+      },
+      "output_schema": {
+        "kind": "response_schema",
+        "id": "profile_discovery-result",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "role": "object_grounding",
+      "input_schema": {
+        "kind": "response_schema",
+        "id": "model-input",
+        "version": "1.0.0"
+      },
+      "output_schema": {
+        "kind": "response_schema",
+        "id": "object_grounding-result",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "role": "object_observation",
+      "input_schema": {
+        "kind": "response_schema",
+        "id": "object_observation-input",
+        "version": "1.0.0"
+      },
+      "output_schema": {
+        "kind": "response_schema",
+        "id": "object_observation-result",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "role": "candidate_prediction",
+      "input_schema": {
+        "kind": "response_schema",
+        "id": "model-input",
+        "version": "1.0.0"
+      },
+      "output_schema": {
+        "kind": "response_schema",
+        "id": "candidate_prediction-result",
+        "version": "1.0.0"
+      }
+    }
+  ],
+  "tool_protocols": [
+    {
+      "input_schema": {
+        "kind": "tool_input_schema",
+        "id": "wheel_segmentation-input",
+        "version": "1.0.0"
+      },
+      "output_schema": {
+        "kind": "tool_output_schema",
+        "id": "wheel_segmentation-result",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "input_schema": {
+        "kind": "tool_input_schema",
+        "id": "tactile_paving_segmentation-input",
+        "version": "1.0.0"
+      },
+      "output_schema": {
+        "kind": "tool_output_schema",
+        "id": "tactile_paving_segmentation-result",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "input_schema": {
+        "kind": "tool_input_schema",
+        "id": "wheel_boundary_geometry-input",
+        "version": "1.0.0"
+      },
+      "output_schema": {
+        "kind": "tool_output_schema",
+        "id": "wheel_boundary_geometry-result",
+        "version": "1.0.0"
+      }
+    }
+  ]
+}

@@ -1,0 +1,2083 @@
+{
+  "$defs": {
+    "AbsentOptional_ApplicabilityAncestorRef_": {
+      "$ref": "#/$defs/ApplicabilityAncestorRef"
+    },
+    "AbsentOptional_AttemptRef_": {
+      "$ref": "#/$defs/AttemptRef"
+    },
+    "AbsentOptional_NodeRunRef_": {
+      "$ref": "#/$defs/NodeRunRef"
+    },
+    "AbsentOptional_ObjectRef_": {
+      "$ref": "#/$defs/ObjectRef"
+    },
+    "AbsentOptional_ReviewReportRef_": {
+      "$ref": "#/$defs/ReviewReportRef"
+    },
+    "AbsentOptional_RuleSetContentRef_": {
+      "$ref": "#/$defs/RuleSetContentRef"
+    },
+    "ApplicabilityAncestorRef": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProfileEligibilityEvaluationRef"
+        },
+        {
+          "$ref": "#/$defs/RuleSetApplicabilityEvaluationRef"
+        }
+      ]
+    },
+    "ApplicabilityAttemptBinding": {
+      "additionalProperties": false,
+      "description": "Finite view of an Attempt's actual N06 invocation scope.",
+      "properties": {
+        "attempt": {
+          "$ref": "#/$defs/AttemptDescriptor"
+        },
+        "object_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObjectRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "attempt"
+      ],
+      "title": "ApplicabilityAttemptBinding",
+      "type": "object"
+    },
+    "ApplicabilityDiagnosticRef": {
+      "additionalProperties": false,
+      "description": "Location of a diagnostic in an evaluated level of a persisted trace.",
+      "properties": {
+        "issue_index": {
+          "$ref": "#/$defs/IssueIndex"
+        },
+        "level": {
+          "$ref": "#/$defs/ApplicabilityLevel"
+        },
+        "trace_ref": {
+          "$ref": "#/$defs/ApplicabilityTraceRef"
+        }
+      },
+      "required": [
+        "trace_ref",
+        "level",
+        "issue_index"
+      ],
+      "title": "ApplicabilityDiagnosticRef",
+      "type": "object"
+    },
+    "ApplicabilityDisposition": {
+      "enum": [
+        "included",
+        "excluded",
+        "unresolved"
+      ],
+      "title": "ApplicabilityDisposition",
+      "type": "string"
+    },
+    "ApplicabilityEvaluationOwner": {
+      "enum": [
+        "pre_n02_gate",
+        "n06"
+      ],
+      "title": "ApplicabilityEvaluationOwner",
+      "type": "string"
+    },
+    "ApplicabilityEvaluationRef": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApplicabilityAncestorRef"
+        },
+        {
+          "$ref": "#/$defs/RuleApplicabilityEvaluationRef"
+        }
+      ]
+    },
+    "ApplicabilityLevel": {
+      "enum": [
+        "profile",
+        "rule_set",
+        "rule"
+      ],
+      "title": "ApplicabilityLevel",
+      "type": "string"
+    },
+    "ApplicabilityLevelTrace": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/_EvaluatedBranch"
+        },
+        {
+          "$ref": "#/$defs/_NotEvaluatedBranch"
+        }
+      ]
+    },
+    "ApplicabilityReason": {
+      "enum": [
+        "included_by_policy",
+        "excluded_by_policy",
+        "metadata_unknown",
+        "metadata_invalid",
+        "ancestor_excluded",
+        "ancestor_unresolved"
+      ],
+      "title": "ApplicabilityReason",
+      "type": "string"
+    },
+    "ApplicabilityReasonEvidenceRef": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        {
+          "$ref": "#/$defs/ContextFieldSelector"
+        }
+      ]
+    },
+    "ApplicabilityTargetRef": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        {
+          "$ref": "#/$defs/RuleSetContentRef"
+        },
+        {
+          "$ref": "#/$defs/RuleContentRef"
+        }
+      ]
+    },
+    "ApplicabilityTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "applicability_trace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Applicability Trace Id",
+          "type": "string"
+        },
+        "bundle_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Digest",
+          "type": "string"
+        },
+        "context_snapshot_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Context Snapshot Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "created_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "decisive_level": {
+          "$ref": "#/$defs/ApplicabilityLevel"
+        },
+        "disposition": {
+          "$ref": "#/$defs/ApplicabilityDisposition"
+        },
+        "effective_truth": {
+          "$ref": "#/$defs/RuleTruth"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "levels": {
+          "items": {
+            "$ref": "#/$defs/ApplicabilityLevelTrace"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Levels",
+          "type": "array"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "release_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_ref": {
+          "$ref": "#/$defs/ApplicabilityTargetRef"
+        }
+      },
+      "required": [
+        "schema_version",
+        "execution_id",
+        "release_id",
+        "bundle_digest",
+        "context_snapshot_ref",
+        "applicability_trace_id",
+        "target_ref",
+        "profile_ref",
+        "context_snapshot_digest",
+        "levels",
+        "effective_truth",
+        "disposition",
+        "decisive_level",
+        "created_at"
+      ],
+      "title": "ApplicabilityTrace",
+      "type": "object"
+    },
+    "ApplicabilityTraceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "applicability_trace",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ApplicabilityTraceRef",
+      "type": "object"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "entity",
+        "region",
+        "profile",
+        "facet",
+        "question",
+        "tool",
+        "tool_plan",
+        "rule",
+        "rule_set",
+        "model_binding",
+        "fact_schema",
+        "prompt_template",
+        "response_schema",
+        "attribute_schema",
+        "context_schema",
+        "tool_input_schema",
+        "tool_output_schema",
+        "object_schema",
+        "decision_schema",
+        "value_schema",
+        "policy",
+        "vocabulary",
+        "geometry_resource",
+        "static_asset",
+        "fact_producer_catalog"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "AttemptDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_number": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "attempt_ref": {
+          "$ref": "#/$defs/AttemptRef"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/$defs/AttemptOwner"
+        },
+        "status": {
+          "$ref": "#/$defs/AttemptStatus"
+        }
+      },
+      "required": [
+        "attempt_ref",
+        "execution_id",
+        "owner",
+        "attempt_number",
+        "status"
+      ],
+      "title": "AttemptDescriptor",
+      "type": "object"
+    },
+    "AttemptOwner": {
+      "discriminator": {
+        "mapping": {
+          "node": "#/$defs/NodeAttemptOwner",
+          "system": "#/$defs/SystemAttemptOwner"
+        },
+        "propertyName": "owner_kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NodeAttemptOwner"
+        },
+        {
+          "$ref": "#/$defs/SystemAttemptOwner"
+        }
+      ]
+    },
+    "AttemptRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "attempt",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "AttemptRef",
+      "type": "object"
+    },
+    "AttemptStatus": {
+      "enum": [
+        "created",
+        "running",
+        "succeeded",
+        "failed",
+        "timed_out",
+        "cancelled",
+        "superseded"
+      ],
+      "title": "AttemptStatus",
+      "type": "string"
+    },
+    "CapabilityFeature": {
+      "enum": [
+        "rgb_image",
+        "typed_context",
+        "structured_output",
+        "original_xyxy",
+        "mask_output",
+        "geometry_output",
+        "ocr_text"
+      ],
+      "title": "CapabilityFeature",
+      "type": "string"
+    },
+    "ContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ContentRef",
+      "type": "object"
+    },
+    "ContextFieldSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "items": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Field Path",
+          "type": "array"
+        },
+        "schema_ref": {
+          "$ref": "#/$defs/ContextSchemaRef"
+        },
+        "source": {
+          "$ref": "#/$defs/ContextSource"
+        }
+      },
+      "required": [
+        "source",
+        "schema_ref",
+        "field_path"
+      ],
+      "title": "ContextFieldSelector",
+      "type": "object"
+    },
+    "ContextSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "context_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ContextSchemaRef",
+      "type": "object"
+    },
+    "ContextSnapshotRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "context_snapshot",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ContextSnapshotRef",
+      "type": "object"
+    },
+    "ContextSource": {
+      "enum": [
+        "context_snapshot",
+        "region_metadata",
+        "profile_metadata"
+      ],
+      "title": "ContextSource",
+      "type": "string"
+    },
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "EvaluatedApplicabilityLevel": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "truth": {
+                "const": "true"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reason_code": {
+                "enum": [
+                  "included_by_policy"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "truth": {
+                "const": "false"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reason_code": {
+                "enum": [
+                  "excluded_by_policy"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "truth": {
+                "const": "unknown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reason_code": {
+                "enum": [
+                  "metadata_unknown",
+                  "metadata_invalid"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "truth": {
+                "const": "false"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reason_evidence_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "truth": {
+                "const": "unknown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "validation_issues": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "level": {
+                "const": "profile"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evaluation_owner": {
+                "const": "pre_n02_gate"
+              },
+              "source_evaluation_ref": {
+                "properties": {
+                  "record_kind": {
+                    "const": "profile_eligibility_evaluation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "level": {
+                "const": "rule_set"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evaluation_owner": {
+                "const": "n06"
+              },
+              "source_evaluation_ref": {
+                "properties": {
+                  "record_kind": {
+                    "const": "rule_set_applicability_evaluation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "level": {
+                "const": "rule"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evaluation_owner": {
+                "const": "n06"
+              },
+              "source_evaluation_ref": {
+                "properties": {
+                  "record_kind": {
+                    "const": "rule_applicability_evaluation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "declared_input_refs": {
+          "items": {
+            "$ref": "#/$defs/ContextFieldSelector"
+          },
+          "maxItems": 1024,
+          "title": "Declared Input Refs",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "evaluation_owner": {
+          "$ref": "#/$defs/ApplicabilityEvaluationOwner"
+        },
+        "evaluation_status": {
+          "const": "evaluated",
+          "title": "Evaluation Status",
+          "type": "string"
+        },
+        "level": {
+          "$ref": "#/$defs/ApplicabilityLevel"
+        },
+        "policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "reason_code": {
+          "$ref": "#/$defs/ApplicabilityReason"
+        },
+        "reason_evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/ApplicabilityReasonEvidenceRef"
+          },
+          "maxItems": 1024,
+          "title": "Reason Evidence Refs",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "source_evaluation_ref": {
+          "$ref": "#/$defs/ApplicabilityEvaluationRef"
+        },
+        "target_ref": {
+          "$ref": "#/$defs/ApplicabilityTargetRef"
+        },
+        "truth": {
+          "$ref": "#/$defs/RuleTruth"
+        },
+        "validation_issues": {
+          "items": {
+            "$ref": "#/$defs/ValidationIssue"
+          },
+          "maxItems": 64,
+          "title": "Validation Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "level",
+        "target_ref",
+        "policy_ref",
+        "evaluation_status",
+        "truth",
+        "evaluation_owner",
+        "source_evaluation_ref",
+        "declared_input_refs",
+        "reason_code",
+        "reason_evidence_refs",
+        "validation_issues"
+      ],
+      "title": "EvaluatedApplicabilityLevel",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "IssueIndex": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "IssuePath": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/FieldName"
+          },
+          {
+            "$ref": "#/$defs/IssueIndex"
+          }
+        ]
+      },
+      "maxItems": 32,
+      "type": "array"
+    },
+    "NodeAttemptOwner": {
+      "additionalProperties": false,
+      "properties": {
+        "node_run_ref": {
+          "$ref": "#/$defs/NodeRunRef"
+        },
+        "owner_kind": {
+          "const": "node",
+          "title": "Owner Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner_kind",
+        "node_run_ref"
+      ],
+      "title": "NodeAttemptOwner",
+      "type": "object"
+    },
+    "NodeRunDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "node_id": {
+          "enum": [
+            "N01",
+            "N02",
+            "N03",
+            "N04",
+            "N05",
+            "N06"
+          ],
+          "title": "Node Id",
+          "type": "string"
+        },
+        "node_run_ref": {
+          "$ref": "#/$defs/NodeRunRef"
+        },
+        "status": {
+          "$ref": "#/$defs/NodeRunStatus"
+        }
+      },
+      "required": [
+        "node_run_ref",
+        "execution_id",
+        "node_id",
+        "status"
+      ],
+      "title": "NodeRunDescriptor",
+      "type": "object"
+    },
+    "NodeRunRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "node_run",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "NodeRunRef",
+      "type": "object"
+    },
+    "NodeRunStatus": {
+      "enum": [
+        "pending",
+        "ready",
+        "running",
+        "succeeded",
+        "failed",
+        "blocked",
+        "skipped",
+        "cancelled"
+      ],
+      "title": "NodeRunStatus",
+      "type": "string"
+    },
+    "NotEvaluatedApplicabilityLevel": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "level": {
+              "not": {
+                "const": "profile"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "level": {
+                "const": "rule_set"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "decisive_ancestor_ref": {
+                "properties": {
+                  "record_kind": {
+                    "const": "profile_eligibility_evaluation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "decisive_ancestor_ref": {
+          "$ref": "#/$defs/ApplicabilityAncestorRef"
+        },
+        "evaluation_status": {
+          "const": "not_evaluated",
+          "title": "Evaluation Status",
+          "type": "string"
+        },
+        "level": {
+          "$ref": "#/$defs/ApplicabilityLevel"
+        },
+        "policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "reason_code": {
+          "enum": [
+            "ancestor_excluded",
+            "ancestor_unresolved"
+          ],
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "target_ref": {
+          "$ref": "#/$defs/ApplicabilityTargetRef"
+        }
+      },
+      "required": [
+        "level",
+        "target_ref",
+        "policy_ref",
+        "evaluation_status",
+        "reason_code",
+        "decisive_ancestor_ref"
+      ],
+      "title": "NotEvaluatedApplicabilityLevel",
+      "type": "object"
+    },
+    "ObjectDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "object_ref": {
+          "$ref": "#/$defs/ObjectRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        }
+      },
+      "required": [
+        "object_ref",
+        "execution_id",
+        "profile_ref"
+      ],
+      "title": "ObjectDescriptor",
+      "type": "object"
+    },
+    "ObjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "object",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ObjectRef",
+      "type": "object"
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "PositiveBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "ProfileEligibilityEvaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "applicability_traces": {
+          "items": {
+            "$ref": "#/$defs/ApplicabilityTraceRef"
+          },
+          "maxItems": 1024,
+          "title": "Applicability Traces",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "bundle_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Digest",
+          "type": "string"
+        },
+        "configured_profile_refs": {
+          "$ref": "#/$defs/ProfileEligibilityScopeRefs"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "eligible_profiles": {
+          "$ref": "#/$defs/ProfileEligibilityScopeRefs"
+        },
+        "evaluated_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "evaluation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "excluded_profiles": {
+          "$ref": "#/$defs/ProfileEligibilityScopeRefs"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "release_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "unresolved_profiles": {
+          "$ref": "#/$defs/ProfileEligibilityScopeRefs"
+        },
+        "workflow_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Workflow Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "execution_id",
+        "release_id",
+        "bundle_digest",
+        "context_snapshot_ref",
+        "evaluation_id",
+        "workflow_version",
+        "evaluated_at",
+        "configured_profile_refs",
+        "eligible_profiles",
+        "excluded_profiles",
+        "unresolved_profiles",
+        "applicability_traces"
+      ],
+      "title": "ProfileEligibilityEvaluation",
+      "type": "object"
+    },
+    "ProfileEligibilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "profile_eligibility_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ProfileEligibilityEvaluationRef",
+      "type": "object"
+    },
+    "ProfileEligibilityScopeRefs": {
+      "items": {
+        "$ref": "#/$defs/ProfileContentRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "ReviewReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "report_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "review_registry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Review Registry Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "version",
+        "sha256",
+        "review_registry_id"
+      ],
+      "title": "ReviewReportRef",
+      "type": "object"
+    },
+    "RuleApplicabilityEvaluation": {
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "decisive_ancestor_ref": false
+          },
+          "required": [
+            "node_run_ref",
+            "attempt_ref"
+          ]
+        },
+        {
+          "properties": {
+            "attempt_ref": false,
+            "node_run_ref": false,
+            "object_ref": false
+          },
+          "required": [
+            "decisive_ancestor_ref"
+          ]
+        }
+      ],
+      "properties": {
+        "applicability_trace_ref": {
+          "$ref": "#/$defs/ApplicabilityTraceRef"
+        },
+        "attempt_ref": {
+          "$ref": "#/$defs/AbsentOptional_AttemptRef_"
+        },
+        "bundle_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "decisive_ancestor_ref": {
+          "$ref": "#/$defs/AbsentOptional_ApplicabilityAncestorRef_"
+        },
+        "evaluation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "node_run_ref": {
+          "$ref": "#/$defs/AbsentOptional_NodeRunRef_"
+        },
+        "object_ref": {
+          "$ref": "#/$defs/AbsentOptional_ObjectRef_"
+        },
+        "profile_eligibility_evaluation_ref": {
+          "$ref": "#/$defs/ProfileEligibilityEvaluationRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "recorded_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "release_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "rule_ref": {
+          "$ref": "#/$defs/RuleContentRef"
+        },
+        "rule_set_applicability_evaluation_ref": {
+          "$ref": "#/$defs/RuleSetApplicabilityEvaluationRef"
+        },
+        "rule_set_ref": {
+          "$ref": "#/$defs/RuleSetContentRef"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "execution_id",
+        "release_id",
+        "bundle_digest",
+        "context_snapshot_ref",
+        "evaluation_id",
+        "profile_eligibility_evaluation_ref",
+        "profile_ref",
+        "rule_set_ref",
+        "applicability_trace_ref",
+        "recorded_at",
+        "rule_ref",
+        "rule_set_applicability_evaluation_ref"
+      ],
+      "title": "RuleApplicabilityEvaluation",
+      "type": "object"
+    },
+    "RuleApplicabilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "rule_applicability_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "RuleApplicabilityEvaluationRef",
+      "type": "object"
+    },
+    "RuleContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "rule",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RuleContentRef",
+      "type": "object"
+    },
+    "RuleSetApplicabilityEvaluation": {
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "decisive_ancestor_ref": false
+          },
+          "required": [
+            "node_run_ref",
+            "attempt_ref"
+          ]
+        },
+        {
+          "properties": {
+            "attempt_ref": false,
+            "node_run_ref": false,
+            "object_ref": false
+          },
+          "required": [
+            "decisive_ancestor_ref"
+          ]
+        }
+      ],
+      "properties": {
+        "applicability_trace_ref": {
+          "$ref": "#/$defs/ApplicabilityTraceRef"
+        },
+        "attempt_ref": {
+          "$ref": "#/$defs/AbsentOptional_AttemptRef_"
+        },
+        "bundle_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Digest",
+          "type": "string"
+        },
+        "context_snapshot_ref": {
+          "$ref": "#/$defs/ContextSnapshotRef"
+        },
+        "decisive_ancestor_ref": {
+          "$ref": "#/$defs/AbsentOptional_ApplicabilityAncestorRef_"
+        },
+        "evaluation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "node_run_ref": {
+          "$ref": "#/$defs/AbsentOptional_NodeRunRef_"
+        },
+        "object_ref": {
+          "$ref": "#/$defs/AbsentOptional_ObjectRef_"
+        },
+        "profile_eligibility_evaluation_ref": {
+          "$ref": "#/$defs/ProfileEligibilityEvaluationRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "recorded_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "release_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "rule_set_ref": {
+          "$ref": "#/$defs/RuleSetContentRef"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "execution_id",
+        "release_id",
+        "bundle_digest",
+        "context_snapshot_ref",
+        "evaluation_id",
+        "profile_eligibility_evaluation_ref",
+        "profile_ref",
+        "rule_set_ref",
+        "applicability_trace_ref",
+        "recorded_at"
+      ],
+      "title": "RuleSetApplicabilityEvaluation",
+      "type": "object"
+    },
+    "RuleSetApplicabilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "rule_set_applicability_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "RuleSetApplicabilityEvaluationRef",
+      "type": "object"
+    },
+    "RuleSetContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "rule_set",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RuleSetContentRef",
+      "type": "object"
+    },
+    "RuleTruth": {
+      "enum": [
+        "true",
+        "false",
+        "unknown"
+      ],
+      "title": "RuleTruth",
+      "type": "string"
+    },
+    "SystemAttemptOwner": {
+      "additionalProperties": false,
+      "properties": {
+        "owner_kind": {
+          "const": "system",
+          "title": "Owner Kind",
+          "type": "string"
+        },
+        "requirement": {
+          "$ref": "#/$defs/SystemProducerRequirement"
+        }
+      },
+      "required": [
+        "owner_kind",
+        "requirement"
+      ],
+      "title": "SystemAttemptOwner",
+      "type": "object"
+    },
+    "SystemProducerRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_implementation_versions": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 5,
+            "not": {
+              "pattern": "\\s"
+            },
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Allowed Implementation Versions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "capability_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "contract_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "evaluation_ref": {
+          "$ref": "#/$defs/AbsentOptional_ReviewReportRef_"
+        },
+        "family": {
+          "const": "system_fact_producer",
+          "title": "Family",
+          "type": "string"
+        },
+        "required_features": {
+          "items": {
+            "$ref": "#/$defs/CapabilityFeature"
+          },
+          "maxItems": 7,
+          "title": "Required Features",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "family",
+        "capability_id",
+        "contract_version",
+        "allowed_implementation_versions",
+        "required_features"
+      ],
+      "title": "SystemProducerRequirement",
+      "type": "object"
+    },
+    "UTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    },
+    "UnresolvedObligation": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "properties": {
+              "rule_set_ref": false
+            }
+          },
+          "if": {
+            "properties": {
+              "scope": {
+                "const": "rule"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "rule_set_ref"
+            ]
+          }
+        },
+        {
+          "else": {
+            "properties": {
+              "decisive_ancestor_ref": false
+            }
+          },
+          "if": {
+            "properties": {
+              "reason_code": {
+                "const": "ancestor_unresolved"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "scope": {
+                "not": {
+                  "const": "profile"
+                }
+              }
+            },
+            "required": [
+              "decisive_ancestor_ref"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "applicability_trace_ref": {
+          "$ref": "#/$defs/ApplicabilityTraceRef"
+        },
+        "decisive_ancestor_ref": {
+          "$ref": "#/$defs/AbsentOptional_ApplicabilityAncestorRef_"
+        },
+        "diagnostic_refs": {
+          "items": {
+            "$ref": "#/$defs/ApplicabilityDiagnosticRef"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Diagnostic Refs",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "object_ref": {
+          "$ref": "#/$defs/AbsentOptional_ObjectRef_"
+        },
+        "obligation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Obligation Id",
+          "type": "string"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "reason_code": {
+          "enum": [
+            "metadata_unknown",
+            "metadata_invalid",
+            "ancestor_unresolved"
+          ],
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "rule_set_ref": {
+          "$ref": "#/$defs/AbsentOptional_RuleSetContentRef_"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/ApplicabilityLevel"
+        },
+        "target_ref": {
+          "$ref": "#/$defs/ApplicabilityTargetRef"
+        }
+      },
+      "required": [
+        "schema_version",
+        "obligation_id",
+        "execution_id",
+        "profile_ref",
+        "scope",
+        "target_ref",
+        "applicability_trace_ref",
+        "reason_code",
+        "diagnostic_refs"
+      ],
+      "title": "UnresolvedObligation",
+      "type": "object"
+    },
+    "ValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "path": {
+          "$ref": "#/$defs/IssuePath"
+        },
+        "related_refs": {
+          "items": {
+            "$ref": "#/$defs/ContentRef"
+          },
+          "maxItems": 16,
+          "title": "Related Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "path",
+        "message",
+        "related_refs"
+      ],
+      "title": "ValidationIssue",
+      "type": "object"
+    },
+    "_Directory_ApplicabilityAttemptBinding_": {
+      "items": {
+        "$ref": "#/$defs/ApplicabilityAttemptBinding"
+      },
+      "maxItems": 4096,
+      "type": "array"
+    },
+    "_Directory_ApplicabilityTrace_": {
+      "items": {
+        "$ref": "#/$defs/ApplicabilityTrace"
+      },
+      "maxItems": 4096,
+      "type": "array"
+    },
+    "_Directory_NodeRunDescriptor_": {
+      "items": {
+        "$ref": "#/$defs/NodeRunDescriptor"
+      },
+      "maxItems": 4096,
+      "type": "array"
+    },
+    "_Directory_ObjectDescriptor_": {
+      "items": {
+        "$ref": "#/$defs/ObjectDescriptor"
+      },
+      "maxItems": 4096,
+      "type": "array"
+    },
+    "_Directory_RuleApplicabilityEvaluation_": {
+      "items": {
+        "$ref": "#/$defs/RuleApplicabilityEvaluation"
+      },
+      "maxItems": 4096,
+      "type": "array"
+    },
+    "_Directory_RuleSetApplicabilityEvaluation_": {
+      "items": {
+        "$ref": "#/$defs/RuleSetApplicabilityEvaluation"
+      },
+      "maxItems": 4096,
+      "type": "array"
+    },
+    "_Directory_UnresolvedObligation_": {
+      "items": {
+        "$ref": "#/$defs/UnresolvedObligation"
+      },
+      "maxItems": 4096,
+      "type": "array"
+    },
+    "_EvaluatedBranch": {
+      "$ref": "#/$defs/EvaluatedApplicabilityLevel"
+    },
+    "_NotEvaluatedBranch": {
+      "$ref": "#/$defs/NotEvaluatedApplicabilityLevel"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Explicit chosen records for one Execution, with injected association evidence.",
+  "properties": {
+    "attempts": {
+      "$ref": "#/$defs/_Directory_ApplicabilityAttemptBinding_"
+    },
+    "node_runs": {
+      "$ref": "#/$defs/_Directory_NodeRunDescriptor_"
+    },
+    "objects": {
+      "$ref": "#/$defs/_Directory_ObjectDescriptor_"
+    },
+    "profile_eligibility": {
+      "$ref": "#/$defs/ProfileEligibilityEvaluation"
+    },
+    "rule_evaluations": {
+      "$ref": "#/$defs/_Directory_RuleApplicabilityEvaluation_"
+    },
+    "rule_set_evaluations": {
+      "$ref": "#/$defs/_Directory_RuleSetApplicabilityEvaluation_"
+    },
+    "traces": {
+      "$ref": "#/$defs/_Directory_ApplicabilityTrace_"
+    },
+    "unresolved_obligations": {
+      "$ref": "#/$defs/_Directory_UnresolvedObligation_"
+    }
+  },
+  "required": [
+    "profile_eligibility",
+    "traces",
+    "rule_set_evaluations",
+    "rule_evaluations",
+    "unresolved_obligations",
+    "node_runs",
+    "attempts",
+    "objects"
+  ],
+  "title": "ApplicabilityRecordSet",
+  "type": "object"
+}

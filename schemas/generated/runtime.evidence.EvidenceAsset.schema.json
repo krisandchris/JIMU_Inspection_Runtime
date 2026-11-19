@@ -1,0 +1,826 @@
+{
+  "$defs": {
+    "AffineCoefficient": {
+      "maximum": 9007199254740991,
+      "minimum": -9007199254740991,
+      "type": "number"
+    },
+    "AssetDimensions": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "width": {
+          "$ref": "#/$defs/PositiveBudget"
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ],
+      "title": "AssetDimensions",
+      "type": "object"
+    },
+    "AssetStage": {
+      "discriminator": {
+        "mapping": {
+          "finalized": "#/$defs/FinalizedAsset",
+          "staged": "#/$defs/StagedAsset"
+        },
+        "propertyName": "stage"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/StagedAsset"
+        },
+        {
+          "$ref": "#/$defs/FinalizedAsset"
+        }
+      ]
+    },
+    "CoordinateSystem": {
+      "additionalProperties": false,
+      "description": "Image-plane pixel edges with origin at the top left and axes right/down.",
+      "properties": {
+        "coordinate_system_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Coordinate System Id",
+          "type": "string"
+        },
+        "dimensions": {
+          "$ref": "#/$defs/AssetDimensions"
+        },
+        "frame": {
+          "enum": [
+            "original_image",
+            "derived_image"
+          ],
+          "title": "Frame",
+          "type": "string"
+        }
+      },
+      "required": [
+        "coordinate_system_id",
+        "frame",
+        "dimensions"
+      ],
+      "title": "CoordinateSystem",
+      "type": "object"
+    },
+    "DerivedImageEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "derived_image",
+          "title": "Kind",
+          "type": "string"
+        },
+        "original_media_ref": {
+          "$ref": "#/$defs/MediaRef"
+        },
+        "transforms": {
+          "items": {
+            "$ref": "#/$defs/TransformRecord"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Transforms",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "original_media_ref",
+        "transforms"
+      ],
+      "title": "DerivedImageEvidence",
+      "type": "object"
+    },
+    "EvidenceAccessScope": {
+      "discriminator": {
+        "mapping": {
+          "project": "#/$defs/ProjectEvidenceAccess",
+          "task": "#/$defs/TaskEvidenceAccess"
+        },
+        "propertyName": "scope"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ProjectEvidenceAccess"
+        },
+        {
+          "$ref": "#/$defs/TaskEvidenceAccess"
+        }
+      ]
+    },
+    "EvidenceMimeType": {
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9!#$%&'*+.^_`|~-]+/[A-Za-z0-9!#$%&'*+.^_`|~-]+$(?![\\s\\S])",
+      "type": "string"
+    },
+    "EvidenceScope": {
+      "discriminator": {
+        "mapping": {
+          "execution": "#/$defs/ExecutionEvidenceScope",
+          "object": "#/$defs/ObjectEvidenceScope"
+        },
+        "propertyName": "scope"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ExecutionEvidenceScope"
+        },
+        {
+          "$ref": "#/$defs/ObjectEvidenceScope"
+        }
+      ]
+    },
+    "EvidenceSpatialProvenance": {
+      "discriminator": {
+        "mapping": {
+          "derived_image": "#/$defs/DerivedImageEvidence",
+          "non_spatial": "#/$defs/NonSpatialEvidence",
+          "original_image": "#/$defs/OriginalImageEvidence"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/OriginalImageEvidence"
+        },
+        {
+          "$ref": "#/$defs/DerivedImageEvidence"
+        },
+        {
+          "$ref": "#/$defs/NonSpatialEvidence"
+        }
+      ]
+    },
+    "EvidenceType": {
+      "enum": [
+        "original_image",
+        "crop",
+        "bbox_visualization",
+        "mask",
+        "tool_output",
+        "geometry",
+        "model_request",
+        "model_response"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    },
+    "ExecutionEvidenceScope": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "scope": {
+          "const": "execution",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "execution_id"
+      ],
+      "title": "ExecutionEvidenceScope",
+      "type": "object"
+    },
+    "FinalizedAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "object_version": {
+          "$ref": "#/$defs/ShortText"
+        },
+        "stage": {
+          "const": "finalized",
+          "title": "Stage",
+          "type": "string"
+        },
+        "staged_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "verified_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "verified_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verified Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage",
+        "staged_at",
+        "verified_at",
+        "verified_sha256",
+        "object_version"
+      ],
+      "title": "FinalizedAsset",
+      "type": "object"
+    },
+    "MediaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "media_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Media Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_id",
+        "sha256"
+      ],
+      "title": "MediaRef",
+      "type": "object"
+    },
+    "NonSpatialEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "non_spatial",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NonSpatialEvidence",
+      "type": "object"
+    },
+    "ObjectEvidenceScope": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "object_ref": {
+          "$ref": "#/$defs/ObjectRef"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "scope": {
+          "const": "object",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "execution_id",
+        "object_ref",
+        "profile_ref"
+      ],
+      "title": "ObjectEvidenceScope",
+      "type": "object"
+    },
+    "ObjectKey": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "pattern": "^(?!.*(?:^|/)[.]{1,2}(?:/|$))[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*(?![\\s\\S])",
+      "type": "string"
+    },
+    "ObjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "object",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ObjectRef",
+      "type": "object"
+    },
+    "OriginalImageEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "coordinate_system": {
+          "$ref": "#/$defs/CoordinateSystem"
+        },
+        "kind": {
+          "const": "original_image",
+          "title": "Kind",
+          "type": "string"
+        },
+        "original_media_ref": {
+          "$ref": "#/$defs/MediaRef"
+        }
+      },
+      "required": [
+        "kind",
+        "original_media_ref",
+        "coordinate_system"
+      ],
+      "title": "OriginalImageEvidence",
+      "type": "object"
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "PositiveBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "ProjectEvidenceAccess": {
+      "additionalProperties": false,
+      "properties": {
+        "project_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Project Id",
+          "type": "string"
+        },
+        "scope": {
+          "const": "project",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "project_id"
+      ],
+      "title": "ProjectEvidenceAccess",
+      "type": "object"
+    },
+    "RetentionPolicyRef": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_policy_ref": {
+          "$ref": "#/$defs/PolicyContentRef"
+        },
+        "retention_class": {
+          "$ref": "#/$defs/VocabularyMemberRef"
+        }
+      },
+      "required": [
+        "evidence_policy_ref",
+        "retention_class"
+      ],
+      "title": "RetentionPolicyRef",
+      "type": "object"
+    },
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "StagedAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "stage": {
+          "const": "staged",
+          "title": "Stage",
+          "type": "string"
+        },
+        "staged_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        }
+      },
+      "required": [
+        "stage",
+        "staged_at"
+      ],
+      "title": "StagedAsset",
+      "type": "object"
+    },
+    "StorageReference": {
+      "additionalProperties": false,
+      "properties": {
+        "object_key": {
+          "$ref": "#/$defs/ObjectKey"
+        },
+        "store_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Store Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "store_id",
+        "object_key"
+      ],
+      "title": "StorageReference",
+      "type": "object"
+    },
+    "TaskEvidenceAccess": {
+      "additionalProperties": false,
+      "properties": {
+        "project_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Project Id",
+          "type": "string"
+        },
+        "scope": {
+          "const": "task",
+          "title": "Scope",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "project_id",
+        "task_id"
+      ],
+      "title": "TaskEvidenceAccess",
+      "type": "object"
+    },
+    "TransformRecord": {
+      "additionalProperties": false,
+      "description": "Forward affine mapping from source to target pixel coordinates.\n\nThe six coefficients are [a, b, c, d, e, f], mapping to\nx' = a*x + b*y + c and y' = d*x + e*y + f.",
+      "properties": {
+        "affine": {
+          "maxItems": 6,
+          "minItems": 6,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            },
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            },
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            },
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            },
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            },
+            {
+              "$ref": "#/$defs/AffineCoefficient"
+            }
+          ],
+          "title": "Affine",
+          "type": "array"
+        },
+        "implementation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Implementation Id",
+          "type": "string"
+        },
+        "implementation_version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Implementation Version",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/CoordinateSystem"
+        },
+        "target": {
+          "$ref": "#/$defs/CoordinateSystem"
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "implementation_id",
+        "implementation_version",
+        "affine"
+      ],
+      "title": "TransformRecord",
+      "type": "object"
+    },
+    "UTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    },
+    "VocabularyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "vocabulary",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "VocabularyContentRef",
+      "type": "object"
+    },
+    "VocabularyMemberRef": {
+      "additionalProperties": false,
+      "properties": {
+        "member": {
+          "$ref": "#/$defs/ShortText"
+        },
+        "vocabulary_ref": {
+          "$ref": "#/$defs/VocabularyContentRef"
+        }
+      },
+      "required": [
+        "vocabulary_ref",
+        "member"
+      ],
+      "title": "VocabularyMemberRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "access_scope": {
+      "$ref": "#/$defs/EvidenceAccessScope"
+    },
+    "byte_size": {
+      "$ref": "#/$defs/PositiveBudget"
+    },
+    "created_at": {
+      "$ref": "#/$defs/UTCDateTime"
+    },
+    "evidence_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "evidence_type": {
+      "$ref": "#/$defs/EvidenceType"
+    },
+    "mime_type": {
+      "$ref": "#/$defs/EvidenceMimeType"
+    },
+    "producer_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+      "title": "Producer Id",
+      "type": "string"
+    },
+    "producer_version": {
+      "maxLength": 128,
+      "minLength": 5,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "title": "Producer Version",
+      "type": "string"
+    },
+    "retention": {
+      "$ref": "#/$defs/RetentionPolicyRef"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/EvidenceScope"
+    },
+    "sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "spatial": {
+      "$ref": "#/$defs/EvidenceSpatialProvenance"
+    },
+    "stage": {
+      "$ref": "#/$defs/AssetStage"
+    },
+    "storage": {
+      "$ref": "#/$defs/StorageReference"
+    }
+  },
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "evidence_type",
+    "scope",
+    "storage",
+    "sha256",
+    "mime_type",
+    "byte_size",
+    "stage",
+    "spatial",
+    "producer_id",
+    "producer_version",
+    "access_scope",
+    "retention",
+    "created_at"
+  ],
+  "title": "EvidenceAsset",
+  "type": "object"
+}

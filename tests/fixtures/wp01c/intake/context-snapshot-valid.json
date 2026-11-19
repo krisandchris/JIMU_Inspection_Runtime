@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0.0",
+  "context_snapshot_id": "snapshot-1",
+  "execution_id": "execution-1",
+  "task_id": "task-1",
+  "release_id": "release-1",
+  "bundle_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+  "media_ref": {
+    "media_id": "frame-1",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "device_ref": {
+    "record_id": "rover-01",
+    "version": "1.0.0",
+    "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "camera_ref": {
+    "record_id": "front-camera",
+    "version": "1.0.0",
+    "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "region_ref": {
+    "artifact_kind": "region",
+    "artifact_id": "region-a",
+    "version": "1.0.0",
+    "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "context_schema_ref": {
+    "artifact_kind": "context_schema",
+    "artifact_id": "street-context",
+    "version": "1.0.0",
+    "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "context_provenance_policy_ref": {
+    "artifact_kind": "policy",
+    "artifact_id": "context-provenance-demo",
+    "version": "1.0.0",
+    "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "clock": {
+    "captured_at": "2026-11-17T02:30:00Z",
+    "original_timestamp": "2026-11-17T10:30:00+08:00",
+    "original_timezone": "Asia/Shanghai",
+    "source": "device_clock",
+    "clock_id": "rover-01",
+    "uncertainty_ms": 5
+  },
+  "values": [
+    {
+      "field_path": [
+        "scene"
+      ],
+      "value": {
+        "kind": "string",
+        "value": "street"
+      },
+      "provenance": {
+        "source": "trusted_task_metadata",
+        "task_id": "task-1"
+      }
+    },
+    {
+      "field_path": [
+        "fleet"
+      ],
+      "value": {
+        "kind": "string",
+        "value": "blue"
+      },
+      "provenance": {
+        "source": "device_registry",
+        "device_ref": {
+          "record_id": "rover-01",
+          "version": "1.0.0",
+          "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      }
+    },
+    {
+      "field_path": [
+        "view"
+      ],
+      "value": {
+        "kind": "string",
+        "value": "front"
+      },
+      "provenance": {
+        "source": "camera_registry",
+        "camera_ref": {
+          "record_id": "front-camera",
+          "version": "1.0.0",
+          "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      }
+    },
+    {
+      "field_path": [
+        "district"
+      ],
+      "value": {
+        "kind": "string",
+        "value": "center"
+      },
+      "provenance": {
+        "source": "region_definition",
+        "region_ref": {
+          "artifact_kind": "region",
+          "artifact_id": "region-a",
+          "version": "1.0.0",
+          "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        }
+      }
+    },
+    {
+      "field_path": [
+        "hour"
+      ],
+      "value": {
+        "kind": "integer",
+        "value": 10
+      },
+      "provenance": {
+        "source": "declared_derivation",
+        "derivation_id": "local-hour",
+        "implementation_version": "1.0.0",
+        "implementation_digest": "2222222222222222222222222222222222222222222222222222222222222222",
+        "input_selectors": [
+          {
+            "source": "context_snapshot",
+            "schema_ref": {
+              "artifact_kind": "context_schema",
+              "artifact_id": "street-context",
+              "version": "1.0.0",
+              "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+              "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "field_path": [
+              "local_timestamp"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "created_at": "2026-11-17T02:31:00Z"
+}

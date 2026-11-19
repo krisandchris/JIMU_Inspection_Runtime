@@ -1,0 +1,94 @@
+{
+  "$defs": {
+    "ProfileEligibilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "profile_eligibility_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ProfileEligibilityEvaluationRef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "execution_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "node_id": {
+      "const": "N02",
+      "title": "Node Id",
+      "type": "string"
+    },
+    "node_run_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Node Run Id",
+      "type": "string"
+    },
+    "outcome": {
+      "const": "not_evaluated",
+      "title": "Outcome",
+      "type": "string"
+    },
+    "profile_eligibility_evaluation_ref": {
+      "$ref": "#/$defs/ProfileEligibilityEvaluationRef"
+    },
+    "reason_code": {
+      "const": "no_eligible_profiles",
+      "title": "Reason Code",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "skipped",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "outcome",
+    "node_id",
+    "status",
+    "reason_code",
+    "node_run_id",
+    "execution_id",
+    "profile_eligibility_evaluation_ref"
+  ],
+  "title": "SkippedDiscoveryOutput",
+  "type": "object"
+}

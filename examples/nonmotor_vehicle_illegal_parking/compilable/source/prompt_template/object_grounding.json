@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "prompt_template_id": "object_grounding",
+  "purpose": "object_grounding",
+  "template_text": "Locate nonmotor vehicles independently. Return boxes in the original image as ordered pixel edges [x_min,y_min,x_max,y_max].",
+  "variables": [],
+  "response_schema_ref": {
+    "$pin": [
+      "response_schema",
+      "object_grounding-result",
+      "1.0.0"
+    ]
+  },
+  "rendering_policy": "literal_substitution"
+}

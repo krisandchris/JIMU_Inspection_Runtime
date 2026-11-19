@@ -1,0 +1,2522 @@
+--- /dev/null
++++ b/src/jimu_runtime/tools/step_attempts.py
+@@ -0,0 +1,1542 @@
++"""Durable execution and authority for internal N05 child attempts."""
++
++from dataclasses import dataclass
++from datetime import datetime, timedelta
++from typing import Literal, Self
++from uuid import uuid4
++
++from pydantic import TypeAdapter, model_validator
++from sqlalchemy import RowMapping, text
++from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
++
++from jimu_runtime.bundle.integrity import sha256_digest
++from jimu_runtime.domain.base import ContractModel
++from jimu_runtime.domain.definition_enums import FactScope
++from jimu_runtime.domain.definition_support import reference_identity
++from jimu_runtime.domain.definitions.tools import ToolStep
++from jimu_runtime.domain.enums import (
++    AttemptStatus,
++    ExecutionStatus,
++    NodeRunStatus,
++    RuntimeRecordKind,
++)
++from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
++from jimu_runtime.domain.fact_selectors import ToolContentRef, ToolPlanContentRef
++from jimu_runtime.domain.nodes.tool_execution import (
++    ToolNodeInput,
++    ToolStepHistory,
++    ToolStepHistoryEntry,
++)
++from jimu_runtime.domain.primitives import Digest
++from jimu_runtime.domain.references import RuntimeRecordRef
++from jimu_runtime.domain.runtime.authority import ActorRef, ToolStepSelection
++from jimu_runtime.domain.runtime.decisions import RecordList
++from jimu_runtime.domain.runtime.evidence import (
++    EvidenceAsset,
++    ObjectEvidenceScope,
++    TaskEvidenceAccess,
++)
++from jimu_runtime.domain.runtime.executions import (
++    Attempt,
++    AttemptLink,
++    LifecycleReason,
++    NodeId,
++    NodeRun,
++)
++from jimu_runtime.domain.runtime.facts import (
++    FactRecord,
++    NodeRunRef,
++    ObjectRef,
++    ProfileContentRef,
++    ToolExecutionRef,
++    ToolFactSource,
++)
++from jimu_runtime.domain.runtime.intake import IdempotencyScope
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
++from jimu_runtime.domain.runtime.media import FinalizedAsset
++from jimu_runtime.domain.runtime.tool_executions import (
++    FailedToolAttempt,
++    FailedToolResult,
++    ReturnedToolAttempt,
++    ToolArtifactRecordRef,
++    ToolArtifactRef,
++    ToolExecution,
++    ToolPlanStepOrigin,
++    UndispatchedToolAttempt,
++)
++from jimu_runtime.domain.validation.authority_inputs import NodeAttemptOwner
++from jimu_runtime.domain.validation.transitions import (
++    AttemptTransitionGuard,
++    NodeTransitionGuard,
++)
++from jimu_runtime.workflow import repository as repo
++from jimu_runtime.workflow.jobs import (
++    JobClaim,
++    _attempt_ref,
++    _clock,
++    _digest,
++    _finish_attempt,
++    _Job,
++    _job,
++    _JobStatus,
++    _matches,
++    _node_ref,
++    _release_job,
++    _scope,
++    _write_job,
++)
++from jimu_runtime.workflow.scheduling import validated_milliseconds
++
++TOOL_STEP_BRANCH_PREFIX = "tool-step:"
++_DIGEST: TypeAdapter[str] = TypeAdapter(Digest)
++_SCOPE = "project_id = :project_id AND client_id = :client_id AND execution_id = :execution_id"
++
++
++class _StepInput(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    inputs: ToolNodeInput
++    step: ToolStep
++    invocation_input_digest: Digest
++
++    def bound_digest(self) -> str:
++        # Only the changing parent Attempt identity is excluded from reuse.
++        fixed_envelope = self.inputs.envelope.model_copy(
++            update={"attempt_id": "pinned"}
++        )
++        fixed = self.inputs.model_copy(update={"envelope": fixed_envelope})
++        return _digest(self.model_copy(update={"inputs": fixed}))
++
++
++class StepResult(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    execution: ToolExecution
++    facts: RecordList[FactRecord] = ()
++    evidence: RecordList[EvidenceAsset] = ()
++    invocations: RecordList[ModelInvocation] = ()
++
++    @model_validator(mode="after")
++    def check_outputs(self) -> Self:
++        tool = self.execution
++        evidence = {item.evidence_id: item for item in self.evidence}
++        required = {
++            ref.record_id
++            for item in (tool, *self.facts, *self.invocations)
++            for ref in item.evidence_refs
++        }
++        if (
++            tuple(ref.record_id for ref in tool.generated_fact_refs)
++            != tuple(item.fact_id for item in self.facts)
++            or len(evidence) != len(self.evidence)
++            or set(evidence) != required
++            or any(
++                item.artifact_ref.record_id not in evidence
++                or evidence[item.artifact_ref.record_id].sha256 != item.digest
++                for item in tool.output_refs
++                if item.artifact_ref.record_kind is RuntimeRecordKind.EVIDENCE
++            )
++            or any(
++                item.scope.execution_id != tool.execution_id
++                or isinstance(item.scope, ObjectEvidenceScope)
++                and (item.scope.object_ref, item.scope.profile_ref)
++                != (tool.object_ref, tool.profile_ref)
++                or not isinstance(item.stage, FinalizedAsset)
++                for item in self.evidence
++            )
++            or len({item.model_invocation_id for item in self.invocations})
++            != len(self.invocations)
++            or any(
++                (
++                    item.execution_id,
++                    item.node_id,
++                    item.node_run_ref,
++                    item.attempt_ref,
++                    item.object_ref,
++                    item.profile_refs,
++                    item.trace_id,
++                )
++                != (
++                    tool.execution_id,
++                    "N05",
++                    tool.node_run_ref,
++                    tool.attempt_ref,
++                    tool.object_ref,
++                    (tool.profile_ref,),
++                    tool.trace_id,
++                )
++                for item in self.invocations
++            )
++        ):
++            raise ValueError(
++                "step completion requires the exact original Fact, evidence and nested invocation group"
++            )
++        return self
++
++
++class StepCompletion(ContractModel):
++    schema_version: Literal["1.0.0"] = "1.0.0"
++    result: StepResult
++    attempt_status: Literal["succeeded", "failed", "timed_out"]
++    selection: ToolStepSelection | None
++
++    @model_validator(mode="after")
++    def check_selection(self) -> Self:
++        tool = self.result.execution
++        winner = self.selection
++        if (
++            (tool.status == "succeeded") != (winner is not None)
++            or (self.attempt_status == "succeeded") != (winner is not None)
++            or self.attempt_status == "timed_out"
++            and not _reports_timeout(tool)
++        ):
++            raise ValueError("only a successful step can have a selection")
++        if winner is not None:
++            origin = tool.invocation_origin
++            if (
++                not isinstance(origin, ToolPlanStepOrigin)
++                or tool.object_ref is None
++                or (
++                    winner.execution_id,
++                    winner.profile_ref,
++                    winner.object_id,
++                    winner.tool_plan_ref,
++                    winner.step_id,
++                    winner.selected_attempt_id,
++                    winner.selected_result_ref.record_id,
++                    winner.selected_fact_refs,
++                )
++                != (
++                    tool.execution_id,
++                    tool.profile_ref,
++                    tool.object_ref.record_id,
++                    origin.tool_plan_ref,
++                    origin.step_id,
++                    tool.attempt_ref.record_id,
++                    tool.tool_execution_id,
++                    tool.generated_fact_refs,
++                )
++            ):
++                raise ValueError(
++                    "step selection must cover the entire successful child output"
++                )
++        return self
++
++
++@dataclass(frozen=True, slots=True)
++class StepAttempt:
++    parent_claim: JobClaim
++    parent_attempt_id: str
++    claim: JobClaim
++    node: NodeRun
++    attempt: Attempt
++    inputs: ToolNodeInput
++    previous: StepCompletion | None = None
++
++
++@dataclass(frozen=True, slots=True)
++class NestedToolStepIdentity:
++    execution_id: str
++    parent_node_run_ref: NodeRunRef
++    tool_plan_ref: ToolPlanContentRef
++    step_id: str
++    tool_ref: ToolContentRef
++    profile_ref: ProfileContentRef
++    object_ref: ObjectRef
++    bound_input_digest: str
++
++
++@dataclass(frozen=True, slots=True)
++class NestedToolAttemptLink:
++    parent_attempt: Attempt
++    child_node: NodeRun
++    child_attempt: Attempt
++    invocations: tuple[ModelInvocation, ...]
++
++
++@dataclass(frozen=True, slots=True)
++class NestedToolRetryHistory:
++    identity: NestedToolStepIdentity
++    current: NestedToolAttemptLink
++    priors: tuple[NestedToolAttemptLink, ...]
++
++
++class StepAttemptBudgetExhausted(ValueError):
++    """Every authorized physical attempt for this logical step has been spent."""
++
++
++async def _read_job(
++    connection: AsyncConnection,
++    claim: JobClaim,
++    *,
++    internal: bool,
++    lock: bool = True,
++) -> _Job | None:
++    row_lock = "FOR UPDATE" if lock else ""
++    row = (
++        (
++            await connection.execute(
++                text(f"""
++                SELECT * FROM jimu_workflow.jobs WHERE {_SCOPE}
++                    AND node_run_id = :node_run_id AND job_id = :job_id
++                    AND internal_tool_step = :internal
++                {row_lock}
++            """),
++                {
++                    **_scope(claim.scope, claim.execution_id),
++                    "node_run_id": claim.node_run_id,
++                    "job_id": claim.job_id,
++                    "internal": internal,
++                },
++            )
++        )
++        .mappings()
++        .one_or_none()
++    )
++    return None if row is None else _job(row)
++
++
++def _live(
++    job: _Job | None,
++    claim: JobClaim,
++    attempt_id: str,
++    now: datetime,
++    *,
++    allow_elapsed_deadline: bool = False,
++) -> bool:
++    return (
++        job is not None
++        and _matches(claim, job)
++        and job.current_attempt_id == attempt_id
++        and job.lease_until is not None
++        and now < job.lease_until
++        and job.attempt_deadline is not None
++        and (now < job.attempt_deadline or allow_elapsed_deadline)
++    )
++
++
++def _parent_inputs(parent: NodeRun, inputs: ToolNodeInput) -> bool:
++    env = inputs.envelope
++    exact_envelope = env.node_id is NodeId.N05 and (
++        parent.node_id,
++        parent.execution_id,
++        parent.node_run_id,
++        parent.trace,
++        reference_identity(parent.config_ref),
++        parent.upstream_inputs,
++    ) == (
++        env.node_id,
++        env.execution_id,
++        env.node_run_id,
++        env.trace,
++        reference_identity(env.node_config_ref),
++        env.upstream_artifacts,
++    )
++    pinned = {
++        (item.ref.record_kind, item.ref.record_id): item.digest
++        for item in env.upstream_artifacts
++    }
++    object_key = (RuntimeRecordKind.OBJECT, inputs.object_record.object_id)
++    context = inputs.context_snapshot_ref
++    return (
++        exact_envelope
++        and pinned.get(object_key)
++        == sha256_digest(canonical_bytes(inputs.object_record.model_dump(mode="json")))
++        and (context.record_kind, context.record_id) in pinned
++    )
++
++
++def _child_inputs(
++    inputs: ToolNodeInput, child_id: str, attempt_id: str
++) -> ToolNodeInput:
++    env = inputs.envelope.model_copy(
++        update={"node_run_id": child_id, "attempt_id": attempt_id}
++    )
++    return inputs.model_copy(update={"envelope": env})
++
++
++def _read_input(row: RowMapping) -> _StepInput:
++    result = _StepInput.model_validate_json(row["bound_input"])
++    env = result.inputs.envelope
++    if (
++        result.bound_digest() != row["bound_input_digest"]
++        or result.invocation_input_digest != row["invocation_input_digest"]
++        or (env.execution_id, env.node_run_id, env.attempt_id, result.step.step_id)
++        != (
++            row["execution_id"],
++            row["parent_node_run_id"],
++            row["original_parent_attempt_id"],
++            row["step_id"],
++        )
++    ):
++        raise ValueError("durable tool step input identity or digest mismatch")
++    return result
++
++
++def _read_completion(row: RowMapping) -> StepCompletion:
++    completion = StepCompletion.model_validate_json(row["completion"])
++    tool = completion.result.execution
++    if (
++        _digest(completion) != row["result_digest"]
++        or completion.attempt_status != row["attempt_status"]
++        or (
++            tool.execution_id,
++            tool.node_run_ref.record_id,
++            tool.attempt_ref.record_id,
++            tool.tool_execution_id,
++        )
++        != (
++            row["execution_id"],
++            row["child_node_run_id"],
++            row["child_attempt_id"],
++            row["tool_execution_id"],
++        )
++    ):
++        raise ValueError("durable tool step completion identity or digest mismatch")
++    return completion
++
++
++_COMPLETED_COLUMNS = """
++    c.*, a.parent_attempt_id AS original_parent_attempt_id,
++    a.invocation_input_digest, a.record::text AS bound_input, c.record::text AS completion
++"""
++_COMPLETED_SOURCE = """
++    jimu_workflow.tool_step_completions AS c
++    JOIN jimu_workflow.tool_step_attempts AS a
++        USING (project_id, client_id, execution_id, child_node_run_id, child_attempt_id, parent_node_run_id, step_id, bound_input_digest)
++"""
++_PARENT_PARAMS = """
++    c.project_id = :project_id AND c.client_id = :client_id AND c.execution_id = :execution_id
++    AND c.parent_node_run_id = :parent_node_run_id
++"""
++
++
++async def _bind_completion(
++    connection: AsyncConnection,
++    parameters: dict[str, str],
++    row: RowMapping,
++) -> None:
++    await connection.execute(
++        text("""
++            INSERT INTO jimu_workflow.tool_step_parent_outputs
++                (project_id, client_id, execution_id, parent_node_run_id, parent_attempt_id,
++                 step_id, bound_input_digest, child_node_run_id, child_attempt_id, result_digest)
++            VALUES (:project_id, :client_id, :execution_id, :parent_node_run_id, :parent_attempt_id,
++                 :step_id, :bound_input_digest, :child_node_run_id, :child_attempt_id, :result_digest)
++        """),
++        {
++            **parameters,
++            **{
++                key: row[key]
++                for key in ("child_node_run_id", "child_attempt_id", "result_digest")
++            },
++        },
++    )
++
++
++class StepAttemptStore:
++    def __init__(self, engine: AsyncEngine, *, actor: ActorRef) -> None:
++        if actor.actor_kind != "service":
++            raise ValueError(
++                "tool-step authority requires an explicit service identity"
++            )
++        self._engine = engine
++        self._actor = actor
++
++    async def begin(
++        self,
++        parent_claim: JobClaim,
++        inputs: ToolNodeInput,
++        step: ToolStep,
++        input_digest: str,
++        *,
++        timeout_ms: int,
++        max_attempts: int | None = None,
++    ) -> StepAttempt | StepCompletion | None:
++        """Reuse the bound result or persist a new child identity before invocation."""
++        timeout_ms = validated_milliseconds(timeout_ms)
++        if max_attempts is not None and (
++            type(max_attempts) is not int or not 1 <= max_attempts <= 1024
++        ):
++            raise ValueError("tool step attempt budget must be between 1 and 1024")
++        bound = _StepInput(
++            inputs=inputs,
++            step=step,
++            invocation_input_digest=_DIGEST.validate_python(input_digest),
++        )
++        env = inputs.envelope
++        parameters = {
++            **_scope(parent_claim.scope, parent_claim.execution_id),
++            "parent_node_run_id": parent_claim.node_run_id,
++            "parent_attempt_id": env.attempt_id,
++            "step_id": step.step_id,
++            "bound_input_digest": bound.bound_digest(),
++        }
++        async with self._engine.begin() as connection:
++            locked = await repo.lock_execution(
++                connection, parent_claim.scope, parent_claim.execution_id
++            )
++            if (
++                locked is None
++                or locked.cancel_requested_at is not None
++                or locked.execution.status is not ExecutionStatus.RUNNING
++            ):
++                return None
++            parent_job = await _read_job(connection, parent_claim, internal=False)
++            now = await _clock(connection)
++            if not _live(parent_job, parent_claim, env.attempt_id, now):
++                return None
++            assert (
++                parent_job is not None
++                and parent_job.lease_until is not None
++                and parent_job.attempt_deadline is not None
++            )
++            parent = await repo.get_node(
++                connection,
++                parent_claim.scope,
++                parent_claim.execution_id,
++                parent_claim.node_run_id,
++            )
++            pins = locked.execution.pins
++            if (
++                parent is None
++                or not _parent_inputs(parent, inputs)
++                or (env.task_id, env.release_id, env.bundle_digest)
++                != (locked.execution.task_id, pins.release_id, pins.bundle_digest)
++                or not any(pin.tool_ref == step.tool_ref for pin in pins.tool_pins)
++            ):
++                raise ValueError(
++                    "step must be bound to the pinned N05 parent inputs and Tool implementation"
++                )
++            existing = (
++                (
++                    await connection.execute(
++                        text(f"""
++                        SELECT {_COMPLETED_COLUMNS} FROM {_COMPLETED_SOURCE}
++                        JOIN jimu_workflow.tool_step_parent_outputs AS b
++                            USING (project_id, client_id, execution_id, parent_node_run_id, step_id,
++                                bound_input_digest, child_node_run_id, child_attempt_id, result_digest)
++                        WHERE {_PARENT_PARAMS} AND c.step_id = :step_id
++                            AND b.parent_attempt_id = :parent_attempt_id
++                    """),
++                        parameters,
++                    )
++                )
++                .mappings()
++                .one_or_none()
++            )
++            if existing is not None:
++                if _read_input(existing).bound_digest() != bound.bound_digest():
++                    raise ValueError(
++                        "current parent step input differs from its immutable result binding"
++                    )
++                return _read_completion(existing)
++            active = await connection.execute(
++                text(f"""
++                    SELECT 1 FROM jimu_workflow.tool_step_attempts WHERE {_SCOPE}
++                        AND parent_node_run_id = :parent_node_run_id AND parent_attempt_id = :parent_attempt_id
++                        AND step_id = :step_id
++                """),
++                parameters,
++            )
++            if active.first() is not None:
++                # A caller cannot recover a possibly dispatched child as a fresh call.
++                return None
++            reusable = (
++                (
++                    await connection.execute(
++                        text(f"""
++                        SELECT {_COMPLETED_COLUMNS} FROM {_COMPLETED_SOURCE}
++                        WHERE {_PARENT_PARAMS} AND c.step_id = :step_id
++                            AND c.attempt_status = 'succeeded'
++                    """),
++                        parameters,
++                    )
++                )
++                .mappings()
++                .one_or_none()
++            )
++            if reusable is not None:
++                original_input = _read_input(reusable)
++                if original_input.bound_digest() != bound.bound_digest():
++                    raise ValueError(
++                        "changing the inputs of an authoritative step requires an explicit new NodeRun"
++                    )
++                original = await repo.get_attempt(
++                    connection,
++                    parent_claim.scope,
++                    parent_claim.execution_id,
++                    parent_claim.node_run_id,
++                    original_input.inputs.envelope.attempt_id,
++                )
++                current = await repo.get_attempt(
++                    connection,
++                    parent_claim.scope,
++                    parent_claim.execution_id,
++                    parent_claim.node_run_id,
++                    env.attempt_id,
++                )
++                if (
++                    original is None
++                    or current is None
++                    or original.ended_at is None
++                    or original.attempt_number >= current.attempt_number
++                ):
++                    raise ValueError(
++                        "reused tool step must come from an earlier terminal parent round"
++                    )
++                completion = _read_completion(reusable)
++                await _bind_completion(connection, parameters, reusable)
++                return completion
++            count = (
++                await connection.execute(
++                    text(f"""
++                        SELECT count(*) FROM jimu_workflow.tool_step_attempts WHERE {_SCOPE}
++                            AND parent_node_run_id = :parent_node_run_id AND step_id = :step_id
++                    """),
++                    parameters,
++                )
++            ).scalar_one()
++            if count >= (
++                max_attempts if max_attempts is not None else parent_job.max_attempts
++            ):
++                raise StepAttemptBudgetExhausted(
++                    "tool step attempt budget is exhausted"
++                )
++            previous = await self._previous_failure(connection, parameters)
++            return await self._start_child(
++                connection,
++                parent_claim,
++                parent,
++                bound,
++                parameters,
++                now,
++                parent_job.attempt_deadline,
++                timeout_ms,
++                previous,
++            )
++
++    async def _previous_failure(
++        self,
++        connection: AsyncConnection,
++        parameters: dict[str, str],
++    ) -> StepCompletion | None:
++        row = (
++            (
++                await connection.execute(
++                    text(f"""
++                    SELECT {_COMPLETED_COLUMNS} FROM {_COMPLETED_SOURCE}
++                    WHERE {_PARENT_PARAMS} AND c.bound_input_digest = :bound_input_digest
++                        AND c.attempt_status IN ('failed', 'timed_out')
++                        AND c.child_attempt_id = (
++                            SELECT s.child_attempt_id
++                            FROM jimu_workflow.tool_step_attempts AS s
++                            JOIN jimu_workflow.attempts AS p
++                                ON (s.project_id, s.client_id, s.execution_id,
++                                    s.parent_node_run_id, s.parent_attempt_id)
++                                = (p.project_id, p.client_id, p.execution_id, p.node_run_id, p.attempt_id)
++                            WHERE (s.project_id, s.client_id, s.execution_id, s.parent_node_run_id, s.step_id)
++                                = (:project_id, :client_id, :execution_id, :parent_node_run_id, :step_id)
++                            ORDER BY p.attempt_number DESC LIMIT 1
++                        )
++                """),
++                    parameters,
++                )
++            )
++            .mappings()
++            .one_or_none()
++        )
++        if row is None:
++            return None
++        _read_input(row)
++        return _read_completion(row)
++
++    async def _start_child(
++        self,
++        connection: AsyncConnection,
++        parent_claim: JobClaim,
++        parent: NodeRun,
++        bound: _StepInput,
++        parameters: dict[str, str],
++        now: datetime,
++        parent_deadline: datetime,
++        timeout_ms: int,
++        previous: StepCompletion | None,
++    ) -> StepAttempt:
++        scope, eid = parent_claim.scope, parent.execution_id
++        deadline = min(parent_deadline, now + timedelta(milliseconds=timeout_ms))
++        child_id, attempt_id, job_id = uuid4().hex, uuid4().hex, uuid4().hex
++        child = NodeRun(
++            schema_version="1.0.0",
++            node_run_id=child_id,
++            execution_id=eid,
++            node_id=NodeId.N05,
++            trace=parent.trace,
++            config_ref=parent.config_ref,
++            upstream_inputs=parent.upstream_inputs,
++            input_digest=bound.bound_digest(),
++            status=NodeRunStatus.PENDING,
++            created_at=now,
++            attempt_history=(),
++            output_refs=(),
++        )
++        await repo.insert_node(
++            connection,
++            scope,
++            eid,
++            child,
++            branch_key=f"{TOOL_STEP_BRANCH_PREFIX}{child_id}",
++        )
++        ready = child.model_copy(update={"status": NodeRunStatus.READY})
++        await repo.transition_node(
++            connection,
++            scope,
++            eid,
++            child,
++            ready,
++            now=now,
++            guard=NodeTransitionGuard.PREREQUISITES_AVAILABLE,
++        )
++        values = {
++            **parameters,
++            "child_node_run_id": child_id,
++            "child_attempt_id": attempt_id,
++            "child_job_id": job_id,
++            "lease_owner": parent_claim.owner,
++            "lease_until": parent_deadline,
++            "now": now,
++            "timeout_ms": timeout_ms,
++        }
++        await connection.execute(
++            text("""
++                INSERT INTO jimu_workflow.jobs (project_id, client_id, execution_id, node_run_id, job_id,
++                    internal_tool_step, status, fence, lease_owner, lease_until, ready_at, max_attempts,
++                    timeout_ms, retry_backoff_ms, retryable_error_classes, retry_on_lease_loss)
++                VALUES (:project_id, :client_id, :execution_id, :child_node_run_id, :child_job_id,
++                    true, 'leased', 1, :lease_owner, :lease_until, :now, 1, :timeout_ms, '{}', '{}', false)
++            """),
++            values,
++        )
++        attempt = Attempt(
++            schema_version="1.0.0",
++            attempt_id=attempt_id,
++            execution_id=eid,
++            owner=NodeAttemptOwner(owner_kind="node", node_run_ref=_node_ref(child_id)),
++            attempt_number=1,
++            status=AttemptStatus.RUNNING,
++            created_at=now,
++            started_at=now,
++        )
++        await repo.insert_attempt(
++            connection,
++            scope,
++            eid,
++            child_id,
++            attempt,
++            job_id=job_id,
++            fence=1,
++            lease_owner=parent_claim.owner,
++        )
++        running = child.model_copy(
++            update={
++                "status": NodeRunStatus.RUNNING,
++                "started_at": now,
++                "attempt_history": (
++                    AttemptLink(attempt_ref=_attempt_ref(attempt_id), attempt_number=1),
++                ),
++            }
++        )
++        await repo.transition_node(
++            connection,
++            scope,
++            eid,
++            ready,
++            running,
++            now=now,
++            guard=NodeTransitionGuard.FIRST_ATTEMPT_STARTED,
++            appended_attempt=attempt,
++        )
++        await connection.execute(
++            text(f"""
++                UPDATE jimu_workflow.jobs SET current_attempt_id = :child_attempt_id,
++                    attempt_count = 1, attempt_deadline = :deadline
++                WHERE {_SCOPE} AND node_run_id = :child_node_run_id AND job_id = :child_job_id
++            """),
++            {**values, "deadline": deadline},
++        )
++        await connection.execute(
++            text("""
++                INSERT INTO jimu_workflow.tool_step_attempts
++                    (project_id, client_id, execution_id, parent_node_run_id, parent_job_id,
++                     parent_attempt_id, parent_fence, child_node_run_id, child_job_id, child_attempt_id, child_fence,
++                     step_id, invocation_input_digest, bound_input_digest, record)
++                VALUES (:project_id, :client_id, :execution_id, :parent_node_run_id, :parent_job_id,
++                     :parent_attempt_id, :parent_fence, :child_node_run_id, :child_job_id, :child_attempt_id, 1,
++                     :step_id, :invocation_input_digest, :bound_input_digest, CAST(:record AS json))
++            """),
++            {
++                **values,
++                "parent_job_id": parent_claim.job_id,
++                "parent_fence": parent_claim.fence,
++                "invocation_input_digest": bound.invocation_input_digest,
++                "record": bound.stable_json(),
++            },
++        )
++        claim = JobClaim(
++            scope, eid, child_id, job_id, 1, parent_claim.owner, parent_deadline
++        )
++        return StepAttempt(
++            parent_claim,
++            bound.inputs.envelope.attempt_id,
++            claim,
++            running,
++            attempt,
++            _child_inputs(bound.inputs, child_id, attempt_id),
++            previous,
++        )
++
++    async def _lock_step(
++        self,
++        connection: AsyncConnection,
++        handle: StepAttempt,
++        *,
++        lock: bool = True,
++        timeout_result: bool = False,
++    ) -> tuple[_Job, _StepInput, datetime] | None:
++        parent, child = handle.parent_claim, handle.claim
++        if (parent.scope, parent.execution_id) != (child.scope, child.execution_id):
++            return None
++        read_execution = repo.lock_execution if lock else repo.get_execution
++        locked = await read_execution(connection, parent.scope, parent.execution_id)
++        if (
++            locked is None
++            or locked.cancel_requested_at is not None
++            or locked.execution.status is not ExecutionStatus.RUNNING
++        ):
++            return None
++        parent_job = await _read_job(connection, parent, internal=False, lock=lock)
++        child_job = await _read_job(connection, child, internal=True, lock=lock)
++        row = (
++            (
++                await connection.execute(
++                    text(f"""
++                    SELECT *, parent_attempt_id AS original_parent_attempt_id, record::text AS bound_input
++                    FROM jimu_workflow.tool_step_attempts WHERE {_SCOPE}
++                        AND parent_node_run_id = :parent_node_run_id AND parent_job_id = :parent_job_id
++                        AND parent_attempt_id = :parent_attempt_id AND parent_fence = :parent_fence
++                        AND child_node_run_id = :child_node_run_id AND child_job_id = :child_job_id
++                        AND child_attempt_id = :child_attempt_id AND child_fence = :child_fence
++                """),
++                    {
++                        **_scope(parent.scope, parent.execution_id),
++                        "parent_node_run_id": parent.node_run_id,
++                        "parent_job_id": parent.job_id,
++                        "parent_attempt_id": handle.parent_attempt_id,
++                        "parent_fence": parent.fence,
++                        "child_node_run_id": child.node_run_id,
++                        "child_job_id": child.job_id,
++                        "child_attempt_id": handle.attempt.attempt_id,
++                        "child_fence": child.fence,
++                    },
++                )
++            )
++            .mappings()
++            .one_or_none()
++        )
++        now = await _clock(connection)
++        if (
++            row is None
++            or child_job is None
++            or not _live(
++                child_job,
++                child,
++                handle.attempt.attempt_id,
++                now,
++                allow_elapsed_deadline=timeout_result,
++            )
++            or not _live(parent_job, parent, handle.parent_attempt_id, now)
++        ):
++            return None
++        bound = _read_input(row)
++        node = await repo.get_node(
++            connection, child.scope, child.execution_id, child.node_run_id
++        )
++        attempt = await repo.get_attempt(
++            connection,
++            child.scope,
++            child.execution_id,
++            child.node_run_id,
++            handle.attempt.attempt_id,
++        )
++        if (
++            node != handle.node
++            or attempt != handle.attempt
++            or node is None
++            or node.input_digest != bound.bound_digest()
++            or handle.inputs
++            != _child_inputs(bound.inputs, child.node_run_id, handle.attempt.attempt_id)
++        ):
++            raise ValueError(
++                "supplied tool step handle differs from durable inputs or child ownership"
++            )
++        return child_job, bound, now
++
++    async def dispatch_live(
++        self, connection: AsyncConnection, handle: StepAttempt
++    ) -> bool:
++        """Check both fences inside the journal's existing dispatch transaction."""
++        return await self._lock_step(connection, handle, lock=False) is not None
++
++    async def nested_retry_history(
++        self,
++        handle: StepAttempt,
++    ) -> NestedToolRetryHistory | None:
++        """Read provenance while both fences hold; ambiguous earlier steps fail closed."""
++        claim, parent = handle.claim, handle.parent_claim
++        scope, eid = claim.scope, claim.execution_id
++        async with self._engine.begin() as connection:
++            current = await self._lock_step(connection, handle)
++            if current is None:
++                return None
++            _, bound, _ = current
++            parent_attempt = await repo.get_attempt(
++                connection,
++                scope,
++                eid,
++                parent.node_run_id,
++                handle.parent_attempt_id,
++            )
++            if (
++                parent_attempt is None
++                or parent_attempt.status is not AttemptStatus.RUNNING
++            ):
++                return None
++            rows = (
++                (
++                    await connection.execute(
++                        text("""
++                        SELECT s.*, s.parent_attempt_id AS original_parent_attempt_id,
++                            s.record::text AS bound_input,
++                            c.attempt_status, c.tool_execution_id, c.result_digest,
++                            c.record::text AS completion
++                        FROM jimu_workflow.tool_step_attempts AS s
++                        JOIN jimu_workflow.attempts AS p
++                            ON (s.project_id, s.client_id, s.execution_id,
++                                s.parent_node_run_id, s.parent_attempt_id)
++                            = (p.project_id, p.client_id, p.execution_id, p.node_run_id, p.attempt_id)
++                        LEFT JOIN jimu_workflow.tool_step_completions AS c
++                            ON (c.project_id, c.client_id, c.execution_id, c.child_node_run_id, c.child_attempt_id)
++                            = (s.project_id, s.client_id, s.execution_id, s.child_node_run_id, s.child_attempt_id)
++                        WHERE (s.project_id, s.client_id, s.execution_id, s.parent_node_run_id, s.step_id)
++                            = (:project_id, :client_id, :execution_id, :parent_node_run_id, :step_id)
++                            AND p.attempt_number < :ordinal
++                        ORDER BY p.attempt_number
++                    """),
++                        {
++                            **_scope(scope, eid),
++                            "parent_node_run_id": parent.node_run_id,
++                            "step_id": bound.step.step_id,
++                            "ordinal": parent_attempt.attempt_number,
++                        },
++                    )
++                )
++                .mappings()
++                .all()
++            )
++            priors = []
++            for row in rows:
++                if (
++                    row["completion"] is None
++                    or _read_input(row).bound_digest() != bound.bound_digest()
++                ):
++                    return None
++                completion = _read_completion(row)
++                old_parent = await repo.get_attempt(
++                    connection,
++                    scope,
++                    eid,
++                    parent.node_run_id,
++                    row["original_parent_attempt_id"],
++                )
++                cid, aid = row["child_node_run_id"], row["child_attempt_id"]
++                child = await repo.get_node(connection, scope, eid, cid)
++                attempt = await repo.get_attempt(connection, scope, eid, cid, aid)
++                if (
++                    old_parent is None
++                    or old_parent.status
++                    not in (AttemptStatus.FAILED, AttemptStatus.TIMED_OUT)
++                    or child is None
++                    or child.node_id is not NodeId.N05
++                    or child.status is not NodeRunStatus.FAILED
++                    or child.input_digest != bound.bound_digest()
++                    or attempt is None
++                    or attempt.status
++                    not in (AttemptStatus.FAILED, AttemptStatus.TIMED_OUT)
++                    or attempt.status.value != completion.attempt_status
++                ):
++                    return None
++                await _verify_child_artifacts(
++                    connection, scope, child, attempt, completion
++                )
++                priors.append(
++                    NestedToolAttemptLink(
++                        old_parent, child, attempt, completion.result.invocations
++                    )
++                )
++            identity = NestedToolStepIdentity(
++                eid,
++                _node_ref(parent.node_run_id),
++                bound.inputs.tool_plan_ref,
++                bound.step.step_id,
++                bound.step.tool_ref,
++                bound.inputs.object_record.profile_ref,
++                ObjectRef(
++                    record_kind=RuntimeRecordKind.OBJECT,
++                    record_id=bound.inputs.object_record.object_id,
++                ),
++                bound.bound_digest(),
++            )
++            if await self._lock_step(connection, handle, lock=False) is None:
++                return None
++            return NestedToolRetryHistory(
++                identity,
++                NestedToolAttemptLink(parent_attempt, handle.node, handle.attempt, ()),
++                tuple(priors),
++            )
++
++    async def complete(
++        self, handle: StepAttempt, result: StepResult
++    ) -> StepCompletion | None:
++        """Commit an original whole-step result and active parent binding atomically."""
++        claim = handle.claim
++        async with self._engine.begin() as connection:
++            timeout_result = _reports_timeout(result.execution)
++            checked = await self._lock_step(
++                connection, handle, timeout_result=timeout_result
++            )
++            if checked is None:
++                return None
++            job, bound, now = checked
++            result = StepResult.model_validate_json(result.stable_json())
++            tool = result.execution
++            observation = tool.authority_observation
++            if observation is not None and observation.arrival_qualification == "late":
++                return None
++            if (
++                observation is not None
++                and observation.arrival_qualification == "unresolved"
++            ):
++                tool = tool.model_copy(
++                    update={
++                        "authority_observation": observation.model_copy(
++                            update={"arrival_qualification": "on_time"}
++                        )
++                    }
++                )
++                result = result.model_copy(update={"execution": tool})
++            state = await repo.get_execution(
++                connection, claim.scope, claim.execution_id
++            )
++            assert state is not None
++            version = next(
++                pin.implementation_version
++                for pin in state.execution.pins.tool_pins
++                if pin.tool_ref == bound.step.tool_ref
++            )
++            _check_result(
++                bound, result, handle.node, handle.attempt, version, claim.scope
++            )
++            if tool.completed_at > now:
++                raise ValueError(
++                    "tool result completion follows its durable commit clock"
++                )
++            # Recheck the two fences after parsing. Only a normalized timeout
++            # may close a still-owned child after its own deadline.
++            checked = await self._lock_step(
++                connection, handle, lock=False, timeout_result=timeout_result
++            )
++            if checked is None:
++                return None
++            job, _, now = checked
++            assert job.attempt_deadline is not None
++            timed_out = now >= job.attempt_deadline
++            won = tool.status == "succeeded"
++            selection = None
++            if won:
++                if tool.object_ref is None:
++                    raise ValueError("successful tool step requires its source Object")
++                selection = ToolStepSelection(
++                    schema_version="1.0.0",
++                    selection_group="tool_step",
++                    scope=FactScope.OBJECT,
++                    selection_id=uuid4().hex,
++                    execution_id=tool.execution_id,
++                    profile_ref=tool.profile_ref,
++                    object_id=tool.object_ref.record_id,
++                    selected_attempt_id=handle.attempt.attempt_id,
++                    selected_fact_refs=tool.generated_fact_refs,
++                    reason="validated_success",
++                    authority_revision=1,
++                    actor_ref=self._actor,
++                    created_at=now,
++                    tool_plan_ref=bound.inputs.tool_plan_ref,
++                    step_id=bound.step.step_id,
++                    selected_result_ref=_tool_ref(tool),
++                )
++            completion = StepCompletion(
++                result=result,
++                attempt_status="succeeded"
++                if won
++                else "timed_out"
++                if timed_out
++                else "failed",
++                selection=selection,
++            )
++            status = AttemptStatus(completion.attempt_status)
++            guard = {
++                AttemptStatus.SUCCEEDED: AttemptTransitionGuard.RESPONSE_VALIDATED_WITH_COMMIT_RIGHTS,
++                AttemptStatus.TIMED_OUT: AttemptTransitionGuard.DEADLINE_ELAPSED,
++                AttemptStatus.FAILED: AttemptTransitionGuard.NORMALIZED_FAILURE,
++            }[status]
++            reason = (
++                None
++                if won
++                else LifecycleReason(
++                    code="tool_deadline_elapsed"
++                    if timed_out
++                    else "tool_step_unsuccessful"
++                )
++            )
++            await _finish_attempt(
++                connection,
++                claim.scope,
++                handle.node,
++                handle.attempt,
++                status,
++                guard,
++                now,
++                reason=reason,
++            )
++            following = handle.node.model_copy(
++                update={
++                    "status": NodeRunStatus.SUCCEEDED if won else NodeRunStatus.FAILED,
++                    "ended_at": now,
++                    "reason": reason,
++                    "output_refs": tuple(
++                        ref for ref, _ in _produced_records(completion)
++                    ),
++                }
++            )
++            await repo.transition_node(
++                connection,
++                claim.scope,
++                claim.execution_id,
++                handle.node,
++                following,
++                now=now,
++                guard=NodeTransitionGuard.AUTHORITATIVE_OUTPUT_VALIDATED
++                if won
++                else NodeTransitionGuard.NONRETRYABLE_FAILURE,
++            )
++            await _write_job(
++                connection, claim.scope, _release_job(job, _JobStatus.DONE, now)
++            )
++            await self._save_completion(connection, handle, bound, completion)
++            return completion
++
++    async def _save_completion(
++        self,
++        connection: AsyncConnection,
++        handle: StepAttempt,
++        bound: _StepInput,
++        completion: StepCompletion,
++    ) -> None:
++        claim = handle.claim
++        for ref, record in _produced_records(completion):
++            await repo.store_output(
++                connection,
++                claim.scope,
++                claim.execution_id,
++                claim.node_run_id,
++                handle.attempt.attempt_id,
++                output_key=_output_key(ref),
++                output_kind=ref.record_kind.value,
++                record=record,
++            )
++        parameters = {
++            **_scope(claim.scope, claim.execution_id),
++            "parent_node_run_id": handle.parent_claim.node_run_id,
++            "parent_attempt_id": handle.parent_attempt_id,
++            "child_node_run_id": claim.node_run_id,
++            "child_attempt_id": handle.attempt.attempt_id,
++            "step_id": bound.step.step_id,
++            "bound_input_digest": bound.bound_digest(),
++            "attempt_status": completion.attempt_status,
++            "tool_execution_id": completion.result.execution.tool_execution_id,
++            "result_digest": _digest(completion),
++            "record": completion.stable_json(),
++        }
++        inserted = await connection.execute(
++            text("""
++                INSERT INTO jimu_workflow.tool_step_completions
++                    (project_id, client_id, execution_id, child_node_run_id, child_attempt_id,
++                     parent_node_run_id, step_id, bound_input_digest, attempt_status, tool_execution_id, result_digest, record)
++                VALUES (:project_id, :client_id, :execution_id, :child_node_run_id, :child_attempt_id,
++                     :parent_node_run_id, :step_id, :bound_input_digest, :attempt_status, :tool_execution_id, :result_digest,
++                     CAST(:record AS json))
++                RETURNING child_node_run_id, child_attempt_id, result_digest
++            """),
++            parameters,
++        )
++        await _bind_completion(connection, parameters, inserted.mappings().one())
++
++
++def _reports_timeout(tool: ToolExecution) -> bool:
++    outcome = tool.attempt_result
++    if isinstance(outcome, (FailedToolAttempt, UndispatchedToolAttempt)):
++        return outcome.error.error_class == "timeout"
++    return (
++        isinstance(outcome, ReturnedToolAttempt)
++        and isinstance(outcome.result, FailedToolResult)
++        and outcome.result.error.error_class == "timeout"
++    )
++
++
++def _tool_ref(tool: ToolExecution) -> ToolExecutionRef:
++    return ToolExecutionRef(
++        record_kind=RuntimeRecordKind.TOOL_EXECUTION, record_id=tool.tool_execution_id
++    )
++
++
++def _output_key(ref: RuntimeRecordRef) -> str:
++    return f"{ref.record_kind.value}.{ref.record_id}"
++
++
++def _produced_records(
++    completion: StepCompletion,
++) -> tuple[tuple[RuntimeRecordRef, ContractModel], ...]:
++    result = completion.result
++    records: list[tuple[RuntimeRecordRef, ContractModel]] = [
++        (_tool_ref(result.execution), result.execution)
++    ]
++    records.extend(
++        (
++            RuntimeRecordRef(
++                record_kind=RuntimeRecordKind.FACT, record_id=item.fact_id
++            ),
++            item,
++        )
++        for item in result.facts
++    )
++    records.extend(
++        (
++            RuntimeRecordRef(
++                record_kind=RuntimeRecordKind.EVIDENCE, record_id=item.evidence_id
++            ),
++            item,
++        )
++        for item in result.evidence
++    )
++    records.extend(
++        (
++            RuntimeRecordRef(
++                record_kind=RuntimeRecordKind.MODEL_INVOCATION,
++                record_id=item.model_invocation_id,
++            ),
++            item,
++        )
++        for item in result.invocations
++    )
++    if completion.selection is not None:
++        records.append(
++            (
++                RuntimeRecordRef(
++                    record_kind=RuntimeRecordKind.AUTHORITATIVE_RESULT_SELECTION,
++                    record_id=completion.selection.selection_id,
++                ),
++                completion.selection,
++            )
++        )
++    return tuple(records)
++
++
++async def _verify_child_artifacts(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    child: NodeRun,
++    attempt: Attempt,
++    completion: StepCompletion,
++) -> None:
++    produced = _produced_records(completion)
++    if tuple(ref.stable_json() for ref in child.output_refs) != tuple(
++        ref.stable_json() for ref, _ in produced
++    ):
++        raise ValueError(
++            "step completion differs from its durable child output manifest"
++        )
++    for ref, record in produced:
++        stored = await repo.read_output(
++            connection,
++            scope,
++            child.execution_id,
++            child.node_run_id,
++            attempt.attempt_id,
++            _output_key(ref),
++            type(record),
++        )
++        if stored != record:
++            raise ValueError(
++                "whole-step completion differs from its child-owned durable artifacts"
++            )
++
++
++_TOOL_INPUT_KINDS = {
++    RuntimeRecordKind.CONTEXT_SNAPSHOT,
++    RuntimeRecordKind.EVIDENCE,
++    RuntimeRecordKind.FACT,
++    RuntimeRecordKind.MODEL_INVOCATION,
++    RuntimeRecordKind.OBJECT,
++    RuntimeRecordKind.TOOL_EXECUTION,
++}
++
++
++def _check_result(
++    bound: _StepInput,
++    result: StepResult,
++    child: NodeRun,
++    attempt: Attempt,
++    implementation_version: str,
++    scope: IdempotencyScope,
++) -> None:
++    tool, origin = result.execution, result.execution.invocation_origin
++    inputs = bound.inputs
++    env, obj = inputs.envelope, inputs.object_record
++    expected_inputs = tuple(
++        ToolArtifactRef(
++            artifact_ref=ToolArtifactRecordRef.model_validate(pin.ref.model_dump()),
++            digest=pin.digest,
++        )
++        for pin in env.upstream_artifacts
++        if pin.ref.record_kind in _TOOL_INPUT_KINDS
++    )
++    if (
++        not isinstance(origin, ToolPlanStepOrigin)
++        or (origin.tool_plan_ref, origin.step_id, tool.tool_ref)
++        != (inputs.tool_plan_ref, bound.step.step_id, bound.step.tool_ref)
++        or (
++            tool.execution_id,
++            tool.profile_ref,
++            tool.object_ref,
++            tool.trace_id,
++            tool.node_run_ref.record_id,
++            tool.attempt_ref.record_id,
++        )
++        != (
++            env.execution_id,
++            obj.profile_ref,
++            ObjectRef(record_kind=RuntimeRecordKind.OBJECT, record_id=obj.object_id),
++            env.trace.trace_id,
++            child.node_run_id,
++            attempt.attempt_id,
++        )
++        or attempt.started_at is None
++        or tool.started_at < attempt.started_at
++        or tool.input_refs != expected_inputs
++        or any(
++            item.access_scope.project_id != scope.project_id
++            or isinstance(item.access_scope, TaskEvidenceAccess)
++            and item.access_scope.task_id != env.task_id
++            for item in result.evidence
++        )
++        or tool.actual_implementation_version is not None
++        and tool.actual_implementation_version != implementation_version
++    ):
++        raise ValueError(
++            "tool result differs from its immutable scope, configuration or child owner"
++        )
++    qualification = tool.authority_observation
++    if tool.status == "succeeded" and (
++        qualification is None
++        or (
++            qualification.arrival_qualification,
++            qualification.envelope_validation,
++            qualification.association_validation,
++        )
++        != ("on_time", "trusted", "trusted")
++        or tool.actual_implementation_version != implementation_version
++    ):
++        raise ValueError(
++            "successful tool step requires a trusted on-time result from the pinned implementation"
++        )
++    mapped = {
++        mapping.output_name: mapping.target_fact_key
++        for mapping in bound.step.fact_output_mappings
++    }
++    names = set()
++    for fact in result.facts:
++        source = fact.source
++        if (
++            not isinstance(source, ToolFactSource)
++            or (
++                source.tool_execution_ref,
++                source.tool_plan_ref,
++                source.step_id,
++                source.tool_ref,
++            )
++            != (_tool_ref(tool), origin.tool_plan_ref, origin.step_id, tool.tool_ref)
++            or (
++                fact.execution_id,
++                fact.object_id,
++                fact.profile_ref,
++                fact.attempt_id,
++                fact.trace_id,
++            )
++            != (
++                tool.execution_id,
++                obj.object_id,
++                tool.profile_ref,
++                attempt.attempt_id,
++                tool.trace_id,
++            )
++            or fact.producer_declaration_id not in origin.producer_declaration_ids
++            or mapped.get(source.output_name) != fact.fact_key
++            or source.output_name in names
++        ):
++            raise ValueError(
++                "tool Fact does not resolve to the exact original step producer and mapping"
++            )
++        names.add(source.output_name)
++    if tool.status == "succeeded" and (
++        qualification is None
++        or {output.output_name for output in qualification.mapped_outputs}
++        != mapped.keys()
++    ):
++        raise ValueError(
++            "successful tool step requires the complete configured output group"
++        )
++
++
++async def load_child_nodes(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    execution_id: str,
++) -> tuple[NodeRun, ...]:
++    rows = await connection.execute(
++        text(f"""
++            SELECT child_node_run_id FROM jimu_workflow.tool_step_attempts WHERE {_SCOPE}
++            ORDER BY child_node_run_id
++        """),
++        _scope(scope, execution_id),
++    )
++    result = []
++    for identity in rows.scalars():
++        node = await repo.get_node(connection, scope, execution_id, identity)
++        if node is None or node.node_id is not NodeId.N05:
++            raise ValueError("tool step ledger requires a durable N05 child NodeRun")
++        result.append(node)
++    return tuple(result)
++
++
++async def load_parent_step_history(
++    connection: AsyncConnection,
++    scope: IdempotencyScope,
++    inputs: ToolNodeInput,
++) -> ToolStepHistory | None:
++    """Resolve a parent's explicit child results or use the legacy same-round path."""
++    env = inputs.envelope
++    parameters = {
++        **_scope(scope, env.execution_id),
++        "parent_node_run_id": env.node_run_id,
++        "parent_attempt_id": env.attempt_id,
++    }
++    bound_count = (
++        await connection.execute(
++            text(f"""
++                SELECT count(*) FROM jimu_workflow.tool_step_attempts WHERE {_SCOPE}
++                    AND parent_node_run_id = :parent_node_run_id AND parent_attempt_id = :parent_attempt_id
++            """),
++            parameters,
++        )
++    ).scalar_one()
++    rows = (
++        (
++            await connection.execute(
++                text(f"""
++                SELECT {_COMPLETED_COLUMNS} FROM {_COMPLETED_SOURCE}
++                JOIN jimu_workflow.tool_step_parent_outputs AS b
++                    USING (project_id, client_id, execution_id, parent_node_run_id, step_id,
++                        bound_input_digest, child_node_run_id, child_attempt_id, result_digest)
++                WHERE {_PARENT_PARAMS} AND b.parent_attempt_id = :parent_attempt_id
++                ORDER BY c.step_id
++            """),
++                parameters,
++            )
++        )
++        .mappings()
++        .all()
++    )
++    if not rows and not bound_count:
++        return None
++    parent = await repo.get_node(connection, scope, env.execution_id, env.node_run_id)
++    current = await repo.get_attempt(
++        connection, scope, env.execution_id, env.node_run_id, env.attempt_id
++    )
++    locked = await repo.get_execution(connection, scope, env.execution_id)
++    if (
++        parent is None
++        or current is None
++        or locked is None
++        or not _parent_inputs(parent, inputs)
++    ):
++        raise ValueError(
++            "tool step history requires the exact persisted parent invocation"
++        )
++    version_by_tool = {
++        pin.tool_ref: pin.implementation_version
++        for pin in locked.execution.pins.tool_pins
++    }
++    entries = []
++    for row in rows:
++        bound, completion = _read_input(row), _read_completion(row)
++        if (
++            bound.model_copy(update={"inputs": inputs}).bound_digest()
++            != bound.bound_digest()
++        ):
++            raise ValueError(
++                "stored child input cannot be reused with changed parent inputs"
++            )
++        original = await repo.get_attempt(
++            connection,
++            scope,
++            env.execution_id,
++            env.node_run_id,
++            bound.inputs.envelope.attempt_id,
++        )
++        cid, aid = row["child_node_run_id"], row["child_attempt_id"]
++        child = await repo.get_node(connection, scope, env.execution_id, cid)
++        attempt = await repo.get_attempt(connection, scope, env.execution_id, cid, aid)
++        version = version_by_tool.get(bound.step.tool_ref)
++        if (
++            original is None
++            or child is None
++            or attempt is None
++            or version is None
++            or child.input_digest != bound.bound_digest()
++            or attempt.status.value != completion.attempt_status
++        ):
++            raise ValueError(
++                "tool step history references missing owners, pins, or exact input"
++            )
++        _check_result(bound, completion.result, child, attempt, version, scope)
++        await _verify_child_artifacts(connection, scope, child, attempt, completion)
++        entries.append(
++            ToolStepHistoryEntry(
++                original,
++                child,
++                attempt,
++                completion.result.execution,
++                completion.result.facts,
++                completion.selection,
++                completion.result.evidence,
++                completion.result.invocations,
++            )
++        )
++    return ToolStepHistory(inputs, parent, current, tuple(entries))
+--- /dev/null
++++ b/src/jimu_runtime/workflow/migrations/004_tool_step_attempts.sql
+@@ -0,0 +1,94 @@
++ALTER TABLE jimu_workflow.jobs
++    ADD COLUMN internal_tool_step boolean NOT NULL DEFAULT false,
++    ADD CONSTRAINT internal_tool_step_job_budget CHECK (
++        NOT internal_tool_step
++        OR (max_attempts = 1 AND status IN ('leased', 'done') AND NOT retry_on_lease_loss)
++    ),
++    ADD UNIQUE (project_id, client_id, execution_id, node_run_id, job_id, internal_tool_step);
++
++CREATE TABLE jimu_workflow.tool_step_attempts (
++    project_id text NOT NULL,
++    client_id text NOT NULL,
++    execution_id text NOT NULL,
++    parent_node_run_id text NOT NULL,
++    parent_job_id text NOT NULL,
++    parent_attempt_id text NOT NULL,
++    parent_fence bigint NOT NULL CHECK (parent_fence > 0),
++    parent_internal boolean GENERATED ALWAYS AS (false) STORED,
++    child_node_run_id text NOT NULL,
++    child_job_id text NOT NULL,
++    child_attempt_id text NOT NULL,
++    child_fence bigint NOT NULL CHECK (child_fence > 0),
++    child_internal boolean GENERATED ALWAYS AS (true) STORED,
++    step_id text NOT NULL CHECK (step_id <> ''),
++    invocation_input_digest jimu_workflow.digest NOT NULL,
++    bound_input_digest jimu_workflow.digest NOT NULL,
++    record json NOT NULL,
++    PRIMARY KEY (project_id, client_id, execution_id, child_node_run_id, child_attempt_id),
++    UNIQUE (project_id, client_id, execution_id, child_node_run_id),
++    UNIQUE (project_id, client_id, execution_id, parent_node_run_id, parent_attempt_id, step_id),
++    UNIQUE (project_id, client_id, execution_id, child_node_run_id, child_attempt_id,
++        parent_node_run_id, step_id, bound_input_digest),
++    FOREIGN KEY (project_id, client_id, execution_id, parent_node_run_id, parent_job_id, parent_internal)
++        REFERENCES jimu_workflow.jobs (project_id, client_id, execution_id, node_run_id, job_id, internal_tool_step),
++    FOREIGN KEY (project_id, client_id, execution_id, child_node_run_id, child_job_id, child_internal)
++        REFERENCES jimu_workflow.jobs (project_id, client_id, execution_id, node_run_id, job_id, internal_tool_step),
++    FOREIGN KEY (project_id, client_id, execution_id, parent_node_run_id, parent_job_id, parent_fence, parent_attempt_id)
++        REFERENCES jimu_workflow.attempts (project_id, client_id, execution_id, node_run_id, job_id, fence, attempt_id),
++    FOREIGN KEY (project_id, client_id, execution_id, child_node_run_id, child_job_id, child_fence, child_attempt_id)
++        REFERENCES jimu_workflow.attempts (project_id, client_id, execution_id, node_run_id, job_id, fence, attempt_id),
++    CHECK (parent_node_run_id <> child_node_run_id)
++);
++
++CREATE TABLE jimu_workflow.tool_step_completions (
++    project_id text NOT NULL,
++    client_id text NOT NULL,
++    execution_id text NOT NULL,
++    child_node_run_id text NOT NULL,
++    child_attempt_id text NOT NULL,
++    parent_node_run_id text NOT NULL,
++    step_id text NOT NULL,
++    bound_input_digest jimu_workflow.digest NOT NULL,
++    attempt_status text NOT NULL CHECK (attempt_status IN ('succeeded', 'failed', 'timed_out')),
++    tool_execution_id text NOT NULL,
++    result_digest jimu_workflow.digest NOT NULL,
++    record json NOT NULL,
++    PRIMARY KEY (project_id, client_id, execution_id, child_node_run_id, child_attempt_id),
++    UNIQUE (project_id, client_id, execution_id, tool_execution_id),
++    UNIQUE (project_id, client_id, execution_id, child_node_run_id, child_attempt_id,
++        parent_node_run_id, step_id, bound_input_digest, result_digest),
++    FOREIGN KEY (project_id, client_id, execution_id, child_node_run_id, child_attempt_id,
++        parent_node_run_id, step_id, bound_input_digest)
++        REFERENCES jimu_workflow.tool_step_attempts (project_id, client_id, execution_id,
++            child_node_run_id, child_attempt_id, parent_node_run_id, step_id, bound_input_digest),
++    FOREIGN KEY (project_id, client_id, execution_id, child_node_run_id, child_attempt_id, attempt_status)
++        REFERENCES jimu_workflow.attempt_results (project_id, client_id, execution_id, node_run_id, attempt_id, status)
++);
++
++CREATE UNIQUE INDEX tool_step_success_identity_idx ON jimu_workflow.tool_step_completions
++    (project_id, client_id, execution_id, parent_node_run_id, step_id)
++    WHERE attempt_status = 'succeeded';
++
++CREATE TABLE jimu_workflow.tool_step_parent_outputs (
++    project_id text NOT NULL,
++    client_id text NOT NULL,
++    execution_id text NOT NULL,
++    parent_node_run_id text NOT NULL,
++    parent_attempt_id text NOT NULL,
++    step_id text NOT NULL,
++    bound_input_digest jimu_workflow.digest NOT NULL,
++    child_node_run_id text NOT NULL,
++    child_attempt_id text NOT NULL,
++    result_digest jimu_workflow.digest NOT NULL,
++    PRIMARY KEY (project_id, client_id, execution_id, parent_node_run_id, parent_attempt_id, step_id),
++    FOREIGN KEY (project_id, client_id, execution_id, parent_node_run_id, parent_attempt_id)
++        REFERENCES jimu_workflow.attempts (project_id, client_id, execution_id, node_run_id, attempt_id),
++    FOREIGN KEY (project_id, client_id, execution_id, child_node_run_id, child_attempt_id,
++        parent_node_run_id, step_id, bound_input_digest, result_digest)
++        REFERENCES jimu_workflow.tool_step_completions (project_id, client_id, execution_id,
++            child_node_run_id, child_attempt_id, parent_node_run_id, step_id, bound_input_digest, result_digest)
++);
++
++GRANT SELECT, INSERT ON jimu_workflow.tool_step_attempts,
++    jimu_workflow.tool_step_completions, jimu_workflow.tool_step_parent_outputs
++    TO jimu_workflow_app;
+--- a/src/jimu_runtime/domain/nodes/tool_execution.py
++++ b/src/jimu_runtime/domain/nodes/tool_execution.py
+@@ -1,50 +1,57 @@
+ """N05 binds one Object to the Profile's fixed ToolPlan and validated inputs."""
+ 
++from dataclasses import dataclass
+ from typing import Annotated, Literal, Self
+ 
+ from pydantic import BeforeValidator, Field, model_validator
+ 
+ from jimu_runtime.domain.base import ContractModel
+ from jimu_runtime.domain.definition_support import (
+     AbsentOptional,
+     OptionalContract,
+     immutable_sequence,
+     omit_default_from_schema,
++    reference_identity,
+ )
+ from jimu_runtime.domain.definitions.capabilities import ProfileDefinition
+ from jimu_runtime.domain.definitions.tools import ToolPlanDefinition
+-from jimu_runtime.domain.enums import NodeRunStatus, RuntimeRecordKind
++from jimu_runtime.domain.enums import AttemptStatus, NodeRunStatus, RuntimeRecordKind
+ from jimu_runtime.domain.fact_selectors import (
+     QuestionProducerSelector,
+     ToolPlanContentRef,
+ )
+ from jimu_runtime.domain.nodes.envelopes import (
+     NodeInputEnvelope,
+     NodeIssues,
+     NodeOutputEnvelope,
+     check_envelope_pair,
+ )
+ from jimu_runtime.domain.nodes.observation import ObjectImageView
+ from jimu_runtime.domain.primitives import ArtifactId
+ from jimu_runtime.domain.runtime.applicability import ContextSnapshotRef
+-from jimu_runtime.domain.runtime.authority import ObservationBatchSelection
+-from jimu_runtime.domain.runtime.executions import NodeId
++from jimu_runtime.domain.runtime.authority import (
++    ObservationBatchSelection,
++    ToolStepSelection,
++)
++from jimu_runtime.domain.runtime.evidence import EvidenceAsset
++from jimu_runtime.domain.runtime.executions import Attempt, NodeId, NodeRun
+ from jimu_runtime.domain.runtime.facts import (
+     AuthoritySelectionRef,
+     EvidenceRefs,
+     FactRecord,
+     FactRefs,
+     ObjectRef,
+     QuestionFactSource,
+     ToolExecutionRef,
+     ToolFactSource,
+     require_unique_runtime_refs,
+ )
++from jimu_runtime.domain.runtime.invocations import ModelInvocation
+ from jimu_runtime.domain.runtime.perception import ObjectRecord
+ from jimu_runtime.domain.runtime.tool_executions import (
+     ToolExecution,
+     ToolPlanStepOrigin,
+ )
+ from jimu_runtime.domain.tool_mappings import FactInput
+ 
+ 
+@@ -221,16 +228,119 @@
+             if isinstance(step, InvokedToolStep)
+         )
+         require_unique_runtime_refs(refs)
+         if self.status != "succeeded" and not self.validation_issues:
+             raise ValueError("incomplete ToolPlan must retain failure diagnostics")
+         return self
+ 
+ 
++@dataclass(frozen=True, slots=True)
++class ToolStepHistoryEntry:
++    """Internal, resolved persistence evidence for one selected parent output."""
++
++    original_parent_attempt: Attempt
++    child_node: NodeRun
++    child_attempt: Attempt
++    execution: ToolExecution
++    facts: tuple[FactRecord, ...]
++    selection: ToolStepSelection | None
++    evidence: tuple[EvidenceAsset, ...]
++    invocations: tuple[ModelInvocation, ...]
++
++
++@dataclass(frozen=True, slots=True)
++class ToolStepHistory:
++    """The durable child outputs explicitly bound to one business N05 Attempt."""
++
++    inputs: ToolNodeInput
++    parent_node: NodeRun
++    parent_attempt: Attempt
++    entries: tuple[ToolStepHistoryEntry, ...]
++
++    def resolved_executions(
++        self, inputs: ToolNodeInput, facts: tuple[FactRecord, ...]
++    ) -> dict[str, ToolExecution]:
++        env = inputs.envelope
++        parent = self.parent_node
++        current = self.parent_attempt
++        if (
++            self.inputs != inputs
++            or parent.node_id is not NodeId.N05
++            or (parent.node_run_id, current.attempt_id, parent.execution_id)
++            != (env.node_run_id, env.attempt_id, env.execution_id)
++            or not current.belongs_to_node(parent)
++            or (
++                parent.trace,
++                reference_identity(parent.config_ref),
++                parent.upstream_inputs,
++            )
++            != (
++                env.trace,
++                reference_identity(env.node_config_ref),
++                env.upstream_artifacts,
++            )
++        ):
++            raise ValueError(
++                "tool step history must resolve this exact parent invocation"
++            )
++        original_rounds = {
++            link.attempt_ref.record_id: link.attempt_number
++            for link in parent.attempt_history
++        }
++        if original_rounds.get(current.attempt_id) != current.attempt_number:
++            raise ValueError("parent Attempt must occur in the durable NodeRun history")
++        indexed_facts = {fact.fact_id: fact for fact in facts}
++        executions: dict[str, ToolExecution] = {}
++        for entry in self.entries:
++            child, attempt, execution = (
++                entry.child_node,
++                entry.child_attempt,
++                entry.execution,
++            )
++            original = entry.original_parent_attempt
++            succeeded = execution.status == "succeeded"
++            expected_node_status = (
++                NodeRunStatus.SUCCEEDED if succeeded else NodeRunStatus.FAILED
++            )
++            expected_attempts = (
++                (AttemptStatus.SUCCEEDED,)
++                if succeeded
++                else (AttemptStatus.FAILED, AttemptStatus.TIMED_OUT)
++            )
++            if (
++                not original.belongs_to_node(parent)
++                or original_rounds.get(original.attempt_id) != original.attempt_number
++                or original.attempt_number > current.attempt_number
++                or original.attempt_id != current.attempt_id
++                and (original.ended_at is None or not succeeded)
++                or child.node_id is not NodeId.N05
++                or child.node_run_id == parent.node_run_id
++                or child.execution_id != parent.execution_id
++                or (child.trace, child.config_ref, child.upstream_inputs)
++                != (parent.trace, parent.config_ref, parent.upstream_inputs)
++                or not attempt.belongs_to_node(child)
++                or len(child.attempt_history) != 1
++                or child.attempt_history[0].attempt_ref != execution.attempt_ref
++                or child.attempt_history[0].attempt_number != attempt.attempt_number
++                or execution.node_run_ref.record_id != child.node_run_id
++                or execution.attempt_ref.record_id != attempt.attempt_id
++                or child.status is not expected_node_status
++                or attempt.status not in expected_attempts
++                or succeeded != (entry.selection is not None)
++                or execution.tool_execution_id in executions
++                or any(indexed_facts.get(fact.fact_id) != fact for fact in entry.facts)
++            ):
++                raise ValueError(
++                    "tool step must retain its complete original child result"
++                )
++            executions[execution.tool_execution_id] = execution
++        return executions
++
++
+ class ToolNodeOutput(ContractModel):
+     schema_version: Literal["1.0.0"]
+     envelope: NodeOutputEnvelope
+     summary: ToolPlanRunSummary
+     tool_fact_refs: FactRefs
+     evidence_refs: EvidenceRefs
+ 
+     @model_validator(mode="after")
+@@ -250,16 +360,18 @@
+ 
+     def check_steps(
+         self,
+         inputs: ToolNodeInput,
+         profile: ProfileDefinition,
+         plan: ToolPlanDefinition,
+         executions: tuple[ToolExecution, ...],
+         facts: tuple[FactRecord, ...],
++        *,
++        history: ToolStepHistory | None = None,
+     ) -> None:
+         check_envelope_pair(inputs.envelope, self.envelope)
+         inputs.check_plan(profile, plan)
+         if (
+             self.summary.object_ref.record_id != inputs.object_record.object_id
+             or self.summary.tool_plan_ref != inputs.tool_plan_ref
+             or tuple(summary.step_id for summary in self.summary.steps)
+             != tuple(step.step_id for step in plan.steps)
+@@ -272,16 +384,20 @@
+             for step in self.summary.steps
+             if isinstance(step, InvokedToolStep)
+         )
+         if tuple(execution.tool_execution_id for execution in executions) != tuple(
+             ref.record_id for ref in refs
+         ):
+             raise ValueError("resolve all recorded ToolPlan step invocations")
+         actual = {execution.tool_execution_id: execution for execution in executions}
++        if history is not None and history.resolved_executions(inputs, facts) != actual:
++            raise ValueError(
++                "summary must resolve every durably bound tool step exactly"
++            )
+         fact_by_id = {fact.fact_id: fact for fact in facts}
+         all_facts = {
+             ref for execution in executions for ref in execution.generated_fact_refs
+         }
+         all_evidence = {
+             ref for execution in executions for ref in execution.evidence_refs
+         }
+         if (
+@@ -300,34 +416,40 @@
+             if isinstance(summary, UninvokedToolStep):
+                 unavailable_required |= (
+                     declared.requirement == "required"
+                     and summary.disposition == "blocked"
+                 )
+                 continue
+             execution = actual[summary.tool_execution_ref.record_id]
+             origin = execution.invocation_origin
+-            if not isinstance(origin, ToolPlanStepOrigin) or (
+-                origin.tool_plan_ref,
+-                origin.step_id,
+-                execution.tool_ref,
+-                execution.execution_id,
+-                execution.profile_ref,
+-                execution.object_ref,
+-                execution.node_run_ref.record_id,
+-                execution.attempt_ref.record_id,
+-            ) != (
+-                inputs.tool_plan_ref,
+-                declared.step_id,
+-                declared.tool_ref,
+-                inputs.envelope.execution_id,
+-                inputs.object_record.profile_ref,
+-                self.summary.object_ref,
+-                self.envelope.node_run_id,
+-                self.envelope.attempt_id,
++            if (
++                not isinstance(origin, ToolPlanStepOrigin)
++                or (
++                    origin.tool_plan_ref,
++                    origin.step_id,
++                    execution.tool_ref,
++                    execution.execution_id,
++                    execution.profile_ref,
++                    execution.object_ref,
++                )
++                != (
++                    inputs.tool_plan_ref,
++                    declared.step_id,
++                    declared.tool_ref,
++                    inputs.envelope.execution_id,
++                    inputs.object_record.profile_ref,
++                    self.summary.object_ref,
++                )
++                or history is None
++                and (
++                    execution.node_run_ref.record_id,
++                    execution.attempt_ref.record_id,
++                )
++                != (self.envelope.node_run_id, self.envelope.attempt_id)
+             ):
+                 raise ValueError(
+                     "N05 Tool execution must resolve to an actual bound ToolPlan step"
+                 )
+             unavailable_required |= (
+                 declared.requirement == "required" and execution.status != "succeeded"
+             )
+             allowed = {
+--- a/src/jimu_runtime/workflow/jobs.py
++++ b/src/jimu_runtime/workflow/jobs.py
+@@ -145,16 +145,17 @@
+     max_attempts: int
+     timeout_ms: int
+     retry_backoff_ms: tuple[int, ...]
+     retryable_error_classes: tuple[str, ...]
+     retry_on_lease_loss: bool
+     attempt_count: int
+     current_attempt_id: str | None
+     attempt_deadline: datetime | None
++    internal_tool_step: bool = False
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+ class _LockedJob:
+     execution: LockedExecution
+     node: NodeRun
+     job: _Job
+     now: datetime
+@@ -189,16 +190,17 @@
+         max_attempts=row.max_attempts,
+         timeout_ms=row.timeout_ms,
+         retry_backoff_ms=tuple(row.retry_backoff_ms),
+         retryable_error_classes=tuple(row.retryable_error_classes),
+         retry_on_lease_loss=row.retry_on_lease_loss,
+         attempt_count=row.attempt_count,
+         current_attempt_id=row.current_attempt_id,
+         attempt_deadline=row.attempt_deadline,
++        internal_tool_step=row.internal_tool_step,
+     )
+ 
+ 
+ async def _clock(connection: AsyncConnection) -> datetime:
+     result = await connection.execute(text("SELECT pg_catalog.clock_timestamp()"))
+     return cast(datetime, result.scalar_one()).astimezone(UTC)
+ 
+ 
+@@ -499,17 +501,19 @@
+             await self._cancel_locked(
+                 connection, claim.scope, execution, nodes, jobs, now
+             )
+             return None
+         job = next(
+             (
+                 job
+                 for job in jobs
+-                if job.job_id == claim.job_id and job.node_run_id == claim.node_run_id
++                if job.job_id == claim.job_id
++                and job.node_run_id == claim.node_run_id
++                and not job.internal_tool_step
+             ),
+             None,
+         )
+         if job is None:
+             return None
+         return _LockedJob(execution, nodes[claim.node_run_id], job, now)
+ 
+     async def _end_running_job(
+@@ -518,16 +522,18 @@
+         scope: IdempotencyScope,
+         locked: _LockedJob,
+         attempt: Attempt,
+         *,
+         retryable: bool,
+         outcome: Outcome | None = None,
+     ) -> CompletionDisposition:
+         job, now = locked.job, locked.now
++        if not job.internal_tool_step and locked.node.node_id is NodeId.N05:
++            await self._end_tool_step_children(connection, scope, locked, attempt)
+         if attempt.status is AttemptStatus.SUCCEEDED:
+             status = NodeRunStatus.SUCCEEDED
+             guard = NodeTransitionGuard.AUTHORITATIVE_OUTPUT_VALIDATED
+         elif retryable and job.attempt_count < job.max_attempts:
+             backoff = job.retry_backoff_ms[job.attempt_count - 1]
+             await _write_job(
+                 connection,
+                 scope,
+@@ -549,21 +555,70 @@
+             locked.node,
+             status,
+             guard,
+             now,
+             outcome=outcome,
+             reason=attempt.reason,
+         )
+         await _write_job(connection, scope, _release_job(job, _JobStatus.DONE, now))
+-        if self._on_terminal is not None:
++        if self._on_terminal is not None and not job.internal_tool_step:
+             await self._on_terminal(
+                 connection, scope, locked.execution, node, attempt, outcome, now
+             )
+         return CompletionDisposition.APPLIED
++
++    async def _end_tool_step_children(
++        self,
++        connection: AsyncConnection,
++        scope: IdempotencyScope,
++        locked: _LockedJob,
++        parent_attempt: Attempt,
++    ) -> None:
++        rows = await connection.execute(
++            text("""
++                SELECT j.* FROM jimu_workflow.tool_step_attempts AS s
++                JOIN jimu_workflow.jobs AS j
++                    ON (j.project_id, j.client_id, j.execution_id, j.node_run_id, j.job_id)
++                    = (s.project_id, s.client_id, s.execution_id, s.child_node_run_id, s.child_job_id)
++                WHERE s.project_id = :project_id AND s.client_id = :client_id
++                    AND s.execution_id = :execution_id AND s.parent_node_run_id = :parent_node_run_id
++                    AND s.parent_attempt_id = :parent_attempt_id AND j.status = 'leased'
++                ORDER BY j.job_id FOR UPDATE OF j
++            """),
++            {
++                **_scope(scope, parent_attempt.execution_id),
++                "parent_node_run_id": locked.node.node_run_id,
++                "parent_attempt_id": parent_attempt.attempt_id,
++            },
++        )
++        for row in rows.mappings():
++            child_job = _job(row)
++            child_node = await repo.get_node(
++                connection, scope, child_job.execution_id, child_job.node_run_id
++            )
++            if child_node is None:
++                raise RuntimeError("tool step has no durable child NodeRun")
++            child = _LockedJob(locked.execution, child_node, child_job, locked.now)
++            if await self._expire(connection, scope, child) is not child_job:
++                continue
++            child_attempt = await _live_attempt(connection, scope, child_job)
++            terminal = await _finish_attempt(
++                connection,
++                scope,
++                child_node,
++                child_attempt,
++                AttemptStatus.SUPERSEDED,
++                AttemptTransitionGuard.AUTHORITATIVE_FENCE_LOST,
++                locked.now,
++                reason=LifecycleReason(code="parent_tool_attempt_ended"),
++            )
++            await self._end_running_job(
++                connection, scope, child, terminal, retryable=False
++            )
+ 
+     async def _expire(
+         self,
+         connection: AsyncConnection,
+         scope: IdempotencyScope,
+         locked: _LockedJob,
+     ) -> _Job:
+         job, now = locked.job, locked.now
+@@ -603,16 +658,17 @@
+                     SELECT execution_id, node_run_id, job_id, ready_at
+                     FROM (
+                         SELECT DISTINCT ON (j.execution_id) j.execution_id,
+                             j.node_run_id, j.job_id, j.ready_at
+                         FROM jimu_workflow.jobs AS j
+                         JOIN jimu_workflow.executions AS e
+                             USING (project_id, client_id, execution_id)
+                         WHERE j.project_id = :project_id AND j.client_id = :client_id
++                            AND NOT j.internal_tool_step
+                             AND e.status IN ('initialized', 'running')
+                             AND (CAST(:execution_filter AS text) IS NULL OR j.execution_id = :execution_filter)
+                             AND (e.cancel_requested_at IS NOT NULL
+                                 OR (j.status = 'ready' AND j.ready_at <= pg_catalog.clock_timestamp())
+                                 OR (j.status = 'leased' AND
+                                     (j.lease_until <= pg_catalog.clock_timestamp()
+                                      OR j.attempt_deadline <= pg_catalog.clock_timestamp())))
+                         ORDER BY j.execution_id, (j.status = 'ready') DESC, j.ready_at, j.job_id
+@@ -679,17 +735,24 @@
+             ):
+                 return None
+             nodes, jobs, now = await _all_locked_jobs(connection, scope, execution_id)
+             if execution.cancel_requested_at is not None:
+                 await self._cancel_locked(
+                     connection, scope, execution, nodes, jobs, now
+                 )
+                 return None
+-            job = next((item for item in jobs if item.job_id == job_id), None)
++            job = next(
++                (
++                    item
++                    for item in jobs
++                    if item.job_id == job_id and not item.internal_tool_step
++                ),
++                None,
++            )
+             if job is None:
+                 return None
+             node = nodes[node_run_id]
+             if job.status is _JobStatus.LEASED:
+                 job = await self._expire(
+                     connection, scope, _LockedJob(execution, node, job, now)
+                 )
+             if job.status is not _JobStatus.READY or job.ready_at > now:
+@@ -915,17 +978,17 @@
+             nodes, jobs, now = await _all_locked_jobs(connection, scope, execution_id)
+             if execution.cancel_requested_at is not None:
+                 await self._cancel_locked(
+                     connection, scope, execution, nodes, jobs, now
+                 )
+                 return True
+             changed = False
+             for job in jobs:
+-                if job.status is _JobStatus.LEASED:
++                if job.status is _JobStatus.LEASED and not job.internal_tool_step:
+                     following = await self._expire(
+                         connection,
+                         scope,
+                         _LockedJob(execution, nodes[job.node_run_id], job, now),
+                     )
+                     changed = changed or following is not job
+             return changed
+ 
+--- a/src/jimu_runtime/workflow/worker_completion.py
++++ b/src/jimu_runtime/workflow/worker_completion.py
+@@ -2,30 +2,33 @@
+ 
+ from datetime import datetime
+ 
+ from sqlalchemy.ext.asyncio import AsyncConnection
+ 
+ from jimu_runtime.domain.enums import ExecutionStatus, NodeRunStatus, TaskStatus
+ from jimu_runtime.domain.nodes.context import SuccessfulContextBuild
+ from jimu_runtime.domain.nodes.envelopes import FailedNodeOutput, SucceededNodeOutput
++from jimu_runtime.domain.references import RuntimeRecordRef
+ from jimu_runtime.domain.runtime.authority import AuthoritativeResultSelection
+ from jimu_runtime.domain.runtime.evidence import EvidenceAsset
+ from jimu_runtime.domain.runtime.executions import Attempt, ContextSnapshotPin, NodeRun
+ from jimu_runtime.domain.runtime.facts import FactRecord
+ from jimu_runtime.domain.runtime.intake import IdempotencyScope
+ from jimu_runtime.domain.runtime.invocations import ModelInvocation
+ from jimu_runtime.domain.runtime.observations import ObservationBatch
+ from jimu_runtime.domain.runtime.perception import GroundingOutcome
+ from jimu_runtime.domain.runtime.tool_executions import ToolExecution
+ from jimu_runtime.domain.validation.runtime_authority import RuntimeAuthorityRecords
++from jimu_runtime.tools.step_attempts import load_parent_step_history
+ from jimu_runtime.workflow import repository as repo
+ from jimu_runtime.workflow.engine import DecisionDraft, plan_work
+ from jimu_runtime.workflow.jobs import StagedDecision
+ from jimu_runtime.workflow.mock_decision import finish_decision
++from jimu_runtime.workflow.mock_support import K, SyntheticArtifact, artifact
+ from jimu_runtime.workflow.worker_coverage import (
+     build_coverage_authority,
+     finalize_execution,
+ )
+ from jimu_runtime.workflow.worker_nodes import NodeResult
+ from jimu_runtime.workflow.worker_records import (
+     MESSAGE_KEY,
+     ContextMessage,
+@@ -36,16 +39,17 @@
+     ToolMessage,
+ )
+ from jimu_runtime.workflow.worker_source import OpenExecution
+ from jimu_runtime.workflow.worker_state import (
+     WorkerRecords,
+     load_attempts,
+     load_records,
+ )
++from jimu_runtime.workflow.worker_validation import check_tool_history
+ 
+ 
+ async def persist_result(
+     connection: AsyncConnection,
+     scope: IdempotencyScope,
+     locked: repo.LockedExecution,
+     node: NodeRun,
+     attempt: Attempt,
+@@ -62,27 +66,73 @@
+         != (node.execution_id, node.node_run_id, attempt.attempt_id)
+         or not {pin for pin in outcome.output_artifacts}
+         <= {item.pin for item in result.artifacts}
+         or len({item.ref for item in result.artifacts}) != len(result.artifacts)
+     ):
+         raise ValueError(
+             "validated node result requires the exact fenced artifact manifest"
+         )
++    archived: dict[RuntimeRecordRef, SyntheticArtifact] = {}
++    if isinstance(message, ToolMessage):
++        history = await load_parent_step_history(connection, scope, message.inputs)
++        if history is not None:
++            check_tool_history(message, history)
++            for entry in history.entries:
++                execution_record = entry.execution
++                for child_artifact in (
++                    artifact(
++                        K.TOOL_EXECUTION,
++                        execution_record.tool_execution_id,
++                        execution_record,
++                    ),
++                    *(artifact(K.FACT, row.fact_id, row) for row in entry.facts),
++                    *(
++                        artifact(K.EVIDENCE, row.evidence_id, row)
++                        for row in entry.evidence
++                    ),
++                    *(
++                        artifact(K.MODEL_INVOCATION, row.model_invocation_id, row)
++                        for row in entry.invocations
++                    ),
++                    *(
++                        ()
++                        if entry.selection is None
++                        else (
++                            artifact(
++                                K.AUTHORITATIVE_RESULT_SELECTION,
++                                entry.selection.selection_id,
++                                entry.selection,
++                            ),
++                        )
++                    ),
++                ):
++                    existing = archived.setdefault(child_artifact.ref, child_artifact)
++                    if existing != child_artifact:
++                        raise ValueError(
++                            "child outputs disagree for a repeated artifact reference"
++                        )
+     await repo.store_output(
+         connection,
+         scope,
+         node.execution_id,
+         node.node_run_id,
+         attempt.attempt_id,
+         output_key=MESSAGE_KEY,
+         output_kind="worker_message",
+         record=message,
+     )
+     for item in result.artifacts:
++        original = archived.get(item.ref)
++        if original is not None:
++            if item != original:
++                raise ValueError(
++                    "parent manifest conflicts with the archived child result"
++                )
++            continue
+         await repo.store_output(
+             connection,
+             scope,
+             node.execution_id,
+             node.node_run_id,
+             attempt.attempt_id,
+             output_key=f"{item.ref.record_kind.value}.{item.ref.record_id}",
+             output_kind=item.ref.record_kind.value,
+@@ -91,39 +141,44 @@
+     pin = execution.context_snapshot
+     if isinstance(message, ContextMessage) and isinstance(
+         message.output, SuccessfulContextBuild
+     ):
+         pin = ContextSnapshotPin(
+             snapshot_ref=message.output.context_snapshot_ref,
+             snapshot_digest=message.output.context_snapshot_digest,
+         )
+-    if pin != execution.context_snapshot or result.model_refs:
++    added_invocations = tuple(
++        ref for ref in result.model_refs if ref not in execution.model_invocation_refs
++    )
++    if pin != execution.context_snapshot or added_invocations:
+         following = execution.model_copy(
+             update={
+                 "context_snapshot": pin,
+                 "model_invocation_refs": (
+                     *execution.model_invocation_refs,
+-                    *result.model_refs,
++                    *added_invocations,
+                 ),
+             }
+         )
+         await repo.transition_execution(
+             connection, scope, execution, following, now=now
+         )
+ 
+ 
+ def _terminal(data: WorkerRecords) -> tuple[ExecutionStatus, TaskStatus]:
+     failure = any(
+         node.status is NodeRunStatus.FAILED for node in data.runs.values()
+     ) or any(
+         isinstance(message, DiscoveryMessage)
+         and message.output.outcome == "partial"
+         or isinstance(message, ObservationMessage)
+         and message.batch.outcome == "partial"
++        or isinstance(message, ToolMessage)
++        and message.output.summary.status == "partial"
+         or isinstance(message, GroundingMessage)
+         and any(
+             record.outcome in (GroundingOutcome.PARTIAL, GroundingOutcome.FAILED)
+             for record in message.records
+         )
+         for message in data.messages.values()
+     )
+     if not failure:
+@@ -163,28 +218,35 @@
+     gate = None if data.gate is None else data.gate.result()
+     all_facts: list[FactRecord] = []
+     authorities: list[AuthoritativeResultSelection] = []
+     evidence: list[EvidenceAsset] = []
+     invocations: list[ModelInvocation] = []
+     observations: list[ObservationBatch] = []
+     tool_executions: list[ToolExecution] = []
+     for message in data.messages.values():
+-        if isinstance(message, (DiscoveryMessage, GroundingMessage)):
++        if isinstance(message, DiscoveryMessage):
+             invocations.extend(message.invocations)
++        elif isinstance(message, GroundingMessage):
++            invocations.extend(message.invocations)
++            invocations.extend(message.nested_invocations)
++            tool_executions.extend(message.tool_executions)
++            evidence.extend(message.evidence)
+         elif isinstance(message, ObservationMessage):
+             all_facts.extend(message.facts)
+             authorities.append(message.authority)
+             evidence.extend(message.evidence)
+             invocations.append(message.invocation)
+             observations.append(message.batch)
+         elif isinstance(message, ToolMessage):
+             all_facts.extend(message.facts)
+             authorities.extend(message.authorities)
+             tool_executions.extend(message.executions)
++            evidence.extend(message.evidence)
++            invocations.extend(message.nested_invocations)
+         elif isinstance(message, DecisionMessage):
+             evidence.extend(message.evidence)
+             invocations.append(message.invocation)
+     authority = None
+     if gate is not None and (all_facts or authorities):
+         records = RuntimeAuthorityRecords(
+             execution=state.execution,
+             release=opened.release,
+@@ -200,31 +262,32 @@
+             execution_events=(),
+             facts=tuple(all_facts),
+             authority_selections=tuple(authorities),
+         )
+         authority = build_coverage_authority(opened.resolved, records)
+     result = finalize_execution(
+         state,
+         work,
+-        scope=opened.synthetic,
++        scope=opened.scope,
+         sources=sources,
+         gate=gate,
+         stages=stages,
+         facts=tuple(all_facts),
+         authorities=tuple(authorities),
+         evidence=tuple(evidence),
+         invocations=tuple(invocations),
+         authority=authority,
++        tool_step_nodes=data.tool_step_nodes,
+         now=now,
+     )
+     if gate is not None:
+         for stage in stages:
+             decision_output = finish_decision(
+-                opened.synthetic, stage, result.coverage, gate
++                opened.scope, stage, result.coverage, gate
+             )
+             env = decision_output.envelope
+             await repo.store_output(
+                 connection,
+                 scope,
+                 eid,
+                 env.node_run_id,
+                 env.attempt_id,
+--- a/src/jimu_runtime/workflow/worker_validation.py
++++ b/src/jimu_runtime/workflow/worker_validation.py
+@@ -2,16 +2,17 @@
+ 
+ from jimu_runtime.domain.definitions.capabilities import (
+     ProfileDefinition,
+     QuestionDefinition,
+ )
+ from jimu_runtime.domain.definitions.tools import ToolPlanDefinition
+ from jimu_runtime.domain.enums import NodeRunStatus
+ from jimu_runtime.domain.nodes.context import SuccessfulContextBuild
++from jimu_runtime.domain.nodes.tool_execution import ToolStepHistory
+ from jimu_runtime.domain.runtime.executions import Attempt, NodeId, NodeRun
+ from jimu_runtime.domain.runtime.facts import ModelInvocationRef
+ from jimu_runtime.workflow.engine import BranchKey
+ from jimu_runtime.workflow.mock_decision import mandatory_paths
+ from jimu_runtime.workflow.mock_facts import prepare_observation
+ from jimu_runtime.workflow.mock_support import K, artifact
+ from jimu_runtime.workflow.worker_nodes import BranchInputs, NodeResult
+ from jimu_runtime.workflow.worker_records import (
+@@ -22,27 +23,47 @@
+     DiscoveryMessage,
+     GroundingMessage,
+     ObservationMessage,
+     ToolMessage,
+ )
+ from jimu_runtime.workflow.worker_source import OpenExecution
+ 
+ 
++def check_tool_history(message: ToolMessage, history: ToolStepHistory) -> None:
++    if (
++        history.resolved_executions(message.inputs, message.facts)
++        != {item.tool_execution_id: item for item in message.executions}
++        or set(message.authorities)
++        != {entry.selection for entry in history.entries if entry.selection is not None}
++        or len(set(message.authorities)) != len(message.authorities)
++        or set(message.evidence)
++        != {item for entry in history.entries for item in entry.evidence}
++        or len({item.evidence_id for item in message.evidence}) != len(message.evidence)
++        or set(message.nested_invocations)
++        != {item for entry in history.entries for item in entry.invocations}
++        or len({item.model_invocation_id for item in message.nested_invocations})
++        != len(message.nested_invocations)
++    ):
++        raise ValueError("Tool summary must retain the complete durable step outputs")
++
++
+ def check_result(
+     opened: OpenExecution,
+     previous: BranchInputs,
+     branch: BranchKey,
+     node: NodeRun,
+     attempt: Attempt,
+     result: NodeResult,
++    *,
++    tool_step_history: ToolStepHistory | None = None,
+ ) -> NodeResult:
+     message = NODE_MESSAGE.validate_json(result.message.model_dump_json())
+     env, output = message.input_envelope(), message.output_envelope()
+-    scope = opened.synthetic
++    scope = opened.scope
+     wanted_upstream = (
+         (artifact(K.TASK, scope.task.task_id, scope.task).pin,)
+         if node.node_id is NodeId.N01
+         else node.upstream_inputs
+     )
+     if (
+         not isinstance(message, MESSAGE_NODES[node.node_id])
+         or not attempt.belongs_to_node(node)
+@@ -109,17 +130,17 @@
+         if previous.discovery is None:
+             raise ValueError("grounding requires complete discovery inputs")
+         message.inputs.check_discovery(previous.discovery.output)
+         message.output.check_records(
+             message.inputs,
+             message.records,
+             message.objects,
+             previous.discovery.selections,
+-            message.invocations,
++            message.producers(),
+             tuple(
+                 scope.resolve(item.hit.profile_ref, ProfileDefinition)
+                 for item in message.inputs.profiles
+             ),
+         )
+     else:
+         obj = previous.object_record(branch)
+         profile = scope.resolve(obj.profile_ref, ProfileDefinition)
+@@ -167,20 +188,46 @@
+                 }
+                 != {(K.FACT, fact.fact_id) for fact in message.facts}
+             ):
+                 raise ValueError(
+                     "joint observation selection must name its exact successful result and Facts"
+                 )
+         elif isinstance(message, ToolMessage):
+             plan = scope.resolve(message.inputs.tool_plan_ref, ToolPlanDefinition)
+-            message.inputs.check_observation_facts(plan, (), None)
++            observation = previous.observation
++            requested_facts = {
++                ref.record_id for ref in message.inputs.validated_observation_fact_refs
++            }
++            selected_facts = (
++                ()
++                if observation is None
++                else tuple(
++                    fact
++                    for fact in observation.facts
++                    if fact.fact_id in requested_facts
++                )
++            )
++            message.inputs.check_observation_facts(
++                plan,
++                selected_facts,
++                None
++                if observation is None or not requested_facts
++                else observation.authority,
++            )
+             message.output.check_steps(
+-                message.inputs, profile, plan, message.executions, message.facts
+-            )
++                message.inputs,
++                profile,
++                plan,
++                message.executions,
++                message.facts,
++                history=tool_step_history,
++            )
++            if tool_step_history is not None:
++                check_tool_history(message, tool_step_history)
+         elif isinstance(message, DecisionMessage):
+             if previous.gate is None:
+                 raise ValueError(
+                     "Decision requires the durable Profile eligibility scope"
+                 )
+             message.draft.inputs.check_gate(previous.gate.evaluation)
+             message.draft.inputs.check_mandatory_scope(mandatory_paths(scope, obj))
+ 
