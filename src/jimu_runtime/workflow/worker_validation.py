@@ -4,10 +4,13 @@ from jimu_runtime.domain.definitions.capabilities import (
     ProfileDefinition,
     QuestionDefinition,
 )
+from jimu_runtime.domain.definitions.models import ModelBinding
+from jimu_runtime.domain.definitions.prompts import PromptTemplateDefinition
 from jimu_runtime.domain.definitions.tools import ToolPlanDefinition
 from jimu_runtime.domain.enums import NodeRunStatus
 from jimu_runtime.domain.nodes.context import SuccessfulContextBuild
 from jimu_runtime.domain.nodes.envelopes import FailedNodeOutput
+from jimu_runtime.domain.nodes.observation import is_region_observation_template
 from jimu_runtime.domain.nodes.tool_execution import InvokedToolStep, ToolStepHistory
 from jimu_runtime.domain.policies import ToolSkipPolicyArtifact
 from jimu_runtime.domain.runtime.executions import Attempt, NodeId, NodeRun
@@ -177,6 +180,8 @@ def check_result(
         )
         message.result()
     elif isinstance(message, GroundingMessage):
+        if any(obj.marked_frame is not None for obj in message.objects):
+            raise ValueError("new grounding outputs must use original-image boxes")
         if previous.discovery is None:
             raise ValueError("grounding requires complete discovery inputs")
         message.inputs.check_discovery(previous.discovery.output)
@@ -202,6 +207,12 @@ def check_result(
         )
         if inputs.object_record != obj:
             raise ValueError("node reply must use the scoped durable Object")
+        if isinstance(message, (ObservationMessage, ToolMessage)) and (
+            message.inputs.image_view.marked_media_ref is not None
+        ):
+            raise ValueError(
+                "new observation and tool inputs require original-image boxes"
+            )
         if isinstance(message, ObservationMessage):
             if previous.discovery is None:
                 raise ValueError("observation needs its durable Question selection")
@@ -228,6 +239,33 @@ def check_result(
             # WP-03 historical and WP-04 compatibility adapters have synthetic
             # inline bytes. Configured production execution supplies verified records.
             if configured:
+                binding = scope.resolve(profile.observation_binding_ref, ModelBinding)
+                original_regions = binding.prompt_template_ref is not None and (
+                    is_region_observation_template(
+                        scope.resolve(
+                            binding.prompt_template_ref, PromptTemplateDefinition
+                        ).template_text
+                    )
+                )
+                if original_regions != (
+                    message.inputs.image_mode == "original_regions_v1"
+                ):
+                    raise ValueError(
+                        "observation image mode must match the pinned binding"
+                    )
+                original = message.original_image_evidence
+                if original_regions and (
+                    original is None
+                    or original.sha256 != scope.media.media_ref.sha256
+                    or not any(
+                        ref.record_kind is K.EVIDENCE
+                        and ref.record_id == original.evidence_id
+                        for ref in message.invocation.evidence_refs
+                    )
+                ):
+                    raise ValueError(
+                        "regional observation must retain its original image evidence"
+                    )
                 if message.request_evidence or not message.durable_request_evidence:
                     raise ValueError(
                         "configured observation requires durable request evidence"
@@ -236,20 +274,20 @@ def check_result(
                 schema = message.inputs.contract_snapshot.response_schema_evidence_ref
                 if (
                     prompt == schema
-                    or {item.evidence_id for item in message.evidence}
+                    or {item.evidence_id for item in message.request_assets}
                     != {prompt.record_id, schema.record_id}
-                    or len(message.evidence) != 2
+                    or len(message.request_assets) != 2
                     or set((prompt, schema)) - set(message.invocation.evidence_refs)
                     or any(
                         item.scope.scope != "object"
                         or item.scope.execution_id != env.execution_id
                         or item.scope.object_ref.record_id != obj.object_id
                         or item.scope.profile_ref != obj.profile_ref
-                        for item in message.evidence
+                        for item in message.request_assets
                     )
                     or next(
                         item.sha256
-                        for item in message.evidence
+                        for item in message.request_assets
                         if item.evidence_id == schema.record_id
                     )
                     != message.inputs.contract_snapshot.response_schema_sha256
@@ -268,6 +306,7 @@ def check_result(
                     or message.inputs.joint_questions
                     != retry.message.inputs.joint_questions
                     or message.inputs.image_view != retry.message.inputs.image_view
+                    or message.inputs.image_mode != retry.message.inputs.image_mode
                 ):
                     raise ValueError(
                         "observation retry must preserve the initial request scope and contract"
@@ -331,6 +370,15 @@ def check_result(
                 )
         elif isinstance(message, ToolMessage):
             plan = scope.resolve(message.inputs.tool_plan_ref, ToolPlanDefinition)
+            completion = message.completion_artifact
+            if (
+                output.status is NodeRunStatus.SUCCEEDED
+                and not message.executions
+                and (completion is None or result.artifacts != (completion,))
+            ):
+                raise ValueError(
+                    "ToolPlan completion may only persist its pinned summary"
+                )
             observation = previous.observation
             historical_fact_pins = {
                 pin.ref.record_id

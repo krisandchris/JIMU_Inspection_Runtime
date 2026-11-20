@@ -1,0 +1,1534 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/v1/inference/tasks",
+    "query": "",
+    "status": 202,
+    "body": {
+      "schema_version": "1.0.0",
+      "task": {
+        "schema_version": "1.0.0",
+        "task_id": "task.8ce3c57dd439cee807ad99af74c87e71e74d09c4b5e452832345b95e445329f2",
+        "request_id": "live.b7368504e0f4416d90877a13b4b86f46",
+        "idempotency_scope": {
+          "project_id": "synthetic.nonmotor.parking",
+          "client_id": "synthetic.edge"
+        },
+        "idempotency_key": "live.b7368504e0f4416d90877a13b4b86f46",
+        "media_ref": {
+          "media_id": "synthetic.scene.image",
+          "sha256": "a17325853ec562bbe1946769abd0074def1ab853adf603e58605dfed5f11f9be"
+        },
+        "context": {
+          "device_id": "synthetic.device",
+          "camera_id": "synthetic.fixed.camera",
+          "region_id": "synthetic_nonmotor_parking",
+          "clock": {
+            "captured_at": "2026-01-02T00:00:00Z",
+            "original_timestamp": "2026-01-02T00:00:00+00:00",
+            "original_timezone": "UTC",
+            "source": "device_clock",
+            "clock_id": "synthetic.device",
+            "uncertainty_ms": null
+          },
+          "metadata": {
+            "kind": "record",
+            "value": {
+              "synthetic_scope_image_sha256": {
+                "kind": "string",
+                "value": "a17325853ec562bbe1946769abd0074def1ab853adf603e58605dfed5f11f9be"
+              }
+            }
+          }
+        },
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "13f656025b8bc9fb4a99a565bd0e05df1e990588a4eefc8dcfd301478873cb23",
+        "accepted_at": "2026-01-02T00:00:00Z",
+        "status": "accepted",
+        "trace": {
+          "trace_id": "live.b7368504e0f4416d90877a13b4b86f46",
+          "span_id": null,
+          "parent_span_id": null
+        }
+      },
+      "execution": {
+        "execution_id": "execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+        "pins": {
+          "release_id": "synthetic.parking.release",
+          "bundle_digest": "13f656025b8bc9fb4a99a565bd0e05df1e990588a4eefc8dcfd301478873cb23",
+          "runtime_version": "1.0.0",
+          "workflow_version": "1.0.0",
+          "model_pins": [
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "candidate_prediction",
+                "version": "1.0.0",
+                "digest": "80532620eda884631e1b97b9b7ca4a6724b4fee16d33ed096f6d855ba57502af"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "bf8e21708d3f2bdb810373e6c4c499bb71063f55be6bc6b422fa80816d250535"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+              "deployments": [
+                {
+                  "provider_id": "live.inspection.protocol_bridge",
+                  "deployment_id": "live.inspection.protocol_bridge.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.2.1"
+                    ],
+                    "allowed_model_versions": [
+                      "1.2.1"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "object_grounding",
+                "version": "1.0.0",
+                "digest": "89ae321bbb630109ab3e224ca77fb308ec96ed37ad29f18ec8bb16f0e625b165"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "bf8e21708d3f2bdb810373e6c4c499bb71063f55be6bc6b422fa80816d250535"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+              "deployments": [
+                {
+                  "provider_id": "live.inspection.protocol_bridge",
+                  "deployment_id": "live.inspection.protocol_bridge.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.2.1"
+                    ],
+                    "allowed_model_versions": [
+                      "1.2.1"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "object_observation",
+                "version": "1.0.0",
+                "digest": "13454a86fec2d7840e82a568478c1e0cbb2da159f2e6fb3ed5acd5773afe9312"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "bf8e21708d3f2bdb810373e6c4c499bb71063f55be6bc6b422fa80816d250535"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+              "deployments": [
+                {
+                  "provider_id": "live.inspection.protocol_bridge",
+                  "deployment_id": "live.inspection.protocol_bridge.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.2.1"
+                    ],
+                    "allowed_model_versions": [
+                      "1.2.1"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "profile_discovery",
+                "version": "1.0.0",
+                "digest": "f1c700041229d93102c16840dbdbe505846d8b5ed980d3207b9700bc859c753b"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "bf8e21708d3f2bdb810373e6c4c499bb71063f55be6bc6b422fa80816d250535"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+              "deployments": [
+                {
+                  "provider_id": "live.inspection.protocol_bridge",
+                  "deployment_id": "live.inspection.protocol_bridge.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.2.1"
+                    ],
+                    "allowed_model_versions": [
+                      "1.2.1"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tool_pins": [
+            {
+              "tool_ref": {
+                "artifact_kind": "tool",
+                "artifact_id": "wheel_boundary_geometry",
+                "version": "1.0.0",
+                "digest": "3f27d97f48f0f34d793411cdcb6719ae24f0dc332f39362c2f08e8206abeac30"
+              },
+              "implementation_version": "1.0.0"
+            }
+          ],
+          "input_digest": "2930ae9da9d653209668587797ac865d99f1102cb86e2b44399997a279f01828"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/executions/execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+    "query": "",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+      "task_id": "task.8ce3c57dd439cee807ad99af74c87e71e74d09c4b5e452832345b95e445329f2",
+      "pins": {
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "13f656025b8bc9fb4a99a565bd0e05df1e990588a4eefc8dcfd301478873cb23",
+        "runtime_version": "1.0.0",
+        "workflow_version": "1.0.0",
+        "model_pins": [
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "candidate_prediction",
+              "version": "1.0.0",
+              "digest": "80532620eda884631e1b97b9b7ca4a6724b4fee16d33ed096f6d855ba57502af"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "bf8e21708d3f2bdb810373e6c4c499bb71063f55be6bc6b422fa80816d250535"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+            "deployments": [
+              {
+                "provider_id": "live.inspection.protocol_bridge",
+                "deployment_id": "live.inspection.protocol_bridge.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.2.1"
+                  ],
+                  "allowed_model_versions": [
+                    "1.2.1"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          },
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "object_grounding",
+              "version": "1.0.0",
+              "digest": "89ae321bbb630109ab3e224ca77fb308ec96ed37ad29f18ec8bb16f0e625b165"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "bf8e21708d3f2bdb810373e6c4c499bb71063f55be6bc6b422fa80816d250535"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+            "deployments": [
+              {
+                "provider_id": "live.inspection.protocol_bridge",
+                "deployment_id": "live.inspection.protocol_bridge.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.2.1"
+                  ],
+                  "allowed_model_versions": [
+                    "1.2.1"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          },
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "object_observation",
+              "version": "1.0.0",
+              "digest": "13454a86fec2d7840e82a568478c1e0cbb2da159f2e6fb3ed5acd5773afe9312"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "bf8e21708d3f2bdb810373e6c4c499bb71063f55be6bc6b422fa80816d250535"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+            "deployments": [
+              {
+                "provider_id": "live.inspection.protocol_bridge",
+                "deployment_id": "live.inspection.protocol_bridge.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.2.1"
+                  ],
+                  "allowed_model_versions": [
+                    "1.2.1"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          },
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "profile_discovery",
+              "version": "1.0.0",
+              "digest": "f1c700041229d93102c16840dbdbe505846d8b5ed980d3207b9700bc859c753b"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "bf8e21708d3f2bdb810373e6c4c499bb71063f55be6bc6b422fa80816d250535"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+            "deployments": [
+              {
+                "provider_id": "live.inspection.protocol_bridge",
+                "deployment_id": "live.inspection.protocol_bridge.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.2.1"
+                  ],
+                  "allowed_model_versions": [
+                    "1.2.1"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          }
+        ],
+        "tool_pins": [
+          {
+            "tool_ref": {
+              "artifact_kind": "tool",
+              "artifact_id": "wheel_boundary_geometry",
+              "version": "1.0.0",
+              "digest": "3f27d97f48f0f34d793411cdcb6719ae24f0dc332f39362c2f08e8206abeac30"
+            },
+            "implementation_version": "1.0.0"
+          }
+        ],
+        "input_digest": "2930ae9da9d653209668587797ac865d99f1102cb86e2b44399997a279f01828"
+      },
+      "trace": {
+        "trace_id": "live.b7368504e0f4416d90877a13b4b86f46",
+        "span_id": null,
+        "parent_span_id": null
+      },
+      "status": "completed",
+      "created_at": "2026-11-19T15:17:44.616389Z",
+      "started_at": "2026-11-19T15:17:45.533670Z",
+      "ended_at": "2026-11-19T15:18:09.372778Z",
+      "context_snapshot": {
+        "snapshot_ref": {
+          "record_kind": "context_snapshot",
+          "record_id": "perception.context.4cd5a7f5c71b5a9eefb5acdac024210a373872834847ba5b964e83250763f329"
+        },
+        "snapshot_digest": "340c56932a4d6a37a23360f7ffe3dbb9e510e22d3c6b2493c64cd8849a38177e"
+      },
+      "model_invocation_refs": [
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.2e25cb2bc7f448c3bf91ec9b1ba85132"
+        },
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.af1ef5be362747f1846400238ae2595e"
+        },
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.26553149f79a44bd84b7fde098eb0467"
+        },
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.09b3bd76ec1a45c9b37666a97f882ee1"
+        }
+      ]
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/inference/tasks/task.8ce3c57dd439cee807ad99af74c87e71e74d09c4b5e452832345b95e445329f2/result",
+    "query": "",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+      "coverage": {
+        "schema_version": "1.0.0",
+        "execution_id": "execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "13f656025b8bc9fb4a99a565bd0e05df1e990588a4eefc8dcfd301478873cb23",
+        "coverage_id": "synthetic.coverage.ad45d764571abd56333ce44877c53d2dbb08a40de394cf1117074182a0003e6a",
+        "applicability_scope": {
+          "scope_status": "evaluated",
+          "context_snapshot_ref": {
+            "record_kind": "context_snapshot",
+            "record_id": "perception.context.4cd5a7f5c71b5a9eefb5acdac024210a373872834847ba5b964e83250763f329"
+          },
+          "profile_eligibility_evaluation_ref": {
+            "record_kind": "profile_eligibility_evaluation",
+            "record_id": "synthetic.eligibility.ea95fa65214f9d6209258f80ff41b76df80d4cce72cab1a65f74f7bcbf259cbf"
+          },
+          "configured_profile_refs": [
+            {
+              "artifact_kind": "profile",
+              "artifact_id": "nonmotor_vehicle",
+              "version": "1.0.0",
+              "digest": "d8e7847c234b173abe262c5e35599a0049a6393a8aa4c51ed6825b142157c3bf"
+            }
+          ]
+        },
+        "discovery_outcome": "hits",
+        "discovery_model_invocation_refs": [
+          {
+            "record_kind": "model_invocation",
+            "record_id": "dispatch.2e25cb2bc7f448c3bf91ec9b1ba85132"
+          }
+        ],
+        "hit_profile_refs": [
+          {
+            "artifact_kind": "profile",
+            "artifact_id": "nonmotor_vehicle",
+            "version": "1.0.0",
+            "digest": "d8e7847c234b173abe262c5e35599a0049a6393a8aa4c51ed6825b142157c3bf"
+          }
+        ],
+        "profiles": [
+          {
+            "schema_version": "1.0.0",
+            "execution_id": "execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+            "release_id": "synthetic.parking.release",
+            "bundle_digest": "13f656025b8bc9fb4a99a565bd0e05df1e990588a4eefc8dcfd301478873cb23",
+            "profile_ref": {
+              "artifact_kind": "profile",
+              "artifact_id": "nonmotor_vehicle",
+              "version": "1.0.0",
+              "digest": "d8e7847c234b173abe262c5e35599a0049a6393a8aa4c51ed6825b142157c3bf"
+            },
+            "grounding_outcome": "objects",
+            "object_refs": [
+              {
+                "record_kind": "object",
+                "record_id": "perception.object.9601bbf9dbae49d5fd582a9f049aa97ee1395ed72bde7dc997a2c464af21bd29"
+              }
+            ],
+            "object_count": 1,
+            "obligation_ids": [
+              "synthetic.profile-obligation.76c728c4d8c639418eb2350e08907f78748870aa1f603517f53ce14a8c742612",
+              "synthetic.coverage-obligation.bd805780283f89ccbae7b85cc92aa5ce5791fd2fcfe04444409b5402049cdc5d",
+              "synthetic.coverage-obligation.a610ca709f06c0c70def828630d3e72c98776e3e0c79e4671e3e33a7644cb2a5"
+            ],
+            "coverage_status": "complete",
+            "reasons": [],
+            "missing_evidence_refs": []
+          }
+        ],
+        "mandatory_rule_coverage": {
+          "scan": "all_mandatory",
+          "obligations": [
+            {
+              "obligation_id": "synthetic.profile-obligation.76c728c4d8c639418eb2350e08907f78748870aa1f603517f53ce14a8c742612",
+              "profile_ref": {
+                "artifact_kind": "profile",
+                "artifact_id": "nonmotor_vehicle",
+                "version": "1.0.0",
+                "digest": "d8e7847c234b173abe262c5e35599a0049a6393a8aa4c51ed6825b142157c3bf"
+              },
+              "target": {
+                "scope": "profile"
+              },
+              "outcome": {
+                "disposition": "included",
+                "selected_applicability": {
+                  "evaluation_ref": {
+                    "record_kind": "profile_eligibility_evaluation",
+                    "record_id": "synthetic.eligibility.ea95fa65214f9d6209258f80ff41b76df80d4cce72cab1a65f74f7bcbf259cbf"
+                  },
+                  "trace_ref": {
+                    "record_kind": "applicability_trace",
+                    "record_id": "synthetic.profile-trace.33b328276602365e0739e1f26e95b6565d652f1c3d5de699c2d6e71bb67a9c15"
+                  }
+                }
+              }
+            },
+            {
+              "obligation_id": "synthetic.coverage-obligation.bd805780283f89ccbae7b85cc92aa5ce5791fd2fcfe04444409b5402049cdc5d",
+              "profile_ref": {
+                "artifact_kind": "profile",
+                "artifact_id": "nonmotor_vehicle",
+                "version": "1.0.0",
+                "digest": "d8e7847c234b173abe262c5e35599a0049a6393a8aa4c51ed6825b142157c3bf"
+              },
+              "target": {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "parking-rules",
+                  "version": "1.0.0",
+                  "digest": "abfd8698b0c1fe70eba51276910e4dd2ea8f81c059b33116b4d4333b0502e380"
+                },
+                "object_ref": {
+                  "record_kind": "object",
+                  "record_id": "perception.object.9601bbf9dbae49d5fd582a9f049aa97ee1395ed72bde7dc997a2c464af21bd29"
+                },
+                "scope": "rule_set"
+              },
+              "outcome": {
+                "disposition": "included",
+                "selected_applicability": {
+                  "evaluation_ref": {
+                    "record_kind": "rule_set_applicability_evaluation",
+                    "record_id": "synthetic.ruleset.ae25120a6f4057788bfd5e6ac29bd4650c6500a1d49c174a25f527b9c4bae630"
+                  },
+                  "trace_ref": {
+                    "record_kind": "applicability_trace",
+                    "record_id": "synthetic.ruleset-trace.c8f3d84166441d73f583aabca7db3a11370ffea8deaf900e50b87dd41ce65073"
+                  }
+                }
+              }
+            },
+            {
+              "obligation_id": "synthetic.coverage-obligation.a610ca709f06c0c70def828630d3e72c98776e3e0c79e4671e3e33a7644cb2a5",
+              "profile_ref": {
+                "artifact_kind": "profile",
+                "artifact_id": "nonmotor_vehicle",
+                "version": "1.0.0",
+                "digest": "d8e7847c234b173abe262c5e35599a0049a6393a8aa4c51ed6825b142157c3bf"
+              },
+              "target": {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "parking-rules",
+                  "version": "1.0.0",
+                  "digest": "abfd8698b0c1fe70eba51276910e4dd2ea8f81c059b33116b4d4333b0502e380"
+                },
+                "object_ref": {
+                  "record_kind": "object",
+                  "record_id": "perception.object.9601bbf9dbae49d5fd582a9f049aa97ee1395ed72bde7dc997a2c464af21bd29"
+                },
+                "scope": "rule",
+                "rule_ref": {
+                  "artifact_kind": "rule",
+                  "artifact_id": "nonmotor_vehicle_illegal_parking",
+                  "version": "1.0.0",
+                  "digest": "79ce57d46c6e85cc9c2caf9ac612dcbce08b582a33f24d305eea76d5418cb5b7"
+                }
+              },
+              "outcome": {
+                "disposition": "evaluated",
+                "selected_applicability": {
+                  "evaluation_ref": {
+                    "record_kind": "rule_applicability_evaluation",
+                    "record_id": "synthetic.rule.ca09478f0cd423ca67752172db653790601f923e22c461cf8a4fcd888b56e79b"
+                  },
+                  "trace_ref": {
+                    "record_kind": "applicability_trace",
+                    "record_id": "synthetic.rule-trace.830a3cefb584422473b7ba78426b66e1591b645ced2fe4df1e8ea2efbc1c1b67"
+                  }
+                },
+                "decision_ref": {
+                  "record_kind": "decision",
+                  "record_id": "synthetic.decision.e34c13dbb89da9a482dc7e44a2266bb6fff189821481b4ba80da8d287ad7c91c"
+                }
+              }
+            }
+          ]
+        },
+        "selected_applicability_evaluation_refs": [
+          {
+            "record_kind": "profile_eligibility_evaluation",
+            "record_id": "synthetic.eligibility.ea95fa65214f9d6209258f80ff41b76df80d4cce72cab1a65f74f7bcbf259cbf"
+          },
+          {
+            "record_kind": "rule_set_applicability_evaluation",
+            "record_id": "synthetic.ruleset.ae25120a6f4057788bfd5e6ac29bd4650c6500a1d49c174a25f527b9c4bae630"
+          },
+          {
+            "record_kind": "rule_applicability_evaluation",
+            "record_id": "synthetic.rule.ca09478f0cd423ca67752172db653790601f923e22c461cf8a4fcd888b56e79b"
+          }
+        ],
+        "applicability_trace_refs": [
+          {
+            "record_kind": "applicability_trace",
+            "record_id": "synthetic.profile-trace.33b328276602365e0739e1f26e95b6565d652f1c3d5de699c2d6e71bb67a9c15"
+          },
+          {
+            "record_kind": "applicability_trace",
+            "record_id": "synthetic.ruleset-trace.c8f3d84166441d73f583aabca7db3a11370ffea8deaf900e50b87dd41ce65073"
+          },
+          {
+            "record_kind": "applicability_trace",
+            "record_id": "synthetic.rule-trace.830a3cefb584422473b7ba78426b66e1591b645ced2fe4df1e8ea2efbc1c1b67"
+          }
+        ],
+        "unresolved_obligation_refs": [],
+        "object_count": 1,
+        "coverage_status": "complete",
+        "reasons": [],
+        "missing_evidence_refs": [],
+        "summary_result": "no_violation",
+        "matches": [],
+        "created_at": "2026-11-19T15:18:09.372778Z"
+      },
+      "decisions": [
+        {
+          "schema_version": "1.0.0",
+          "execution_id": "execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+          "release_id": "synthetic.parking.release",
+          "bundle_digest": "13f656025b8bc9fb4a99a565bd0e05df1e990588a4eefc8dcfd301478873cb23",
+          "context_snapshot_ref": {
+            "record_kind": "context_snapshot",
+            "record_id": "perception.context.4cd5a7f5c71b5a9eefb5acdac024210a373872834847ba5b964e83250763f329"
+          },
+          "scope": "object",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "nonmotor_vehicle",
+            "version": "1.0.0",
+            "digest": "d8e7847c234b173abe262c5e35599a0049a6393a8aa4c51ed6825b142157c3bf"
+          },
+          "object_ref": {
+            "record_kind": "object",
+            "record_id": "perception.object.9601bbf9dbae49d5fd582a9f049aa97ee1395ed72bde7dc997a2c464af21bd29"
+          },
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "synthetic.node.befbd86b7905060874f092be321e85d31ce81fd47d054d3cfe27612dfcf94818"
+          },
+          "attempt_ref": {
+            "record_kind": "attempt",
+            "record_id": "81c57d5088344c33bcbb23561ae45c9e"
+          },
+          "decision_id": "synthetic.decision.e34c13dbb89da9a482dc7e44a2266bb6fff189821481b4ba80da8d287ad7c91c",
+          "profile_eligibility_evaluation_ref": {
+            "record_kind": "profile_eligibility_evaluation",
+            "record_id": "synthetic.eligibility.ea95fa65214f9d6209258f80ff41b76df80d4cce72cab1a65f74f7bcbf259cbf"
+          },
+          "candidate_prediction_ref": {
+            "record_kind": "candidate_prediction",
+            "record_id": "synthetic.candidate.e34c13dbb89da9a482dc7e44a2266bb6fff189821481b4ba80da8d287ad7c91c"
+          },
+          "execution_coverage_ref": {
+            "record_kind": "execution_coverage",
+            "record_id": "synthetic.coverage.ad45d764571abd56333ce44877c53d2dbb08a40de394cf1117074182a0003e6a"
+          },
+          "rule_engine_version": "1.0.0",
+          "rule_evaluations": [
+            {
+              "rule": {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "parking-rules",
+                  "version": "1.0.0",
+                  "digest": "abfd8698b0c1fe70eba51276910e4dd2ea8f81c059b33116b4d4333b0502e380"
+                },
+                "rule_ref": {
+                  "artifact_kind": "rule",
+                  "artifact_id": "nonmotor_vehicle_illegal_parking",
+                  "version": "1.0.0",
+                  "digest": "79ce57d46c6e85cc9c2caf9ac612dcbce08b582a33f24d305eea76d5418cb5b7"
+                }
+              },
+              "selected_rule_set_evaluation_ref": {
+                "record_kind": "rule_set_applicability_evaluation",
+                "record_id": "synthetic.ruleset.ae25120a6f4057788bfd5e6ac29bd4650c6500a1d49c174a25f527b9c4bae630"
+              },
+              "selected_rule_evaluation_ref": {
+                "record_kind": "rule_applicability_evaluation",
+                "record_id": "synthetic.rule.ca09478f0cd423ca67752172db653790601f923e22c461cf8a4fcd888b56e79b"
+              },
+              "applicability_trace_ref": {
+                "record_kind": "applicability_trace",
+                "record_id": "synthetic.rule-trace.830a3cefb584422473b7ba78426b66e1591b645ced2fe4df1e8ea2efbc1c1b67"
+              },
+              "result": {
+                "outcome": "evaluated",
+                "predicate": {
+                  "truth": "false",
+                  "diagnostic_codes": []
+                },
+                "guard": {
+                  "required_fact_refs": [
+                    {
+                      "record_kind": "fact",
+                      "record_id": "tool-fact:796b21dd5b380eaaebc1bb41656660e9b594089047aab973d75b1b063fc5472b"
+                    }
+                  ],
+                  "required_evidence_refs": [
+                    {
+                      "record_kind": "evidence",
+                      "record_id": "tool:64da8387ffe96f0f50cba055d8aaf0daf67134e3a47efb0ef7c536ff825a905a.geometry"
+                    },
+                    {
+                      "record_kind": "evidence",
+                      "record_id": "input.original.7b75adb51aaf3ea7a9ad6ae308a152f7812c9de63c305e4ddbd1ec324b3bc0bb"
+                    }
+                  ],
+                  "authoritative_result_selection_refs": [
+                    {
+                      "record_kind": "authoritative_result_selection",
+                      "record_id": "cd299381a03c4ef5959ffe674fc08e4d"
+                    }
+                  ],
+                  "fact_proofs": [
+                    {
+                      "selector": {
+                        "scope": "object",
+                        "fact_key": "parking_group_match",
+                        "fact_schema_ref": {
+                          "artifact_kind": "fact_schema",
+                          "artifact_id": "wheel_boundary_relation",
+                          "version": "1.0.0",
+                          "digest": "198203c1aa2c832eac85b9b99e07d0fdc38862a1c22ccf53c016fede24c2d0cd"
+                        },
+                        "producer_selector": {
+                          "producer_kind": "tool",
+                          "tool_plan_ref": {
+                            "artifact_kind": "tool_plan",
+                            "artifact_id": "nonmotor_vehicle_geometry",
+                            "version": "1.0.0",
+                            "digest": "bc130e474f23a51651e87e06f9ba259818b1f20ea2e1dcfce09c831dbc08853d"
+                          },
+                          "step_id": "wheel_boundary_geometry",
+                          "tool_ref": {
+                            "artifact_kind": "tool",
+                            "artifact_id": "wheel_boundary_geometry",
+                            "version": "1.0.0",
+                            "digest": "3f27d97f48f0f34d793411cdcb6719ae24f0dc332f39362c2f08e8206abeac30"
+                          },
+                          "output_name": "parking_group_match"
+                        },
+                        "field_path": []
+                      },
+                      "fact_ref": {
+                        "record_kind": "fact",
+                        "record_id": "tool-fact:796b21dd5b380eaaebc1bb41656660e9b594089047aab973d75b1b063fc5472b"
+                      },
+                      "authority_selection_ref": {
+                        "record_kind": "authoritative_result_selection",
+                        "record_id": "cd299381a03c4ef5959ffe674fc08e4d"
+                      }
+                    }
+                  ],
+                  "outcome": "complete"
+                },
+                "matched": false
+              },
+              "optional_fact_proofs": [],
+              "fact_refs": [
+                {
+                  "record_kind": "fact",
+                  "record_id": "tool-fact:796b21dd5b380eaaebc1bb41656660e9b594089047aab973d75b1b063fc5472b"
+                }
+              ],
+              "evidence_refs": [
+                {
+                  "record_kind": "evidence",
+                  "record_id": "tool:64da8387ffe96f0f50cba055d8aaf0daf67134e3a47efb0ef7c536ff825a905a.geometry"
+                },
+                {
+                  "record_kind": "evidence",
+                  "record_id": "input.original.7b75adb51aaf3ea7a9ad6ae308a152f7812c9de63c305e4ddbd1ec324b3bc0bb"
+                }
+              ]
+            }
+          ],
+          "result": "no_violation",
+          "explanation": {
+            "applicable_rules": [
+              {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "parking-rules",
+                  "version": "1.0.0",
+                  "digest": "abfd8698b0c1fe70eba51276910e4dd2ea8f81c059b33116b4d4333b0502e380"
+                },
+                "rule_ref": {
+                  "artifact_kind": "rule",
+                  "artifact_id": "nonmotor_vehicle_illegal_parking",
+                  "version": "1.0.0",
+                  "digest": "79ce57d46c6e85cc9c2caf9ac612dcbce08b582a33f24d305eea76d5418cb5b7"
+                }
+              }
+            ],
+            "evaluated_rules": [
+              {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "parking-rules",
+                  "version": "1.0.0",
+                  "digest": "abfd8698b0c1fe70eba51276910e4dd2ea8f81c059b33116b4d4333b0502e380"
+                },
+                "rule_ref": {
+                  "artifact_kind": "rule",
+                  "artifact_id": "nonmotor_vehicle_illegal_parking",
+                  "version": "1.0.0",
+                  "digest": "79ce57d46c6e85cc9c2caf9ac612dcbce08b582a33f24d305eea76d5418cb5b7"
+                }
+              }
+            ],
+            "skipped_rules": [],
+            "blocked_rules": [],
+            "not_evaluated_rules": [],
+            "applicability_trace_refs": [
+              {
+                "record_kind": "applicability_trace",
+                "record_id": "synthetic.profile-trace.33b328276602365e0739e1f26e95b6565d652f1c3d5de699c2d6e71bb67a9c15"
+              },
+              {
+                "record_kind": "applicability_trace",
+                "record_id": "synthetic.ruleset-trace.c8f3d84166441d73f583aabca7db3a11370ffea8deaf900e50b87dd41ce65073"
+              },
+              {
+                "record_kind": "applicability_trace",
+                "record_id": "synthetic.rule-trace.830a3cefb584422473b7ba78426b66e1591b645ced2fe4df1e8ea2efbc1c1b67"
+              }
+            ],
+            "obligation_ids": [
+              "synthetic.profile-obligation.76c728c4d8c639418eb2350e08907f78748870aa1f603517f53ce14a8c742612",
+              "synthetic.coverage-obligation.bd805780283f89ccbae7b85cc92aa5ce5791fd2fcfe04444409b5402049cdc5d",
+              "synthetic.coverage-obligation.a610ca709f06c0c70def828630d3e72c98776e3e0c79e4671e3e33a7644cb2a5"
+            ],
+            "fact_refs": [
+              {
+                "record_kind": "fact",
+                "record_id": "tool-fact:796b21dd5b380eaaebc1bb41656660e9b594089047aab973d75b1b063fc5472b"
+              }
+            ],
+            "evidence_refs": [
+              {
+                "record_kind": "evidence",
+                "record_id": "tool:64da8387ffe96f0f50cba055d8aaf0daf67134e3a47efb0ef7c536ff825a905a.geometry"
+              },
+              {
+                "record_kind": "evidence",
+                "record_id": "input.original.7b75adb51aaf3ea7a9ad6ae308a152f7812c9de63c305e4ddbd1ec324b3bc0bb"
+              }
+            ]
+          },
+          "conflict_resolution": {
+            "mode": "collect_all",
+            "conflict_policy_refs": [
+              {
+                "artifact_kind": "policy",
+                "artifact_id": "conflict",
+                "version": "1.0.0",
+                "digest": "33115f079b9fdb09b64e9e6801b01790bb536d17f4b8a814bb844702d7c87671"
+              }
+            ],
+            "matched_rules": [],
+            "matched_category_ids": []
+          },
+          "created_at": "2026-11-19T15:18:08.021431Z"
+        }
+      ],
+      "projected_traces": [],
+      "projected_rule_set_evaluations": [],
+      "projected_rule_evaluations": [],
+      "unresolved_obligations": []
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/executions/execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57/trace",
+    "query": "limit=25&after_event_number=0",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+      "trace_id": "live.b7368504e0f4416d90877a13b4b86f46",
+      "through_event_number": 41,
+      "events": [
+        {
+          "number": 1,
+          "recorded_at": "2026-11-19T15:17:44.616389Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "accepted"
+        },
+        {
+          "number": 2,
+          "recorded_at": "2026-11-19T15:17:44.616389Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "queued"
+        },
+        {
+          "number": 3,
+          "recorded_at": "2026-11-19T15:17:44.616389Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 4,
+          "recorded_at": "2026-11-19T15:17:45.533670Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 5,
+          "recorded_at": "2026-11-19T15:17:45.533670Z",
+          "kind": "execution_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 6,
+          "recorded_at": "2026-11-19T15:17:45.533670Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+          "node_id": "N01",
+          "attempt_id": "b4f8c0c20ec44b778c6e28f596d53bff",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 7,
+          "recorded_at": "2026-11-19T15:17:45.533670Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 8,
+          "recorded_at": "2026-11-19T15:17:45.581210Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+          "node_id": "N01",
+          "attempt_id": "b4f8c0c20ec44b778c6e28f596d53bff",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 9,
+          "recorded_at": "2026-11-19T15:17:45.581210Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 10,
+          "recorded_at": "2026-11-19T15:17:45.581210Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.926873c61232e254fc428903d8d514980b79a1caeecfa06e70bdea0bc3925678",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 11,
+          "recorded_at": "2026-11-19T15:17:46.182661Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.926873c61232e254fc428903d8d514980b79a1caeecfa06e70bdea0bc3925678",
+          "node_id": "N02",
+          "attempt_id": "d4d16bdd34614a428fd11748ef1e64a0",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 12,
+          "recorded_at": "2026-11-19T15:17:46.182661Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.926873c61232e254fc428903d8d514980b79a1caeecfa06e70bdea0bc3925678",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 13,
+          "recorded_at": "2026-11-19T15:17:47.817426Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.926873c61232e254fc428903d8d514980b79a1caeecfa06e70bdea0bc3925678",
+          "node_id": "N02",
+          "attempt_id": "d4d16bdd34614a428fd11748ef1e64a0",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 14,
+          "recorded_at": "2026-11-19T15:17:47.817426Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.926873c61232e254fc428903d8d514980b79a1caeecfa06e70bdea0bc3925678",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 15,
+          "recorded_at": "2026-11-19T15:17:47.817426Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.07ae7a1109e2a7b043d4ab3b48d96ee718d21a9bf435e2a8b0ea8558feabe3fe",
+          "node_id": "N03",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 16,
+          "recorded_at": "2026-11-19T15:17:49.453029Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.07ae7a1109e2a7b043d4ab3b48d96ee718d21a9bf435e2a8b0ea8558feabe3fe",
+          "node_id": "N03",
+          "attempt_id": "02c07d463de1482b804c37b2cf87f6ee",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 17,
+          "recorded_at": "2026-11-19T15:17:49.453029Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.07ae7a1109e2a7b043d4ab3b48d96ee718d21a9bf435e2a8b0ea8558feabe3fe",
+          "node_id": "N03",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 18,
+          "recorded_at": "2026-11-19T15:17:52.884969Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.07ae7a1109e2a7b043d4ab3b48d96ee718d21a9bf435e2a8b0ea8558feabe3fe",
+          "node_id": "N03",
+          "attempt_id": "02c07d463de1482b804c37b2cf87f6ee",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 19,
+          "recorded_at": "2026-11-19T15:17:52.884969Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.07ae7a1109e2a7b043d4ab3b48d96ee718d21a9bf435e2a8b0ea8558feabe3fe",
+          "node_id": "N03",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 20,
+          "recorded_at": "2026-11-19T15:17:52.884969Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.6e9c9b7523832e67051cbb5804fa2f1e869509f02c3d988b72292991708353cf",
+          "node_id": "N04",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 21,
+          "recorded_at": "2026-11-19T15:17:53.747823Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.6e9c9b7523832e67051cbb5804fa2f1e869509f02c3d988b72292991708353cf",
+          "node_id": "N04",
+          "attempt_id": "0b53997818814cd99fb31a0979cd1c2d",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 22,
+          "recorded_at": "2026-11-19T15:17:53.747823Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.6e9c9b7523832e67051cbb5804fa2f1e869509f02c3d988b72292991708353cf",
+          "node_id": "N04",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 23,
+          "recorded_at": "2026-11-19T15:17:55.554178Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.6e9c9b7523832e67051cbb5804fa2f1e869509f02c3d988b72292991708353cf",
+          "node_id": "N04",
+          "attempt_id": "0b53997818814cd99fb31a0979cd1c2d",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 24,
+          "recorded_at": "2026-11-19T15:17:55.554178Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.6e9c9b7523832e67051cbb5804fa2f1e869509f02c3d988b72292991708353cf",
+          "node_id": "N04",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 25,
+          "recorded_at": "2026-11-19T15:17:55.554178Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.a2c01503578ab8cdbcd22bc53c3f323bb72c21574279e4f7c8b57c8c97ff5870",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        }
+      ],
+      "next_after_event_number": 25
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/executions/execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57/trace",
+    "query": "limit=25&after_event_number=25&through_event_number=41",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+      "trace_id": "live.b7368504e0f4416d90877a13b4b86f46",
+      "through_event_number": 41,
+      "events": [
+        {
+          "number": 26,
+          "recorded_at": "2026-11-19T15:17:56.136492Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.a2c01503578ab8cdbcd22bc53c3f323bb72c21574279e4f7c8b57c8c97ff5870",
+          "node_id": "N05",
+          "attempt_id": "c2aa715f106c4a65b0ea44510d21dd7f",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 27,
+          "recorded_at": "2026-11-19T15:17:56.136492Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.a2c01503578ab8cdbcd22bc53c3f323bb72c21574279e4f7c8b57c8c97ff5870",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 28,
+          "recorded_at": "2026-11-19T15:17:56.312800Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "9beaf09e6c47415faa9287575a9ef8b8",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 29,
+          "recorded_at": "2026-11-19T15:17:56.312800Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "9beaf09e6c47415faa9287575a9ef8b8",
+          "node_id": "N05",
+          "attempt_id": "507f0caea4744ca7aa9a6dab3cc542cd",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 30,
+          "recorded_at": "2026-11-19T15:17:56.312800Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "9beaf09e6c47415faa9287575a9ef8b8",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 31,
+          "recorded_at": "2026-11-19T15:18:02.222622Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "9beaf09e6c47415faa9287575a9ef8b8",
+          "node_id": "N05",
+          "attempt_id": "507f0caea4744ca7aa9a6dab3cc542cd",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 32,
+          "recorded_at": "2026-11-19T15:18:02.222622Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "9beaf09e6c47415faa9287575a9ef8b8",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 33,
+          "recorded_at": "2026-11-19T15:18:02.393532Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.a2c01503578ab8cdbcd22bc53c3f323bb72c21574279e4f7c8b57c8c97ff5870",
+          "node_id": "N05",
+          "attempt_id": "c2aa715f106c4a65b0ea44510d21dd7f",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 34,
+          "recorded_at": "2026-11-19T15:18:02.393532Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.a2c01503578ab8cdbcd22bc53c3f323bb72c21574279e4f7c8b57c8c97ff5870",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 35,
+          "recorded_at": "2026-11-19T15:18:02.393532Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.befbd86b7905060874f092be321e85d31ce81fd47d054d3cfe27612dfcf94818",
+          "node_id": "N06",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 36,
+          "recorded_at": "2026-11-19T15:18:03.003399Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.befbd86b7905060874f092be321e85d31ce81fd47d054d3cfe27612dfcf94818",
+          "node_id": "N06",
+          "attempt_id": "81c57d5088344c33bcbb23561ae45c9e",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 37,
+          "recorded_at": "2026-11-19T15:18:03.003399Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.befbd86b7905060874f092be321e85d31ce81fd47d054d3cfe27612dfcf94818",
+          "node_id": "N06",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 38,
+          "recorded_at": "2026-11-19T15:18:09.372778Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.befbd86b7905060874f092be321e85d31ce81fd47d054d3cfe27612dfcf94818",
+          "node_id": "N06",
+          "attempt_id": "81c57d5088344c33bcbb23561ae45c9e",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 39,
+          "recorded_at": "2026-11-19T15:18:09.372778Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.befbd86b7905060874f092be321e85d31ce81fd47d054d3cfe27612dfcf94818",
+          "node_id": "N06",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 40,
+          "recorded_at": "2026-11-19T15:18:09.372778Z",
+          "kind": "execution_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "completed"
+        },
+        {
+          "number": 41,
+          "recorded_at": "2026-11-19T15:18:09.372778Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "completed"
+        }
+      ],
+      "next_after_event_number": null
+    }
+  }
+]

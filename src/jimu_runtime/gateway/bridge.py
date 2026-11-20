@@ -16,8 +16,14 @@ from jimu_runtime.domain.definition_enums import ModelCapability
 from jimu_runtime.domain.definition_support import reference_identity
 from jimu_runtime.domain.definitions.capabilities import ProfileDefinition
 from jimu_runtime.domain.definitions.models import ModelBinding, ModelBindingContentRef
+from jimu_runtime.domain.definitions.prompts import PromptTemplateDefinition
 from jimu_runtime.domain.definitions.tools import ToolDefinition
 from jimu_runtime.domain.enums import AttemptStatus, RuntimeRecordKind
+from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
+from jimu_runtime.domain.nodes.observation import (
+    N04_REGIONS_MARKER,
+    is_region_observation_template,
+)
 from jimu_runtime.domain.policies import EvaluatedFallbackPolicy, TriggerError
 from jimu_runtime.domain.runtime.executions import Attempt, NodeId, NodeRun
 from jimu_runtime.domain.runtime.facts import (
@@ -49,7 +55,7 @@ from jimu_runtime.domain.validation.invocations import (
     NestedModelStepOwner,
 )
 from jimu_runtime.gateway.http import HttpModelTransport
-from jimu_runtime.gateway.http_wire import VerifiedImage, WireError
+from jimu_runtime.gateway.http_wire import VerifiedImage, WireError, strict_json
 from jimu_runtime.gateway.invocation import (
     DispatchBoundary,
     DispatchOutcome,
@@ -221,6 +227,63 @@ class ModelCallFailure(AdapterRejected):
     """Normalized route or pre-send rejection suited to a Worker diagnostic."""
 
     pass
+
+
+def _region_prompt_digest(claimed: ClaimedNode, call: ModelCall) -> str:
+    scope = claimed.opened.scope
+    serialized = call.prompt.partition("\n")[2]
+    grounding = claimed.previous.grounding
+    if call.object_ref is None or grounding is None:
+        raise ModelCallFailure("model.region_request_pin_mismatch")
+    actual = call.object_ref.record_id
+    object_ids = [
+        obj.object_id for obj in grounding.objects if obj.effective_question_refs
+    ]
+    try:
+        metadata = strict_json(serialized)
+        if not isinstance(metadata, dict) or set(metadata) != {
+            "jimu_region_request",
+            "jimu_projection_object",
+        }:
+            raise ValueError
+        request = metadata["jimu_region_request"]
+        if not isinstance(request, dict) or set(request) != {
+            "execution_id",
+            "attempt_number",
+            "release_id",
+            "bundle_digest",
+            "image_sha256",
+            "prompt",
+            "response_schema",
+            "object_ids",
+        }:
+            raise ValueError
+        expected = {
+            "execution_id": scope.execution_id,
+            "attempt_number": claimed.attempt.attempt_number,
+            "release_id": scope.pins.release_id,
+            "bundle_digest": scope.pins.bundle_digest,
+            "image_sha256": scope.media.media_ref.sha256,
+        }
+        if (
+            any(request[key] != value for key, value in expected.items())
+            or type(request["attempt_number"]) is not int
+            or metadata["jimu_projection_object"] != actual
+            or not isinstance(request["prompt"], str)
+            or not isinstance(request["response_schema"], dict)
+            or request["object_ids"] != object_ids
+            or len(set(object_ids)) != len(object_ids)
+            or actual not in object_ids
+            or canonical_bytes(metadata).decode("utf-8") != serialized
+        ):
+            raise ValueError
+    except ValueError:
+        raise ModelCallFailure("model.region_request_pin_mismatch") from None
+    # Retry routing reuses logical identity. The wire request still pins its Attempt.
+    del request["attempt_number"]
+    return sha256_digest(
+        N04_REGIONS_MARKER.encode() + b"\n" + canonical_bytes(metadata)
+    )
 
 
 def require_model_output(result: DispatchOutcome) -> bytes:
@@ -607,11 +670,8 @@ class CapabilityGateway:
                 for ref in call.profile_refs
             ):
                 raise ModelCallFailure("model.discovery_binding_mismatch")
-        image_pin, image_type, image_size = (
-            scope.media.media_ref,
-            scope.media.mime_type,
-            scope.media.byte_size,
-        )
+        region_request = is_region_observation_template(call.prompt)
+        obj = None
         if call.object_ref is not None:
             obj = claimed.previous.object_record(claimed.branch)
             if obj.object_id != call.object_ref.record_id or call.profile_refs != (
@@ -619,39 +679,50 @@ class CapabilityGateway:
             ):
                 raise ModelCallFailure("model.object_scope_mismatch")
         if claimed.node.node_id is NodeId.N04:
-            obj = claimed.previous.object_record(claimed.branch)
-            if obj.marked_frame is not None:
-                frame = obj.marked_frame
-                if (
-                    call.object_ref is None
-                    or call.image is None
-                    or obj.execution_id != scope.execution_id
-                    or obj.source_media_ref != scope.media.media_ref
-                    or call.purposes != (ModelCapability.OBJECT_OBSERVATION,)
-                ):
-                    raise ModelCallFailure("model.marked_frame_scope_mismatch")
-                image_pin, image_type, image_size = (
-                    frame.media_ref,
-                    frame.mime_type,
-                    frame.byte_size,
+            if obj is None:
+                raise ModelCallFailure("model.object_scope_mismatch")
+            profile = scope.resolve(obj.profile_ref, ProfileDefinition)
+            pinned = scope.resolve(profile.observation_binding_ref, ModelBinding)
+            region_binding = pinned.prompt_template_ref is not None and (
+                is_region_observation_template(
+                    scope.resolve(
+                        pinned.prompt_template_ref, PromptTemplateDefinition
+                    ).template_text
                 )
-        if call.image is not None and (
-            call.image.sha256 != image_pin.sha256
-            or call.image.media_type != image_type
-            or len(call.image.content) != image_size
-            or sha256_digest(call.image.content) != image_pin.sha256
-        ):
-            raise ModelCallFailure(
-                "model.original_media_mismatch"
-                if image_pin == scope.media.media_ref
-                else "model.marked_frame_mismatch"
             )
+            if (
+                region_request != region_binding
+                or reference_identity(profile.observation_binding_ref)
+                != reference_identity(call.binding_ref)
+                or call.image is None
+                or obj.execution_id != scope.execution_id
+                or obj.source_media_ref != scope.media.media_ref
+                or call.purposes != (ModelCapability.OBJECT_OBSERVATION,)
+            ):
+                raise ModelCallFailure(
+                    "model.region_observation_scope_mismatch"
+                    if region_request or region_binding
+                    else "model.observation_scope_mismatch"
+                )
+        elif region_request:
+            raise ModelCallFailure("model.region_observation_scope_mismatch")
+        if call.image is not None and (
+            call.image.sha256 != scope.media.media_ref.sha256
+            or call.image.media_type != scope.media.mime_type
+            or len(call.image.content) != scope.media.byte_size
+            or sha256_digest(call.image.content) != scope.media.media_ref.sha256
+        ):
+            raise ModelCallFailure("model.original_media_mismatch")
         logical = _LogicalModelInput(
             node_input_digest=claimed.node.input_digest,
             binding_ref=call.binding_ref,
             purposes=call.purposes,
             profile_refs=call.profile_refs,
-            prompt_digest=sha256_digest(call.prompt.encode("utf-8")),
+            prompt_digest=(
+                _region_prompt_digest(claimed, call)
+                if region_request
+                else sha256_digest(call.prompt.encode("utf-8"))
+            ),
             image_digest=None if call.image is None else call.image.sha256,
             object_ref=call.object_ref,
             source_discovery_invocation_ref=call.source_discovery_invocation_ref,

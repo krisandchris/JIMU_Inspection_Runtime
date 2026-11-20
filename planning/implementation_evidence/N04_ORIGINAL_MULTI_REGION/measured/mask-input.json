@@ -1,0 +1,57 @@
+{
+  "source_case": "mask/synthetic-roster",
+  "image_sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3",
+  "image_size": [
+    1536,
+    1024
+  ],
+  "id_map": {
+    "r1": {
+      "object_id": "perception.object.ff2fa7c7697bdf74063b7141a035fbab9da8167cc35b25d8d67d7461aa61dde1",
+      "xyxy_px": [
+        579.072,
+        0.0,
+        1276.416,
+        1021.952
+      ]
+    }
+  },
+  "prompt": "Observe the one supplied original image. Each bbox_2d is [left,top,right,bottom], integer thousandths of full image width and height, clamped to 0..999, origin top left. Use each target's coordinates to identify that specific subject. Evaluate only its listed questions, using surrounding visual context where needed. Answer by the provided target IDs and question IDs. If unclear use the uncertainty option for that question. Do not decide violations. Return the JSON object only.\n{\"questions\": {\"face_visibility\": {\"prompt\": \"Inspect only the specified person's face. Answer face_assessable if the face and nose/mouth area are clear enough to assess a worn mask, including if a mask clearly covers that area. Answer face_not_assessable for blur or obstruction. Return insufficient_visibility if the target cannot be identified.\", \"answers\": [\"face_assessable\", \"face_not_assessable\", \"insufficient_visibility\"]}, \"mask_status\": {\"prompt\": \"Inspect only the specified person's face. Answer not_wearing_mask only if the person's nose and mouth area is assessable and no mask is worn across it. Answer wearing_mask if a mask clearly covers both the nose and mouth. Answer insufficient_visibility if the face is occluded, too small, blurred, or the mask is partly worn.\", \"answers\": [\"wearing_mask\", \"not_wearing_mask\", \"insufficient_visibility\"]}}, \"targets\": [{\"id\": \"r1\", \"subject\": \"food_service_worker\", \"bbox_2d\": [377, 0, 831, 998], \"questions\": [\"face_visibility\", \"mask_status\"]}]}",
+  "response_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "r1"
+    ],
+    "properties": {
+      "r1": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "face_visibility",
+          "mask_status"
+        ],
+        "properties": {
+          "face_visibility": {
+            "enum": [
+              "face_assessable",
+              "face_not_assessable",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          },
+          "mask_status": {
+            "enum": [
+              "wearing_mask",
+              "not_wearing_mask",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "request_bytes": 2930031,
+  "request_sha256": "9ee3f460ea38715e1b476afce1f3de8d7d79402d8498db298073d0f433fa07a2"
+}

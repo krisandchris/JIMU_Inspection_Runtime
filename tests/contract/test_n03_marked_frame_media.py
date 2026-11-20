@@ -4,9 +4,11 @@ import asyncio
 import json
 import os
 from hashlib import sha256
+from io import BytesIO
 
 import psycopg
 import pytest
+from PIL import Image, ImageDraw
 from pydantic import ValidationError
 
 from jimu_runtime.domain.enums import NodeRunStatus, RuntimeRecordKind
@@ -18,7 +20,6 @@ from jimu_runtime.domain.runtime.perception import MarkedGroundingFrame, ObjectR
 from jimu_runtime.domain.validation.transitions import NodeTransitionGuard
 from jimu_runtime.gateway.http_wire import VerifiedImage
 from jimu_runtime.inspection.media import LocalMediaStore, MediaError
-from jimu_runtime.inspection.media.group_frame import marked_group_image
 from jimu_runtime.inspection.media.persistence import _key
 from jimu_runtime.workflow import repository as repo
 from jimu_runtime.workflow.jobs import CompletionDisposition, DurableJobs
@@ -106,11 +107,15 @@ def test_marked_frame_attempt_authority_and_durable_cleanup(tmp_path):
                 BBoxXYXY(xyxy=(5.0, 6.0, 8.0, 9.0)),
             )
             box = BBoxXYXY.enclosing(members)
-            image = await marked_group_image(
-                VerifiedImage(IMAGE, "image/png", task.media_ref.sha256),
-                dimensions,
-                box,
-            )
+            # Build historical archive bytes independently of Worker execution.
+            left, top, right, bottom = box.xyxy
+            with Image.open(BytesIO(IMAGE)) as archived_frame, BytesIO() as buffer:
+                ImageDraw.Draw(archived_frame).rectangle(
+                    (left, top, right - 1, bottom - 1), outline=(255, 0, 0)
+                )
+                archived_frame.save(buffer, format="PNG")
+                content = buffer.getvalue()
+            image = VerifiedImage(content, "image/png", sha256(content).hexdigest())
             frame = MarkedGroundingFrame(
                 media_ref=MediaRef(media_id="marked-image", sha256=image.sha256),
                 byte_size=len(image.content),

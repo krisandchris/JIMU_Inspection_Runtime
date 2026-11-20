@@ -36,9 +36,12 @@ from jimu_runtime.gateway.http_wire import VerifiedImage
 from jimu_runtime.gateway.invocation import DispatchOutcome
 from jimu_runtime.inspection.geometry import synthetic_cpu_implementations
 from jimu_runtime.inspection.geometry.node import GeometryNodeAdapter
-from jimu_runtime.inspection.media import MediaError
 from jimu_runtime.tools.executor import ToolExecutor
-from jimu_runtime.tools.registry import ToolWorkerRegistry
+from jimu_runtime.tools.registry import (
+    ToolDispatch,
+    ToolImplementation,
+    ToolWorkerRegistry,
+)
 from jimu_runtime.tools.step_attempts import StepAttemptStore
 from jimu_runtime.workflow import repository
 from jimu_runtime.workflow.engine import BranchKey
@@ -65,7 +68,15 @@ _ANSWERS = {
 }
 
 
-def _grouped_source() -> BundleCompileInput:
+def _substitute_image(original: VerifiedImage, x: float, y: float) -> VerifiedImage:
+    with Image.open(BytesIO(original.content)) as frame, BytesIO() as output:
+        frame.putpixel((int(x), int(y)), (255, 0, 0))
+        frame.save(output, format="PNG")
+        content = output.getvalue()
+    return VerifiedImage(content, "image/png", sha256_digest(content))
+
+
+def _grouped_source(*, include_member_boxes: bool) -> BundleCompileInput:
     source = load_source()
     (profile,) = (row for row in source.artifacts if row.kind is ArtifactKind.PROFILE)
     document = json.loads(profile.content)
@@ -73,49 +84,59 @@ def _grouped_source() -> BundleCompileInput:
         "mode": "connected_boxes",
         "max_gap_pixels": 1,
     }
-    grouped = replace(profile, content=json.dumps(document).encode())
+    changes = {
+        (profile.kind, profile.artifact_id): replace(
+            profile, content=json.dumps(document).encode()
+        )
+    }
+    if include_member_boxes:
+        schema = next(
+            row
+            for row in source.artifacts
+            if row.artifact_id == "object_observation-input"
+        )
+        payload = json.loads(schema.content)
+        payload["properties"]["member_boxes"] = {
+            "type": "array",
+            "items": payload["properties"]["bbox"],
+            "minItems": 1,
+            "maxItems": 256,
+        }
+        payload["required"].append("member_boxes")
+        # The effective input contract may define its record behind a local reference.
+        properties = {
+            key: payload.pop(key)
+            for key in ("type", "properties", "required", "additionalProperties")
+        }
+        payload["$defs"] = {"Input": properties}
+        payload["$ref"] = "#/$defs/Input"
+        changes[schema.kind, schema.artifact_id] = replace(
+            schema, content=json.dumps(payload).encode()
+        )
     return with_source_provenance(
         replace(
             source,
             artifacts=tuple(
-                grouped if row is profile else row for row in source.artifacts
+                changes.get((row.kind, row.artifact_id), row)
+                for row in source.artifacts
             ),
         )
     )
 
 
-def _check_marked_png(data: bytes, box: tuple[int, ...]) -> None:
-    left, top, right, bottom = box
-    perimeter = {
-        (x, y)
-        for y in range(top, bottom)
-        for x in range(left, right)
-        if x in {left, right - 1} or y in {top, bottom - 1}
-    }
-    with (
-        Image.open(BytesIO(perception.IMAGE)) as original,
-        Image.open(BytesIO(data)) as marked,
-    ):
-        assert (marked.format, marked.mode, marked.size) == (
-            "PNG",
-            "RGB",
-            original.size,
-        )
-        expected = original.load()
-        actual = marked.load()
-        assert expected is not None and actual is not None
-        for y in range(marked.height):
-            for x in range(marked.width):
-                assert actual[x, y] == (
-                    (255, 0, 0) if (x, y) in perimeter else expected[x, y]
-                )
-
-
+@pytest.mark.parametrize(
+    "include_member_boxes", [False, True], ids=["legacy-input", "member-input"]
+)
 def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
-    tmp_path: Path, loopback_only: set[int], monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    loopback_only: set[int],
+    monkeypatch: pytest.MonkeyPatch,
+    include_member_boxes: bool,
 ) -> None:
     calls: Counter[str] = Counter()
-    observations: dict[tuple[int, ...], tuple[bytes, dict[str, str]]] = {}
+    model_image_refs: list[dict[str, str]] = []
+    observations: dict[tuple[int, ...], str] = {}
+    candidates: dict[tuple[int, ...], str] = {}
 
     async def peer(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         request = await http_support.read_request(reader)
@@ -129,25 +150,31 @@ def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
             "object_observation-result": _ANSWERS,
             "candidate_prediction-result": {"categories": []},
         }[name]
-        if name in {
-            "profile_discovery-result",
-            "object_grounding-result",
-            "object_observation-result",
-        }:
-            prompt, image = body["messages"][0]["content"]
-            media_type, encoded = image["image_url"]["url"].split(",", 1)
-            assert media_type == "data:image/png;base64"
-            data = base64.b64decode(encoded, validate=True)
-            if name == "object_observation-result":
-                _, model_input, metadata = prompt["text"].splitlines()
-                request_input = json.loads(model_input)
-                box = tuple(request_input["bbox"]["xyxy"])
-                assert box in _GROUPS and box not in observations
-                assert set(json.loads(metadata)["questions"]) == set(_ANSWERS)
-                _check_marked_png(data, box)
-                observations[box] = (data, request_input["image"])
+        prompt, image = body["messages"][0]["content"]
+        media_type, encoded = image["image_url"]["url"].split(",", 1)
+        assert media_type == "data:image/png;base64"
+        assert base64.b64decode(encoded, validate=True) == perception.IMAGE
+        _, model_input, metadata = prompt["text"].splitlines()
+        request_input = json.loads(model_input)
+        instructions = json.loads(metadata)
+        model_image_refs.append(request_input["image"])
+        if name == "object_observation-result":
+            box = tuple(request_input["bbox"]["xyxy"])
+            assert box in _GROUPS and box not in observations
+            expected_members = [{"xyxy": list(member)} for member in _GROUPS[box]]
+            if include_member_boxes:
+                assert request_input["member_boxes"] == expected_members
+                assert "member_boxes" not in instructions
             else:
-                assert data == perception.IMAGE
+                assert "member_boxes" not in request_input
+                assert instructions["member_boxes"] == expected_members
+            assert "original image" in instructions["image_view"]
+            assert set(instructions["questions"]) == set(_ANSWERS)
+            observations[box] = instructions["object_id"]
+        elif name == "candidate_prediction-result":
+            box = tuple(instructions["bbox"]["xyxy"])
+            assert box in _GROUPS and box not in candidates
+            candidates[box] = instructions["object_id"]
         writer.write(
             http_support.response(
                 http_support.chat_body(model=body["model"], content=json.dumps(reply)),
@@ -164,10 +191,14 @@ def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
         asyncio.get_running_loop().set_default_executor(
             ThreadPoolExecutor(max_workers=1)
         )
-        monkeypatch.setattr(perception, "load_source", _grouped_source)
         async with (
             http_support.http_peer(loopback_only, peer) as url,
-            perception.perception_fixture(tmp_path, url, with_media=True) as fixture,
+            perception.perception_fixture(
+                tmp_path,
+                url,
+                with_media=True,
+                source=_grouped_source(include_member_boxes=include_member_boxes),
+            ) as fixture,
         ):
             media = fixture.media_store
             assert media is not None
@@ -176,9 +207,16 @@ def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
             eid = accepted.execution.execution_id
             invoke_model = fixture.gateway.invoke_model
             rejected_objects: set[str] = set()
+            tool_dispatches: dict[tuple[str, str], ToolDispatch] = {}
             original = VerifiedImage(
                 perception.IMAGE, "image/png", accepted.task.media_ref.sha256
             )
+
+            async def unexpected_marked_frame(*args, **kwargs):
+                pytest.fail("the Worker accessed marked-frame storage")
+
+            monkeypatch.setattr(media, "stage_marked_frame", unexpected_marked_frame)
+            monkeypatch.setattr(media, "read_marked_frame", unexpected_marked_frame)
 
             async def reject_substituted_observation_frames(
                 claimed: ClaimedNode, call: ModelCall
@@ -190,16 +228,27 @@ def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
                     (other_object,) = (
                         item for item in grounding.objects if item != object_record
                     )
-                    other_frame = await media.read_marked_frame(scope, other_object)
-                    assert call.image is not None
+                    assert call.image == original
+                    altered = _substitute_image(original, *object_record.bbox.xyxy[:2])
+                    other_frame = _substitute_image(
+                        original, *other_object.bbox.xyxy[:2]
+                    )
                     assert (
-                        len({original.sha256, other_frame.sha256, call.image.sha256})
-                        == 3
+                        len({original.sha256, altered.sha256, other_frame.sha256}) == 3
                     )
                     before = calls.copy()
-                    for wrong_frame in (original, other_frame):
+                    tampered = replace(
+                        original,
+                        content=original.content[:-1]
+                        + bytes([original.content[-1] ^ 1]),
+                    )
+                    for wrong_frame in (
+                        altered,
+                        other_frame,
+                        tampered,
+                    ):
                         with pytest.raises(
-                            ModelCallFailure, match=r"^model\.marked_frame_mismatch$"
+                            ModelCallFailure, match=r"^model\.original_media_mismatch$"
                         ):
                             await invoke_model(
                                 claimed, replace(call, image=wrong_frame)
@@ -231,14 +280,45 @@ def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
                 require_definition(catalogue, item.ref, ToolDefinition)
                 for item in catalogue.of_kind(ArtifactKind.TOOL)
             )
+
+            def inspect_tool_input(
+                implementation: ToolImplementation,
+            ) -> ToolImplementation:
+                check = implementation.physical_input_check
+                assert check is not None
+
+                def inspect(dispatch: ToolDispatch, content: bytes) -> None:
+                    check(dispatch, content)
+                    assert dispatch.object_ref is not None
+                    assert dispatch.original_media_ref == accepted.task.media_ref
+                    assert dispatch.object_bbox is not None
+                    box = dispatch.object_bbox.xyxy
+                    assert (
+                        tuple(row.xyxy for row in dispatch.object_member_boxes)
+                        == _GROUPS[box]
+                    )
+                    tool_id = dispatch.tool_ref.artifact_id
+                    if tool_id in {"wheel_segmentation", "tactile_paving_segmentation"}:
+                        image = json.loads(content)["image"]
+                        assert (
+                            base64.b64decode(image, validate=True) == perception.IMAGE
+                        )
+                    tool_dispatches[dispatch.object_ref.record_id, tool_id] = dispatch
+
+                return replace(implementation, physical_input_check=inspect)
+
+            implementations = synthetic_cpu_implementations(
+                fixture.resources,
+                "cpu",
+                "grouped-inspection-tools",
+                definitions,
+                fixture.tool_proofs,
+                synthetic_image_digests=frozenset({accepted.task.media_ref.sha256}),
+            )
             tool_registry = ToolWorkerRegistry(
-                synthetic_cpu_implementations(
-                    fixture.resources,
-                    "cpu",
-                    "grouped-inspection-tools",
-                    definitions,
-                    fixture.tool_proofs,
-                    synthetic_image_digests=frozenset({accepted.task.media_ref.sha256}),
+                tuple(
+                    inspect_tool_input(implementation)
+                    for implementation in implementations
                 )
             )
             tools = GeometryNodeAdapter(
@@ -284,21 +364,55 @@ def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
                     await asyncio.sleep(0.025)
             final = await open_worker().read_finalization(scope, eid)
             assert final is not None, dispositions
-            assert calls == {
-                "profile_discovery-result": 1,
-                "object_grounding-result": 1,
-                "object_observation-result": 2,
-                "candidate_prediction-result": 2,
-            }
 
             async with fixture.application.connect() as connection:
                 locked = await repository.get_execution(connection, scope, eid)
                 assert locked is not None
                 state = await load_records(connection, scope, locked)
-            grounding = state.inputs().grounding
+                marked_frames = await connection.scalar(
+                    text("""
+                        SELECT count(*) FROM jimu_workflow.marked_frame_media
+                        WHERE project_id = :project AND client_id = :client
+                            AND execution_id = :execution
+                    """),
+                    {
+                        "project": scope.project_id,
+                        "client": scope.client_id,
+                        "execution": eid,
+                    },
+                )
+            assert calls == {
+                "profile_discovery-result": 1,
+                "object_grounding-result": 1,
+                "object_observation-result": 2,
+                "candidate_prediction-result": 2,
+            }, {
+                branch: (node.status, node.reason)
+                for branch, node in state.runs.items()
+            }
+            assert (
+                model_image_refs
+                == [accepted.task.media_ref.model_dump(mode="json")] * calls.total()
+            )
+            assert marked_frames == 0
+            common = state.inputs()
+            assert common.snapshot().media_ref == accepted.task.media_ref
+            discovery = common.discovery
+            grounding = common.grounding
+            assert discovery is not None
+            assert discovery.inputs.original_media_ref == accepted.task.media_ref
             assert grounding is not None and len(grounding.objects) == 2
+            assert grounding.inputs.original_media_ref == accepted.task.media_ref
+            assert {record.source_media_ref for record in grounding.records} == {
+                accepted.task.media_ref
+            }
             objects = {obj.bbox.xyxy: obj for obj in grounding.objects}
-            assert set(objects) == set(observations) == set(_GROUPS)
+            assert set(objects) == set(_GROUPS)
+            assert (
+                observations
+                == candidates
+                == {box: obj.object_id for box, obj in objects.items()}
+            )
             decisions = {item.object_ref.record_id: item for item in final.decisions}
             assert len(final.decisions) == len(decisions) == 2
             assert (
@@ -306,24 +420,25 @@ def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
                 == rejected_objects
                 == {obj.object_id for obj in objects.values()}
             )
-            frame_digests = set()
+            assert {
+                object_id
+                for object_id, tool_id in tool_dispatches
+                if tool_id == "wheel_segmentation"
+            } == set(decisions)
             for box, obj in objects.items():
+                assert obj.grounding_member_boxes is not None
                 assert (
                     tuple(row.xyxy for row in obj.grounding_member_boxes)
                     == _GROUPS[box]
                 )
-                frame = obj.marked_frame
-                assert frame is not None
+                assert obj.marked_frame is None
+                assert "marked_frame" not in obj.model_dump(mode="json")
                 assert obj.source_media_ref == accepted.task.media_ref
                 assert obj.coordinate_system.frame == "original_image"
                 assert obj.coordinate_system.dimensions == fixture.host.media.dimensions
-                data, ref = observations[box]
-                assert frame.media_ref.model_dump(mode="json") == ref
-                assert frame.byte_size == len(data)
-                assert frame.mime_type == "image/png"
-                assert frame.media_ref.sha256 == sha256_digest(data)
-                frame_digests.add(frame.media_ref.sha256)
-                assert (await media.read_marked_frame(scope, obj)).content == data
+                wheel = tool_dispatches[obj.object_id, "wheel_segmentation"]
+                assert wheel.object_bbox == obj.bbox
+                assert wheel.original_coordinates == obj.coordinate_system
 
                 inputs = state.inputs(obj.object_id)
                 observation, tool = inputs.observation, inputs.tool
@@ -331,7 +446,9 @@ def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
                     observation is not None and observation.batch.outcome == "complete"
                 )
                 assert observation.inputs.object_record == obj
-                assert observation.inputs.image_view.marked_media_ref == frame.media_ref
+                assert observation.inputs.image_view.roi == obj.bbox
+                assert not observation.inputs.image_view.transforms
+                assert observation.inputs.image_view.marked_media_ref is None
                 assert tool is not None
                 expected_status = "succeeded" if box == _PARKED else "partial"
                 assert tool.output.summary.status == expected_status, (
@@ -341,7 +458,7 @@ def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
                 assert tool.inputs.object_record == obj
                 assert tool.inputs.image_view.roi == obj.bbox
                 assert not tool.inputs.image_view.transforms
-                assert tool.inputs.image_view.marked_media_ref == frame.media_ref
+                assert tool.inputs.image_view.marked_media_ref is None
                 (wheel_mask,) = [
                     evidence
                     for evidence in tool.evidence
@@ -366,20 +483,5 @@ def test_signed_worker_keeps_grouped_object_identity_and_image_scope(
             )
             (match,) = final.coverage.matches
             assert match.object_ref == parked_decision.object_ref
-            assert len(frame_digests) == 2
-            assert accepted.task.media_ref.sha256 not in frame_digests
-
-            with pytest.raises(MediaError, match="marked_frame_unavailable"):
-                await media.read_marked_frame(
-                    scope.model_copy(update={"client_id": "other.client"}),
-                    objects[_PARKED],
-                )
-            with pytest.raises(MediaError, match="marked_frame_identity_conflict"):
-                await media.read_marked_frame(
-                    scope,
-                    objects[_PARKED].model_copy(
-                        update={"marked_frame": objects[_ISOLATED].marked_frame}
-                    ),
-                )
 
     asyncio.run(run())

@@ -9,6 +9,7 @@
 For the current development state, test evidence and acceptance scope, see the [work package ledger](planning/WORK_PACKAGE_STATUS.md). The original starter-pack baseline is recorded below.
 
 - [Run the local CPU inspection scenario with Docker Compose](ops/compose/README.md)
+- [Run grouped parking, employee mask and sidewalk goods inspections with local models](examples/live_inspection/README.md)
 - [Query scoped metrics and provision the local dashboard](ops/observability/README.md)
 - [Back up and restore an isolated deployment](ops/recovery/README.md)
 - [Replay and evaluate historical executions](src/jimu_runtime/evaluation/README.md)
@@ -34,9 +35,9 @@ Build a new, independent, configuration-driven multimodal inspection runtime. Th
 
 1. **N01 Context Builder** — resolve device/camera/region and immutable task context.
 2. **N02 Omni-JEV Profile Discovery** — output registered Profile hits and their configured Question sets only. It must not output boxes, Object IDs, instance associations, or violation decisions.
-3. **N03 Grounding** — independently ground each hit Profile and create Object instances. It must not match instances to N02 (N02 has no instances), reselect Questions, or decide violations.
-4. **N04 VLM Observation** — one normal-path joint VLM request per Object for all effective Questions; validate and persist each Question's Fact independently.
-5. **N05 Tool Execution** — execute the pre-bound Profile Tool Plan, independent of N06 violation predictions; produce Tool Facts and evidence.
+3. **N03 Grounding** — independently ground each hit Profile and publish Objects with original-image pixel boxes and ordered members for grouped targets. It must not match instances to N02 (N02 has no instances), reselect Questions, or decide violations.
+4. **N04 VLM Observation** — observe the original image and all selected regions in one upstream VLM request when the signed regional binding is enabled. Each Object retains its assigned Questions and independently validated Facts. Legacy bindings keep per-Object model requests.
+5. **N05 Tool Execution** — execute the pre-bound Profile Tool Plan for each Object. Visual tools use the same original and group/member boxes as N04; persist their Facts and evidence.
 6. **N06 Decision** — predict candidate violation categories, then perform deterministic Rule evaluation. Candidate prediction must not silently suppress applicable mandatory Rules.
 
 ## 4. Package map
@@ -85,8 +86,7 @@ RUNTIME_NOT_RUN. No WP-01 implementation is authorized.
 Domain §9–14 provides the ArtifactKind/ref catalogue, ModelBinding/Tool capability
 bindings, PromptTemplate, QuestionSelectionPolicy/Record, Facet Schema intersection,
 producer/output/authority models and typed Policy Catalog. Release pins Question
-catalogue/policy; N02 records the effective set, N03 inherits it, N04 sends one
-joint request per Object. N05 stays independent of N06 and mandatory Rules retain
+catalogue/policy; N02 records the effective set, N03 inherits it, N04 keeps a joint observation batch per Object. N05 stays independent of N06 and mandatory Rules retain
 full scanning. D09 no_hits conservatism is unchanged; alternatives require
 independent evaluation and business approval.
 

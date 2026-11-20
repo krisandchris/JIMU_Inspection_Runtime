@@ -84,6 +84,7 @@ class RuntimeRecordKind(WireEnum):
     EXECUTION_EVENT = "execution_event"
     CANDIDATE_PREDICTION = "candidate_prediction"
     OBSERVATION_BATCH = "observation_batch"
+    TOOL_PLAN_RUN_SUMMARY = "tool_plan_run_summary"
 
 
 @unique

@@ -1,0 +1,359 @@
+{
+  "initial": {
+    "parking": {
+      "execution_id": "execution.5b0f4c3920316854024cddedc2d695c709081a30d9c6b4e57b368d27aa20abbd",
+      "bundle_digest": "f786d9945444ee1e36327e1c4876aa52b90096d34026d351f8fb32d6f57085fd",
+      "physical_request_id": "region-c2cfbbff1a24d911fbd6db675c13db845b7d04dc120df9aead8b20661179134e",
+      "region_count": 1,
+      "logical_bridge_requests": 1,
+      "physical_n04_requests": 1,
+      "upstream_seconds": 0.922,
+      "upstream_usage": {
+        "completion_tokens": 166,
+        "prompt_tokens": 1895,
+        "total_tokens": 2061
+      },
+      "fact_count": 3,
+      "result": "violation",
+      "coverage": "complete",
+      "decisions": {
+        "violation": 1
+      }
+    },
+    "mask": {
+      "execution_id": "execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+      "bundle_digest": "beecd1ab6c4ae8f20f2727fc78764cc70aa13e678fa1652ed36baf2cfad7f30f",
+      "physical_request_id": "region-63a54779e444ad0bfa65ea64729fb1145f358f1194a4f45dbacddc26ef3776d2",
+      "region_count": 1,
+      "logical_bridge_requests": 1,
+      "physical_n04_requests": 1,
+      "upstream_seconds": 0.353,
+      "upstream_usage": {
+        "completion_tokens": 27,
+        "prompt_tokens": 1869,
+        "total_tokens": 1896
+      },
+      "fact_count": 2,
+      "result": "violation",
+      "coverage": "complete",
+      "decisions": {
+        "violation": 1
+      }
+    },
+    "goods": {
+      "execution_id": "execution.e2adef4a8f88008e1fa82ce471d9776a47a28dd63fdb34d73a867e413c66408f",
+      "bundle_digest": "824eb0fa680948851b20718ff79049fdb90fc1486cc83435928c45bc876cacb6",
+      "physical_request_id": "region-e82b4281cdde96401a9ba9b8a2634276642ca35656d5c6ab523d63808c7b8223",
+      "region_count": 9,
+      "logical_bridge_requests": 9,
+      "physical_n04_requests": 1,
+      "upstream_seconds": 1.29,
+      "upstream_usage": {
+        "completion_tokens": 273,
+        "prompt_tokens": 2220,
+        "total_tokens": 2493
+      },
+      "fact_count": 9,
+      "result": "violation",
+      "coverage": "complete",
+      "decisions": {
+        "no_violation": 5,
+        "violation": 4
+      },
+      "goods_by_matched_source_box": {
+        "r1": {
+          "expected": "occupies_sidewalk",
+          "observed": "does_not_occupy_sidewalk"
+        },
+        "r2": {
+          "expected": "occupies_sidewalk",
+          "observed": "does_not_occupy_sidewalk"
+        },
+        "r3": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r4": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r5": {
+          "expected": "insufficient_visibility",
+          "observed": "does_not_occupy_sidewalk"
+        },
+        "r6": {
+          "expected": "insufficient_visibility",
+          "observed": "does_not_occupy_sidewalk"
+        },
+        "r7": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r8": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r9": {
+          "expected": "insufficient_visibility",
+          "observed": "does_not_occupy_sidewalk"
+        }
+      }
+    },
+    "goods-default": {
+      "execution_id": "execution.cc626613d46f62154aab335d7ad1a83b4a7c41fcc76da2ee029d08db7b0ce219",
+      "bundle_digest": "824eb0fa680948851b20718ff79049fdb90fc1486cc83435928c45bc876cacb6",
+      "physical_request_id": "region-b6b88053c1afd128c40035fd71a360d30204480f3a491e63a2fc53a32d78008f",
+      "region_count": 9,
+      "logical_bridge_requests": 9,
+      "physical_n04_requests": 1,
+      "upstream_seconds": 6.991,
+      "upstream_usage": {
+        "completion_tokens": 1439,
+        "prompt_tokens": 2218,
+        "total_tokens": 3657
+      },
+      "fact_count": 9,
+      "result": "violation",
+      "coverage": "complete",
+      "decisions": {
+        "violation": 9
+      },
+      "goods_by_matched_source_box": {
+        "r1": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r2": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r3": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r4": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r5": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r6": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r7": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r8": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r9": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        }
+      }
+    }
+  },
+  "reviewed": {
+    "parking": {
+      "execution_id": "execution.eee39e54c9105827daf795a96de2925a2e40d6c1011c22317810a1dd23be6d57",
+      "bundle_digest": "13f656025b8bc9fb4a99a565bd0e05df1e990588a4eefc8dcfd301478873cb23",
+      "physical_request_id": "region-2979599d578cdf9862930933aa6a38fab4b8b41bcf9d031456225bf27b5baa5c",
+      "region_count": 1,
+      "logical_bridge_requests": 1,
+      "physical_n04_requests": 1,
+      "upstream_seconds": 1.065,
+      "upstream_usage": {
+        "completion_tokens": 188,
+        "prompt_tokens": 1895,
+        "total_tokens": 2083
+      },
+      "fact_count": 3,
+      "result": "no_violation",
+      "coverage": "complete",
+      "decisions": {
+        "no_violation": 1
+      }
+    },
+    "mask": {
+      "execution_id": "execution.4f804bc76a7ba5f7ca2492945f0830ab1ec1a78e101126b786dc7f1fbab77c24",
+      "bundle_digest": "e87bcb93f722b8e3eb152919b850ee80c5a411ed2fff7248c23c01bfc0f19e86",
+      "physical_request_id": "region-a9e94f563d25b10a8153f05f9f2f70f94e73be3bfacd6610d4304c748a8399e2",
+      "region_count": 1,
+      "logical_bridge_requests": 1,
+      "physical_n04_requests": 1,
+      "upstream_seconds": 0.471,
+      "upstream_usage": {
+        "completion_tokens": 27,
+        "prompt_tokens": 1828,
+        "total_tokens": 1855
+      },
+      "fact_count": 2,
+      "result": "violation",
+      "coverage": "complete",
+      "decisions": {
+        "violation": 1
+      }
+    },
+    "goods": {
+      "execution_id": "execution.212a37891322c7b6b3dc340771855129f28cc12261aa204dc87ea3065e0c49fe",
+      "bundle_digest": "98686e755775947ea6128af437f544a111187fb46b30d76f2fa873a0e1920450",
+      "physical_request_id": "region-838e1cfd5f6bfdf04071908d5f30878a5932266c594e37ad5d69ad9a1d6925f2",
+      "region_count": 9,
+      "logical_bridge_requests": 9,
+      "physical_n04_requests": 1,
+      "upstream_seconds": 0.942,
+      "upstream_usage": {
+        "completion_tokens": 152,
+        "prompt_tokens": 1993,
+        "total_tokens": 2145
+      },
+      "fact_count": 9,
+      "result": "violation",
+      "coverage": "complete",
+      "decisions": {
+        "violation": 9
+      },
+      "goods_by_matched_source_box": {
+        "r1": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r2": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r3": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r4": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r5": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r6": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r7": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r8": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r9": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        }
+      }
+    },
+    "goods-default": {
+      "execution_id": "execution.4cf5dd2954d32c89325be83a50adc92ba374729563b289883dc030749980f008",
+      "bundle_digest": "98686e755775947ea6128af437f544a111187fb46b30d76f2fa873a0e1920450",
+      "physical_request_id": "region-92f8998805a5ab56f1aa9706597738b8d9c8efef4be25eb6e5972a5078a0c037",
+      "region_count": 9,
+      "logical_bridge_requests": 9,
+      "physical_n04_requests": 1,
+      "upstream_seconds": 5.317,
+      "upstream_usage": {
+        "completion_tokens": 1140,
+        "prompt_tokens": 1991,
+        "total_tokens": 3131
+      },
+      "fact_count": 9,
+      "result": "violation",
+      "coverage": "complete",
+      "decisions": {
+        "violation": 9
+      },
+      "goods_by_matched_source_box": {
+        "r1": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r2": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r3": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r4": {
+          "expected": "occupies_sidewalk",
+          "observed": "occupies_sidewalk"
+        },
+        "r5": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r6": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r7": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r8": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        },
+        "r9": {
+          "expected": "insufficient_visibility",
+          "observed": "occupies_sidewalk"
+        }
+      }
+    },
+    "parking-one": {
+      "execution_id": "execution.637610741bd9641d203636c38872384f63d6f77213975c107748ebf7798074bd",
+      "bundle_digest": "15bbcb4e1fa61f06fe32a6365c0b7c8dcc7f77ef37c1119701cc7750102d1416",
+      "physical_request_id": "region-b4585571c1992711838136d17f7f0e0d3ae27034016a7e188539ec71d6ec85c1",
+      "region_count": 1,
+      "logical_bridge_requests": 1,
+      "physical_n04_requests": 1,
+      "upstream_seconds": 1.027,
+      "upstream_usage": {
+        "completion_tokens": 168,
+        "prompt_tokens": 1909,
+        "total_tokens": 2077
+      },
+      "fact_count": 3,
+      "result": "violation",
+      "coverage": "complete",
+      "decisions": {
+        "violation": 1
+      }
+    },
+    "parking-two": {
+      "execution_id": "execution.bd8ecefef34ee97b79ee90fbff2e9df5bfa44664b3f36433622a90b7de5de0e4",
+      "bundle_digest": "15bbcb4e1fa61f06fe32a6365c0b7c8dcc7f77ef37c1119701cc7750102d1416",
+      "physical_request_id": "region-fecc6fbd21153b46953c62551dda3f9cc16a73a76ab05dc583d0bd93e4828f71",
+      "region_count": 1,
+      "logical_bridge_requests": 1,
+      "physical_n04_requests": 1,
+      "upstream_seconds": 0.851,
+      "upstream_usage": {
+        "completion_tokens": 152,
+        "prompt_tokens": 1909,
+        "total_tokens": 2061
+      },
+      "fact_count": 3,
+      "result": "violation",
+      "coverage": "complete",
+      "decisions": {
+        "violation": 1
+      }
+    }
+  }
+}

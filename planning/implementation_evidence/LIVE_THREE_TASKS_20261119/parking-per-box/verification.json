@@ -1,0 +1,60 @@
+{
+  "image": "parking",
+  "image_sha256": "a17325853ec562bbe1946769abd0074def1ab853adf603e58605dfed5f11f9be",
+  "task_id": "task.12f1d07894761d14c2562a78c551f6d409b101210a10d5662cd68914f95ca721",
+  "execution_id": "execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3",
+  "release_id": "synthetic.parking.release",
+  "bundle_digest": "e35fdb69dbad8d94e30efa69ce5eb58c2df45c6adf41548d25bbdea3bbe3c778",
+  "api": {
+    "/api/v1/inference/tasks": 202,
+    "/api/v1/executions/execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3": 200,
+    "/api/v1/inference/tasks/task.12f1d07894761d14c2562a78c551f6d409b101210a10d5662cd68914f95ca721/result": 200,
+    "/api/v1/executions/execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3/trace": 200
+  },
+  "execution_status": "partial_failed",
+  "coverage": "partial",
+  "summary_result": "violation",
+  "object_count": 2,
+  "decisions": [
+    "uncertain",
+    "violation"
+  ],
+  "nodes": [
+    [
+      "N01",
+      "succeeded"
+    ],
+    [
+      "N02",
+      "succeeded"
+    ],
+    [
+      "N03",
+      "succeeded"
+    ],
+    [
+      "N05",
+      "succeeded"
+    ],
+    [
+      "N05",
+      "succeeded"
+    ],
+    [
+      "N06",
+      "succeeded"
+    ],
+    [
+      "N04",
+      "succeeded"
+    ],
+    [
+      "N04",
+      "succeeded"
+    ],
+    [
+      "N06",
+      "succeeded"
+    ]
+  ]
+}

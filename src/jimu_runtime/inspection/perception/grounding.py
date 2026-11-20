@@ -1,8 +1,7 @@
 """N03 creates Objects from independently dispatched Profile grounding."""
 
 from collections import Counter
-from collections.abc import Awaitable, Callable, Iterator
-from dataclasses import dataclass
+from collections.abc import Iterator
 from typing import TypedDict
 
 from jimu_runtime.bundle.schema_validation import compile_offline_response_schema
@@ -23,12 +22,11 @@ from jimu_runtime.domain.references import SchemaRef
 from jimu_runtime.domain.runtime.facts import ObjectRef, ProfileContentRef
 from jimu_runtime.domain.runtime.grounding_groups import observation_groups
 from jimu_runtime.domain.runtime.invocations import ModelInvocation
-from jimu_runtime.domain.runtime.media import BBoxXYXY, ImageDimensions, MediaRef
+from jimu_runtime.domain.runtime.media import BBoxXYXY
 from jimu_runtime.domain.runtime.perception import (
     GroundingOutcome,
     GroundingRecord,
     GroundingRecordRef,
-    MarkedGroundingFrame,
     ModelGroundingProvenance,
     ObjectRecord,
 )
@@ -37,12 +35,6 @@ from jimu_runtime.gateway.bridge import (
     CapabilityGateway,
     ModelCall,
 )
-from jimu_runtime.gateway.http_wire import VerifiedImage
-from jimu_runtime.inspection.media.group_frame import (
-    MARKED_FRAME_RENDERER_VERSION,
-    marked_group_image,
-)
-from jimu_runtime.inspection.media.types import MediaError
 from jimu_runtime.inspection.perception.model import (
     GroundingReply,
     ModelAccess,
@@ -70,43 +62,16 @@ from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
 from jimu_runtime.workflow.worker_nodes import NodeResult
 from jimu_runtime.workflow.worker_records import GroundingMessage
 
-type StageMarkedFrame = Callable[
-    [ClaimedNode, ObjectRecord, VerifiedImage], Awaitable[None]
-]
-
 
 class _GroupFields(TypedDict, total=False):
     grounding_member_boxes: tuple[BBoxXYXY, ...]
-    marked_frame: MarkedGroundingFrame
-
-
-# Bound repeated full-frame PNG work and staged bytes for the entire N03 call.
-# At the maximum allowed source image area, this admits ten marked frames.
-_MAX_MARKED_FRAME_PIXELS = 240_000_000
-_MAX_MARKED_FRAME_BYTES = 256 * 1024 * 1024
-
-
-@dataclass(slots=True)
-class _MarkedFrameBudget:
-    pixels: int = 0
-    byte_size: int = 0
-
-    def reserve_pixels(self, dimensions: ImageDimensions, count: int) -> None:
-        self.pixels += dimensions.width * dimensions.height * count
-        if self.pixels > _MAX_MARKED_FRAME_PIXELS:
-            raise AdapterRejected("perception.marked_frame_pixel_budget_exceeded")
-
-    def reserve_bytes(self, image: VerifiedImage) -> None:
-        self.byte_size += len(image.content)
-        if self.byte_size > _MAX_MARKED_FRAME_BYTES:
-            raise AdapterRejected("perception.marked_frame_byte_budget_exceeded")
 
 
 def _grouped_identities(
     envelope: NodeInputEnvelope,
     profile_ref: ProfileContentRef,
     groups: tuple[tuple[BBoxXYXY, ...], ...],
-) -> Iterator[tuple[str, str]]:
+) -> Iterator[str]:
     """Return identities in canonical group order, including repeated singleton boxes."""
     profile = profile_ref.stable_json()
     repeats: Counter[tuple[BBoxXYXY, ...]] = Counter()
@@ -114,10 +79,7 @@ def _grouped_identities(
         occurrence = repeats[members]
         repeats[members] += 1
         identity = canonical_bytes([list(member.xyxy) for member in members]).decode()
-        yield (
-            runtime_id(envelope, "object", profile, identity, str(occurrence)),
-            runtime_id(envelope, "marked-frame", profile, identity, str(occurrence)),
-        )
+        yield runtime_id(envelope, "object", profile, identity, str(occurrence))
 
 
 def verify_grouped_grounding_response(
@@ -138,6 +100,8 @@ def verify_grouped_grounding_response(
         or record not in message.records
         or message.inputs.original_media_ref != scope.media.media_ref
         or message.inputs.original_coordinate_system != frame
+        or record.source_media_ref != scope.media.media_ref
+        or record.coordinate_system != frame
     ):
         raise AdapterRejected("perception.grouped_grounding_record_mismatch")
 
@@ -155,10 +119,12 @@ def verify_grouped_grounding_response(
     expected_outcome = (
         GroundingOutcome.OBJECTS if groups else GroundingOutcome.NO_TARGET
     )
-    if record.outcome is not expected_outcome or tuple(
-        obj.object_id for obj in objects
-    ) != tuple(ref.record_id for ref in record.object_refs):
+    if record.outcome is not expected_outcome:
         raise AdapterRejected("perception.grouped_grounding_record_mismatch")
+    try:
+        record.check_objects(objects)
+    except ValueError:
+        raise AdapterRejected("perception.grouped_grounding_record_mismatch") from None
     _verify_grouped_objects(
         message.inputs.envelope, record.profile_ref, objects, groups
     )
@@ -173,16 +139,11 @@ def _verify_grouped_objects(
     if len(groups) != len(objects):
         raise AdapterRejected("perception.grouped_grounding_members_mismatch")
     identities = _grouped_identities(envelope, profile_ref, groups)
-    for obj, members, (object_id, media_id) in zip(
-        objects, groups, identities, strict=True
-    ):
-        marked = obj.marked_frame
+    for obj, members, object_id in zip(objects, groups, identities, strict=True):
         if (
             obj.grounding_member_boxes != members
             or obj.bbox != BBoxXYXY.enclosing(members)
             or obj.object_id != object_id
-            or marked is None
-            or marked.media_ref.media_id != media_id
         ):
             raise AdapterRejected("perception.grouped_grounding_members_mismatch")
 
@@ -215,7 +176,6 @@ async def ground(
     envelope: NodeInputEnvelope,
     gateway: CapabilityGateway,
     access: ModelAccess,
-    stage_marked_frame: StageMarkedFrame | None = None,
 ) -> NodeResult:
     scope = claimed.opened.scope
     discovery = claimed.previous.discovery
@@ -236,10 +196,6 @@ async def ground(
     definitions = tuple(
         scope.resolve(hit.profile_ref, ProfileDefinition) for hit in hits
     )
-    if stage_marked_frame is None and any(
-        profile.grounding_grouping is not None for profile in definitions
-    ):
-        raise AdapterRejected("perception.marked_frame_storage_unavailable")
     frame = original_frame(scope)
     inputs = GroundingInput(
         schema_version=VERSION,
@@ -259,7 +215,6 @@ async def ground(
     invocations: list[ModelInvocation] = []
     failure: NodeError | None = None
     undispatched: list[_GroundingInvocationGap] = []
-    marked_budget = _MarkedFrameBudget()
     for entry, profile in zip(inputs.profiles, definitions, strict=True):
         hit, grounding = entry.hit, entry.grounding_binding
         if not isinstance(grounding, ModelGroundingBinding):
@@ -315,8 +270,7 @@ async def ground(
                 error = failed_request(result, "perception.invalid_grounding_boxes")
         if error is not None and (failure is None or error.retryable):
             failure = error
-        record, new_objects = await _profile_objects(
-            claimed,
+        record, new_objects = _profile_objects(
             inputs,
             entry,
             profile,
@@ -324,9 +278,6 @@ async def ground(
             invocation,
             boxes,
             error,
-            image,
-            stage_marked_frame,
-            marked_budget,
         )
         records.append(record)
         objects.extend(new_objects)
@@ -380,8 +331,7 @@ async def ground(
     )
 
 
-async def _profile_objects(
-    claimed: ClaimedNode,
+def _profile_objects(
     inputs: GroundingInput,
     entry: GroundingProfileInput,
     profile: ProfileDefinition,
@@ -389,9 +339,6 @@ async def _profile_objects(
     invocation: ModelInvocation,
     boxes: tuple[BBoxXYXY, ...],
     error: NodeError | None,
-    original: VerifiedImage,
-    stage_marked_frame: StageMarkedFrame | None,
-    marked_budget: _MarkedFrameBudget,
 ) -> tuple[GroundingRecord, tuple[ObjectRecord, ...]]:
     hit, env = entry.hit, inputs.envelope
     record_ref = GroundingRecordRef(
@@ -409,39 +356,19 @@ async def _profile_objects(
         if grouping is not None
         else tuple((box,) for box in boxes)
     )
-    dimensions = inputs.original_coordinate_system.dimensions
     if grouping is not None:
-        marked_budget.reserve_pixels(dimensions, len(groups))
-        identities: Iterator[tuple[str, str | None]] = _grouped_identities(
-            env, hit.profile_ref, groups
-        )
+        identities = _grouped_identities(env, hit.profile_ref, groups)
     else:
         profile_identity = hit.profile_ref.stable_json()
         identities = (
-            (runtime_id(env, "object", profile_identity, str(index)), None)
+            runtime_id(env, "object", profile_identity, str(index))
             for index in range(len(groups))
         )
     objects: list[ObjectRecord] = []
-    for members, (object_id, media_id) in zip(groups, identities, strict=True):
-        box = members[0]
-        grouped_fields: _GroupFields = {}
-        marked = None
-        if media_id is not None:
-            box = BBoxXYXY.enclosing(members)
-            try:
-                marked = await marked_group_image(original, dimensions, box)
-            except MediaError:
-                raise AdapterRejected("perception.marked_frame_render_failed") from None
-            marked_budget.reserve_bytes(marked)
-            grouped_fields = {
-                "grounding_member_boxes": members,
-                "marked_frame": MarkedGroundingFrame(
-                    media_ref=MediaRef(media_id=media_id, sha256=marked.sha256),
-                    byte_size=len(marked.content),
-                    mime_type="image/png",
-                    renderer_version=MARKED_FRAME_RENDERER_VERSION,
-                ),
-            }
+    for members, object_id in zip(groups, identities, strict=True):
+        grouped_fields: _GroupFields = (
+            {"grounding_member_boxes": members} if grouping is not None else {}
+        )
         obj = ObjectRecord(
             schema_version=VERSION,
             object_id=object_id,
@@ -450,7 +377,7 @@ async def _profile_objects(
             grounding_record_ref=record_ref,
             source_media_ref=inputs.original_media_ref,
             coordinate_system=inputs.original_coordinate_system,
-            bbox=box,
+            bbox=BBoxXYXY.enclosing(members) if grouping is not None else members[0],
             grounding_producer=producer,
             visibility="unknown",
             localization_status="localized",
@@ -460,12 +387,6 @@ async def _profile_objects(
             effective_question_refs=hit.effective_question_refs,
             **grouped_fields,
         )
-        if marked is not None:
-            assert stage_marked_frame is not None
-            try:
-                await stage_marked_frame(claimed, obj, marked)
-            except MediaError:
-                raise AdapterRejected("perception.marked_frame_stage_failed") from None
         objects.append(obj)
     return GroundingRecord(
         schema_version=VERSION,

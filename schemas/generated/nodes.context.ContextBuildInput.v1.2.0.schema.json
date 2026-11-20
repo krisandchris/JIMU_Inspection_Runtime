@@ -1,0 +1,1210 @@
+{
+  "$defs": {
+    "AcceptedTask": {
+      "additionalProperties": false,
+      "description": "Immutable accepted intake, recording the resolved Release and Bundle.",
+      "properties": {
+        "accepted_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "bundle_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Digest",
+          "type": "string"
+        },
+        "context": {
+          "$ref": "#/$defs/TaskContext"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/ShortText"
+        },
+        "idempotency_scope": {
+          "$ref": "#/$defs/IdempotencyScope"
+        },
+        "media_ref": {
+          "$ref": "#/$defs/MediaRef"
+        },
+        "release_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "request_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "const": "accepted",
+          "title": "Status",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "task_id",
+        "request_id",
+        "idempotency_scope",
+        "idempotency_key",
+        "media_ref",
+        "context",
+        "release_id",
+        "bundle_digest",
+        "accepted_at",
+        "status",
+        "trace"
+      ],
+      "title": "AcceptedTask",
+      "type": "object"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "entity",
+        "region",
+        "profile",
+        "facet",
+        "question",
+        "tool",
+        "tool_plan",
+        "rule",
+        "rule_set",
+        "model_binding",
+        "fact_schema",
+        "prompt_template",
+        "response_schema",
+        "attribute_schema",
+        "context_schema",
+        "tool_input_schema",
+        "tool_output_schema",
+        "object_schema",
+        "decision_schema",
+        "value_schema",
+        "policy",
+        "vocabulary",
+        "geometry_resource",
+        "static_asset",
+        "fact_producer_catalog"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "AssetDimensions": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "width": {
+          "$ref": "#/$defs/PositiveBudget"
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ],
+      "title": "AssetDimensions",
+      "type": "object"
+    },
+    "AssetStage": {
+      "discriminator": {
+        "mapping": {
+          "finalized": "#/$defs/FinalizedAsset",
+          "staged": "#/$defs/StagedAsset"
+        },
+        "propertyName": "stage"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/StagedAsset"
+        },
+        {
+          "$ref": "#/$defs/FinalizedAsset"
+        }
+      ]
+    },
+    "BooleanValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "bool",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanValue",
+      "type": "object"
+    },
+    "BoundedString": {
+      "maxLength": 4096,
+      "type": "string"
+    },
+    "CaptureClockSource": {
+      "enum": [
+        "device_clock",
+        "server_clock",
+        "external_reference"
+      ],
+      "title": "CaptureClockSource",
+      "type": "string"
+    },
+    "CaptureTimezone": {
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9_+-]*(?:/[A-Za-z0-9_+-]+)*$(?![\\s\\S])",
+      "type": "string"
+    },
+    "ClockProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "clock_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Clock Id",
+          "type": "string"
+        },
+        "original_timestamp": {
+          "$ref": "#/$defs/OriginalCaptureTimestamp"
+        },
+        "original_timezone": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureTimezone"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source": {
+          "$ref": "#/$defs/CaptureClockSource"
+        },
+        "uncertainty_ms": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NonNegativeBudget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "captured_at",
+        "original_timestamp",
+        "source",
+        "clock_id"
+      ],
+      "title": "ClockProvenance",
+      "type": "object"
+    },
+    "ContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ContentRef",
+      "type": "object"
+    },
+    "ContextSchemaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "context_schema",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "schema_dialect": {
+          "const": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Schema Dialect",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest",
+        "schema_dialect"
+      ],
+      "title": "ContextSchemaRef",
+      "type": "object"
+    },
+    "EnumValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enum",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "EnumValue",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "FinalizedAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "object_version": {
+          "$ref": "#/$defs/ShortText"
+        },
+        "stage": {
+          "const": "finalized",
+          "title": "Stage",
+          "type": "string"
+        },
+        "staged_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "verified_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "verified_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verified Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage",
+        "staged_at",
+        "verified_at",
+        "verified_sha256",
+        "object_version"
+      ],
+      "title": "FinalizedAsset",
+      "type": "object"
+    },
+    "FiniteNumber": {
+      "type": "number"
+    },
+    "IdempotencyScope": {
+      "additionalProperties": false,
+      "properties": {
+        "client_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Client Id",
+          "type": "string"
+        },
+        "project_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Project Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project_id",
+        "client_id"
+      ],
+      "title": "IdempotencyScope",
+      "type": "object"
+    },
+    "ImageMimeType": {
+      "maxLength": 128,
+      "pattern": "^image/[a-z0-9][a-z0-9.+-]*$",
+      "type": "string"
+    },
+    "IntegerValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "IntegerValue",
+      "type": "object"
+    },
+    "ListValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "$ref": "#/$defs/Value"
+          },
+          "maxItems": 256,
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "ListValue",
+      "type": "object"
+    },
+    "MediaAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_size": {
+          "$ref": "#/$defs/PositiveBudget"
+        },
+        "color_space": {
+          "const": "RGB",
+          "title": "Color Space",
+          "type": "string"
+        },
+        "dimensions": {
+          "$ref": "#/$defs/AssetDimensions"
+        },
+        "media_ref": {
+          "$ref": "#/$defs/MediaRef"
+        },
+        "mime_type": {
+          "$ref": "#/$defs/ImageMimeType"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/AssetStage"
+        },
+        "storage": {
+          "$ref": "#/$defs/StorageReference"
+        }
+      },
+      "required": [
+        "schema_version",
+        "media_ref",
+        "storage",
+        "stage",
+        "mime_type",
+        "byte_size",
+        "dimensions",
+        "color_space"
+      ],
+      "title": "MediaAsset",
+      "type": "object"
+    },
+    "MediaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "media_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Media Id",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_id",
+        "sha256"
+      ],
+      "title": "MediaRef",
+      "type": "object"
+    },
+    "NodeId": {
+      "enum": [
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "title": "NodeId",
+      "type": "string"
+    },
+    "NodeInputEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "bundle_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bundle Digest",
+          "type": "string"
+        },
+        "execution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "node_config_ref": {
+          "$ref": "#/$defs/ContentRef"
+        },
+        "node_id": {
+          "$ref": "#/$defs/NodeId"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "release_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        },
+        "upstream_artifacts": {
+          "$ref": "#/$defs/NodeInputs"
+        }
+      },
+      "required": [
+        "schema_version",
+        "node_id",
+        "task_id",
+        "execution_id",
+        "release_id",
+        "bundle_digest",
+        "node_run_id",
+        "attempt_id",
+        "trace",
+        "upstream_artifacts",
+        "node_config_ref"
+      ],
+      "title": "NodeInputEnvelope",
+      "type": "object"
+    },
+    "NodeInputs": {
+      "items": {
+        "$ref": "#/$defs/PinnedRuntimeInput"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonNegativeBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "NumberValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "NumberValue",
+      "type": "object"
+    },
+    "ObjectKey": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "pattern": "^(?!.*(?:^|/)[.]{1,2}(?:/|$))[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*(?![\\s\\S])",
+      "type": "string"
+    },
+    "OriginalCaptureTimestamp": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]{1,6})?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])$(?![\\s\\S])",
+      "type": "string"
+    },
+    "PinnedRuntimeInput": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "ref": {
+          "$ref": "#/$defs/RuntimeRecordRef"
+        }
+      },
+      "required": [
+        "ref",
+        "digest"
+      ],
+      "title": "PinnedRuntimeInput",
+      "type": "object"
+    },
+    "PolicyContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "policy",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "PolicyContentRef",
+      "type": "object"
+    },
+    "PositiveBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "RecordValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Value"
+          },
+          "maxProperties": 64,
+          "propertyNames": {
+            "$ref": "#/$defs/FieldName"
+          },
+          "title": "Value",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "RecordValue",
+      "type": "object"
+    },
+    "RegionContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "region",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RegionContentRef",
+      "type": "object"
+    },
+    "RegistryRecordRef": {
+      "additionalProperties": false,
+      "description": "Reference to exact externally supplied device or camera registry metadata.",
+      "properties": {
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "version",
+        "digest"
+      ],
+      "title": "RegistryRecordRef",
+      "type": "object"
+    },
+    "RuntimeRecordKind": {
+      "enum": [
+        "task",
+        "execution",
+        "node_run",
+        "attempt",
+        "object",
+        "fact",
+        "evidence",
+        "tool_execution",
+        "model_invocation",
+        "decision",
+        "release",
+        "activation",
+        "context_snapshot",
+        "grounding_record",
+        "question_selection_record",
+        "authoritative_result_selection",
+        "execution_coverage",
+        "profile_eligibility_evaluation",
+        "rule_set_applicability_evaluation",
+        "rule_applicability_evaluation",
+        "applicability_trace",
+        "unresolved_obligation",
+        "replay_run",
+        "execution_event",
+        "candidate_prediction",
+        "observation_batch",
+        "tool_plan_run_summary"
+      ],
+      "title": "RuntimeRecordKind",
+      "type": "string"
+    },
+    "RuntimeRecordRef": {
+      "additionalProperties": false,
+      "description": "Record identity, interpreted within its owning root's pinned scope.\n\nIn particular an Object ID is Execution-local: this nested ref must not be\nresolved globally or reused across Executions. Scope/existence checks belong\nto the later owning record contracts, not a hidden resolver in this model.",
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "$ref": "#/$defs/RuntimeRecordKind"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "RuntimeRecordRef",
+      "type": "object"
+    },
+    "ShortText": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "StagedAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "stage": {
+          "const": "staged",
+          "title": "Stage",
+          "type": "string"
+        },
+        "staged_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        }
+      },
+      "required": [
+        "stage",
+        "staged_at"
+      ],
+      "title": "StagedAsset",
+      "type": "object"
+    },
+    "StorageReference": {
+      "additionalProperties": false,
+      "properties": {
+        "object_key": {
+          "$ref": "#/$defs/ObjectKey"
+        },
+        "store_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Store Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "store_id",
+        "object_key"
+      ],
+      "title": "StorageReference",
+      "type": "object"
+    },
+    "StringValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "StringValue",
+      "type": "object"
+    },
+    "TaskContext": {
+      "additionalProperties": false,
+      "description": "Submitted identifiers and typed metadata carried into trusted intake.",
+      "properties": {
+        "camera_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "clock": {
+          "$ref": "#/$defs/ClockProvenance"
+        },
+        "device_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Device Id",
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/$defs/RecordValue"
+        },
+        "region_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Region Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device_id",
+        "camera_id",
+        "region_id",
+        "clock",
+        "metadata"
+      ],
+      "title": "TaskContext",
+      "type": "object"
+    },
+    "TraceContext": {
+      "additionalProperties": false,
+      "properties": {
+        "parent_span_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Span Id"
+        },
+        "span_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Span Id"
+        },
+        "trace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_id"
+      ],
+      "title": "TraceContext",
+      "type": "object"
+    },
+    "UTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    },
+    "Value": {
+      "discriminator": {
+        "mapping": {
+          "bool": "#/$defs/BooleanValue",
+          "enum": "#/$defs/EnumValue",
+          "integer": "#/$defs/IntegerValue",
+          "list": "#/$defs/ListValue",
+          "number": "#/$defs/NumberValue",
+          "record": "#/$defs/RecordValue",
+          "string": "#/$defs/StringValue"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BooleanValue"
+        },
+        {
+          "$ref": "#/$defs/IntegerValue"
+        },
+        {
+          "$ref": "#/$defs/NumberValue"
+        },
+        {
+          "$ref": "#/$defs/StringValue"
+        },
+        {
+          "$ref": "#/$defs/EnumValue"
+        },
+        {
+          "$ref": "#/$defs/ListValue"
+        },
+        {
+          "$ref": "#/$defs/RecordValue"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accepted_task": {
+      "$ref": "#/$defs/AcceptedTask"
+    },
+    "camera_ref": {
+      "$ref": "#/$defs/RegistryRecordRef"
+    },
+    "context_provenance_policy_ref": {
+      "$ref": "#/$defs/PolicyContentRef"
+    },
+    "context_schema_ref": {
+      "$ref": "#/$defs/ContextSchemaRef"
+    },
+    "device_ref": {
+      "$ref": "#/$defs/RegistryRecordRef"
+    },
+    "envelope": {
+      "$ref": "#/$defs/NodeInputEnvelope"
+    },
+    "media_asset": {
+      "$ref": "#/$defs/MediaAsset"
+    },
+    "region_ref": {
+      "$ref": "#/$defs/RegionContentRef"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "envelope",
+    "accepted_task",
+    "media_asset",
+    "device_ref",
+    "camera_ref",
+    "region_ref",
+    "context_schema_ref",
+    "context_provenance_policy_ref"
+  ],
+  "title": "ContextBuildInput",
+  "type": "object"
+}

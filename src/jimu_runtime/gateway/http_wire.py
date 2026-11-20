@@ -1,10 +1,12 @@
 """Bounded, non-streaming Chat Completions wire used by host-approved adapters."""
 
+from __future__ import annotations
+
 import base64
 import binascii
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 from math import isfinite
@@ -91,6 +93,46 @@ class ChatContract:
 
     def response_schema_document(self) -> object:
         return strict_json(self._schema_bytes)
+
+    @property
+    def response_schema_bytes(self) -> bytes:
+        return self._schema_bytes
+
+    def for_region_questions(
+        self, question_slots: tuple[ArtifactId, ...]
+    ) -> ChatContract:
+        """Derive a closed projection from the full signed Question schema."""
+        if (
+            not self.question_slots
+            or self.response_schema_digest != self.output_schema_ref.digest
+        ):
+            raise WireError("http_schema_pin_unregistered")
+        selected = set(question_slots)
+        if (
+            not selected
+            or len(selected) != len(question_slots)
+            or not selected <= set(self.question_slots)
+        ):
+            raise WireError("http_question_slots_pin_mismatch")
+        if question_slots == self.question_slots:
+            return self
+        if len(selected) == len(self.question_slots):
+            schema = self._schema_bytes
+        else:
+            document = cast(dict[str, JSONValue], self.response_schema_document())
+            if "properties" not in document or "required" not in document:
+                raise WireError("http_invalid_projected_schema")
+            properties = cast(dict[str, JSONValue], document["properties"])
+            required = cast(list[str], document["required"])
+            document["properties"] = {
+                key: properties[key] for key in required if key in selected
+            }
+            document["required"] = [key for key in required if key in selected]
+            try:
+                schema = canonical_bytes(document)
+            except ValueError:
+                raise WireError("http_invalid_projected_schema") from None
+        return replace(self, response_schema=schema, question_slots=question_slots)
 
     def validate_response_content(
         self, content: str, value: object
@@ -306,10 +348,15 @@ def _require_request_image(value: object, image_limit: int) -> None:
     raise WireError("http_invalid_image")
 
 
-def validate_chat_request(
-    payload: bytes, model: str, contract: ChatContract, *, image_limit: int
-) -> object:
-    """Validate the exact bytes authorized by the caller's dispatch journal."""
+@dataclass(frozen=True, slots=True)
+class DecodedChatRequest:
+    root: dict[str, object] = field(repr=False)
+    prompt: str = field(repr=False)
+    parts: list[object] = field(repr=False)
+
+
+def decode_chat_request(payload: bytes) -> DecodedChatRequest:
+    """Read the prompt from the same bounded bytes checked before dispatch."""
     root = strict_json(payload)
     if not isinstance(root, dict) or set(root) != {
         "model",
@@ -318,12 +365,6 @@ def validate_chat_request(
         "response_format",
     }:
         raise WireError("http_invalid_request")
-    if root["model"] != model:
-        raise WireError("http_request_model_mismatch")
-    if root["stream"] is not False or _json_bytes(
-        root["response_format"]
-    ) != _json_bytes(_result_format(contract)):
-        raise WireError("http_request_contract_mismatch")
     messages = root["messages"]
     if not isinstance(messages, list) or len(messages) != 1:
         raise WireError("http_invalid_request")
@@ -335,8 +376,7 @@ def validate_chat_request(
     ):
         raise WireError("http_invalid_request")
     parts = message["content"]
-    allowed_parts = 2 if contract.accepts_image else 1
-    if not isinstance(parts, list) or not 1 <= len(parts) <= allowed_parts:
+    if not isinstance(parts, list) or not 1 <= len(parts) <= 2:
         raise WireError("http_invalid_request")
     prompt = parts[0]
     if (
@@ -347,8 +387,33 @@ def validate_chat_request(
         or not prompt["text"].strip()
     ):
         raise WireError("http_invalid_prompt")
-    if len(parts) == 2:
-        _require_request_image(parts[1], image_limit)
+    return DecodedChatRequest(root, prompt["text"], parts)
+
+
+def validate_chat_request(
+    payload: bytes | DecodedChatRequest,
+    model: str,
+    contract: ChatContract,
+    *,
+    image_limit: int,
+) -> object:
+    """Validate the exact bytes authorized by the caller's dispatch journal."""
+    decoded = (
+        payload
+        if isinstance(payload, DecodedChatRequest)
+        else decode_chat_request(payload)
+    )
+    root = decoded.root
+    if root["model"] != model:
+        raise WireError("http_request_model_mismatch")
+    if root["stream"] is not False or _json_bytes(
+        root["response_format"]
+    ) != _json_bytes(_result_format(contract)):
+        raise WireError("http_request_contract_mismatch")
+    if len(decoded.parts) == 2:
+        if not contract.accepts_image:
+            raise WireError("http_invalid_request")
+        _require_request_image(decoded.parts[1], image_limit)
     return root
 
 

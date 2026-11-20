@@ -266,11 +266,15 @@ def _response(
         ), message.batch
     if not result.artifacts:
         return None, None
-    if isinstance(result.message, ToolMessage) and any(
-        execution.node_run_ref.record_id != result.message.inputs.envelope.node_run_id
-        for execution in result.message.executions
+    if isinstance(result.message, ToolMessage) and (
+        not result.message.executions
+        or any(
+            execution.node_run_ref.record_id
+            != result.message.inputs.envelope.node_run_id
+            for execution in result.message.executions
+        )
     ):
-        # The step journal retains each physical receipt under its child claim.
+        # Physical receipts belong to the invoked child, if any.
         return None, None
     response = next(
         (item for item in result.artifacts if isinstance(item.record, ModelInvocation)),

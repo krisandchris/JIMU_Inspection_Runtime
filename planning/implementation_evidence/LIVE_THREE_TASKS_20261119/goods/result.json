@@ -1,0 +1,1018 @@
+{
+  "task_id": "task.372725a228511cef0112f674a556e6f3837204c194696d12837a56c3a95e7746",
+  "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+  "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+  "release_id": "synthetic.parking.release",
+  "media": {
+    "media_id": "synthetic.scene.image",
+    "sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8"
+  },
+  "postgres_version": "16.14 (Debian 16.14-1.pgdg13+1)",
+  "dispositions": [
+    "applied",
+    "applied",
+    "finalized"
+  ],
+  "execution": {
+    "schema_version": "1.0.0",
+    "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+    "task_id": "task.372725a228511cef0112f674a556e6f3837204c194696d12837a56c3a95e7746",
+    "pins": {
+      "release_id": "synthetic.parking.release",
+      "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+      "runtime_version": "1.0.0",
+      "workflow_version": "1.0.0",
+      "model_pins": [
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "candidate_prediction",
+            "version": "1.0.0",
+            "digest": "8a7cb3177fe68b907d50a60d6d8a0691e5eeeceb557bcaffe6431e99e79905d3"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+          "deployments": [
+            {
+              "provider_id": "synthetic.loopback",
+              "deployment_id": "synthetic.nonmotor.parking.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        },
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "object_grounding",
+            "version": "1.0.0",
+            "digest": "6677d577d063c0be708256c655a68ca83c6d4b6316ce9426b70ae5631eb88c15"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+          "deployments": [
+            {
+              "provider_id": "synthetic.loopback",
+              "deployment_id": "synthetic.nonmotor.parking.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        },
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "object_observation",
+            "version": "1.0.0",
+            "digest": "c931b89341be8e13e6948e0959d9bfe29f905db5a1c44ae1eb48f9a4a613d170"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+          "deployments": [
+            {
+              "provider_id": "synthetic.loopback",
+              "deployment_id": "synthetic.nonmotor.parking.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        },
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "profile_discovery",
+            "version": "1.0.0",
+            "digest": "86fba2ed5ec769f9836c5e624d33d37c4fe57f725e981c4bc55125657738e8a3"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+          "deployments": [
+            {
+              "provider_id": "synthetic.loopback",
+              "deployment_id": "synthetic.nonmotor.parking.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        }
+      ],
+      "tool_pins": [],
+      "input_digest": "35be76c9bc1df5f7569fef64edb42795e665daf5f865225b77ebb37707fc9200"
+    },
+    "trace": {
+      "trace_id": "synthetic.scene.trace",
+      "span_id": null,
+      "parent_span_id": null
+    },
+    "status": "failed",
+    "created_at": "2026-11-19T12:21:02.457405Z",
+    "started_at": "2026-11-19T12:21:02.778510Z",
+    "ended_at": "2026-11-19T12:21:04.431271Z",
+    "context_snapshot": {
+      "snapshot_ref": {
+        "record_kind": "context_snapshot",
+        "record_id": "perception.context.be1bd640f36ae42f49bb9689caa166a67ffdb52f40cd6f556c794c1cde10da92"
+      },
+      "snapshot_digest": "595e080284e565c3a17eb8fb5500e78106855a2435e40f40810ccd568151aa3a"
+    },
+    "model_invocation_refs": []
+  },
+  "nodes": [
+    {
+      "schema_version": "1.0.0",
+      "node_run_id": "node.n01.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+      "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+      "node_id": "N01",
+      "trace": {
+        "trace_id": "synthetic.scene.trace",
+        "span_id": null,
+        "parent_span_id": null
+      },
+      "config_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "workflow",
+        "version": "1.0.0",
+        "digest": "6331c17677452378c62bd61dc7a8b6d1d6721a40c41e69535fdded409afd4b41"
+      },
+      "upstream_inputs": [],
+      "input_digest": "35be76c9bc1df5f7569fef64edb42795e665daf5f865225b77ebb37707fc9200",
+      "status": "succeeded",
+      "created_at": "2026-11-19T12:21:02.457405Z",
+      "started_at": "2026-11-19T12:21:02.778510Z",
+      "ended_at": "2026-11-19T12:21:02.822363Z",
+      "reason": null,
+      "predecessor_ref": null,
+      "attempt_history": [
+        {
+          "attempt_ref": {
+            "record_kind": "attempt",
+            "record_id": "0ae5563621f84d52ada838c10dafff64"
+          },
+          "attempt_number": 1
+        }
+      ],
+      "output_refs": [
+        {
+          "record_kind": "context_snapshot",
+          "record_id": "perception.context.be1bd640f36ae42f49bb9689caa166a67ffdb52f40cd6f556c794c1cde10da92"
+        }
+      ]
+    },
+    {
+      "schema_version": "1.0.0",
+      "node_run_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc",
+      "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+      "node_id": "N02",
+      "trace": {
+        "trace_id": "synthetic.scene.trace",
+        "span_id": null,
+        "parent_span_id": null
+      },
+      "config_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "workflow",
+        "version": "1.0.0",
+        "digest": "6331c17677452378c62bd61dc7a8b6d1d6721a40c41e69535fdded409afd4b41"
+      },
+      "upstream_inputs": [
+        {
+          "ref": {
+            "record_kind": "context_snapshot",
+            "record_id": "perception.context.be1bd640f36ae42f49bb9689caa166a67ffdb52f40cd6f556c794c1cde10da92"
+          },
+          "digest": "595e080284e565c3a17eb8fb5500e78106855a2435e40f40810ccd568151aa3a"
+        },
+        {
+          "ref": {
+            "record_kind": "profile_eligibility_evaluation",
+            "record_id": "synthetic.eligibility.4c92efafb5ffc1bdf2c9bbff14e3921c13c3bd1e0d63c89caf6719a22659c627"
+          },
+          "digest": "67a39b68a8c707bc72879bff1cef9527206e094aff4e61c86a89729a73fc26c4"
+        }
+      ],
+      "input_digest": "d652beedeed33f2ba874603201a065899f88522831cf248cad06aaf334460fd5",
+      "status": "failed",
+      "created_at": "2026-11-19T12:21:02.822363Z",
+      "started_at": "2026-11-19T12:21:03.177250Z",
+      "ended_at": "2026-11-19T12:21:04.112784Z",
+      "reason": {
+        "code": "http_status_rejected",
+        "detail": null
+      },
+      "predecessor_ref": null,
+      "attempt_history": [
+        {
+          "attempt_ref": {
+            "record_kind": "attempt",
+            "record_id": "8234f9e666814f92abcf3375f5cac6d5"
+          },
+          "attempt_number": 1
+        }
+      ],
+      "output_refs": []
+    },
+    {
+      "schema_version": "1.0.0",
+      "node_run_id": "synthetic.node.852ee09b7a3036eeaf81065d828e077cac7306c77792d9c02d9cb8ba500dc165",
+      "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+      "node_id": "N05",
+      "trace": {
+        "trace_id": "synthetic.scene.trace",
+        "span_id": null,
+        "parent_span_id": null
+      },
+      "config_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "workflow",
+        "version": "1.0.0",
+        "digest": "6331c17677452378c62bd61dc7a8b6d1d6721a40c41e69535fdded409afd4b41"
+      },
+      "upstream_inputs": [],
+      "input_digest": "6e2f6841520d12062236926d71ed8c23d097056b85c65dbd2968836125f0772a",
+      "status": "blocked",
+      "created_at": "2026-11-19T12:21:04.112784Z",
+      "started_at": null,
+      "ended_at": "2026-11-19T12:21:04.112784Z",
+      "reason": {
+        "code": "discovery_failed",
+        "detail": null
+      },
+      "predecessor_ref": null,
+      "attempt_history": [],
+      "output_refs": []
+    },
+    {
+      "schema_version": "1.0.0",
+      "node_run_id": "synthetic.node.af2bd94a5875812a5df124f8a563f5c769275769dc35562392d1a0b03401098c",
+      "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+      "node_id": "N06",
+      "trace": {
+        "trace_id": "synthetic.scene.trace",
+        "span_id": null,
+        "parent_span_id": null
+      },
+      "config_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "workflow",
+        "version": "1.0.0",
+        "digest": "6331c17677452378c62bd61dc7a8b6d1d6721a40c41e69535fdded409afd4b41"
+      },
+      "upstream_inputs": [],
+      "input_digest": "0f34cc7d2df6d7821dfbaef13a371aa581ca8fa0e27e2dd4497030ad34fe5f31",
+      "status": "blocked",
+      "created_at": "2026-11-19T12:21:04.112784Z",
+      "started_at": null,
+      "ended_at": "2026-11-19T12:21:04.112784Z",
+      "reason": {
+        "code": "discovery_failed",
+        "detail": null
+      },
+      "predecessor_ref": null,
+      "attempt_history": [],
+      "output_refs": []
+    },
+    {
+      "schema_version": "1.0.0",
+      "node_run_id": "synthetic.node.e06c725e3bab283563e4ff9fce4dd5ab27eb41a2ceefa27016791ce2b212f322",
+      "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+      "node_id": "N04",
+      "trace": {
+        "trace_id": "synthetic.scene.trace",
+        "span_id": null,
+        "parent_span_id": null
+      },
+      "config_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "workflow",
+        "version": "1.0.0",
+        "digest": "6331c17677452378c62bd61dc7a8b6d1d6721a40c41e69535fdded409afd4b41"
+      },
+      "upstream_inputs": [],
+      "input_digest": "185b6e05c1350b29fa53cd5f52440ab04241fe5adfa900b18d4e8c6afe2cc313",
+      "status": "blocked",
+      "created_at": "2026-11-19T12:21:04.112784Z",
+      "started_at": null,
+      "ended_at": "2026-11-19T12:21:04.112784Z",
+      "reason": {
+        "code": "discovery_failed",
+        "detail": null
+      },
+      "predecessor_ref": null,
+      "attempt_history": [],
+      "output_refs": []
+    },
+    {
+      "schema_version": "1.0.0",
+      "node_run_id": "synthetic.node.f4e8c3b0f94dce350a5912a106f08e9120992469e3567374861e8db86c9bee14",
+      "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+      "node_id": "N03",
+      "trace": {
+        "trace_id": "synthetic.scene.trace",
+        "span_id": null,
+        "parent_span_id": null
+      },
+      "config_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "workflow",
+        "version": "1.0.0",
+        "digest": "6331c17677452378c62bd61dc7a8b6d1d6721a40c41e69535fdded409afd4b41"
+      },
+      "upstream_inputs": [],
+      "input_digest": "1eb2c03d90d21211dab07841f54ae54ec4ed3e02fd0b2a6cdfa0529b1cc769df",
+      "status": "blocked",
+      "created_at": "2026-11-19T12:21:04.112784Z",
+      "started_at": null,
+      "ended_at": "2026-11-19T12:21:04.112784Z",
+      "reason": {
+        "code": "discovery_failed",
+        "detail": null
+      },
+      "predecessor_ref": null,
+      "attempt_history": [],
+      "output_refs": []
+    }
+  ],
+  "tool_step_nodes": [],
+  "node_outputs": [
+    {
+      "schema_version": "1.0.0",
+      "worker_format": "configured-v1",
+      "kind": "context",
+      "inputs": {
+        "schema_version": "1.0.0",
+        "envelope": {
+          "schema_version": "1.0.0",
+          "node_id": "N01",
+          "task_id": "task.372725a228511cef0112f674a556e6f3837204c194696d12837a56c3a95e7746",
+          "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "release_id": "synthetic.parking.release",
+          "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+          "node_run_id": "node.n01.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "attempt_id": "0ae5563621f84d52ada838c10dafff64",
+          "trace": {
+            "trace_id": "synthetic.scene.trace",
+            "span_id": null,
+            "parent_span_id": null
+          },
+          "upstream_artifacts": [
+            {
+              "ref": {
+                "record_kind": "task",
+                "record_id": "task.372725a228511cef0112f674a556e6f3837204c194696d12837a56c3a95e7746"
+              },
+              "digest": "f732b53bc0e7afdc6d844d0219d9a009dcaf907dbf52829c33c3b23dd98cba77"
+            }
+          ],
+          "node_config_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "workflow",
+            "version": "1.0.0",
+            "digest": "6331c17677452378c62bd61dc7a8b6d1d6721a40c41e69535fdded409afd4b41"
+          }
+        },
+        "accepted_task": {
+          "schema_version": "1.0.0",
+          "task_id": "task.372725a228511cef0112f674a556e6f3837204c194696d12837a56c3a95e7746",
+          "request_id": "trial.82caa4290de746d5871a139e4f68d317",
+          "idempotency_scope": {
+            "project_id": "synthetic.nonmotor.parking",
+            "client_id": "synthetic.edge"
+          },
+          "idempotency_key": "trial.82caa4290de746d5871a139e4f68d317",
+          "media_ref": {
+            "media_id": "synthetic.scene.image",
+            "sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8"
+          },
+          "context": {
+            "device_id": "synthetic.device",
+            "camera_id": "synthetic.fixed.camera",
+            "region_id": "isolated_sidewalk",
+            "clock": {
+              "captured_at": "2026-01-02T00:00:00Z",
+              "original_timestamp": "2026-01-02T00:00:00+00:00",
+              "original_timezone": "UTC",
+              "source": "device_clock",
+              "clock_id": "synthetic.device",
+              "uncertainty_ms": null
+            },
+            "metadata": {
+              "kind": "record",
+              "value": {}
+            }
+          },
+          "release_id": "synthetic.parking.release",
+          "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+          "accepted_at": "2026-01-02T00:00:00Z",
+          "status": "accepted",
+          "trace": {
+            "trace_id": "synthetic.scene.trace",
+            "span_id": null,
+            "parent_span_id": null
+          }
+        },
+        "media_asset": {
+          "schema_version": "1.0.0",
+          "media_ref": {
+            "media_id": "synthetic.scene.image",
+            "sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8"
+          },
+          "storage": {
+            "store_id": "jimu.local-media",
+            "object_key": "media-v1/08170ec13efc2c564365c65f38bb1f488a3c84485027b3181019d0f6ca5fbb71"
+          },
+          "stage": {
+            "stage": "finalized",
+            "staged_at": "2026-11-19T12:21:02.064431Z",
+            "verified_at": "2026-11-19T12:21:02.064431Z",
+            "verified_sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8",
+            "object_version": "sha256:2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8"
+          },
+          "mime_type": "image/png",
+          "byte_size": 3288754,
+          "dimensions": {
+            "width": 1536,
+            "height": 1024
+          },
+          "color_space": "RGB"
+        },
+        "device_ref": {
+          "record_id": "synthetic.device",
+          "version": "1.0.2",
+          "digest": "4693b5849a8634219e6f5eb1594f4c8b9a12c5657821e63409ff806b17df9d08"
+        },
+        "camera_ref": {
+          "record_id": "synthetic.fixed.camera",
+          "version": "1.0.3",
+          "digest": "f1471b51fe748c0584a30e7de88ae050611007da703270671ce10d3e1b01480f"
+        },
+        "region_ref": {
+          "artifact_kind": "region",
+          "artifact_id": "isolated_sidewalk",
+          "version": "1.0.0",
+          "digest": "2e0dc832d8e9fad9bf36214e2d5e39b84bae253134e42830ee2c00c36127f1b8"
+        },
+        "context_schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "sidewalk-goods.context",
+          "version": "1.0.0",
+          "digest": "12e289895eb16d6b80ff99f599c7883984cc79cc176934f2faf6ec2327181138",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "context_provenance_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "context-provenance",
+          "version": "1.0.0",
+          "digest": "7cbe5b79ea6464b5cc3584bdc272d7452514382ad53fa186a0dd09b1ceaf9d75"
+        }
+      },
+      "output": {
+        "schema_version": "1.0.0",
+        "envelope": {
+          "schema_version": "1.0.0",
+          "node_id": "N01",
+          "node_run_id": "node.n01.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "attempt_id": "0ae5563621f84d52ada838c10dafff64",
+          "trace": {
+            "trace_id": "synthetic.scene.trace",
+            "span_id": null,
+            "parent_span_id": null
+          },
+          "output_artifacts": [
+            {
+              "ref": {
+                "record_kind": "context_snapshot",
+                "record_id": "perception.context.be1bd640f36ae42f49bb9689caa166a67ffdb52f40cd6f556c794c1cde10da92"
+              },
+              "digest": "595e080284e565c3a17eb8fb5500e78106855a2435e40f40810ccd568151aa3a"
+            }
+          ],
+          "started_at": "2026-11-19T12:21:02.778510Z",
+          "finished_at": "2026-11-19T12:21:02.778510Z",
+          "duration_ms": 0,
+          "status": "succeeded"
+        },
+        "disposition": "usable",
+        "validation_report": {
+          "disposition": "usable",
+          "optional_issues": [
+            {
+              "code": "perception.context_field_unavailable",
+              "path": [
+                "sidewalk_placement_policy_verified"
+              ],
+              "message": "A trusted value is unavailable for the configured context field.",
+              "related_refs": []
+            }
+          ]
+        },
+        "context_snapshot_ref": {
+          "record_kind": "context_snapshot",
+          "record_id": "perception.context.be1bd640f36ae42f49bb9689caa166a67ffdb52f40cd6f556c794c1cde10da92"
+        },
+        "context_snapshot_digest": "595e080284e565c3a17eb8fb5500e78106855a2435e40f40810ccd568151aa3a"
+      },
+      "snapshot": {
+        "schema_version": "1.0.0",
+        "context_snapshot_id": "perception.context.be1bd640f36ae42f49bb9689caa166a67ffdb52f40cd6f556c794c1cde10da92",
+        "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+        "task_id": "task.372725a228511cef0112f674a556e6f3837204c194696d12837a56c3a95e7746",
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+        "media_ref": {
+          "media_id": "synthetic.scene.image",
+          "sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8"
+        },
+        "device_ref": {
+          "record_id": "synthetic.device",
+          "version": "1.0.2",
+          "digest": "4693b5849a8634219e6f5eb1594f4c8b9a12c5657821e63409ff806b17df9d08"
+        },
+        "camera_ref": {
+          "record_id": "synthetic.fixed.camera",
+          "version": "1.0.3",
+          "digest": "f1471b51fe748c0584a30e7de88ae050611007da703270671ce10d3e1b01480f"
+        },
+        "region_ref": {
+          "artifact_kind": "region",
+          "artifact_id": "isolated_sidewalk",
+          "version": "1.0.0",
+          "digest": "2e0dc832d8e9fad9bf36214e2d5e39b84bae253134e42830ee2c00c36127f1b8"
+        },
+        "context_schema_ref": {
+          "artifact_kind": "context_schema",
+          "artifact_id": "sidewalk-goods.context",
+          "version": "1.0.0",
+          "digest": "12e289895eb16d6b80ff99f599c7883984cc79cc176934f2faf6ec2327181138",
+          "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "context_provenance_policy_ref": {
+          "artifact_kind": "policy",
+          "artifact_id": "context-provenance",
+          "version": "1.0.0",
+          "digest": "7cbe5b79ea6464b5cc3584bdc272d7452514382ad53fa186a0dd09b1ceaf9d75"
+        },
+        "clock": {
+          "captured_at": "2026-01-02T00:00:00Z",
+          "original_timestamp": "2026-01-02T00:00:00+00:00",
+          "original_timezone": "UTC",
+          "source": "device_clock",
+          "clock_id": "synthetic.device",
+          "uncertainty_ms": null
+        },
+        "values": [],
+        "created_at": "2026-11-19T12:21:02.778510Z"
+      }
+    },
+    {
+      "schema_version": "1.0.0",
+      "worker_format": "configured-v1",
+      "kind": "discovery",
+      "inputs": {
+        "schema_version": "1.0.0",
+        "envelope": {
+          "schema_version": "1.0.0",
+          "node_id": "N02",
+          "task_id": "task.372725a228511cef0112f674a556e6f3837204c194696d12837a56c3a95e7746",
+          "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "release_id": "synthetic.parking.release",
+          "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+          "node_run_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc",
+          "attempt_id": "8234f9e666814f92abcf3375f5cac6d5",
+          "trace": {
+            "trace_id": "synthetic.scene.trace",
+            "span_id": null,
+            "parent_span_id": null
+          },
+          "upstream_artifacts": [
+            {
+              "ref": {
+                "record_kind": "context_snapshot",
+                "record_id": "perception.context.be1bd640f36ae42f49bb9689caa166a67ffdb52f40cd6f556c794c1cde10da92"
+              },
+              "digest": "595e080284e565c3a17eb8fb5500e78106855a2435e40f40810ccd568151aa3a"
+            },
+            {
+              "ref": {
+                "record_kind": "profile_eligibility_evaluation",
+                "record_id": "synthetic.eligibility.4c92efafb5ffc1bdf2c9bbff14e3921c13c3bd1e0d63c89caf6719a22659c627"
+              },
+              "digest": "67a39b68a8c707bc72879bff1cef9527206e094aff4e61c86a89729a73fc26c4"
+            }
+          ],
+          "node_config_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "workflow",
+            "version": "1.0.0",
+            "digest": "6331c17677452378c62bd61dc7a8b6d1d6721a40c41e69535fdded409afd4b41"
+          }
+        },
+        "original_media_ref": {
+          "media_id": "synthetic.scene.image",
+          "sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8"
+        },
+        "context_snapshot_ref": {
+          "record_kind": "context_snapshot",
+          "record_id": "perception.context.be1bd640f36ae42f49bb9689caa166a67ffdb52f40cd6f556c794c1cde10da92"
+        },
+        "context_snapshot_digest": "595e080284e565c3a17eb8fb5500e78106855a2435e40f40810ccd568151aa3a",
+        "profile_eligibility_evaluation_ref": {
+          "record_kind": "profile_eligibility_evaluation",
+          "record_id": "synthetic.eligibility.4c92efafb5ffc1bdf2c9bbff14e3921c13c3bd1e0d63c89caf6719a22659c627"
+        },
+        "eligible_profiles": [
+          {
+            "artifact_kind": "profile",
+            "artifact_id": "sidewalk_goods",
+            "version": "1.0.0",
+            "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+          }
+        ],
+        "bindings": [
+          {
+            "profile_ref": {
+              "artifact_kind": "profile",
+              "artifact_id": "sidewalk_goods",
+              "version": "1.0.0",
+              "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+            },
+            "discovery_binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "profile_discovery",
+              "version": "1.0.0",
+              "digest": "86fba2ed5ec769f9836c5e624d33d37c4fe57f725e981c4bc55125657738e8a3"
+            },
+            "prompt_template_ref": {
+              "artifact_kind": "prompt_template",
+              "artifact_id": "profile_discovery",
+              "version": "1.0.0",
+              "digest": "27b70108b35d7075aca62eaeae648768a79f276b68876ada3b75826dcadaea07"
+            },
+            "question_selection_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "selection",
+              "version": "1.0.0",
+              "digest": "862f2b24c1feb7c19716eddd7cf28922b193db8196a0f274950ee40ba22cb2f0"
+            }
+          }
+        ]
+      },
+      "output": {
+        "schema_version": "1.0.0",
+        "outcome": "failed",
+        "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+        "envelope": {
+          "schema_version": "1.0.0",
+          "node_id": "N02",
+          "node_run_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc",
+          "attempt_id": "8234f9e666814f92abcf3375f5cac6d5",
+          "trace": {
+            "trace_id": "synthetic.scene.trace",
+            "span_id": null,
+            "parent_span_id": null
+          },
+          "output_artifacts": [],
+          "started_at": "2026-11-19T12:21:03.177250Z",
+          "finished_at": "2026-11-19T12:21:03.177250Z",
+          "duration_ms": 0,
+          "status": "failed",
+          "error": {
+            "code": "http_status_rejected",
+            "error_class": "validation",
+            "retryable": false,
+            "message": "Perception invocation failed to produce usable output.",
+            "validation_issues": [
+              {
+                "code": "http_status_rejected",
+                "path": [],
+                "message": "Perception invocation failed to produce usable output.",
+                "related_refs": []
+              }
+            ]
+          }
+        },
+        "profile_hits": [],
+        "diagnostics": [],
+        "model_invocation_refs": []
+      },
+      "selections": [],
+      "invocations": [],
+      "group_failures": [
+        {
+          "schema_version": "1.0.0",
+          "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "node_run_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc",
+          "attempt_id": "8234f9e666814f92abcf3375f5cac6d5",
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "profile_discovery",
+            "version": "1.0.0",
+            "digest": "86fba2ed5ec769f9836c5e624d33d37c4fe57f725e981c4bc55125657738e8a3"
+          },
+          "profile_refs": [
+            {
+              "artifact_kind": "profile",
+              "artifact_id": "sidewalk_goods",
+              "version": "1.0.0",
+              "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+            }
+          ],
+          "dispatch_id": "dispatch.552c3ec98bbc4509b6175d87d4be1f37",
+          "boundary": "acknowledged",
+          "model_invocation_ref": null,
+          "error": {
+            "code": "http_status_rejected",
+            "error_class": "validation",
+            "retryable": false,
+            "message": "Perception invocation failed to produce usable output.",
+            "validation_issues": [
+              {
+                "code": "http_status_rejected",
+                "path": [],
+                "message": "Perception invocation failed to produce usable output.",
+                "related_refs": []
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "final": {
+    "schema_version": "1.0.0",
+    "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+    "coverage": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+      "release_id": "synthetic.parking.release",
+      "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+      "coverage_id": "synthetic.coverage.4dcdc5a1abb044388df6a18f1f923b73dd04e2fc8838dc047c23c174f365dc27",
+      "applicability_scope": {
+        "scope_status": "evaluated",
+        "context_snapshot_ref": {
+          "record_kind": "context_snapshot",
+          "record_id": "perception.context.be1bd640f36ae42f49bb9689caa166a67ffdb52f40cd6f556c794c1cde10da92"
+        },
+        "profile_eligibility_evaluation_ref": {
+          "record_kind": "profile_eligibility_evaluation",
+          "record_id": "synthetic.eligibility.4c92efafb5ffc1bdf2c9bbff14e3921c13c3bd1e0d63c89caf6719a22659c627"
+        },
+        "configured_profile_refs": [
+          {
+            "artifact_kind": "profile",
+            "artifact_id": "sidewalk_goods",
+            "version": "1.0.0",
+            "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+          }
+        ]
+      },
+      "discovery_outcome": "failed",
+      "discovery_model_invocation_refs": [],
+      "hit_profile_refs": [],
+      "profiles": [
+        {
+          "schema_version": "1.0.0",
+          "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "release_id": "synthetic.parking.release",
+          "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "sidewalk_goods",
+            "version": "1.0.0",
+            "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+          },
+          "grounding_outcome": "not_evaluated",
+          "object_refs": [],
+          "object_count": 0,
+          "obligation_ids": [
+            "synthetic.profile-obligation.23f18aeb5f49a94a6fd2031ddbf9bb01db85b03c971c23f344e4ffef68e631cc",
+            "synthetic.coverage-obligation.df87d32577cbd795939b1bc4391da9696ccc192cc45038c5135b95b8f1247cbf",
+            "synthetic.coverage-obligation.9df1898d384ed4e4aefaaca8ac6da70b857b962bd552c2d28a51d82921159125"
+          ],
+          "coverage_status": "none",
+          "reasons": [
+            "grounding_not_evaluated",
+            "profile_not_discovered"
+          ],
+          "missing_evidence_refs": []
+        }
+      ],
+      "mandatory_rule_coverage": {
+        "scan": "all_mandatory",
+        "obligations": [
+          {
+            "obligation_id": "synthetic.profile-obligation.23f18aeb5f49a94a6fd2031ddbf9bb01db85b03c971c23f344e4ffef68e631cc",
+            "profile_ref": {
+              "artifact_kind": "profile",
+              "artifact_id": "sidewalk_goods",
+              "version": "1.0.0",
+              "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+            },
+            "target": {
+              "scope": "profile"
+            },
+            "outcome": {
+              "disposition": "included",
+              "selected_applicability": {
+                "evaluation_ref": {
+                  "record_kind": "profile_eligibility_evaluation",
+                  "record_id": "synthetic.eligibility.4c92efafb5ffc1bdf2c9bbff14e3921c13c3bd1e0d63c89caf6719a22659c627"
+                },
+                "trace_ref": {
+                  "record_kind": "applicability_trace",
+                  "record_id": "synthetic.profile-trace.4dd4cbf6bb2a82c7b70c0e61b7e7e87ad458595a34b51ebe6108b10615e41657"
+                }
+              }
+            }
+          },
+          {
+            "obligation_id": "synthetic.coverage-obligation.df87d32577cbd795939b1bc4391da9696ccc192cc45038c5135b95b8f1247cbf",
+            "profile_ref": {
+              "artifact_kind": "profile",
+              "artifact_id": "sidewalk_goods",
+              "version": "1.0.0",
+              "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+            },
+            "target": {
+              "rule_set_ref": {
+                "artifact_kind": "rule_set",
+                "artifact_id": "sidewalk-goods.rules",
+                "version": "1.0.0",
+                "digest": "d6e696bd54c2892174b2e714b2aba6b265e5cd8dfc371b18e0fdf102ca543c31"
+              },
+              "scope": "rule_set"
+            },
+            "outcome": {
+              "disposition": "dependency_not_evaluated",
+              "reason": "discovery_failed",
+              "blocker_node_run_ref": {
+                "record_kind": "node_run",
+                "record_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc"
+              }
+            }
+          },
+          {
+            "obligation_id": "synthetic.coverage-obligation.9df1898d384ed4e4aefaaca8ac6da70b857b962bd552c2d28a51d82921159125",
+            "profile_ref": {
+              "artifact_kind": "profile",
+              "artifact_id": "sidewalk_goods",
+              "version": "1.0.0",
+              "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+            },
+            "target": {
+              "rule_set_ref": {
+                "artifact_kind": "rule_set",
+                "artifact_id": "sidewalk-goods.rules",
+                "version": "1.0.0",
+                "digest": "d6e696bd54c2892174b2e714b2aba6b265e5cd8dfc371b18e0fdf102ca543c31"
+              },
+              "scope": "rule",
+              "rule_ref": {
+                "artifact_kind": "rule",
+                "artifact_id": "sidewalk_goods_encroachment",
+                "version": "1.0.0",
+                "digest": "73c9f0fc091f4a3ee88c3d7de98839694529d49c94209410a1f8cdb2cac02f80"
+              }
+            },
+            "outcome": {
+              "disposition": "dependency_not_evaluated",
+              "reason": "discovery_failed",
+              "blocker_node_run_ref": {
+                "record_kind": "node_run",
+                "record_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc"
+              }
+            }
+          }
+        ]
+      },
+      "selected_applicability_evaluation_refs": [
+        {
+          "record_kind": "profile_eligibility_evaluation",
+          "record_id": "synthetic.eligibility.4c92efafb5ffc1bdf2c9bbff14e3921c13c3bd1e0d63c89caf6719a22659c627"
+        }
+      ],
+      "applicability_trace_refs": [
+        {
+          "record_kind": "applicability_trace",
+          "record_id": "synthetic.profile-trace.4dd4cbf6bb2a82c7b70c0e61b7e7e87ad458595a34b51ebe6108b10615e41657"
+        }
+      ],
+      "unresolved_obligation_refs": [],
+      "object_count": 0,
+      "coverage_status": "none",
+      "reasons": [
+        "discovery_failed",
+        "grounding_not_evaluated",
+        "profile_not_discovered"
+      ],
+      "missing_evidence_refs": [],
+      "summary_result": "uncertain",
+      "matches": [],
+      "created_at": "2026-11-19T12:21:04.431271Z"
+    },
+    "decisions": [],
+    "projected_traces": [],
+    "projected_rule_set_evaluations": [],
+    "projected_rule_evaluations": [],
+    "unresolved_obligations": []
+  }
+}

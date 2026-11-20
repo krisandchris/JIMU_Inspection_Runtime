@@ -250,6 +250,42 @@ async def _node_message(
         raise ValueError(
             "workflow message does not match the exact selected execution, attempt and inputs"
         )
+    if (
+        isinstance(message, ToolMessage)
+        and node.status is NodeRunStatus.SUCCEEDED
+        and not message.executions
+    ):
+        if not node.output_refs or node.output_refs != tuple(
+            pin.ref for pin in output.output_artifacts
+        ):
+            raise ValueError(
+                "successful ToolPlan requires its selected output references"
+            )
+        completion = message.completion_artifact
+        if completion is None:
+            attempt = await repo.get_attempt(connection, scope, eid, nid, aid)
+            if (
+                attempt is None
+                or attempt.status is not AttemptStatus.SUCCEEDED
+                or not attempt.belongs_to_node(node)
+            ):
+                raise ValueError(
+                    "historical ToolPlan success requires its successful Attempt"
+                )
+        else:
+            stored = await repo.read_output(
+                connection,
+                scope,
+                eid,
+                nid,
+                aid,
+                f"{completion.ref.record_kind.value}.{completion.ref.record_id}",
+                type(completion.record),
+            )
+            if stored != completion.record:
+                raise ValueError(
+                    "selected ToolPlan completion requires its durable summary"
+                )
     return message
 
 

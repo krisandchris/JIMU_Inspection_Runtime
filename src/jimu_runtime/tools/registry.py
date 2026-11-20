@@ -118,6 +118,7 @@ class ToolDispatch:
     object_bbox: BBoxXYXY | None = None
     original_media_ref: MediaRef | None = None
     task_id: RecordId | None = None
+    object_member_boxes: tuple[BBoxXYXY, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

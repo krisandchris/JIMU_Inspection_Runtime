@@ -587,6 +587,7 @@
       "source_symbol": "jimu_runtime.domain.enums.NodeRunStatus"
     },
     {
+      "export_revision": "1.0.0",
       "filename": "enums.RuntimeRecordKind.schema.json",
       "limitations": [
         "numeric",
@@ -599,6 +600,22 @@
       "role": "foundation",
       "sha256": "0104e7e07baad78644121bd8a4815159bdfc06b2815f19cdcd356fc9a6371d10",
       "source_symbol": "jimu_runtime.domain.enums.RuntimeRecordKind"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "enums.RuntimeRecordKind.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "foundation",
+      "sha256": "185525cda8d36a7f2538b9f02bc11c1f2509bc38154995844a37464101105de9",
+      "source_symbol": "jimu_runtime.domain.enums.RuntimeRecordKind",
+      "supersedes": "enums.RuntimeRecordKind.schema.json"
     },
     {
       "filename": "enums.TaskStatus.schema.json",
@@ -769,6 +786,7 @@
       "source_symbol": "jimu_runtime.domain.fact_selectors.ProducerSelector"
     },
     {
+      "export_revision": "1.0.0",
       "filename": "nodes.context.ContextBuildInput.schema.json",
       "limitations": [
         "numeric",
@@ -783,6 +801,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.context.ContextBuildInput"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.context.ContextBuildInput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "45b33f61c9527ad4ee7caeaa1a340c21a5be5145fba152483ab92aa674376ed7",
+      "source_symbol": "jimu_runtime.domain.nodes.context.ContextBuildInput",
+      "supersedes": "nodes.context.ContextBuildInput.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.context.ContextBuildOutput.schema.json",
       "limitations": [
         "numeric",
@@ -795,6 +830,22 @@
       "role": "named_union",
       "sha256": "ac8c1458307482cdcb48b9d0d61ff7dc0003ffd997d426b8f830dca99dcfbc87",
       "source_symbol": "jimu_runtime.domain.nodes.context.ContextBuildOutput"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "nodes.context.ContextBuildOutput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "named_union",
+      "sha256": "3c7ccef84c83b4f56e58aad4c33a3828e9768afa0a50470de5e704b762a4bc2f",
+      "source_symbol": "jimu_runtime.domain.nodes.context.ContextBuildOutput",
+      "supersedes": "nodes.context.ContextBuildOutput.schema.json"
     },
     {
       "filename": "nodes.context.ContextValidationReport.schema.json",
@@ -811,6 +862,7 @@
       "source_symbol": "jimu_runtime.domain.nodes.context.ContextValidationReport"
     },
     {
+      "export_revision": "1.0.0",
       "filename": "nodes.context.FailedContextBuild.schema.json",
       "limitations": [
         "numeric",
@@ -825,6 +877,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.context.FailedContextBuild"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.context.FailedContextBuild.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "7d6592a04818592eabeb80f4fcafa4beb043b0fa1d4aa583b0e60cf36ef931ef",
+      "source_symbol": "jimu_runtime.domain.nodes.context.FailedContextBuild",
+      "supersedes": "nodes.context.FailedContextBuild.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.context.SuccessfulContextBuild.schema.json",
       "limitations": [
         "numeric",
@@ -837,6 +906,22 @@
       "role": "runtime_root",
       "sha256": "a32051ab8b1f152ddde9c6af05c5da539f53989c9184a12f7b2c62610ebae9c6",
       "source_symbol": "jimu_runtime.domain.nodes.context.SuccessfulContextBuild"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "nodes.context.SuccessfulContextBuild.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "bc7544bb215645d92e91c6e4a1ca2031c364e342df7b1ddd3631fe8f9ed067e0",
+      "source_symbol": "jimu_runtime.domain.nodes.context.SuccessfulContextBuild",
+      "supersedes": "nodes.context.SuccessfulContextBuild.schema.json"
     },
     {
       "export_revision": "1.0.0",
@@ -870,6 +955,23 @@
       "supersedes": "nodes.decision.DecisionInput.schema.json"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.decision.DecisionInput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "eca986b9bcb8d79d1e03d75cdf11c844987ecc5a37b15447e56ea1c79d42fbfa",
+      "source_symbol": "jimu_runtime.domain.nodes.decision.DecisionInput",
+      "supersedes": "nodes.decision.DecisionInput.v1.1.0.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.decision.DecisionOutput.schema.json",
       "limitations": [
         "numeric",
@@ -884,6 +986,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.decision.DecisionOutput"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.decision.DecisionOutput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "44b7a91123d56296381af93249f082b571b4602155623797e11da2e913d46650",
+      "source_symbol": "jimu_runtime.domain.nodes.decision.DecisionOutput",
+      "supersedes": "nodes.decision.DecisionOutput.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.discovery.DiscoveryAttemptOutput.schema.json",
       "limitations": [
         "numeric",
@@ -898,6 +1017,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.discovery.DiscoveryAttemptOutput"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.discovery.DiscoveryAttemptOutput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "ddce84870d49a461cd9415fc1658df764af2165cb91824f7268aba39fd5de134",
+      "source_symbol": "jimu_runtime.domain.nodes.discovery.DiscoveryAttemptOutput",
+      "supersedes": "nodes.discovery.DiscoveryAttemptOutput.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.discovery.DiscoveryInput.schema.json",
       "limitations": [
         "numeric",
@@ -912,6 +1048,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.discovery.DiscoveryInput"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.discovery.DiscoveryInput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "0b24c3de102111626527f7ca6f7d0e365ba30555c41a02fa61084f5a0f86a734",
+      "source_symbol": "jimu_runtime.domain.nodes.discovery.DiscoveryInput",
+      "supersedes": "nodes.discovery.DiscoveryInput.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.discovery.DiscoveryOutput.schema.json",
       "limitations": [
         "numeric",
@@ -924,6 +1077,22 @@
       "role": "named_union",
       "sha256": "9de37b8ec7544e415fd73e71ac82e4b53258cc70dd4a90910f99e54c332f40f7",
       "source_symbol": "jimu_runtime.domain.nodes.discovery.DiscoveryOutput"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "nodes.discovery.DiscoveryOutput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "named_union",
+      "sha256": "6e47ad93cb3893e9bbedc04294e15e410dc65f04a64795278d5403ae7e458ec9",
+      "source_symbol": "jimu_runtime.domain.nodes.discovery.DiscoveryOutput",
+      "supersedes": "nodes.discovery.DiscoveryOutput.schema.json"
     },
     {
       "filename": "nodes.discovery.DiscoveryProfileDiagnostic.schema.json",
@@ -968,6 +1137,7 @@
       "source_symbol": "jimu_runtime.domain.nodes.discovery.SkippedDiscoveryOutput"
     },
     {
+      "export_revision": "1.0.0",
       "filename": "nodes.envelopes.ArtifactOutputRef.schema.json",
       "limitations": [
         "numeric",
@@ -982,6 +1152,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.envelopes.ArtifactOutputRef"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.envelopes.ArtifactOutputRef.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_component",
+      "sha256": "15a9fa7f8f97208d5a72ffef79e41befca9183406bef89c43dbfac49116344f8",
+      "source_symbol": "jimu_runtime.domain.nodes.envelopes.ArtifactOutputRef",
+      "supersedes": "nodes.envelopes.ArtifactOutputRef.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.envelopes.CancelledNodeOutput.schema.json",
       "limitations": [
         "numeric",
@@ -996,6 +1183,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.envelopes.CancelledNodeOutput"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.envelopes.CancelledNodeOutput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "030b6d0abddf15a3e623d533b53d8edae6928382a5affca31fa378416d30e014",
+      "source_symbol": "jimu_runtime.domain.nodes.envelopes.CancelledNodeOutput",
+      "supersedes": "nodes.envelopes.CancelledNodeOutput.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.envelopes.FailedNodeOutput.schema.json",
       "limitations": [
         "numeric",
@@ -1008,6 +1212,22 @@
       "role": "runtime_root",
       "sha256": "37b978f97f1d71f33ef3d66bf5988d9cd2194093ee2425493a906c1ff4cb5c18",
       "source_symbol": "jimu_runtime.domain.nodes.envelopes.FailedNodeOutput"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "nodes.envelopes.FailedNodeOutput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "927cf79555fc23e4838c8553aaa9fd9a6015d0b71bc9159ec94e2e1f48274df6",
+      "source_symbol": "jimu_runtime.domain.nodes.envelopes.FailedNodeOutput",
+      "supersedes": "nodes.envelopes.FailedNodeOutput.schema.json"
     },
     {
       "filename": "nodes.envelopes.NodeError.schema.json",
@@ -1024,6 +1244,7 @@
       "source_symbol": "jimu_runtime.domain.nodes.envelopes.NodeError"
     },
     {
+      "export_revision": "1.0.0",
       "filename": "nodes.envelopes.NodeInputEnvelope.schema.json",
       "limitations": [
         "numeric",
@@ -1038,6 +1259,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.envelopes.NodeInputEnvelope"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.envelopes.NodeInputEnvelope.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "f2e5eb0c201b6d84d50b7ea9a943b54cc6373bc71204d96dc7e181c01bf8f853",
+      "source_symbol": "jimu_runtime.domain.nodes.envelopes.NodeInputEnvelope",
+      "supersedes": "nodes.envelopes.NodeInputEnvelope.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.envelopes.NodeInputs.schema.json",
       "limitations": [
         "numeric",
@@ -1052,6 +1290,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.envelopes.NodeInputs"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.envelopes.NodeInputs.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_component",
+      "sha256": "4f7a834be1b46108d6bb44c92a0020d708511766bc6b0dbc68f929f493c290fe",
+      "source_symbol": "jimu_runtime.domain.nodes.envelopes.NodeInputs",
+      "supersedes": "nodes.envelopes.NodeInputs.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.envelopes.NodeOutputEnvelope.schema.json",
       "limitations": [
         "numeric",
@@ -1066,6 +1321,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.envelopes.NodeOutputEnvelope"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.envelopes.NodeOutputEnvelope.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "named_union",
+      "sha256": "2c564f1649abfa45478fe5c6e8836567639c9bed8ad62d58596d24d1f22f930d",
+      "source_symbol": "jimu_runtime.domain.nodes.envelopes.NodeOutputEnvelope",
+      "supersedes": "nodes.envelopes.NodeOutputEnvelope.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.envelopes.NodeOutputs.schema.json",
       "limitations": [
         "numeric",
@@ -1080,6 +1352,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.envelopes.NodeOutputs"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.envelopes.NodeOutputs.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_component",
+      "sha256": "a6dfe4695799e1ab48c94b8380608c7565525c270288e0cd62981d1b6ef88c08",
+      "source_symbol": "jimu_runtime.domain.nodes.envelopes.NodeOutputs",
+      "supersedes": "nodes.envelopes.NodeOutputs.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.envelopes.SucceededNodeOutput.schema.json",
       "limitations": [
         "numeric",
@@ -1094,6 +1383,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.envelopes.SucceededNodeOutput"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.envelopes.SucceededNodeOutput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "28486b151c3c162e0c8cf36d3ea18a3d6a32e7c4b7542a26fbd7b02fa105c8cc",
+      "source_symbol": "jimu_runtime.domain.nodes.envelopes.SucceededNodeOutput",
+      "supersedes": "nodes.envelopes.SucceededNodeOutput.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.grounding.GroundingInput.schema.json",
       "limitations": [
         "numeric",
@@ -1108,6 +1414,23 @@
       "source_symbol": "jimu_runtime.domain.nodes.grounding.GroundingInput"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.grounding.GroundingInput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "925de50594763b5d89a6baecd3b36a281a05f5f1c284f1706449676677742d4f",
+      "source_symbol": "jimu_runtime.domain.nodes.grounding.GroundingInput",
+      "supersedes": "nodes.grounding.GroundingInput.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.grounding.GroundingOutput.schema.json",
       "limitations": [
         "numeric",
@@ -1120,6 +1443,22 @@
       "role": "runtime_root",
       "sha256": "9e633edcf7461a2b832c2719fa3fe2889ff3a2944ca78bf3970cccd556658fd8",
       "source_symbol": "jimu_runtime.domain.nodes.grounding.GroundingOutput"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "nodes.grounding.GroundingOutput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "382904a5b7072dfb81fb9d04d1eeda909caea9ddf7ae9983f933c7edbe3dcdfa",
+      "source_symbol": "jimu_runtime.domain.nodes.grounding.GroundingOutput",
+      "supersedes": "nodes.grounding.GroundingOutput.schema.json"
     },
     {
       "export_revision": "1.0.0",
@@ -1153,6 +1492,38 @@
       "supersedes": "nodes.observation.ObservationInput.schema.json"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.observation.ObservationInput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "31922c2ccedcbc80d179d1888df52630c1f36ad0c785b44d923aaa705e858fc9",
+      "source_symbol": "jimu_runtime.domain.nodes.observation.ObservationInput",
+      "supersedes": "nodes.observation.ObservationInput.v1.1.0.schema.json"
+    },
+    {
+      "export_revision": "1.3.0",
+      "filename": "nodes.observation.ObservationInput.v1.3.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "2034080ff62ed69109d18958fcf8339128f6c2ec06cbe2373eba69f0d555fe9b",
+      "source_symbol": "jimu_runtime.domain.nodes.observation.ObservationInput",
+      "supersedes": "nodes.observation.ObservationInput.v1.2.0.schema.json"
+    },
+    {
       "export_revision": "1.0.0",
       "filename": "nodes.tool_execution.ToolNodeInput.schema.json",
       "limitations": [
@@ -1184,6 +1555,23 @@
       "supersedes": "nodes.tool_execution.ToolNodeInput.schema.json"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "nodes.tool_execution.ToolNodeInput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "d500718650b0fa4d4c76aca423fedfa1faa3b1eefd3ce8c8e247df76d6e04397",
+      "source_symbol": "jimu_runtime.domain.nodes.tool_execution.ToolNodeInput",
+      "supersedes": "nodes.tool_execution.ToolNodeInput.v1.1.0.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "nodes.tool_execution.ToolNodeOutput.schema.json",
       "limitations": [
         "numeric",
@@ -1196,6 +1584,36 @@
       "role": "runtime_root",
       "sha256": "7e4998ac76b3f7b3086a27f39d015440813f9a49711f8ce50ce0dd164202a1ad",
       "source_symbol": "jimu_runtime.domain.nodes.tool_execution.ToolNodeOutput"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "nodes.tool_execution.ToolNodeOutput.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "c7a92bbb5bcb3df5445edeb5792b405b46f89e3c2b09436423da31770f9ebee9",
+      "source_symbol": "jimu_runtime.domain.nodes.tool_execution.ToolNodeOutput",
+      "supersedes": "nodes.tool_execution.ToolNodeOutput.schema.json"
+    },
+    {
+      "filename": "nodes.tool_execution.ToolPlanCompletionRecord.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "2b26d8b219b49c662c5536732ed1def1b40c0a9a4118b64b2b8e3ddd3ab7a063",
+      "source_symbol": "jimu_runtime.domain.nodes.tool_execution.ToolPlanCompletionRecord"
     },
     {
       "filename": "nodes.tool_execution.ToolPlanRunSummary.schema.json",
@@ -1674,6 +2092,7 @@
       "source_symbol": "jimu_runtime.domain.references.IdentitySelector"
     },
     {
+      "export_revision": "1.0.0",
       "filename": "references.RuntimeRecordRef.schema.json",
       "limitations": [
         "numeric",
@@ -1686,6 +2105,22 @@
       "role": "foundation",
       "sha256": "234745273fdf31b5e1cca81d0048f16357db3365a42b062203605c27aff33b33",
       "source_symbol": "jimu_runtime.domain.references.RuntimeRecordRef"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "references.RuntimeRecordRef.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "foundation",
+      "sha256": "397a6adda761b61296594e0c4dd97d33ad52bd0992b4b237e79d1eef71c0bee2",
+      "source_symbol": "jimu_runtime.domain.references.RuntimeRecordRef",
+      "supersedes": "references.RuntimeRecordRef.schema.json"
     },
     {
       "filename": "references.SchemaRef.schema.json",
@@ -2654,6 +3089,7 @@
       "source_symbol": "jimu_runtime.domain.runtime.executions.ContextSnapshotPin"
     },
     {
+      "export_revision": "1.0.0",
       "filename": "runtime.executions.ExecutionEvent.schema.json",
       "limitations": [
         "numeric",
@@ -2668,6 +3104,23 @@
       "source_symbol": "jimu_runtime.domain.runtime.executions.ExecutionEvent"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "runtime.executions.ExecutionEvent.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "4b22a5d6f71a63bb7c9ed3c0ffd91dc3289ba8c26982b0f7fa37266f0dd0f458",
+      "source_symbol": "jimu_runtime.domain.runtime.executions.ExecutionEvent",
+      "supersedes": "runtime.executions.ExecutionEvent.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "runtime.executions.ExecutionEventPayload.schema.json",
       "limitations": [
         "numeric",
@@ -2680,6 +3133,22 @@
       "role": "named_union",
       "sha256": "2e1217dba9a843d92b975cae0b8ebaccb11a11822cd5fef692c343d4e0d9dc4e",
       "source_symbol": "jimu_runtime.domain.runtime.executions.ExecutionEventPayload"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "runtime.executions.ExecutionEventPayload.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "named_union",
+      "sha256": "ed989ba17a35c6727d764814221097c17902b9b56643a72e79a6f9b3f8163bb1",
+      "source_symbol": "jimu_runtime.domain.runtime.executions.ExecutionEventPayload",
+      "supersedes": "runtime.executions.ExecutionEventPayload.schema.json"
     },
     {
       "filename": "runtime.executions.ExecutionPins.schema.json",
@@ -2753,6 +3222,22 @@
       "sha256": "a1f5cbcef2d7a2522e3cd5389cd8e68c8ab048c9f2c764477ddce461acc8eaae",
       "source_symbol": "jimu_runtime.domain.runtime.executions.NodeRun",
       "supersedes": "runtime.executions.NodeRun.schema.json"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "runtime.executions.NodeRun.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "8a3bbbeb1b8474e0b5715f08a0e463bf051778dfa651481ed300692131eb1e4b",
+      "source_symbol": "jimu_runtime.domain.runtime.executions.NodeRun",
+      "supersedes": "runtime.executions.NodeRun.v1.1.0.schema.json"
     },
     {
       "filename": "runtime.executions.SystemOutputAuthorityWitness.schema.json",
@@ -3598,6 +4083,7 @@
       "source_symbol": "jimu_runtime.domain.runtime.releases.ReleaseStatus"
     },
     {
+      "export_revision": "1.0.0",
       "filename": "runtime.replay.ArtifactReplayRequest.schema.json",
       "limitations": [
         "numeric",
@@ -3612,6 +4098,23 @@
       "source_symbol": "jimu_runtime.domain.runtime.replay.ArtifactReplayRequest"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "runtime.replay.ArtifactReplayRequest.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "nonpersistent_input",
+      "sha256": "ddc204e20b7065955533438eb32f4a7707c966b2bdae1106d4550c739b23b4c9",
+      "source_symbol": "jimu_runtime.domain.runtime.replay.ArtifactReplayRequest",
+      "supersedes": "runtime.replay.ArtifactReplayRequest.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "runtime.replay.ArtifactReplayRun.schema.json",
       "limitations": [
         "numeric",
@@ -3624,6 +4127,22 @@
       "role": "runtime_root",
       "sha256": "b65e26014ecd9b1d534b05b507a70bed6c8095b8c1f95d6aab30b0538ca5ba0d",
       "source_symbol": "jimu_runtime.domain.runtime.replay.ArtifactReplayRun"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "runtime.replay.ArtifactReplayRun.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "runtime_root",
+      "sha256": "dcd2a026048df0243fd218049c7f95ef77834c5de942b0f1c48d37770dc1a3d2",
+      "source_symbol": "jimu_runtime.domain.runtime.replay.ArtifactReplayRun",
+      "supersedes": "runtime.replay.ArtifactReplayRun.schema.json"
     },
     {
       "filename": "runtime.replay.InferenceReplayRequest.schema.json",
@@ -3668,6 +4187,7 @@
       "source_symbol": "jimu_runtime.domain.runtime.replay.ReplayKind"
     },
     {
+      "export_revision": "1.0.0",
       "filename": "runtime.replay.ReplayRequest.schema.json",
       "limitations": [
         "numeric",
@@ -3682,6 +4202,23 @@
       "source_symbol": "jimu_runtime.domain.runtime.replay.ReplayRequest"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "runtime.replay.ReplayRequest.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "named_union",
+      "sha256": "412685c2355c875b0ab3d41e2284584edf406072ba2f23580572f4f9b055ffc5",
+      "source_symbol": "jimu_runtime.domain.runtime.replay.ReplayRequest",
+      "supersedes": "runtime.replay.ReplayRequest.schema.json"
+    },
+    {
+      "export_revision": "1.0.0",
       "filename": "runtime.replay.ReplayRun.schema.json",
       "limitations": [
         "numeric",
@@ -3694,6 +4231,22 @@
       "role": "named_union",
       "sha256": "4705ee428877dd26d8e3588e3a8e1182005bb0f2f4c81712619df76e33878dd0",
       "source_symbol": "jimu_runtime.domain.runtime.replay.ReplayRun"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "runtime.replay.ReplayRun.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "named_union",
+      "sha256": "5be6f6fa892041aca2b11a750090c6488aca1809a202ea49bd32e2be02e5fa8f",
+      "source_symbol": "jimu_runtime.domain.runtime.replay.ReplayRun",
+      "supersedes": "runtime.replay.ReplayRun.schema.json"
     },
     {
       "filename": "runtime.selection.AllDeclaredSelectionRecord.schema.json",
@@ -4399,6 +4952,22 @@
       "supersedes": "validation.coverage_sources.CoverageSources.schema.json"
     },
     {
+      "export_revision": "1.2.0",
+      "filename": "validation.coverage_sources.CoverageSources.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "nonpersistent_input",
+      "sha256": "afd022c8a28f402d467b1dc1c323fceb03d467f5e80f96744592ba3e8130039f",
+      "source_symbol": "jimu_runtime.domain.validation.coverage_sources.CoverageSources",
+      "supersedes": "validation.coverage_sources.CoverageSources.v1.1.0.schema.json"
+    },
+    {
       "filename": "validation.decision_coverage.DecisionCoverageRecords.schema.json",
       "limitations": [
         "numeric",
@@ -4866,6 +5435,22 @@
       "sha256": "20154981bf2dd6eeb9a1de4cc19d350a89e2ff2f8d618e772833c3c1cc34a65a",
       "source_symbol": "jimu_runtime.domain.validation.runtime_authority.RuntimeAuthorityRecords",
       "supersedes": "validation.runtime_authority.RuntimeAuthorityRecords.schema.json"
+    },
+    {
+      "export_revision": "1.2.0",
+      "filename": "validation.runtime_authority.RuntimeAuthorityRecords.v1.2.0.schema.json",
+      "limitations": [
+        "numeric",
+        "utc",
+        "bytes",
+        "taint",
+        "relations",
+        "digest"
+      ],
+      "role": "nonpersistent_input",
+      "sha256": "0e3eb9d994194de155bd4645d0c2c910cbac1e00033263be7484dd634d01e428",
+      "source_symbol": "jimu_runtime.domain.validation.runtime_authority.RuntimeAuthorityRecords",
+      "supersedes": "validation.runtime_authority.RuntimeAuthorityRecords.v1.1.0.schema.json"
     },
     {
       "filename": "validation.tool_plans.ToolRegistration.schema.json",

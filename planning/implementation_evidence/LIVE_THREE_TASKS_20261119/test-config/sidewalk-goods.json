@@ -1,0 +1,30 @@
+{
+  "scene_id": "sidewalk-goods",
+  "region_id": "isolated_sidewalk",
+  "profile_id": "sidewalk_goods",
+  "entity_name": "Individually grounded placed goods",
+  "violation_category": "sidewalk_goods_encroachment",
+  "discovery_prompt": "Report a sidewalk_goods profile hit for a clearly visible instance of placed merchandise or stock; identify only the configured profile. People and vehicles do not qualify.",
+  "grounding_prompt": "Independently locate individual placed goods or a visually bounded group of goods. Return original-image pixel boxes [x_min,y_min,x_max,y_max]. Leave ambiguous object boundaries unresolved rather than mixing distinct objects.",
+  "questions": [
+    {
+      "id": "sidewalk_encroachment",
+      "members": [
+        "occupies_sidewalk",
+        "does_not_occupy_sidewalk"
+      ],
+      "matching_value": "occupies_sidewalk",
+      "prompt": "Assess only the grounded goods in this image. Use occupies_sidewalk only when both the goods footprint and the pedestrian sidewalk boundary are clearly visible and their physical overlap is unambiguous. Use does_not_occupy_sidewalk only when both boundaries are visible and clearly disjoint. Where a boundary or contact with the sidewalk is unclear, return insufficient_visibility."
+    },
+    {
+      "id": "placement_permission",
+      "members": [
+        "placement_prohibited",
+        "placement_permitted"
+      ],
+      "matching_value": "placement_prohibited",
+      "prompt": "Assess whether an explicit clearly legible authorization or prohibition in the image unambiguously applies to the location of these same grounded goods. Return placement_prohibited or placement_permitted only with such evidence. The absence of a visible permit does not establish a prohibition. Return insufficient_visibility when signage, zone boundaries, or applicability is unclear."
+    }
+  ],
+  "trusted_scope_field": "sidewalk_placement_policy_verified"
+}

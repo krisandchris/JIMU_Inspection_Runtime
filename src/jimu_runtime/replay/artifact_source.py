@@ -145,7 +145,9 @@ def _message_records(message: NodeMessage) -> dict[ArtifactKey, ContractModel]:
             **_selections(() if message.authority is None else (message.authority,)),
         }
     if isinstance(message, ToolMessage):
+        completion = message.completion_artifact
         return {
+            **({} if completion is None else {_key(completion.ref): completion.record}),
             **_facts(message.facts),
             **_tools(message.executions),
             **_selections(message.authorities),

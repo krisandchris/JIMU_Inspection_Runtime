@@ -1,0 +1,221 @@
+{
+  "execution_id": "execution.6ac49d016ee7c3e8b1ee6ef5b93cbf734654b0c7acff1c4c9d639d3dd47f1a62",
+  "task_id": "task.282da38ae396258a7622edbe0c93986c8c7fbcff685d6fc6b866d6c17aa33d6e",
+  "bundle_digest": "e5acdc66274003b12952712a4e67d06b8b7488dbbba7200f86c006632900632c",
+  "release_id": "synthetic.parking.release",
+  "image_sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8",
+  "trusted_placement_policy_present": true,
+  "scope_evidence_sha256": "36620c0905e3009319a7cbd8a1f68f8de2b779ea974c9dc8c99e1f8c80e40072",
+  "postgres_version": "16.14 (Debian 16.14-1.pgdg13+1)",
+  "execution_status": "partial_failed",
+  "node_terminal_statuses": {
+    "N01:succeeded": 1,
+    "N04:succeeded": 8,
+    "N06:succeeded": 9,
+    "N05:succeeded": 9,
+    "N04:failed": 1,
+    "N02:succeeded": 1,
+    "N03:succeeded": 1
+  },
+  "trace_event_count": 158,
+  "source_detections": 9,
+  "model_calls": {
+    "candidate_prediction-result": 9,
+    "object_observation-result": 9,
+    "profile_discovery-result": 1,
+    "object_grounding-result": 1
+  },
+  "grounded_objects": 9,
+  "completed_empty_tool_plans": 9,
+  "facts": {
+    "perception.object.d812ae38f53d4ebab77ca47ca40567954a3bf4a9dcb28fd7a9a521ba769ebd52": {
+      "answer": "does_not_occupy_sidewalk",
+      "source_bbox_xyxy": [
+        875.52,
+        277.504,
+        1012.224,
+        387.072
+      ],
+      "fact_id": "perception.fact.a9894a6f37feb41650fddacd21790fa7fe512ac677fdeed432438053b5de1832",
+      "status": "known",
+      "original_evidence_id": "input.original.11bc2a4693775811dc082d99281189e1aa2da2cec71eccba066fb9ccd0d6ee9c",
+      "upstream_completion_id": "chatcmpl-9a5ccc0a7ac95d72"
+    },
+    "perception.object.a02cd031821b9129411c5c18a9c5f689098ea0aba235b903282378cf5b74dc05": {
+      "answer": "insufficient_visibility",
+      "source_bbox_xyxy": [
+        1004.5440000000001,
+        175.104,
+        1084.416,
+        284.672
+      ],
+      "fact_id": "perception.fact.80b943ac7e66af482bfbdee47f05e725168f5e5b8b6456316b447db0d6c0d6c5",
+      "status": "unknown",
+      "original_evidence_id": "input.original.11bc2a4693775811dc082d99281189e1aa2da2cec71eccba066fb9ccd0d6ee9c",
+      "upstream_completion_id": "chatcmpl-8146de7dc80f3cf2"
+    },
+    "perception.object.b8275436a1c6b4d872a0f7daa8bf56a30030135d08a47a1ade6bd7bb2b6db93b": {
+      "answer": "occupies_sidewalk",
+      "source_bbox_xyxy": [
+        818.6880000000001,
+        150.528,
+        1003.008,
+        282.624
+      ],
+      "fact_id": "perception.fact.5b8ccbfe414a95cde0164b04546603aedbd89eaeddb8aef472e82559beda5842",
+      "status": "known",
+      "original_evidence_id": "input.original.11bc2a4693775811dc082d99281189e1aa2da2cec71eccba066fb9ccd0d6ee9c",
+      "upstream_completion_id": "chatcmpl-9119717cd6f430f3"
+    },
+    "perception.object.1d2b642dc62eda1a36988fb88704bbd7c6bf2ee2ac1fbb41630ad5f0bdbbef57": {
+      "answer": "does_not_occupy_sidewalk",
+      "source_bbox_xyxy": [
+        463.87199999999996,
+        392.192,
+        629.76,
+        575.488
+      ],
+      "fact_id": "perception.fact.e52c88d36a464016531328a1f2aa6346a6092044506eec59ad9b7fbd1d5f6000",
+      "status": "known",
+      "original_evidence_id": "input.original.11bc2a4693775811dc082d99281189e1aa2da2cec71eccba066fb9ccd0d6ee9c",
+      "upstream_completion_id": "chatcmpl-91a836fdce70d41f"
+    },
+    "perception.object.93f3140f76fc54646b5c5cc93b09d4b7880e6941b26340c074a1cbcde5bb0c32": {
+      "answer": "occupies_sidewalk",
+      "source_bbox_xyxy": [
+        628.2239999999999,
+        272.384,
+        881.664,
+        432.128
+      ],
+      "fact_id": "perception.fact.2e841dde9644bcbff44f81658daa08a1082906a2003b0f3dbbcf67368c8ed227",
+      "status": "known",
+      "original_evidence_id": "input.original.11bc2a4693775811dc082d99281189e1aa2da2cec71eccba066fb9ccd0d6ee9c",
+      "upstream_completion_id": "chatcmpl-bf1bf83ef0d89ff6"
+    },
+    "perception.object.9d23ea5cb1a9b9cf0add2b447383e9444451f6435ec09afefd6ce7a38e1e03bb": {
+      "answer": "insufficient_visibility",
+      "source_bbox_xyxy": [
+        662.016,
+        210.944,
+        821.76,
+        274.432
+      ],
+      "fact_id": "perception.fact.26a847e61099b6203bdd428ea8e03fcf5121fc578e8f70c01071218488fbab3e",
+      "status": "unknown",
+      "original_evidence_id": "input.original.11bc2a4693775811dc082d99281189e1aa2da2cec71eccba066fb9ccd0d6ee9c",
+      "upstream_completion_id": "chatcmpl-94fb57cb3d08917c"
+    },
+    "perception.object.d913ddcf5adf016c17be94cd00e370c715b1a6db21e9894b2950ab0bfb4bf052": {
+      "answer": "occupies_sidewalk",
+      "source_bbox_xyxy": [
+        509.952,
+        261.12,
+        642.048,
+        394.24
+      ],
+      "fact_id": "perception.fact.dad030d1de5aee162622c5a5ee4118dabd29ba22d22e86023ca4b50866c1ae16",
+      "status": "known",
+      "original_evidence_id": "input.original.11bc2a4693775811dc082d99281189e1aa2da2cec71eccba066fb9ccd0d6ee9c",
+      "upstream_completion_id": "chatcmpl-ac0e2e8bc143314a"
+    },
+    "perception.object.ae365ce50c99f09a316c0a17d0d6f83d0b90110d4701606f09d8383e7a75c007": {
+      "answer": "occupies_sidewalk",
+      "source_bbox_xyxy": [
+        617.472,
+        424.96,
+        1018.368,
+        613.376
+      ],
+      "fact_id": "perception.fact.cca63be1974abc6077b0e7f8c931c4212aede0a3f077caf0eff4db2a7651138f",
+      "status": "known",
+      "original_evidence_id": "input.original.11bc2a4693775811dc082d99281189e1aa2da2cec71eccba066fb9ccd0d6ee9c",
+      "upstream_completion_id": "chatcmpl-87d6bdf4d171ad3b"
+    }
+  },
+  "failed_observations": {
+    "perception.object.1fa673a04ce00b4af8d88ea1d3b0186422bafd998c7ba943f09932e1f7a549af": {
+      "source_bbox_xyxy": [
+        877.0559999999999,
+        386.048,
+        1035.2640000000001,
+        433.152
+      ],
+      "reason": "worker_provider_model.retry_without_terminal_witness",
+      "attempts": 2,
+      "provider_failures": {
+        "live-a51865eff19144538e1bf88a8e9fbe0b": "qwen_completion_incomplete"
+      }
+    }
+  },
+  "decisions": {
+    "perception.object.1d2b642dc62eda1a36988fb88704bbd7c6bf2ee2ac1fbb41630ad5f0bdbbef57": {
+      "decision_id": "synthetic.decision.0933b5db94f44e9861544b950653307c4b088179346b83b03b658df80fb2a19e",
+      "result": "no_violation",
+      "rule_outcome": "evaluated",
+      "guard_reasons": []
+    },
+    "perception.object.d913ddcf5adf016c17be94cd00e370c715b1a6db21e9894b2950ab0bfb4bf052": {
+      "decision_id": "synthetic.decision.ecbb652f9d53814f19c5d4e23845f6162c1006a33bebb4420693801c788ab11e",
+      "result": "violation",
+      "rule_outcome": "evaluated",
+      "guard_reasons": []
+    },
+    "perception.object.ae365ce50c99f09a316c0a17d0d6f83d0b90110d4701606f09d8383e7a75c007": {
+      "decision_id": "synthetic.decision.a9e33f522ae1408967e8eb67a1aba6fb980b508fdce5683501caa21a07265b3d",
+      "result": "violation",
+      "rule_outcome": "evaluated",
+      "guard_reasons": []
+    },
+    "perception.object.93f3140f76fc54646b5c5cc93b09d4b7880e6941b26340c074a1cbcde5bb0c32": {
+      "decision_id": "synthetic.decision.fbdc48bec38a7ed3ffbdf5dbce1aed4c48c3f1290006f990a4bbdef28dd7cac1",
+      "result": "violation",
+      "rule_outcome": "evaluated",
+      "guard_reasons": []
+    },
+    "perception.object.9d23ea5cb1a9b9cf0add2b447383e9444451f6435ec09afefd6ce7a38e1e03bb": {
+      "decision_id": "synthetic.decision.eee6877f34fdc940969396a30012a2a4d412c26c1ba9f812a1ed8bb71846325e",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "required_fact_unavailable"
+      ]
+    },
+    "perception.object.b8275436a1c6b4d872a0f7daa8bf56a30030135d08a47a1ade6bd7bb2b6db93b": {
+      "decision_id": "synthetic.decision.46ddbf6c83e40446a08524f45d036f4b388f8bfc29f15289b5e1475fa69b5d81",
+      "result": "violation",
+      "rule_outcome": "evaluated",
+      "guard_reasons": []
+    },
+    "perception.object.d812ae38f53d4ebab77ca47ca40567954a3bf4a9dcb28fd7a9a521ba769ebd52": {
+      "decision_id": "synthetic.decision.e7b4b877047923cd1a72e55558a161bd26e50ea1ec70dbb486f89d761fc8f21b",
+      "result": "no_violation",
+      "rule_outcome": "evaluated",
+      "guard_reasons": []
+    },
+    "perception.object.1fa673a04ce00b4af8d88ea1d3b0186422bafd998c7ba943f09932e1f7a549af": {
+      "decision_id": "synthetic.decision.759dcfe151b7b7cbac4d29f747e2756fbcdee27d88848ecb051378a2b9bc1c57",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable",
+        "required_fact_unavailable"
+      ]
+    },
+    "perception.object.a02cd031821b9129411c5c18a9c5f689098ea0aba235b903282378cf5b74dc05": {
+      "decision_id": "synthetic.decision.f90b26ec544375d181ab49668ce2719dbfd4e9cd2031d62f1923ebffb1a350bd",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "required_fact_unavailable"
+      ]
+    }
+  },
+  "decision_counts": {
+    "no_violation": 2,
+    "violation": 4,
+    "uncertain": 3
+  },
+  "coverage": "partial",
+  "summary_result": "violation"
+}

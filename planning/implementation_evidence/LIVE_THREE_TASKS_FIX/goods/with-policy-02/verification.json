@@ -1,0 +1,167 @@
+{
+  "execution_id": "execution.daddd5f0b9fc832351bff4d768b9f6cd40d462284ab8079dab2753566f78ea36",
+  "task_id": "task.1b572ae59008b3825b6833aecd7f28d2a39414c308d729fd26747a564a9f5030",
+  "bundle_digest": "e41f9fe6929796ca4d787550066fb47ce7bf3ff0aa5d7613f09ebc02bb1f7eac",
+  "release_id": "synthetic.parking.release",
+  "image_sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8",
+  "trusted_placement_policy_present": true,
+  "scope_evidence_sha256": "36620c0905e3009319a7cbd8a1f68f8de2b779ea974c9dc8c99e1f8c80e40072",
+  "postgres_version": "16.14 (Debian 16.14-1.pgdg13+1)",
+  "execution_status": "completed",
+  "node_terminal_statuses": {
+    "N01:succeeded": 1,
+    "N06:succeeded": 9,
+    "N02:succeeded": 1,
+    "N05:succeeded": 9,
+    "N04:succeeded": 9,
+    "N03:succeeded": 1
+  },
+  "trace_event_count": 156,
+  "source_detections": 9,
+  "model_calls": {
+    "candidate_prediction-result": 9,
+    "object_observation-result": 9,
+    "object_grounding-result": 1,
+    "profile_discovery-result": 1
+  },
+  "grounded_objects": 9,
+  "completed_empty_tool_plans": 9,
+  "facts": {
+    "perception.object.5f4779fb3a6e52c54dcc945b5b842ad8747e7bb732d6b6064c6ef01d75fdbb86": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.4052c484e6b4c98ca17df522d2e8aff44ca10a9997ff7a2e914ac0dc98e5209a",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-a5e01e54cbd9132f"
+    },
+    "perception.object.43c40d9f8878dbbdb4bb0aff50fc0fe84cf411fd3d1b874075aea7999e297f20": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.63790da1f1b047f2abfa3edc5d3551570835264601900a81a6c8c9457dc8bd6d",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-9624779f1d313774"
+    },
+    "perception.object.5ecf7852cf5659c0c376d5ef8bbfac2cc71bc7f6d7d9fdc59e3c8ef7a3f0ebf4": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.8f41796ae83ca54284c7ffd1b217a0638c2caf33af6b2a10900119511acb58e0",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-8995294354d624fa"
+    },
+    "perception.object.8ae765b173c4013baa49af9c2311a738becb210683ae21c8ee6fffffd97b2631": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.176742733d10e007ac62b6160cb35b9d4ce38b165c81d35db1f7fed5777a6346",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-ba3615d4ff48c550"
+    },
+    "perception.object.738a2aaa95d3c91d9f8ea4ad03150dc736a7e8e3f43f739d8e7da1181c1b4e73": {
+      "answer": "insufficient_visibility",
+      "fact_id": "perception.fact.143d5188411699db8a7e79524b607a83d0a354f36ce3c06b825892d3f119dd9b",
+      "status": "unknown",
+      "upstream_completion_id": "chatcmpl-b291c0e62ced16ba"
+    },
+    "perception.object.00303e52d8f68bc97bdc31aff75de9c6f0eb918b7692bb90bd9cf1aff262b75f": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.d24bcd0c8823b66e1ae17d30eb20328281f76b327503cb4e54d9a2de445212a7",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-a13066425fd90045"
+    },
+    "perception.object.d3a81a971626fce5e727669ed09dfee139f249c92906241c8d04d493d5c6936d": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.217632cad2c3f21dc2ffaaa50f49e9b28609ec5f7fa7fd7b29f19fe148fdd5ec",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-b9a80c1519831387"
+    },
+    "perception.object.76138cdfaf2e9f3002c4ff2aa2eeb4ce6d56805f7f2a330468a734ace59f676f": {
+      "answer": "insufficient_visibility",
+      "fact_id": "perception.fact.8bc5ecbaffa432e92b8234e9e022fb3ee39a8de1ead080c2bfd0db348237b98a",
+      "status": "unknown",
+      "upstream_completion_id": "chatcmpl-ac1ab255aea8220e"
+    },
+    "perception.object.3c21a525b37cef41f4430b3f856a36340d6d37f1afefadc4d5d8de4c067d7472": {
+      "answer": "insufficient_visibility",
+      "fact_id": "perception.fact.0e3c9b1b3cb7a8fbbf8e44334dc522300308f69df614a5d2b38c382e577fe9f7",
+      "status": "unknown",
+      "upstream_completion_id": "chatcmpl-b83bec4f18f870c7"
+    }
+  },
+  "decisions": {
+    "perception.object.43c40d9f8878dbbdb4bb0aff50fc0fe84cf411fd3d1b874075aea7999e297f20": {
+      "decision_id": "synthetic.decision.50616751b99ec7e5a3603c056857a6236c59a98f0e22c50aa7531ad9609a19d6",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    },
+    "perception.object.3c21a525b37cef41f4430b3f856a36340d6d37f1afefadc4d5d8de4c067d7472": {
+      "decision_id": "synthetic.decision.9254948b26346d3eb52d1344b2bb3bf574ee5e11aa65ca0b5186be843dfe2bf9",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable",
+        "required_fact_unavailable"
+      ]
+    },
+    "perception.object.5ecf7852cf5659c0c376d5ef8bbfac2cc71bc7f6d7d9fdc59e3c8ef7a3f0ebf4": {
+      "decision_id": "synthetic.decision.af7fd3c9b2178474730237fcf1cfd30a65ee79118cf30dd51eadbfb2669b1c28",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    },
+    "perception.object.d3a81a971626fce5e727669ed09dfee139f249c92906241c8d04d493d5c6936d": {
+      "decision_id": "synthetic.decision.745a019bfcef57d25348f5afb1f70c29b850d364507baf94072f9259253906e0",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    },
+    "perception.object.76138cdfaf2e9f3002c4ff2aa2eeb4ce6d56805f7f2a330468a734ace59f676f": {
+      "decision_id": "synthetic.decision.cd9e1e2cff6e080ca6953e9e498b5e1a66f3f2dcbe182c2db8649cc80d55430d",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable",
+        "required_fact_unavailable"
+      ]
+    },
+    "perception.object.5f4779fb3a6e52c54dcc945b5b842ad8747e7bb732d6b6064c6ef01d75fdbb86": {
+      "decision_id": "synthetic.decision.22d7fedc5dd7314e1c421ab10a91e68576fcf6df62cbf851b42dee8dfd07898a",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    },
+    "perception.object.738a2aaa95d3c91d9f8ea4ad03150dc736a7e8e3f43f739d8e7da1181c1b4e73": {
+      "decision_id": "synthetic.decision.672a602b88cea5d15230ddfaea43495d8fe53c45cf14b4cb953112b5de9a318c",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable",
+        "required_fact_unavailable"
+      ]
+    },
+    "perception.object.00303e52d8f68bc97bdc31aff75de9c6f0eb918b7692bb90bd9cf1aff262b75f": {
+      "decision_id": "synthetic.decision.76836cc71b5a03036e37d0285e553f49b48308a07f6c08a1663d8f9ea357b152",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    },
+    "perception.object.8ae765b173c4013baa49af9c2311a738becb210683ae21c8ee6fffffd97b2631": {
+      "decision_id": "synthetic.decision.338ab2a0ebf04f8ba02261aaac0501ea7646271c078d175a074c86578236365b",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    }
+  },
+  "decision_counts": {
+    "uncertain": 9
+  },
+  "coverage": "partial",
+  "summary_result": "uncertain"
+}

@@ -23,6 +23,8 @@ from pydantic import (
 
 from jimu_runtime.bundle.trust import TrustPin
 from jimu_runtime.domain.base import ContractModel
+from jimu_runtime.domain.definition_enums import ModelCapability
+from jimu_runtime.domain.nodes.observation import is_region_observation_template
 from jimu_runtime.domain.primitives import ArtifactId, Digest, RecordId, Version
 from jimu_runtime.domain.runtime.invocations import InvocationError, ProviderKind
 from jimu_runtime.gateway.http_wire import (
@@ -30,10 +32,12 @@ from jimu_runtime.gateway.http_wire import (
 )
 from jimu_runtime.gateway.http_wire import (
     ChatResponse,
+    DecodedChatRequest,
     VllmChatResponse,
     WireError,
     approved_model_id,
     contains_text,
+    decode_chat_request,
     encode_chat,
     strict_json,
     validate_chat_request,
@@ -104,6 +108,7 @@ class ChatEndpoint(ContractModel):
     credential_ref: ArtifactId | None = Field(default=None, repr=False)
     allow_plaintext_loopback: bool = False
     retain_complete_response: bool = False
+    supports_region_projection: bool = False
     limits: HttpLimits
 
     @model_validator(mode="after")
@@ -139,6 +144,9 @@ class ChatEndpoint(ContractModel):
     def descriptor_pin(self) -> TrustPin:
         document = self.model_dump(mode="json")
         document["url"] = str(httpx.URL(self.url))
+        # Preserve descriptor pins issued before the opt-in existed.
+        if not self.supports_region_projection:
+            del document["supports_region_projection"]
         payload = json.dumps(document, sort_keys=True, separators=(",", ":")).encode()
         return TrustPin(
             identity=self.endpoint_id,
@@ -402,16 +410,14 @@ def _parse_success(
 
 
 def _check_request(
-    payload: bytes,
+    decoded: DecodedChatRequest,
     model_id: str,
     contract: ChatContract,
     image_limit: int,
     secret: str | None,
 ) -> None:
-    decoded = validate_chat_request(
-        payload, model_id, contract, image_limit=image_limit
-    )
-    if secret is not None and contains_text(decoded, secret):
+    root = validate_chat_request(decoded, model_id, contract, image_limit=image_limit)
+    if secret is not None and contains_text(root, secret):
         raise WireError("http_credential_in_request")
 
 
@@ -463,7 +469,7 @@ class HttpModelTransport:
         # dispatch's deadline or cancellation. It owns no receipt or I/O state.
         return await asyncio.shield(task)
 
-    def _resolve(self, route: PlannedRoute) -> tuple[ChatEndpoint, ChatContract]:
+    def _resolve_endpoint(self, route: PlannedRoute) -> ChatEndpoint:
         endpoint = self._endpoints.get(
             (route.selected.provider_id, route.selected.deployment_id)
         )
@@ -477,6 +483,51 @@ class HttpModelTransport:
             raise WireError("http_endpoint_pin_mismatch")
         if not self._allow_network and not _is_loopback(httpx.URL(endpoint.url)):
             raise WireError("http_network_disabled")
+        return endpoint
+
+    def _resolve_contract(
+        self,
+        route: PlannedRoute,
+        endpoint: ChatEndpoint,
+        prompt: str,
+        *,
+        has_image: bool,
+    ) -> ChatContract:
+        if not isinstance(prompt, str):
+            raise WireError("http_invalid_prompt")
+        snapshot = route.operation.contract_snapshot
+        if is_region_observation_template(prompt):
+            if not endpoint.supports_region_projection:
+                raise WireError("http_region_projection_unsupported")
+            if (
+                route.operation.purposes != (ModelCapability.OBJECT_OBSERVATION,)
+                or snapshot is None
+                or snapshot.configured_output_schema_ref
+                != route.binding.output_schema_ref
+                or snapshot.response_schema_sha256
+                != route.operation.response_contract_digest
+            ):
+                raise WireError("http_region_projection_contract_mismatch")
+            base = self._contracts.get(
+                (
+                    route.binding.input_schema_ref,
+                    route.binding.output_schema_ref,
+                    route.binding.output_schema_ref.digest,
+                )
+            )
+            if base is None:
+                raise WireError("http_schema_pin_unregistered")
+            projected = base.for_region_questions(
+                tuple(ref.artifact_id for ref in snapshot.effective_question_refs)
+            )
+            if (
+                projected.response_schema_digest
+                != route.operation.response_contract_digest
+            ):
+                raise WireError("http_schema_pin_unregistered")
+            if not has_image:
+                raise WireError("http_region_projection_image_required")
+            return projected
         key = (
             route.binding.input_schema_ref,
             route.binding.output_schema_ref,
@@ -486,23 +537,24 @@ class HttpModelTransport:
         if contract is None:
             raise WireError("http_schema_pin_unregistered")
         if contract.question_slots:
-            snapshot = route.operation.contract_snapshot
             if snapshot is None or contract.question_slots != tuple(
                 ref.artifact_id for ref in snapshot.effective_question_refs
             ):
                 raise WireError("http_question_slots_pin_mismatch")
-        return endpoint, contract
+        return contract
 
     def raw_response_retention(self, route: PlannedRoute) -> bool:
         """Resolve the exact pinned endpoint's response byte retention permission."""
-        endpoint, _ = self._resolve(route)
-        return endpoint.retain_complete_response
+        return self._resolve_endpoint(route).retain_complete_response
 
     def prepare(
         self, route: PlannedRoute, prompt: str, media: VerifiedImage | None = None
     ) -> bytes:
         """Render exact outbound bytes before the gateway records send intent."""
-        endpoint, contract = self._resolve(route)
+        endpoint = self._resolve_endpoint(route)
+        contract = self._resolve_contract(
+            route, endpoint, prompt, has_image=media is not None
+        )
         return encode_chat(
             endpoint.model_id,
             prompt,
@@ -540,11 +592,25 @@ class HttpModelTransport:
             raise WireError("http_credential_invalid")
         return value
 
+    def _validated_contract(
+        self,
+        request: DispatchRequest,
+        endpoint: ChatEndpoint,
+        image_limit: int,
+        secret: str | None,
+    ) -> ChatContract:
+        decoded = decode_chat_request(request.payload)
+        contract = self._resolve_contract(
+            request.route, endpoint, decoded.prompt, has_image=len(decoded.parts) == 2
+        )
+        _check_request(decoded, endpoint.model_id, contract, image_limit, secret)
+        return contract
+
     async def dispatch(self, request: DispatchRequest) -> TransportResult:
         """Return safe receipt data; propagate cooperative task cancellation."""
         receipt = _Receipt(request.dispatch_id)
         try:
-            endpoint, contract = self._resolve(request.route)
+            endpoint = self._resolve_endpoint(request.route)
         except WireError as exc:
             return receipt.failed("association", exc.code)
 
@@ -563,11 +629,10 @@ class HttpModelTransport:
                 if len(request.payload) > input_limit:
                     raise WireError("http_request_too_large")
                 secret = self._bearer(endpoint)
-                await self._validate_in_worker(
-                    lambda: _check_request(
-                        request.payload,
-                        endpoint.model_id,
-                        contract,
+                contract = await self._validate_in_worker(
+                    lambda: self._validated_contract(
+                        request,
+                        endpoint,
                         min(endpoint.limits.image_bytes, input_limit),
                         secret,
                     )
@@ -763,6 +828,10 @@ def _wire_error_class(code: ArtifactId) -> HTTPErrorClass:
         "http_reported_model_unavailable",
         "http_presend_authorization_lost",
         "http_reported_version_mismatch",
+        "http_region_projection_contract_mismatch",
+        "http_region_projection_unsupported",
+        "http_schema_pin_unregistered",
+        "http_question_slots_pin_mismatch",
     }:
         return "association"
     if code in {"http_invalid_content_length", "http_invalid_status"}:

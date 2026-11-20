@@ -9,7 +9,10 @@ from pydantic import Field, TypeAdapter
 
 from jimu_runtime.bundle.artifacts import SchemaResource
 from jimu_runtime.bundle.integrity import sha256_digest
-from jimu_runtime.bundle.schema_validation import compile_offline_response_schema
+from jimu_runtime.bundle.schema_validation import (
+    OfflineResponseSchema,
+    compile_offline_response_schema,
+)
 from jimu_runtime.domain.base import ContractModel
 from jimu_runtime.domain.definition_enums import ModelCapability
 from jimu_runtime.domain.definition_support import reference_identity
@@ -33,6 +36,7 @@ from jimu_runtime.domain.nodes.envelopes import (
     NodeOutputEnvelope,
     SucceededNodeOutput,
 )
+from jimu_runtime.domain.nodes.observation import is_region_observation_template
 from jimu_runtime.domain.primitives import ArtifactId
 from jimu_runtime.domain.references import ContentRef, SchemaRef
 from jimu_runtime.domain.runtime.facts import ModelInvocationRef
@@ -97,30 +101,60 @@ def _schema(
     return member.value, member.canonical_bytes
 
 
+def uses_region_observation(
+    scope: VerifiedExecutionScope, binding: ModelBinding
+) -> bool:
+    ref = binding.prompt_template_ref
+    return (
+        binding.capability is ModelCapability.OBJECT_OBSERVATION
+        and ref is not None
+        and is_region_observation_template(
+            scope.resolve(ref, PromptTemplateDefinition).template_text
+        )
+    )
+
+
 def build_chat_contract(
     scope: VerifiedExecutionScope,
     binding_ref: ModelBindingContentRef,
     effective_questions: tuple[QuestionContentRef, ...] = (),
+    *,
+    register_region_base: bool = False,
 ) -> ChatContract:
     """Register stock HTTP against the exact admitted binding and schema bytes."""
     binding = scope.resolve(binding_ref, ModelBinding)
     model = _RESPONSE_MODELS.get(binding.capability)
-    if model is None or bool(effective_questions) != (
+    if model is None or (bool(effective_questions) or register_region_base) != (
         binding.capability is ModelCapability.OBJECT_OBSERVATION
     ):
         raise AdapterRejected("perception.unsupported_model_contract")
     _schema(scope, binding.input_schema_ref)
-    _, raw = _schema(scope, binding.output_schema_ref)
+    schema, raw = _schema(scope, binding.output_schema_ref)
     for ref in effective_questions:
         scope.catalogue.resolve(ref)
-    return ChatContract(
+    selected = tuple(ref.artifact_id for ref in effective_questions)
+    regional = uses_region_observation(scope, binding)
+    slots = selected
+    if regional:
+        required = schema.document.get("required")
+        if not isinstance(required, list) or not all(
+            isinstance(name, str) for name in required
+        ):
+            raise AdapterRejected("perception.invalid_region_question_catalogue")
+        slots = tuple(str(name) for name in required)
+    elif register_region_base:
+        raise AdapterRejected("perception.unsupported_model_contract")
+    contract = ChatContract(
         input_schema_ref=binding.input_schema_ref,
         output_schema_ref=binding.output_schema_ref,
         response_model=model,
         accepts_image=True,
         response_schema=raw,
-        question_slots=tuple(ref.artifact_id for ref in effective_questions),
+        question_slots=slots,
     )
+    if regional and not register_region_base:
+        return contract.for_region_questions(selected)
+    return contract
 
 
 def schema_resource(scope: VerifiedExecutionScope, ref: ContentRef) -> SchemaResource:
@@ -156,11 +190,14 @@ class PreparedBinding:
     definition: ModelBinding
     template: str
 
+    def input_validator(self) -> OfflineResponseSchema:
+        schema, _ = _schema(self.scope, self.definition.input_schema_ref)
+        return compile_offline_response_schema(schema.document)
+
     def prompt(
         self, model_input: dict[str, JSONValue], instructions: dict[str, JSONValue]
     ) -> str:
-        schema, _ = _schema(self.scope, self.definition.input_schema_ref)
-        compile_offline_response_schema(schema.document).validate(model_input)
+        self.input_validator().validate(model_input)
         return "\n".join(
             (
                 self.template,
@@ -191,16 +228,10 @@ def prepare_binding(
 type ImageLoader = Callable[[VerifiedExecutionScope], Awaitable[VerifiedImage]]
 
 
-type MarkedImageLoader = Callable[
-    [VerifiedExecutionScope, ObjectRecord], Awaitable[VerifiedImage]
-]
-
-
 @dataclass(frozen=True, slots=True)
 class ModelAccess:
     load_image: ImageLoader
     resource_scope_id: ArtifactId
-    load_marked_image: MarkedImageLoader | None = None
 
     def __post_init__(self) -> None:
         _RESOURCE_SCOPE.validate_python(self.resource_scope_id)
@@ -227,21 +258,7 @@ class ModelAccess:
             or obj.source_media_ref != scope.media.media_ref
         ):
             raise AdapterRejected("perception.observation_image_scope_mismatch")
-        frame = obj.marked_frame
-        if frame is None:
-            return await self.image(scope)
-        if self.load_marked_image is None:
-            raise AdapterRejected("perception.marked_frame_loader_unavailable")
-        image = await self.load_marked_image(scope, obj)
-        if (
-            image.media_type != frame.mime_type
-            or image.sha256 != frame.media_ref.sha256
-            or type(image.content) is not bytes
-            or len(image.content) != frame.byte_size
-            or sha256_digest(image.content) != frame.media_ref.sha256
-        ):
-            raise AdapterRejected("perception.marked_frame_pin_mismatch")
-        return image
+        return await self.image(scope)
 
 
 def image_input(scope: VerifiedExecutionScope) -> dict[str, JSONValue]:

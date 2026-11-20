@@ -284,13 +284,13 @@ def _check_profile_groups(
         tuple(box for members in groups for box in members), grouping
     ):
         raise ValueError("grounding groups must match the pinned Profile grouping")
-    media_ids = {
+    marked_media_ids = tuple(
         obj.marked_frame.media_ref.media_id
         for obj in objects
         if obj.marked_frame is not None
-    }
-    if len(media_ids) != len(objects):
-        raise ValueError("each grounding group must pin its own marked media identity")
+    )
+    if len(set(marked_media_ids)) != len(marked_media_ids):
+        raise ValueError("historical marked frame media identities must be distinct")
 
 
 def _check_producer(

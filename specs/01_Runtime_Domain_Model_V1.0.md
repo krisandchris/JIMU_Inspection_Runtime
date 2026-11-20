@@ -100,7 +100,7 @@ Required fields:
 A Profile is not a violation category. One Profile may yield zero, one or many
 Objects. Release freezes the declared Question catalogue and selection policy;
 N02 records a per-Profile effective_question_refs set under that pinned policy.
-N03 inherits it unchanged; N04 uses it in one joint request per Object (§11).
+N03 inherits it unchanged; N04 uses it in one joint observation batch per Object (§11).
 
 ### 3.4 Facet
 
@@ -812,7 +812,7 @@ Profile-specific role, not a mutable property of a reusable Question.
 
 | Mode | Benefit | Failure risk / constraint |
 |---|---|---|
-| A: all_declared | Simplest deterministic Stage1 Profile→Question-set output; no selection omission | Larger N04 prompt/schema; still one call per Object, no measured cost claim |
+| A: all_declared | Simplest deterministic Stage1 Profile→Question-set output; no selection omission | Larger N04 prompt/schema; joint observation batch per Object |
 | B: mandatory_plus_optional | Stage1 generates a smaller configured set; may reduce N04 input/schema complexity | Optional omission can reduce coverage/quality; all required downstream producers must be mandatory; selection needs audit/fallback |
 
 Recommended candidate: contract supports both; initial accepted Profile must
@@ -841,7 +841,7 @@ question_selection_ref + effective_question_refs, and any repeated set must matc
 
 N03 copies the selection ref and exact set to per-Profile result/Object; no
 reselection by localization or visibility. N04 validates the set against the
-selection record and issues one joint normal-path request per Object. A retry is
+selection record and retains one joint observation batch per Object. The physical request scope follows the observation binding (Six Node Contract §6). A retry is
 whole-batch under the same frozen selection (new Attempt/Invocation), not per-Question
 follow-up or silent optional expansion. Selection retries in N02 create new records;
 downstream work pins one authoritative N02 selection, never the newest by timestamp.
@@ -905,8 +905,7 @@ branch) record selection_invocation_mode=shared_n02/explicit_additional matching
 the pinned policy. No automatic extra call is permitted for all_declared,
 context_rules or fallback. Exhausted/absent additional budget takes the configured
 conservative fallback/block path; it does not silently spend another request.
-N03/N04 inherit the same effective set; one Object still has one normal joint N04
-request. WP-01 defines this union and reference validation, not an N02 call engine.
+N03/N04 inherit the same effective set; each Object retains its own N04 observation batch. WP-01 defines this union and reference validation, not an N02 call engine.
 
 ModelInvocation.purposes is a nonempty closed set of profile_discovery/
 optional_question_proposal/object_grounding/object_observation/candidate_prediction/

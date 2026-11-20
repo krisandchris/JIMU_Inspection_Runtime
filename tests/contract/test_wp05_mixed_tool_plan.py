@@ -19,16 +19,22 @@ from examples.nonmotor_vehicle_illegal_parking.compilable.scene import (
 from jimu_runtime.bundle.compiler import BundleCompileInput
 from jimu_runtime.bundle.semantic_inputs import require_definition
 from jimu_runtime.domain.definitions.tools import ToolDefinition
-from jimu_runtime.domain.enums import ArtifactKind, NodeRunStatus
+from jimu_runtime.domain.enums import ArtifactKind, ExecutionStatus, NodeRunStatus
 from jimu_runtime.domain.enums import RuntimeRecordKind as K
-from jimu_runtime.domain.nodes.tool_execution import InvokedToolStep, UninvokedToolStep
+from jimu_runtime.domain.nodes.tool_execution import (
+    InvokedToolStep,
+    ToolPlanCompletionRecord,
+    UninvokedToolStep,
+)
 from jimu_runtime.domain.runtime.executions import NodeId
+from jimu_runtime.domain.runtime.replay import ExecutionRef, ReplayExecutionSource
 from jimu_runtime.gateway.bridge_tools import ToolExecutionAdapter
 from jimu_runtime.inspection.geometry import (
     GeometryInput,
     synthetic_cpu_implementations,
 )
 from jimu_runtime.inspection.geometry.node import GeometryNodeAdapter
+from jimu_runtime.replay.artifact_source import load_historical_source
 from jimu_runtime.tools.executor import ToolExecutor
 from jimu_runtime.tools.registry import ToolWorkerRegistry
 from jimu_runtime.tools.step_attempts import (
@@ -38,12 +44,22 @@ from jimu_runtime.tools.step_attempts import (
 )
 from jimu_runtime.workflow import repository
 from jimu_runtime.workflow.engine import BranchKey
-from jimu_runtime.workflow.worker import RetryableNodeFailure, WorkerStep, _failed_node
+from jimu_runtime.workflow.jobs import CompletionDisposition
+from jimu_runtime.workflow.mock_support import artifact
+from jimu_runtime.workflow.worker import (
+    RetryableNodeFailure,
+    WorkerStep,
+    WorkflowWorker,
+    _failed_node,
+)
 from jimu_runtime.workflow.worker_inspection import (
     VerifiedMediaWorkerHost,
     inspection_worker,
 )
+from jimu_runtime.workflow.worker_nodes import NodeResult
+from jimu_runtime.workflow.worker_records import ToolMessage
 from jimu_runtime.workflow.worker_state import load_records
+from jimu_runtime.workflow.worker_validation import check_result
 from tests.fixtures.wp04 import http_support
 from tests.fixtures.wp05 import perception
 
@@ -172,6 +188,325 @@ def _mixed_source(*, guard_only: bool) -> BundleCompileInput:
             item = replace(item, content=json.dumps(data).encode())
         artifacts.append(item)
     return with_source_provenance(replace(source, artifacts=tuple(artifacts)))
+
+
+def _no_invocations_source(*, empty: bool) -> BundleCompileInput:
+    source = load_source()
+    plan = json.loads(
+        (DIRECTORY / "source" / "tool_plan" / f"{_PLAN}.json").read_bytes()
+    )
+    rule = json.loads(
+        (
+            DIRECTORY / "source" / "rule" / "nonmotor_vehicle_illegal_parking.json"
+        ).read_bytes()
+    )
+    (condition, _) = rule["condition_ast"]["arguments"]
+    rule["condition_ast"] = condition
+    rule["required_fact_selectors"].pop()
+    plan["steps"] = [] if empty else plan["steps"][:2]
+    artifacts = []
+    for item in source.artifacts:
+        if item.kind is ArtifactKind.TOOL_PLAN and item.artifact_id == _PLAN:
+            data = plan
+        elif item.kind is ArtifactKind.RULE:
+            data = rule
+        elif (
+            item.kind is ArtifactKind.POLICY
+            and item.artifact_id == "skip"
+            and not empty
+        ):
+            data = json.loads(item.content)
+            data["policy"]["condition_ast"] = condition
+        else:
+            artifacts.append(item)
+            continue
+        slots = []
+        data = _extract_slots(data, slots)
+        artifacts.append(
+            replace(
+                item, content=json.dumps(data).encode(), reference_slots=tuple(slots)
+            )
+        )
+    return with_source_provenance(replace(source, artifacts=tuple(artifacts)))
+
+
+@pytest.mark.parametrize(
+    "scenario", ["empty", "all_skipped", "unknown_guard", "historical"]
+)
+def test_n05_no_invocations_persists_exact_completion_and_unblocks_decision(
+    tmp_path, loopback_only, scenario
+):
+    async def run():
+        calls = []
+        retried_attempts = []
+        commit = WorkflowWorker._commit
+
+        def check_submission(
+            opened, previous, branch, node, attempt, result, **options
+        ):
+            message = result.message
+            if (
+                isinstance(message, ToolMessage)
+                and message.completion_artifact is not None
+            ):
+                obj = message.inputs.object_record
+                legacy = artifact(K.OBJECT, obj.object_id, obj)
+                legacy_result = None
+                for prior in ((), (legacy,)):
+                    wire = message.model_dump(mode="json")
+                    wire["output"]["envelope"]["output_artifacts"] = [
+                        item.pin.model_dump(mode="json") for item in prior
+                    ]
+                    decoded = ToolMessage.model_validate_json(json.dumps(wire))
+                    assert decoded.completion_artifact is None
+                    legacy_result = NodeResult(decoded, prior)
+                    with pytest.raises(
+                        ValueError, match="may only persist its pinned summary"
+                    ):
+                        check_result(
+                            opened,
+                            previous,
+                            branch,
+                            node,
+                            attempt,
+                            legacy_result,
+                            **options,
+                        )
+                if scenario == "historical":
+                    # Seed the artifact-bearing format previously permitted for a
+                    # custom adapter. The unmodified durable job commit still runs.
+                    assert legacy_result is not None
+                    return legacy_result
+            return check_result(
+                opened, previous, branch, node, attempt, result, **options
+            )
+
+        async def commit_and_retry(jobs, claim, result, *, configured):
+            disposition = await commit(jobs, claim, result, configured=configured)
+            if (
+                isinstance(result.message, ToolMessage)
+                and result.message.completion_artifact is not None
+            ):
+                assert disposition is CompletionDisposition.APPLIED
+                assert (
+                    await commit(jobs, claim, result, configured=configured)
+                    is CompletionDisposition.DUPLICATE
+                )
+                retried_attempts.append(result.message.inputs.envelope.attempt_id)
+            return disposition
+
+        async def peer(reader, writer):
+            incoming = await http_support.read_request(reader)
+            body = json.loads(incoming.body)
+            role = body["response_format"]["json_schema"]["schema"]["$id"].split(":")[
+                -2
+            ]
+            calls.append(role)
+            reply = {
+                "candidate_prediction-result": {"categories": []},
+                "profile_discovery-result": {"profile_hits": ["nonmotor_vehicle"]},
+                "object_grounding-result": {"boxes": [{"xyxy": [40, 23, 52, 33]}]},
+                "object_observation-result": {
+                    "vehicle_type": "electric_bicycle",
+                    **(
+                        {"parking_state": "unparked"}
+                        if scenario != "unknown_guard"
+                        else {}
+                    ),
+                    "parking_position": "outside_parking_area",
+                },
+            }[role]
+            writer.write(
+                http_support.response(
+                    http_support.chat_body(
+                        model=body["model"], content=json.dumps(reply)
+                    ),
+                    headers=(
+                        (b"X-Request-ID", b"no-invoked-tools"),
+                        (b"X-Jimu-Deployment-Version", b"1.0.0"),
+                        (b"X-Jimu-Model-Version", b"1.0.0"),
+                    ),
+                )
+            )
+            await writer.drain()
+
+        async with http_support.http_peer(loopback_only, peer) as url:
+            with patch.object(
+                perception,
+                "load_source",
+                return_value=_no_invocations_source(
+                    empty=scenario in {"empty", "historical"}
+                ),
+            ):
+                async with perception.perception_fixture(
+                    tmp_path, url, with_media=True
+                ) as fixture:
+                    media = fixture.media_store
+                    assert media is not None
+                    accepted = fixture.accepted
+                    scope = accepted.task.idempotency_scope
+                    eid = accepted.execution.execution_id
+                    ledger = StepAttemptStore(fixture.application, actor=ACTOR)
+                    bridge = ToolExecutionAdapter(
+                        ToolExecutor(ToolWorkerRegistry(())),
+                        ledger,
+                        fixture.journal,
+                        fixture.host.capabilities,
+                    )
+
+                    async def capture_registry(request_scope, task):
+                        source = await fixture.host.worker_source(request_scope, task)
+                        return source.device, source.camera
+
+                    def open_worker():
+                        return inspection_worker(
+                            fixture.application,
+                            fixture.releases,
+                            fixture.store,
+                            host=VerifiedMediaWorkerHost(
+                                media, fixture.host.capabilities, capture_registry
+                            ),
+                            bundle_limits=LIMITS,
+                            media=media,
+                            gateway=fixture.gateway,
+                            execute_tools=GeometryNodeAdapter(media, bridge).execute,
+                            model_resource_scope_id="model",
+                        )
+
+                    with (
+                        patch.object(
+                            ledger,
+                            "begin",
+                            side_effect=AssertionError("unexpected tool dispatch"),
+                        ) as dispatch,
+                        patch.object(
+                            WorkflowWorker, "_commit", staticmethod(commit_and_retry)
+                        ),
+                        patch(
+                            "jimu_runtime.workflow.worker.check_result",
+                            side_effect=check_submission,
+                        ),
+                    ):
+                        for _ in range(12):
+                            worker = open_worker()
+                            await worker.run_once(
+                                scope, eid, owner="no-tools", lease_ms=10000
+                            )
+                            if await worker.read_finalization(scope, eid) is not None:
+                                break
+                            await asyncio.sleep(0.03)
+                        else:
+                            pytest.fail("expected terminal execution")
+                        dispatch.assert_not_called()
+
+                    async with fixture.application.connect() as connection:
+                        locked = await repository.get_execution(connection, scope, eid)
+                        assert locked is not None
+                        state = await load_records(connection, scope, locked)
+                        (obj,) = state.inputs(None).grounding.objects
+                        node = state.runs[BranchKey(NodeId.N05, obj.object_id)]
+                        tools = state.inputs(obj.object_id).tool
+                        assert tools is not None
+                        assert not (
+                            tools.executions
+                            or tools.facts
+                            or tools.authorities
+                            or tools.evidence
+                        )
+                        assert not state.tool_step_nodes
+                        completion = tools.completion_artifact
+                        if scenario == "unknown_guard":
+                            assert node.status is NodeRunStatus.FAILED
+                            assert locked.execution.status in {
+                                ExecutionStatus.FAILED,
+                                ExecutionStatus.PARTIAL_FAILED,
+                            }
+                            assert completion is None
+                            assert not retried_attempts
+                            assert not node.output_refs
+                            assert {
+                                step.disposition for step in tools.output.summary.steps
+                            } == {"blocked"}
+                            assert {
+                                step.reason_code for step in tools.output.summary.steps
+                            } == {"geometry.step_guard_unknown"}
+                            return
+                        assert node.status is NodeRunStatus.SUCCEEDED
+                        assert (
+                            state.runs[BranchKey(NodeId.N06, obj.object_id)].status
+                            is NodeRunStatus.SUCCEEDED
+                        )
+                        assert calls.count("candidate_prediction-result") == 1
+                        historical = await load_historical_source(
+                            connection,
+                            scope,
+                            ReplayExecutionSource(
+                                execution_ref=ExecutionRef(
+                                    record_kind=K.EXECUTION, record_id=eid
+                                ),
+                                task_id=locked.execution.task_id,
+                                pins=locked.execution.pins,
+                            ),
+                        )
+                        if scenario == "historical":
+                            assert completion is None
+                            assert not retried_attempts
+                            prior = artifact(K.OBJECT, obj.object_id, obj)
+                            assert node.output_refs == (prior.ref,)
+                            assert any(
+                                pin.ref == prior.ref and pin.digest == prior.pin.digest
+                                for pin in historical.artifacts
+                            )
+                            return
+                        assert completion is not None
+                        assert node.output_refs == (completion.ref,)
+                        assert tools.output.envelope.output_artifacts == (
+                            completion.pin,
+                        )
+                        aid = tools.inputs.envelope.attempt_id
+                        assert retried_attempts == [aid]
+                        stored = await repository.read_output(
+                            connection,
+                            scope,
+                            eid,
+                            node.node_run_id,
+                            aid,
+                            f"{K.TOOL_PLAN_RUN_SUMMARY.value}.{aid}",
+                            ToolPlanCompletionRecord,
+                        )
+                        assert stored == completion.record
+                        assert (
+                            stored.summary.tool_plan_ref == tools.inputs.tool_plan_ref
+                        )
+                        assert stored.summary.object_ref.record_id == obj.object_id
+                        assert stored.summary.steps == tools.output.summary.steps
+                        manifest = tools.model_dump(mode="json")
+                        manifest["output"]["envelope"]["output_artifacts"][0][
+                            "digest"
+                        ] = "0" * 64
+                        with pytest.raises(
+                            ValueError, match="exact summary as the sole output"
+                        ):
+                            ToolMessage.model_validate_json(json.dumps(manifest))
+                        assert any(
+                            pin.ref == completion.ref
+                            and pin.digest == completion.pin.digest
+                            for pin in historical.artifacts
+                        )
+                        if scenario == "empty":
+                            assert not stored.summary.steps
+                            assert not tools.observation_input_artifacts
+                        else:
+                            assert len(stored.summary.steps) == 2
+                            assert {
+                                step.disposition for step in stored.summary.steps
+                            } == {"skipped"}
+                            assert {
+                                step.reason_code for step in stored.summary.steps
+                            } == {"geometry.step_guard_false"}
+                            assert tools.observation_input_artifacts
+
+    asyncio.run(run())
 
 
 @pytest.mark.parametrize(

@@ -1497,6 +1497,7 @@ class ToolExecutor:
         input_fields: Mapping[str, object],
     ) -> bytes:
         """Encode the exact step request before claiming its durable child Attempt."""
+        call.inputs.check_dispatch_object()
         site = _site(resolved, call, media)
         tool = site.tool.definition
         policy = require_definition(
@@ -1542,6 +1543,8 @@ class ToolExecutor:
         """
         envelope = call.inputs.envelope
         _associate(resolved, execution, node, attempt, envelope)
+        if isinstance(call, PlanStepCall):
+            call.inputs.check_dispatch_object()
         site = _site(resolved, call, media)
         definition = site.tool.definition
         catalog = resolved.catalogue
@@ -1739,6 +1742,12 @@ class ToolExecutor:
             object_bbox=None if site.object_record is None else site.object_record.bbox,
             original_media_ref=media.media_ref,
             task_id=execution.task_id,
+            object_member_boxes=(
+                ()
+                if site.object_record is None
+                else site.object_record.grounding_member_boxes
+                or (site.object_record.bbox,)
+            ),
         )
         if cpu_exchange is not None:
             assert implementation.physical_input_check is not None

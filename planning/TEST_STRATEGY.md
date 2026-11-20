@@ -180,3 +180,11 @@ Inference Replay:
 - pins target Release and deployment versions;
 - retains source Task linkage;
 - never overwrites original Execution.
+
+### N04 original-image region protocol
+
+Count upstream VLM dispatches separately from Object-level observation batches. Exercise multiple Objects on a single original image, different effective Question sets, and a group with ordered members. Verify the original SHA-256 and the region-to-Object map against selected N03 records. Map reordered responses by ID. Retain known sibling Facts when another slot is missing or explicitly reports insufficient visibility. Reject duplicate or unknown associations. Verify one upstream dispatch under concurrent projections, reuse after provider restart, an unresolved dispatch intent, and isolation across Executions and Attempts. Run legacy signed Bundle and replay fixtures alongside the new schema revision. Evaluate model quality separately by matching source boxes and scoring both visible and occluded cases.
+
+### N03–N05 box-only execution
+
+For a grouped execution, check that N03 keeps the original media SHA and pixel coordinates, a positive enclosing box, and the canonical member order. Assert zero marked-frame writes and reads. Compare N04 and N05 Object pins. Inspect the N04 model image hash, N05 group/member geometry, and the resulting N06 member association. Confirm historical marked-media records still deserialize and recover with their original hashes.

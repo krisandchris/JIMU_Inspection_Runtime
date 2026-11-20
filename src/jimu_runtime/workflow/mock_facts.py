@@ -553,6 +553,7 @@ def run_tool_plan(
     observation_authority: ObservationBatchSelection | None = None,
 ) -> SyntheticToolResult:
     inputs = ToolNodeInput.model_validate(inputs)
+    inputs.check_dispatch_object()
     call = scope.check_call(inputs.envelope, NodeId.N05, at)
     scope.check_snapshot(snapshot, inputs.context_snapshot_ref)
     obj = inputs.object_record

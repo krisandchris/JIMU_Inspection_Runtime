@@ -1,0 +1,167 @@
+{
+  "execution_id": "execution.34b0f8d9ac2aed16815e7329a07ab890603a42b7b757bb160d96a7f46eb85ca5",
+  "task_id": "task.57832564b429b01b85afa337d843dd4528b5a7d8ed52fcc6605c380855014807",
+  "bundle_digest": "e41f9fe6929796ca4d787550066fb47ce7bf3ff0aa5d7613f09ebc02bb1f7eac",
+  "release_id": "synthetic.parking.release",
+  "image_sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8",
+  "trusted_placement_policy_present": true,
+  "scope_evidence_sha256": "36620c0905e3009319a7cbd8a1f68f8de2b779ea974c9dc8c99e1f8c80e40072",
+  "postgres_version": "16.14 (Debian 16.14-1.pgdg13+1)",
+  "execution_status": "completed",
+  "node_terminal_statuses": {
+    "N01:succeeded": 1,
+    "N04:succeeded": 9,
+    "N05:succeeded": 9,
+    "N06:succeeded": 9,
+    "N03:succeeded": 1,
+    "N02:succeeded": 1
+  },
+  "trace_event_count": 156,
+  "source_detections": 9,
+  "model_calls": {
+    "candidate_prediction-result": 9,
+    "object_observation-result": 9,
+    "object_grounding-result": 1,
+    "profile_discovery-result": 1
+  },
+  "grounded_objects": 9,
+  "completed_empty_tool_plans": 9,
+  "facts": {
+    "perception.object.648a430fa22a2b9b202d80028df64419d1b95552d434c2e81135abb3d94f4e06": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.f201fa58ca438676809c9c6244702df3635ac78975ca6138226fa93cbbe9eaa3",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-a21a75b014300f2d"
+    },
+    "perception.object.9b02b849efb167606c5ca52f7b5b29e1e8501358939cd27140a7c53057dfe1ad": {
+      "answer": "insufficient_visibility",
+      "fact_id": "perception.fact.d992303158f20dc19f5204eb97f689e430cf7941cada55dd94f62e76f0d54e8b",
+      "status": "unknown",
+      "upstream_completion_id": "chatcmpl-8934ad6f44531f3f"
+    },
+    "perception.object.78850a9a0bedad953572dbf0982ab1372c41aa31b5a11cee90c388f76a995a90": {
+      "answer": "insufficient_visibility",
+      "fact_id": "perception.fact.a63ebdf842b6c3807aa70b7b128631f85b9d1a8dd4603ed6e308cd22ab586ec1",
+      "status": "unknown",
+      "upstream_completion_id": "chatcmpl-93ebfecc963ffa21"
+    },
+    "perception.object.453cddfc343010fd1958c4b89b08f38434a4fdc2d471ed4ec2f86f40a7c0a9f0": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.47b9669cfd61fdbfd72ca725465114cfdf55917a8fdbc13fb9d63f44f527e8db",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-a23eb977bbcce0ad"
+    },
+    "perception.object.6670f5557f9acc5597d8706e9c60a4eb5b75db0c080b1241b7d391ce2cd316d2": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.edf73d0f3d9f09d008f9478517bfd78274f99354c0eb12277efd36b610ea6fe8",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-8daebadc4a537f84"
+    },
+    "perception.object.b22cdeefb3d4417da46577941cc7fc9b94d438e4435d38934ef49cebf22a09b2": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.93ef6d8cb3c7b3e66027a184573f0879cfc248c4734001b51ae233a6ae549b67",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-8406435441657715"
+    },
+    "perception.object.0590b5c6f34fcab443aad9a5f98c41f0206714f135ab4252aa369f41d3dd9f1f": {
+      "answer": "insufficient_visibility",
+      "fact_id": "perception.fact.31c420bd2001af57fa208f7e541255a75dd71c226795f73f454c4295f2787ea9",
+      "status": "unknown",
+      "upstream_completion_id": "chatcmpl-93890285b20fbd74"
+    },
+    "perception.object.86c690cb2e757fefc22fb020be3ea983006bc8f1d7895ff8b97a02a0e069e8e4": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.e53752b9eb3aebb0ebc2a0e5b21687236b3de4b6345d71b808d2bb67858b7c51",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-8c33352618a6f9cf"
+    },
+    "perception.object.3e24d37cbe125b11403e6220ee4b3b5086300e92c299c35f58961d0116e7f4c5": {
+      "answer": "occupies_sidewalk",
+      "fact_id": "perception.fact.976d27147737b1860220d89555d275d3889edd509e8099ba0b6e2c30bec444fc",
+      "status": "known",
+      "upstream_completion_id": "chatcmpl-86c0dbecafa11cd9"
+    }
+  },
+  "decisions": {
+    "perception.object.453cddfc343010fd1958c4b89b08f38434a4fdc2d471ed4ec2f86f40a7c0a9f0": {
+      "decision_id": "synthetic.decision.000fa8ac26566ca3ee7a6461e83a4a7919d4d5651252a765dfab62366e4ad184",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    },
+    "perception.object.3e24d37cbe125b11403e6220ee4b3b5086300e92c299c35f58961d0116e7f4c5": {
+      "decision_id": "synthetic.decision.ad51be590d81924a94e277122138d187d250c99cc871c36dc4a5ddfe1adeab60",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    },
+    "perception.object.648a430fa22a2b9b202d80028df64419d1b95552d434c2e81135abb3d94f4e06": {
+      "decision_id": "synthetic.decision.b41a908ae040b66c38819f994a7589c3ac13ee6fdfd0833e02fb2709c9b90bfd",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    },
+    "perception.object.0590b5c6f34fcab443aad9a5f98c41f0206714f135ab4252aa369f41d3dd9f1f": {
+      "decision_id": "synthetic.decision.732d0cdfeb912365fbc5c8634e189786b867889ac7b8298d8bac0de758300ff2",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable",
+        "required_fact_unavailable"
+      ]
+    },
+    "perception.object.86c690cb2e757fefc22fb020be3ea983006bc8f1d7895ff8b97a02a0e069e8e4": {
+      "decision_id": "synthetic.decision.2c613f8636b7c64119876e2b05a04a77a21bd3e73540f8fcc31f23724a94be57",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    },
+    "perception.object.78850a9a0bedad953572dbf0982ab1372c41aa31b5a11cee90c388f76a995a90": {
+      "decision_id": "synthetic.decision.e09537473f791b02241758faef2cdaac274460dfcd7bd028e92bf8c1116353f3",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable",
+        "required_fact_unavailable"
+      ]
+    },
+    "perception.object.6670f5557f9acc5597d8706e9c60a4eb5b75db0c080b1241b7d391ce2cd316d2": {
+      "decision_id": "synthetic.decision.493afbd64599ca14704dd374b2b4d697ae06433314617ae2c95075e7235823f4",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    },
+    "perception.object.9b02b849efb167606c5ca52f7b5b29e1e8501358939cd27140a7c53057dfe1ad": {
+      "decision_id": "synthetic.decision.5ac3ba538c427474651ad596021a44c8224e20493c5c2073af943703c8b33ea2",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable",
+        "required_fact_unavailable"
+      ]
+    },
+    "perception.object.b22cdeefb3d4417da46577941cc7fc9b94d438e4435d38934ef49cebf22a09b2": {
+      "decision_id": "synthetic.decision.25271ef5cd3eec45171b14b997b8a7958d7feb6151064da7ad8702b5c186264c",
+      "result": "uncertain",
+      "rule_outcome": "blocked",
+      "guard_reasons": [
+        "evidence_unavailable"
+      ]
+    }
+  },
+  "decision_counts": {
+    "uncertain": 9
+  },
+  "coverage": "partial",
+  "summary_result": "uncertain"
+}

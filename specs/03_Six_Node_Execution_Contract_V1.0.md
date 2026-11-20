@@ -18,7 +18,7 @@ workflow or Rule evaluation execution. R2.1 source commit is
 - Every output is schema-validated before downstream use.
 - Node, Task, Execution, Fact and Decision states are distinct.
 - N02 does not produce instances; N03 does not associate instances with N02.
-- N04 performs one normal-path joint request per Object.
+- N04 preserves one joint observation batch per Object; §6 defines the physical VLM request scope.
 - N05 executes Profile-bound ToolPlan regardless of N06 candidate prediction.
 - N06 candidate prediction cannot silently suppress mandatory Rule applicability checks.
 
@@ -135,7 +135,7 @@ not returned is a discovery omission, not an inapplicable Profile. Rejected
 unregistered/noneligible proposals are validation diagnostics, never valid hits
 or new Profile exclusion records. N02 input does not include the excluded or
 unresolved partition as model candidates. N03 copies each hit's exact effective
-Question set; N04 still makes one normal-path joint request per Object.
+Question set; N04 retains all its Questions in the Object observation batch.
 
 Questions are selected from the Profile's frozen configuration, not invented by the model. N02 is optimized for recall, but model confidence is not a recall guarantee. No-hit means no Profile was returned; it is not a final `no_violation` Decision.
 
@@ -174,7 +174,7 @@ Outputs:
 - original-image pixel XYXY boxes;
 - coordinate system and image dimensions;
 - grounding provenance and scores;
-- visualization/evidence references;
+- original media and grounding evidence references;
 - explicit per-Profile grounding status, including no-target, failed and partial.
 - GroundingRecord producer branch model/tool, with corresponding ModelInvocation/ToolExecution provenance; no fake model invocation for tool-only localization.
 - ToolExecution.invocation_origin.kind=grounding_binding, node_id=N03, same execution/Profile/binding and actual Attempt; object_ref absent, generated_fact_refs empty (F05, 01 §4.5).
@@ -192,17 +192,22 @@ Rules:
 Coordinate contract:
 - origin top-left;
 - `xyxy = [x_min, y_min, x_max, y_max]`;
-- pixel coordinates relative to original RGB image;
+- pixel coordinates relative to the original RGB image. The group box encloses its ordered member boxes. A group remains one Object even when it contains multiple vehicles;
 - validate bounds and positive area;
 - transformed/cropped coordinates require explicit transform provenance.
 
 ## 6. N04 — VLM Observation
 
-Request granularity:
-`one Object → one normal-path joint VLM request → all effective Questions for that Object`.
+### Physical request and Object projection
+
+The signed observation binding selects the protocol. Legacy bindings submit one joint request per Object. A binding marked `JIMU_N04_REGIONS_V1` uses a projection-capable provider. On the normal path the provider sends the original image once with all selected N03 regions and their assigned Questions. Empty grounding produces zero N04 model calls. Eligible regions must share a compatible binding. An unsupported mix or an oversized request fails explicitly; it must never trigger per-region fallback calls.
+
+The compiler uses top-left-origin `xyxy` coordinates normalized to 0–999, retains grouped member order, and lists each shared Question once. Short region IDs are scoped to this request. The mapping to N03 Object IDs is pinned along with the effective question sets. Each logical Object request to the adapter receives only its own answer slots. Each Object keeps a distinct ObservationBatch, Fact authority and N05/N06 linkage. Physical VLM call counts come from upstream dispatch receipts; logical Object projections are counted separately.
+
+The per-run provider journal binds the execution and attempt to a shared request identity, exact original image, region manifest, model request and response. Reopening a completed request reads the recorded response. An unresolved prior dispatch cannot authorize another physical call under the same identity. An explicit new Attempt can call again. Legacy pinned Releases and archived evidence retain their original semantics.
 
 Inputs:
-- original image and Object crop/ROI reference with transform metadata;
+- the pinned original RGB image and the N03 Object ROI. N03 publishes geometry directly; N04 locates targets using coordinates in either request protocol. Historical marked-media fields are readable for artifact replay; new observations use the original;
 - exact Profile and Question versions;
 - Context View built only from each Question's allowlist;
 - Prompt Compiler output;
@@ -210,7 +215,7 @@ Inputs:
 - Profile.observation_binding_ref and the N02-pinned question_selection_ref/effective_question_refs; exact Question prompt/primary-Fact contracts compose the joint response schema.
 
 Output:
-- one ObservationBatch per Object/request;
+- one ObservationBatch per Object;
 - independent QuestionResult entries;
 - independently validated Facts;
 - one ModelInvocation reference;
@@ -243,7 +248,7 @@ Error semantics:
 - omitted field is not `false`.
 
 Retries:
-- normal path is one request per Object.
+- each logical request contains all effective Questions for its Object.
 - A retry is a new whole-batch Attempt with a new invocation ID and explicit retry reason.
 - Do not silently issue per-Question follow-up requests.
 - If a future repair-request mode is introduced, it must be a separately versioned execution policy and must preserve original and repair attempts.
@@ -253,7 +258,7 @@ Retries:
 Inputs:
 - Object;
 - Profile-pinned ToolPlan;
-- original image/ROI and transforms;
+- the current Object’s original-pixel group box and ordered member boxes. Image tools read pixels from the pinned original and may crop member regions for processing. Parking zones and other scene geometry remain separate tool inputs;
 - validated N04 Facts only where declared as Tool inputs;
 - allowlisted Tool Registry and resource policy.
 
@@ -569,7 +574,7 @@ Task → Execution → NodeRun → Attempt → ModelInvocation/ToolExecution →
 
 - N02 schema rejects boxes/Object IDs.
 - N03 cannot alter Question refs.
-- N04 normal path has one joint request per Object.
+- N04 region mode sends one physical request per nonempty compatible image/attempt; legacy mode sends one per Object.
 - N04 partial invalid Fact does not corrupt valid sibling Facts.
 - N05 runs independently of candidate prediction.
 - ToolPlan cycle and invalid mapping rejected.

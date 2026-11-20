@@ -7,6 +7,7 @@ from pydantic import Field, TypeAdapter, model_validator
 
 from jimu_runtime.bundle.integrity import sha256_digest
 from jimu_runtime.domain.base import ContractModel
+from jimu_runtime.domain.enums import NodeRunStatus
 from jimu_runtime.domain.nodes.context import ContextBuildInput, ContextBuildOutput
 from jimu_runtime.domain.nodes.discovery import (
     DiscoveryAttemptOutput,
@@ -26,7 +27,12 @@ from jimu_runtime.domain.nodes.grounding import (
     _GroundingInvocationGap,
 )
 from jimu_runtime.domain.nodes.observation import ObservationInput
-from jimu_runtime.domain.nodes.tool_execution import ToolNodeInput, ToolNodeOutput
+from jimu_runtime.domain.nodes.tool_execution import (
+    ToolNodeInput,
+    ToolNodeOutput,
+    ToolPlanCompletionRecord,
+    ToolPlanRunSummary,
+)
 from jimu_runtime.domain.primitives import ArtifactId
 from jimu_runtime.domain.runtime.applicability import (
     ApplicabilityTrace,
@@ -40,7 +46,7 @@ from jimu_runtime.domain.runtime.coverage import MandatoryRuleObligation
 from jimu_runtime.domain.runtime.decisions import RecordList
 from jimu_runtime.domain.runtime.evidence import EvidenceAsset
 from jimu_runtime.domain.runtime.executions import NodeId, PinnedRuntimeInput
-from jimu_runtime.domain.runtime.facts import FactRecord
+from jimu_runtime.domain.runtime.facts import AttemptRef, FactRecord, NodeRunRef
 from jimu_runtime.domain.runtime.intake import ContextSnapshot
 from jimu_runtime.domain.runtime.invocations import ModelInvocation
 from jimu_runtime.domain.runtime.observations import ObservationBatch
@@ -244,6 +250,9 @@ class ObservationMessage(_Message):
     durable_request_evidence: RecordList[EvidenceAsset] = Field(
         default=(), exclude_if=lambda value: not value
     )
+    original_image_evidence: EvidenceAsset | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     authority: ObservationBatchSelection | None
 
     def input_envelope(self) -> NodeInputEnvelope:
@@ -254,6 +263,17 @@ class ObservationMessage(_Message):
 
     @property
     def evidence(self) -> tuple[EvidenceAsset, ...]:
+        return (
+            *self.request_assets,
+            *(
+                (self.original_image_evidence,)
+                if self.original_image_evidence is not None
+                else ()
+            ),
+        )
+
+    @property
+    def request_assets(self) -> tuple[EvidenceAsset, ...]:
         return (
             *tuple(item.evidence for item in self.request_evidence),
             *self.durable_request_evidence,
@@ -296,6 +316,25 @@ class ObservationMessage(_Message):
         )
 
 
+def tool_plan_completion_artifact(
+    inputs: ToolNodeInput, summary: ToolPlanRunSummary
+) -> SyntheticArtifact:
+    if (summary.tool_plan_ref, summary.object_ref.record_id) != (
+        inputs.tool_plan_ref,
+        inputs.object_record.object_id,
+    ):
+        raise ValueError("ToolPlan completion must retain the bound Plan and Object")
+    env = inputs.envelope
+    record = ToolPlanCompletionRecord(
+        schema_version=inputs.schema_version,
+        execution_id=env.execution_id,
+        node_run_ref=NodeRunRef(record_kind=K.NODE_RUN, record_id=env.node_run_id),
+        attempt_ref=AttemptRef(record_kind=K.ATTEMPT, record_id=env.attempt_id),
+        summary=summary,
+    )
+    return artifact(K.TOOL_PLAN_RUN_SUMMARY, env.attempt_id, record)
+
+
 class ToolMessage(_Message):
     kind: Literal["tool"] = "tool"
     inputs: ToolNodeInput
@@ -316,6 +355,39 @@ class ToolMessage(_Message):
 
     def output_envelope(self) -> NodeOutputEnvelope:
         return self.output.envelope
+
+    @property
+    def completion_artifact(self) -> SyntheticArtifact | None:
+        if not any(
+            pin.ref.record_kind is K.TOOL_PLAN_RUN_SUMMARY
+            for pin in self.output.envelope.output_artifacts
+        ):
+            return None
+        return tool_plan_completion_artifact(self.inputs, self.output.summary)
+
+    @model_validator(mode="after")
+    def check_completion_artifact(self) -> Self:
+        completion = self.completion_artifact
+        pins = self.output.envelope.output_artifacts
+        if completion is None:
+            # Historical messages may carry an ordinary output pin. The worker
+            # separately requires a completion artifact for new zero-child success.
+            return self
+        if (
+            pins != (completion.pin,)
+            or self.output.envelope.status is not NodeRunStatus.SUCCEEDED
+            or self.executions
+            or self.facts
+            or self.authorities
+            or self.evidence
+            or self.nested_invocations
+            or self.output.tool_fact_refs
+            or self.output.evidence_refs
+        ):
+            raise ValueError(
+                "ToolPlan completion requires its exact summary as the sole output"
+            )
+        return self
 
     @property
     def authority_artifacts(self) -> tuple[SyntheticArtifact, ...]:

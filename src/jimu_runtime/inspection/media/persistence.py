@@ -15,6 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from jimu_runtime.domain.base import ContractModel
 from jimu_runtime.domain.definition_enums import EvidenceType
 from jimu_runtime.domain.enums import FactStatus, RuntimeRecordKind
 from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
@@ -27,8 +28,14 @@ from jimu_runtime.domain.runtime.evidence import (
 )
 from jimu_runtime.domain.runtime.executions import NodeId
 from jimu_runtime.domain.runtime.facts import EvidenceRef
-from jimu_runtime.domain.runtime.intake import AcceptedTask, IdempotencyScope
+from jimu_runtime.domain.runtime.intake import (
+    AcceptedTask,
+    ContextSnapshot,
+    IdempotencyScope,
+    RegionDefinitionProvenance,
+)
 from jimu_runtime.domain.runtime.media import (
+    BBoxXYXY,
     FinalizedAsset,
     ImageDimensions,
     MediaAsset,
@@ -44,7 +51,13 @@ from jimu_runtime.domain.runtime.tool_executions import (
     ToolPlanStepOrigin,
     ToolResult,
 )
-from jimu_runtime.domain.values import EnumValue, RecordValue
+from jimu_runtime.domain.values import (
+    BooleanValue,
+    EnumValue,
+    ListValue,
+    RecordValue,
+    Value,
+)
 from jimu_runtime.gateway.http_wire import VerifiedImage, WireError, strict_json
 from jimu_runtime.gateway.invocation import TransportResult
 from jimu_runtime.gateway.journal import DispatchJournal, StoredDispatch
@@ -55,6 +68,13 @@ from jimu_runtime.gateway.journal_records import (
     ToolDispatchResult,
     ToolDispatchTarget,
 )
+from jimu_runtime.inspection.geometry.parking_members_evidence import (
+    GROUP_CAPABILITY,
+    GROUP_OUTPUT,
+    GROUP_REPORT,
+    ParkingMemberGeometryEvidence,
+)
+from jimu_runtime.inspection.geometry.region import ParkingArea
 from jimu_runtime.inspection.media.decoder import verify_image
 from jimu_runtime.inspection.media.files import LocalBytes
 from jimu_runtime.inspection.media.types import (
@@ -302,6 +322,8 @@ class _ToolContext:
     target: ToolDispatchTarget
     task: AcceptedTask
     original: VerifiedOriginal
+    member_boxes: tuple[BBoxXYXY, ...] = ()
+    parking_area: ParkingArea | None = None
 
 
 async def _locked(connection: AsyncConnection, key: str) -> None:
@@ -1367,6 +1389,119 @@ class LocalMediaStore:
             limit = min(limit, max_bytes)
         return await self._read_blob(binding, role, blob, limit)
 
+    async def _group_input[T: ContractModel](
+        self,
+        connection: AsyncConnection,
+        binding: _DispatchKey,
+        target: ToolDispatchTarget,
+        kind: RuntimeRecordKind,
+        node_id: NodeId,
+        model: type[T],
+    ) -> T:
+        pins = tuple(
+            item
+            for item in target.input_refs or ()
+            if item.artifact_ref.record_kind is kind
+        )
+        if len(pins) != 1:
+            raise MediaError("geometry_sidecar_input_mismatch")
+        (pin,) = pins
+        key = f"{kind.value}.{pin.artifact_ref.record_id}"
+        rows = (
+            await connection.execute(
+                text("""
+                    SELECT p.node_run_id, p.attempt_id, a.output_key, a.output_digest
+                    FROM jimu_workflow.produced_outputs p
+                    JOIN jimu_workflow.authority_outputs a
+                        USING (project_id, client_id, execution_id, node_run_id, attempt_id)
+                    WHERE (p.project_id, p.client_id, p.execution_id)
+                        = (:project, :client, :execution)
+                        AND p.output_kind = :kind AND p.output_key = :key
+                    LIMIT 2
+                """),
+                {**binding.params(), "kind": kind.value, "key": key},
+            )
+        ).all()
+        if len(rows) != 1:
+            raise MediaError("geometry_sidecar_input_mismatch")
+        (row,) = rows
+        owner = (
+            connection,
+            binding.scope,
+            binding.execution_id,
+            row.node_run_id,
+            row.attempt_id,
+        )
+        record = await read_output(*owner, key, model)
+        authority = await read_output(*owner, row.output_key, SucceededNodeOutput)
+        if (
+            record is None
+            or record_digest(record) != pin.digest
+            or authority is None
+            or authority.node_id is not node_id
+            or sha256(authority.stable_json().encode("utf-8")).hexdigest()
+            != row.output_digest
+            or not any(
+                item.ref.record_kind is kind
+                and item.ref.record_id == pin.artifact_ref.record_id
+                and item.digest == pin.digest
+                for item in authority.output_artifacts
+            )
+        ):
+            raise MediaError("geometry_sidecar_input_mismatch")
+        return record
+
+    async def _group_geometry_inputs(
+        self,
+        connection: AsyncConnection,
+        binding: _DispatchKey,
+        target: ToolDispatchTarget,
+        original: VerifiedOriginal,
+    ) -> tuple[tuple[BBoxXYXY, ...], ParkingArea]:
+        obj = await self._group_input(
+            connection,
+            binding,
+            target,
+            RuntimeRecordKind.OBJECT,
+            NodeId.N03,
+            ObjectRecord,
+        )
+        snapshot = await self._group_input(
+            connection,
+            binding,
+            target,
+            RuntimeRecordKind.CONTEXT_SNAPSHOT,
+            NodeId.N01,
+            ContextSnapshot,
+        )
+        area = tuple(
+            value for value in snapshot.values if value.field_path == ("parking_area",)
+        )
+        if (
+            target.object_ref is None
+            or obj.object_id != target.object_ref.record_id
+            or obj.profile_ref != target.profile_ref
+            or obj.execution_id != binding.execution_id
+            or obj.execution_id != snapshot.execution_id
+            or obj.source_media_ref != original.asset.media_ref
+            or obj.coordinate_system != original.coordinate_system
+            or len(area) != 1
+        ):
+            raise MediaError("geometry_sidecar_input_mismatch")
+        (entry,) = area
+        if (
+            not isinstance(entry.provenance, RegionDefinitionProvenance)
+            or entry.provenance.region_ref != snapshot.region_ref
+        ):
+            raise MediaError("geometry_sidecar_input_mismatch")
+        try:
+            parking_area = ParkingArea.model_validate(
+                _plain_geometry_value(entry.value)
+            )
+        except ValueError as exc:
+            raise MediaError("geometry_sidecar_input_mismatch") from exc
+        return obj.grounding_member_boxes or (obj.bbox,), parking_area
+
     async def _tool_context(
         self, binding: _DispatchKey, slot: ToolSidecarSlot
     ) -> _ToolContext:
@@ -1398,7 +1533,16 @@ class LocalMediaStore:
         if task.task_id != row.task_id:
             raise MediaError("tool_sidecar_task_mismatch")
         original = await self.verified_task_original(binding.scope, task)
-        return _ToolContext(binding, dispatch, target, task, original)
+        member_boxes: tuple[BBoxXYXY, ...] = ()
+        parking_area = None
+        if target.capability_id == GROUP_CAPABILITY:
+            async with self._engine.connect() as connection:
+                member_boxes, parking_area = await self._group_geometry_inputs(
+                    connection, binding, target, original
+                )
+        return _ToolContext(
+            binding, dispatch, target, task, original, member_boxes, parking_area
+        )
 
     async def stage_tool_sidecar(
         self,
@@ -1791,6 +1935,14 @@ _GEOMETRY_METRICS = {
 }
 
 
+def _plain_geometry_value(value: Value) -> object:
+    if isinstance(value, RecordValue):
+        return {key: _plain_geometry_value(item) for key, item in value.value.items()}
+    if isinstance(value, ListValue):
+        return [_plain_geometry_value(item) for item in value.value]
+    return value.value
+
+
 def _geometry_document(context: _ToolContext, content: bytes) -> dict[str, object]:
     document = _check_json_object(content)
     dispatch, target = context.dispatch, context.target
@@ -1806,6 +1958,22 @@ def _geometry_document(context: _ToolContext, content: bytes) -> dict[str, objec
         "implementation": target.implementation_proof_ref.model_dump(mode="json"),
         "original_sha256": context.original.asset.media_ref.sha256,
     }
+    if target.capability_id == GROUP_CAPABILITY:
+        try:
+            grouped = ParkingMemberGeometryEvidence.model_validate_json(content)
+        except ValueError as exc:
+            raise MediaError("geometry_sidecar_document_invalid") from exc
+        if (
+            any(document.get(key) != value for key, value in exact.items())
+            or grouped.input_refs != target.input_refs
+            or grouped.parking_area != context.parking_area
+            or grouped.parking_area.coordinate_system
+            != context.original.coordinate_system
+            or tuple(member.bbox for member in grouped.members)
+            != tuple(box.xyxy for box in context.member_boxes)
+        ):
+            raise MediaError("geometry_sidecar_dispatch_mismatch")
+        return document
     if set(document) != _GEOMETRY_FIELDS or any(
         document[key] != value for key, value in exact.items()
     ):
@@ -1861,6 +2029,9 @@ def _geometry_document(context: _ToolContext, content: bytes) -> dict[str, objec
 def _verify_geometry_result(
     document: dict[str, object], result: ToolResult, ref: EvidenceRef
 ) -> None:
+    if document.get("kind") == GROUP_REPORT:
+        _verify_member_geometry_result(document, result, ref)
+        return
     output_name = "wheel_boundary_relation"
     state = next(
         (item for item in result.output_states if item.output_name == output_name), None
@@ -1894,6 +2065,36 @@ def _verify_geometry_result(
         refs = named.get(name, ())
         if len(refs) != 1 or refs[0].record_id != item["evidence_id"]:
             raise MediaError("geometry_sidecar_input_mismatch")
+
+
+def _verify_member_geometry_result(
+    document: dict[str, object], result: ToolResult, ref: EvidenceRef
+) -> None:
+    state = next(
+        (item for item in result.output_states if item.output_name == GROUP_OUTPUT),
+        None,
+    )
+    payload = None if isinstance(result, FailedToolResult) else result.payload
+    value = (
+        payload.value.get(GROUP_OUTPUT) if isinstance(payload, RecordValue) else None
+    )
+    if state is None or ref not in state.evidence_refs:
+        raise MediaError("geometry_sidecar_output_mismatch")
+    expected = document["matches"]
+    if expected is None:
+        if (
+            not isinstance(state, NonKnownToolOutputState)
+            or state.fact_status != FactStatus.UNKNOWN
+            or value is not None
+            or ref not in state.reason.diagnostic_refs
+        ):
+            raise MediaError("geometry_sidecar_output_mismatch")
+    elif (
+        not isinstance(state, KnownToolOutputState)
+        or not isinstance(value, BooleanValue)
+        or value.value is not expected
+    ):
+        raise MediaError("geometry_sidecar_output_mismatch")
 
 
 def _mask_output_status(

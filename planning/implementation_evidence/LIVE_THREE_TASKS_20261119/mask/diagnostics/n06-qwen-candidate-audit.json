@@ -1,0 +1,24 @@
+{
+  "started_at": "2026-11-19T12:19:41.281409+00:00",
+  "elapsed_seconds": 0.4598534330143593,
+  "http_status": 200,
+  "source_observation_model_response_id": "chatcmpl-8bae2bcf2e661ea5",
+  "source_image_sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3",
+  "request": {
+    "model": "Qwen3_5-9B",
+    "temperature": 0,
+    "max_tokens": 400,
+    "response_format": {
+      "type": "json_object"
+    },
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "messages": [
+      {
+        "role": "user",
+        "content": "根据以下观察，只输出 JSON 的 candidate_categories 数组及 evidence_gaps 数组。允许候选只有 staff_not_wear_mask 和 staff_mask_misplaced；候选供确定性规则检查，不是裁决。可见食品操作和未佩戴口罩可提出 staff_not_wear_mask；必须单独记录欠缺的受雇人员身份绑定和相机配置的后厨区域义务。不得凭衣着或厨具生成身份，也不得把可见厨房线索视为可信后厨区域数据。禁止输出违规裁决。观察：{\"face_visibility\": \"assessable\", \"mask_state\": \"not_worn\", \"food_operation\": \"visible\", \"kitchen_cues\": \"visible\", \"employment_status\": \"unknown\", \"evidence\": \"人物面部清晰可见，无口罩；手持汤勺正在向碗中盛放食物，操作明确；背景可见不锈钢厨具、灶台、排烟罩、食材盆等厨房设施。\"}"
+      }
+    ]
+  }
+}

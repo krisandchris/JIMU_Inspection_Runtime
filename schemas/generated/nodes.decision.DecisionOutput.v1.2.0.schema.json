@@ -1,0 +1,1457 @@
+{
+  "$defs": {
+    "AbsentOptional_CandidatePredictionRef_": {
+      "$ref": "#/$defs/CandidatePredictionRef"
+    },
+    "AbsentOptional_ObjectRef_": {
+      "$ref": "#/$defs/ObjectRef"
+    },
+    "AncestorNotEvaluatedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "ancestor_obligation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Ancestor Obligation Id",
+          "type": "string"
+        },
+        "decisive_ancestor_ref": {
+          "$ref": "#/$defs/ApplicabilityAncestorRef"
+        },
+        "disposition": {
+          "const": "not_evaluated",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability",
+        "decisive_ancestor_ref",
+        "ancestor_obligation_id"
+      ],
+      "title": "AncestorNotEvaluatedObligation",
+      "type": "object"
+    },
+    "ApplicabilityAncestorRef": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProfileEligibilityEvaluationRef"
+        },
+        {
+          "$ref": "#/$defs/RuleSetApplicabilityEvaluationRef"
+        }
+      ]
+    },
+    "ApplicabilityEvaluationRef": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApplicabilityAncestorRef"
+        },
+        {
+          "$ref": "#/$defs/RuleApplicabilityEvaluationRef"
+        }
+      ]
+    },
+    "ApplicabilityTraceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "applicability_trace",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ApplicabilityTraceRef",
+      "type": "object"
+    },
+    "ApplicableNotEvaluatedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "blocker_node_run_ref": {
+          "$ref": "#/$defs/NodeRunRef"
+        },
+        "disposition": {
+          "const": "applicable_not_evaluated",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability",
+        "blocker_node_run_ref"
+      ],
+      "title": "ApplicableNotEvaluatedObligation",
+      "type": "object"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "entity",
+        "region",
+        "profile",
+        "facet",
+        "question",
+        "tool",
+        "tool_plan",
+        "rule",
+        "rule_set",
+        "model_binding",
+        "fact_schema",
+        "prompt_template",
+        "response_schema",
+        "attribute_schema",
+        "context_schema",
+        "tool_input_schema",
+        "tool_output_schema",
+        "object_schema",
+        "decision_schema",
+        "value_schema",
+        "policy",
+        "vocabulary",
+        "geometry_resource",
+        "static_asset",
+        "fact_producer_catalog"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactOutputRef": {
+      "additionalProperties": false,
+      "description": "Immutable reference and digest of an emitted runtime artifact.",
+      "properties": {
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "ref": {
+          "$ref": "#/$defs/RuntimeRecordRef"
+        }
+      },
+      "required": [
+        "ref",
+        "digest"
+      ],
+      "title": "ArtifactOutputRef",
+      "type": "object"
+    },
+    "CancelledNodeOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "duration_ms": {
+          "$ref": "#/$defs/NonNegativeBudget"
+        },
+        "error": {
+          "$ref": "#/$defs/NodeError"
+        },
+        "finished_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "node_id": {
+          "$ref": "#/$defs/NodeId"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "output_artifacts": {
+          "$ref": "#/$defs/NodeOutputs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "status": {
+          "const": "cancelled",
+          "title": "Status",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "node_id",
+        "node_run_id",
+        "attempt_id",
+        "trace",
+        "output_artifacts",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "status",
+        "error"
+      ],
+      "title": "CancelledNodeOutput",
+      "type": "object"
+    },
+    "CandidatePredictionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "candidate_prediction",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "CandidatePredictionRef",
+      "type": "object"
+    },
+    "ContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ContentRef",
+      "type": "object"
+    },
+    "CoverageReason": {
+      "enum": [
+        "context_build_blocked",
+        "no_eligible_profiles",
+        "empty_configured_scope",
+        "profile_not_discovered",
+        "discovery_no_hits",
+        "discovery_failed",
+        "discovery_partial",
+        "discovery_not_evaluated",
+        "grounding_no_target",
+        "grounding_failed",
+        "grounding_partial",
+        "grounding_not_evaluated",
+        "decision_not_evaluated",
+        "required_evidence_blocked",
+        "predicate_unknown",
+        "applicability_unresolved"
+      ],
+      "title": "CoverageReason",
+      "type": "string"
+    },
+    "DecisionRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "decision",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "DecisionRef",
+      "type": "object"
+    },
+    "DependencyNotEvaluatedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "blocker_node_run_ref": {
+          "$ref": "#/$defs/NodeRunRef"
+        },
+        "disposition": {
+          "const": "dependency_not_evaluated",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/CoverageReason"
+        }
+      },
+      "required": [
+        "disposition",
+        "reason",
+        "blocker_node_run_ref"
+      ],
+      "title": "DependencyNotEvaluatedObligation",
+      "type": "object"
+    },
+    "Description": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "EvaluatedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_ref": {
+          "$ref": "#/$defs/DecisionRef"
+        },
+        "disposition": {
+          "const": "evaluated",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability",
+        "decision_ref"
+      ],
+      "title": "EvaluatedObligation",
+      "type": "object"
+    },
+    "ExcludedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "excluded",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability"
+      ],
+      "title": "ExcludedObligation",
+      "type": "object"
+    },
+    "ExecutionCoverageRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "execution_coverage",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ExecutionCoverageRef",
+      "type": "object"
+    },
+    "FailedNodeOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "duration_ms": {
+          "$ref": "#/$defs/NonNegativeBudget"
+        },
+        "error": {
+          "$ref": "#/$defs/NodeError"
+        },
+        "finished_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "node_id": {
+          "$ref": "#/$defs/NodeId"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "output_artifacts": {
+          "$ref": "#/$defs/NodeOutputs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "status": {
+          "const": "failed",
+          "title": "Status",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "node_id",
+        "node_run_id",
+        "attempt_id",
+        "trace",
+        "output_artifacts",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "status",
+        "error"
+      ],
+      "title": "FailedNodeOutput",
+      "type": "object"
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "GuardBlockedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_ref": {
+          "$ref": "#/$defs/DecisionRef"
+        },
+        "disposition": {
+          "const": "blocked",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability",
+        "decision_ref"
+      ],
+      "title": "GuardBlockedObligation",
+      "type": "object"
+    },
+    "IncludedObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "included",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability"
+      ],
+      "title": "IncludedObligation",
+      "type": "object"
+    },
+    "IssueIndex": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "IssuePath": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/FieldName"
+          },
+          {
+            "$ref": "#/$defs/IssueIndex"
+          }
+        ]
+      },
+      "maxItems": 32,
+      "type": "array"
+    },
+    "MandatoryRuleCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "obligations": {
+          "$ref": "#/$defs/RecordList_MandatoryRuleObligation_"
+        },
+        "scan": {
+          "const": "all_mandatory",
+          "title": "Scan",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scan",
+        "obligations"
+      ],
+      "title": "MandatoryRuleCoverage",
+      "type": "object"
+    },
+    "MandatoryRuleObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "obligation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Obligation Id",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/ObligationDisposition"
+        },
+        "profile_ref": {
+          "$ref": "#/$defs/ProfileContentRef"
+        },
+        "target": {
+          "$ref": "#/$defs/ObligationTarget"
+        }
+      },
+      "required": [
+        "obligation_id",
+        "profile_ref",
+        "target",
+        "outcome"
+      ],
+      "title": "MandatoryRuleObligation",
+      "type": "object"
+    },
+    "NodeError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "error_class": {
+          "enum": [
+            "validation",
+            "dependency",
+            "transport",
+            "timeout",
+            "resource",
+            "internal"
+          ],
+          "title": "Error Class",
+          "type": "string"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "validation_issues": {
+          "$ref": "#/$defs/NodeIssues"
+        }
+      },
+      "required": [
+        "code",
+        "error_class",
+        "retryable",
+        "message",
+        "validation_issues"
+      ],
+      "title": "NodeError",
+      "type": "object"
+    },
+    "NodeId": {
+      "enum": [
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "title": "NodeId",
+      "type": "string"
+    },
+    "NodeIssues": {
+      "items": {
+        "$ref": "#/$defs/ValidationIssue"
+      },
+      "maxItems": 1024,
+      "type": "array"
+    },
+    "NodeOutputEnvelope": {
+      "discriminator": {
+        "mapping": {
+          "cancelled": "#/$defs/CancelledNodeOutput",
+          "failed": "#/$defs/FailedNodeOutput",
+          "succeeded": "#/$defs/SucceededNodeOutput"
+        },
+        "propertyName": "status"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SucceededNodeOutput"
+        },
+        {
+          "$ref": "#/$defs/FailedNodeOutput"
+        },
+        {
+          "$ref": "#/$defs/CancelledNodeOutput"
+        }
+      ]
+    },
+    "NodeOutputs": {
+      "items": {
+        "$ref": "#/$defs/ArtifactOutputRef"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NodeRunRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "node_run",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "NodeRunRef",
+      "type": "object"
+    },
+    "NonNegativeBudget": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "ObjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "object",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ObjectRef",
+      "type": "object"
+    },
+    "ObligationDisposition": {
+      "discriminator": {
+        "mapping": {
+          "applicable_not_evaluated": "#/$defs/ApplicableNotEvaluatedObligation",
+          "blocked": "#/$defs/GuardBlockedObligation",
+          "dependency_not_evaluated": "#/$defs/DependencyNotEvaluatedObligation",
+          "evaluated": "#/$defs/EvaluatedObligation",
+          "excluded": "#/$defs/ExcludedObligation",
+          "included": "#/$defs/IncludedObligation",
+          "not_evaluated": "#/$defs/AncestorNotEvaluatedObligation",
+          "unresolved": "#/$defs/UnresolvedMandatoryObligation"
+        },
+        "propertyName": "disposition"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/IncludedObligation"
+        },
+        {
+          "$ref": "#/$defs/ExcludedObligation"
+        },
+        {
+          "$ref": "#/$defs/UnresolvedMandatoryObligation"
+        },
+        {
+          "$ref": "#/$defs/EvaluatedObligation"
+        },
+        {
+          "$ref": "#/$defs/GuardBlockedObligation"
+        },
+        {
+          "$ref": "#/$defs/AncestorNotEvaluatedObligation"
+        },
+        {
+          "$ref": "#/$defs/ApplicableNotEvaluatedObligation"
+        },
+        {
+          "$ref": "#/$defs/DependencyNotEvaluatedObligation"
+        }
+      ]
+    },
+    "ObligationTarget": {
+      "discriminator": {
+        "mapping": {
+          "profile": "#/$defs/ProfileObligationTarget",
+          "rule": "#/$defs/RuleObligationTarget",
+          "rule_set": "#/$defs/RuleSetObligationTarget"
+        },
+        "propertyName": "scope"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ProfileObligationTarget"
+        },
+        {
+          "$ref": "#/$defs/RuleSetObligationTarget"
+        },
+        {
+          "$ref": "#/$defs/RuleObligationTarget"
+        }
+      ]
+    },
+    "ProfileContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "profile",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ProfileContentRef",
+      "type": "object"
+    },
+    "ProfileEligibilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "profile_eligibility_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "ProfileEligibilityEvaluationRef",
+      "type": "object"
+    },
+    "ProfileObligationTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "const": "profile",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope"
+      ],
+      "title": "ProfileObligationTarget",
+      "type": "object"
+    },
+    "RecordList_MandatoryRuleObligation_": {
+      "items": {
+        "$ref": "#/$defs/MandatoryRuleObligation"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "RuleApplicabilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "rule_applicability_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "RuleApplicabilityEvaluationRef",
+      "type": "object"
+    },
+    "RuleContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "rule",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RuleContentRef",
+      "type": "object"
+    },
+    "RuleObligationTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "object_ref": {
+          "$ref": "#/$defs/AbsentOptional_ObjectRef_"
+        },
+        "rule_ref": {
+          "$ref": "#/$defs/RuleContentRef"
+        },
+        "rule_set_ref": {
+          "$ref": "#/$defs/RuleSetContentRef"
+        },
+        "scope": {
+          "const": "rule",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_set_ref",
+        "scope",
+        "rule_ref"
+      ],
+      "title": "RuleObligationTarget",
+      "type": "object"
+    },
+    "RuleSetApplicabilityEvaluationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "rule_set_applicability_evaluation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "RuleSetApplicabilityEvaluationRef",
+      "type": "object"
+    },
+    "RuleSetContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "const": "rule_set",
+          "title": "Artifact Kind",
+          "type": "string"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "RuleSetContentRef",
+      "type": "object"
+    },
+    "RuleSetObligationTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "object_ref": {
+          "$ref": "#/$defs/AbsentOptional_ObjectRef_"
+        },
+        "rule_set_ref": {
+          "$ref": "#/$defs/RuleSetContentRef"
+        },
+        "scope": {
+          "const": "rule_set",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_set_ref",
+        "scope"
+      ],
+      "title": "RuleSetObligationTarget",
+      "type": "object"
+    },
+    "RuntimeRecordKind": {
+      "enum": [
+        "task",
+        "execution",
+        "node_run",
+        "attempt",
+        "object",
+        "fact",
+        "evidence",
+        "tool_execution",
+        "model_invocation",
+        "decision",
+        "release",
+        "activation",
+        "context_snapshot",
+        "grounding_record",
+        "question_selection_record",
+        "authoritative_result_selection",
+        "execution_coverage",
+        "profile_eligibility_evaluation",
+        "rule_set_applicability_evaluation",
+        "rule_applicability_evaluation",
+        "applicability_trace",
+        "unresolved_obligation",
+        "replay_run",
+        "execution_event",
+        "candidate_prediction",
+        "observation_batch",
+        "tool_plan_run_summary"
+      ],
+      "title": "RuntimeRecordKind",
+      "type": "string"
+    },
+    "RuntimeRecordRef": {
+      "additionalProperties": false,
+      "description": "Record identity, interpreted within its owning root's pinned scope.\n\nIn particular an Object ID is Execution-local: this nested ref must not be\nresolved globally or reused across Executions. Scope/existence checks belong\nto the later owning record contracts, not a hidden resolver in this model.",
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "$ref": "#/$defs/RuntimeRecordKind"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "RuntimeRecordRef",
+      "type": "object"
+    },
+    "SelectedApplicability": {
+      "additionalProperties": false,
+      "properties": {
+        "evaluation_ref": {
+          "$ref": "#/$defs/ApplicabilityEvaluationRef"
+        },
+        "trace_ref": {
+          "$ref": "#/$defs/ApplicabilityTraceRef"
+        }
+      },
+      "required": [
+        "evaluation_ref",
+        "trace_ref"
+      ],
+      "title": "SelectedApplicability",
+      "type": "object"
+    },
+    "SucceededNodeOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "duration_ms": {
+          "$ref": "#/$defs/NonNegativeBudget"
+        },
+        "finished_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "node_id": {
+          "$ref": "#/$defs/NodeId"
+        },
+        "node_run_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Node Run Id",
+          "type": "string"
+        },
+        "output_artifacts": {
+          "$ref": "#/$defs/NodeOutputs"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "$ref": "#/$defs/UTCDateTime"
+        },
+        "status": {
+          "const": "succeeded",
+          "title": "Status",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/TraceContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "node_id",
+        "node_run_id",
+        "attempt_id",
+        "trace",
+        "output_artifacts",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "status"
+      ],
+      "title": "SucceededNodeOutput",
+      "type": "object"
+    },
+    "TraceContext": {
+      "additionalProperties": false,
+      "properties": {
+        "parent_span_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Span Id"
+        },
+        "span_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Span Id"
+        },
+        "trace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_id"
+      ],
+      "title": "TraceContext",
+      "type": "object"
+    },
+    "UTCDateTime": {
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])[Tt](?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:[Zz]|\\+00:00)$(?![\\s\\S])",
+      "type": "string"
+    },
+    "UnresolvedMandatoryObligation": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "const": "unresolved",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "selected_applicability": {
+          "$ref": "#/$defs/SelectedApplicability"
+        },
+        "unresolved_obligation_ref": {
+          "$ref": "#/$defs/UnresolvedObligationRef"
+        }
+      },
+      "required": [
+        "disposition",
+        "selected_applicability",
+        "unresolved_obligation_ref"
+      ],
+      "title": "UnresolvedMandatoryObligation",
+      "type": "object"
+    },
+    "UnresolvedObligationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "const": "unresolved_obligation",
+          "title": "Record Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "UnresolvedObligationRef",
+      "type": "object"
+    },
+    "ValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "$ref": "#/$defs/Description"
+        },
+        "path": {
+          "$ref": "#/$defs/IssuePath"
+        },
+        "related_refs": {
+          "items": {
+            "$ref": "#/$defs/ContentRef"
+          },
+          "maxItems": 16,
+          "title": "Related Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "path",
+        "message",
+        "related_refs"
+      ],
+      "title": "ValidationIssue",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_prediction_ref": {
+      "$ref": "#/$defs/AbsentOptional_CandidatePredictionRef_"
+    },
+    "decision_ref": {
+      "$ref": "#/$defs/DecisionRef"
+    },
+    "envelope": {
+      "$ref": "#/$defs/NodeOutputEnvelope"
+    },
+    "execution_coverage_ref": {
+      "$ref": "#/$defs/ExecutionCoverageRef"
+    },
+    "mandatory_rule_coverage": {
+      "$ref": "#/$defs/MandatoryRuleCoverage"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "envelope",
+    "decision_ref",
+    "execution_coverage_ref",
+    "mandatory_rule_coverage"
+  ],
+  "title": "DecisionOutput",
+  "type": "object"
+}

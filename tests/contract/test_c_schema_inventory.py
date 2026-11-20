@@ -224,18 +224,28 @@ def test_published_c_schema_hashes_and_revision_links(
 
     index = json.loads(rendered["index.json"])
     entries = {item["filename"]: item for item in index["schemas"]}
-    active = [
-        item for item in entries.values() if item.get("export_revision") == "1.1.0"
-    ]
+    active = [item for item in entries.values() if item.get("supersedes") is not None]
     assert active
     for item in active:
         filename = item["filename"]
         prior = entries[item["supersedes"]]
-        assert prior["export_revision"] == "1.0.0"
+        assert prior["export_revision"] < item["export_revision"]
         assert prior["source_symbol"] == item["source_symbol"]
         assert prior["role"] == item["role"]
         assert item["sha256"] == hashlib.sha256(rendered[filename]).hexdigest()
         assert item["sha256"] != prior["sha256"]
+
+
+def test_tool_plan_completion_uses_an_additive_record_kind_revision(
+    rendered: dict[str, bytes],
+) -> None:
+    stem = "references.RuntimeRecordRef"
+    prior = Draft202012Validator(json.loads(rendered[f"{stem}.schema.json"]))
+    active = Draft202012Validator(json.loads(rendered[f"{stem}.v1.2.0.schema.json"]))
+    summary = {"record_kind": "tool_plan_run_summary", "record_id": "attempt-1"}
+    assert not prior.is_valid(summary)
+    assert active.is_valid(summary)
+    assert active.is_valid({"record_kind": "tool_execution", "record_id": "tool-1"})
 
 
 def test_grouping_profile_schema_revision_and_legacy_digest(
@@ -314,6 +324,19 @@ def test_grouped_observation_requires_the_active_schema(
     }
     _check_wire(grouped, active, TypeAdapter(ObservationInput))
     assert not published.is_valid(grouped)
+
+
+def test_region_observation_uses_an_additive_export(rendered: dict[str, bytes]) -> None:
+    legacy = node_cases()["observation_input"]
+    stem = "nodes.observation.ObservationInput"
+    prior = Draft202012Validator(json.loads(rendered[f"{stem}.v1.2.0.schema.json"]))
+    active = Draft202012Validator(json.loads(rendered[f"{stem}.v1.3.0.schema.json"]))
+    original = {**legacy, "image_mode": "original_regions_v1"}
+    prior.validate(legacy)
+    assert not prior.is_valid(original)
+    active.validate(legacy)
+    _check_wire(original, active, TypeAdapter(ObservationInput))
+    assert not active.is_valid({**legacy, "image_mode": "unregistered"})
 
 
 def test_node_run_revision_has_one_extra_physical_slot_only_for_n05(

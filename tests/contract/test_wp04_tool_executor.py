@@ -62,6 +62,7 @@ from jimu_runtime.domain.runtime.executions import (
     ExecutionRecord,
     NodeId,
     NodeRun,
+    PinnedRuntimeInput,
 )
 from jimu_runtime.domain.runtime.facts import (
     AttemptRef,
@@ -82,10 +83,12 @@ from jimu_runtime.domain.runtime.media import (
     FinalizedAsset,
     ImageDimensions,
     MediaAsset,
+    MediaRef,
     StorageReference,
 )
 from jimu_runtime.domain.runtime.perception import (
     GroundingRecordRef,
+    MarkedGroundingFrame,
     ObjectRecord,
     ToolGroundingProvenance,
 )
@@ -630,6 +633,12 @@ def _run_objects(scenario, node_id):
             localization_status="localized",
             evidence_refs=(),
         )
+        object_pin = PinnedRuntimeInput(
+            ref=ObjectRef(record_kind=K.OBJECT, record_id=obj.object_id),
+            digest=sha256_digest(canonical_bytes(obj.model_dump(mode="json"))),
+        )
+        node = node.model_copy(update={"upstream_inputs": (object_pin,)})
+        envelope = envelope.model_copy(update={"upstream_artifacts": (object_pin,)})
         site = PlanStepCall(
             ToolNodeInput(
                 schema_version=VERSION,
@@ -845,6 +854,94 @@ def test_isolated_cpu_same_tool_and_same_round_siblings(tool_fixture, tmp_path):
                 one.execution.model_copy(update={"tool_execution_id": "different-id"}),
             ),
         )
+
+
+def test_n05_dispatch_rejects_replaced_object_under_existing_n03_pin(
+    tool_fixture, tmp_path
+):
+    resolved, execution, node, attempt, call, media = _run_objects(
+        tool_fixture, NodeId.N05
+    )
+    obj = call.inputs.object_record
+    alternate = BBoxXYXY(xyxy=(1.0, 1.0, 5.0, 7.0))
+    tampered = call.inputs.model_copy(
+        update={
+            "object_record": obj.model_copy(update={"bbox": alternate}),
+            "image_view": ObjectImageView(roi=alternate, transforms=()),
+        }
+    )
+    forged = replace(call, inputs=tampered)
+    executor, proof = _worker(tmp_path, resolved)
+    with pytest.raises(ValueError, match="exact pinned N03 Object"):
+        executor.prepare_step_input(resolved, forged, media, {"image": "step"})
+    with pytest.raises(ValueError, match="exact pinned N03 Object"):
+        _invoke(
+            executor, proof, (resolved, execution, node, attempt, forged, media), "step"
+        )
+
+
+def test_n05_historical_object_dispatch_uses_only_original_view(tool_fixture, tmp_path):
+    resolved, execution, node, attempt, call, media = _run_objects(
+        tool_fixture, NodeId.N05
+    )
+    obj = call.inputs.object_record
+    members = (
+        BBoxXYXY(xyxy=(0.0, 1.0, 3.0, 7.0)),
+        BBoxXYXY(xyxy=(3.0, 1.0, 5.0, 7.0)),
+    )
+    marked_frame = MarkedGroundingFrame(
+        media_ref=MediaRef(media_id="archived-marked-media", sha256="a" * 64),
+        mime_type="image/png",
+        byte_size=1,
+        renderer_version="1.0.0",
+    )
+    legacy_object = obj.model_copy(
+        update={"grounding_member_boxes": members, "marked_frame": marked_frame}
+    )
+    object_pin = PinnedRuntimeInput(
+        ref=ObjectRef(record_kind=K.OBJECT, record_id=legacy_object.object_id),
+        digest=sha256_digest(canonical_bytes(legacy_object.model_dump(mode="json"))),
+    )
+    node = node.model_copy(update={"upstream_inputs": (object_pin,)})
+    legacy = call.inputs.model_copy(
+        update={
+            "envelope": call.inputs.envelope.model_copy(
+                update={"upstream_artifacts": (object_pin,)}
+            ),
+            "object_record": legacy_object,
+            "image_view": ObjectImageView(
+                roi=legacy_object.bbox,
+                transforms=(),
+                marked_media_ref=marked_frame.media_ref,
+            ),
+        }
+    )
+    restored = ToolNodeInput.model_validate_json(legacy.model_dump_json())
+    assert restored == legacy
+    executor, proof = _worker(tmp_path, resolved)
+    with pytest.raises(ValueError, match="without marked media"):
+        executor.prepare_step_input(
+            resolved, replace(call, inputs=restored), media, {"image": "step"}
+        )
+    original = restored.model_copy(
+        update={"image_view": ObjectImageView.for_object(legacy_object)}
+    )
+
+    async def inspect_original(dispatch, lease):
+        assert dispatch.original_media_ref == legacy_object.source_media_ref
+        assert dispatch.object_bbox == legacy_object.bbox
+        assert dispatch.object_member_boxes == members
+        assert marked_frame.media_ref.media_id.encode() not in dispatch.request
+        return await _allow(dispatch, lease)
+
+    result = _invoke(
+        executor,
+        proof,
+        (resolved, execution, node, attempt, replace(call, inputs=original), media),
+        "step",
+        before_dispatch=inspect_original,
+    )
+    assert result.execution.status == "succeeded"
 
 
 @pytest.mark.parametrize(

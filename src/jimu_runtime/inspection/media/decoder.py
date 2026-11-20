@@ -1,12 +1,11 @@
 """Bounded JPEG/PNG CPU operations for the trusted local media adapter."""
 
 from io import BytesIO
-from math import ceil, floor
 from typing import Literal
 
-from PIL import Image, ImageDraw, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError
 
-from jimu_runtime.domain.runtime.media import BBoxXYXY, ImageDimensions
+from jimu_runtime.domain.runtime.media import ImageDimensions
 from jimu_runtime.inspection.media.types import ImageMime, MediaError, MediaLimits
 
 _FORMATS: dict[ImageMime, str] = {"image/jpeg": "JPEG", "image/png": "PNG"}
@@ -113,25 +112,3 @@ def verify_image(
         IndexError,
     ):
         raise MediaError("media_decode_failed") from None
-
-
-def render_rgb_outline_png(content: bytes, bbox: BBoxXYXY) -> bytes:
-    """Render one red outline on previously verified original RGB pixels."""
-    x_min, y_min, x_max, y_max = bbox.xyxy
-    # PIL uses inclusive pixel indices. Contract coordinates describe edges.
-    left, top, right, bottom = (
-        floor(x_min),
-        floor(y_min),
-        ceil(x_max) - 1,
-        ceil(y_max) - 1,
-    )
-    with Image.open(BytesIO(content)) as image, BytesIO() as encoded:
-        # A closed stroke stays in bounds even if the ROI occupies one pixel.
-        ImageDraw.Draw(image).line(
-            [(left, top), (right, top), (right, bottom), (left, bottom), (left, top)],
-            fill=(255, 0, 0),
-            width=1,
-        )
-        image.info.clear()
-        image.save(encoded, format="PNG", compress_level=6)
-        return encoded.getvalue()

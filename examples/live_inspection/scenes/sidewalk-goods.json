@@ -1,0 +1,19 @@
+{
+  "scene_id": "sidewalk-goods",
+  "region_id": "isolated_sidewalk",
+  "profile_id": "sidewalk_goods",
+  "entity_name": "Individually grounded placed cardboard cartons",
+  "violation_category": "sidewalk_goods_encroachment",
+  "discovery_prompt": "Report a sidewalk_goods Profile hit when one or more placed cardboard cartons are clearly visible.",
+  "grounding_prompt": "Locate each placed cardboard carton independently and return its original-image pixel box [x_min,y_min,x_max,y_max].",
+  "questions": [
+    {
+      "id": "sidewalk_encroachment",
+      "members": ["occupies_sidewalk", "does_not_occupy_sidewalk"],
+      "matching_value": "occupies_sidewalk",
+      "prompt": "Evaluate only the highlighted carton. The signed synthetic camera calibration covers $SIDEWALK_ZONE, in original 1536 by 1024 pixel coordinates (top-left origin). Evaluate whether the carton's ground-contact footprint overlaps this pedestrian zone. A stacked carton is assessable only when its support to the ground is visually unambiguous and the supporting footprint overlaps the zone. A raised carton seen against this rectangle is not sufficient. Answer occupies_sidewalk when physical overlap is clear, does_not_occupy_sidewalk when clearly disjoint, or insufficient_visibility when ground contact, support, or overlap is ambiguous. Assess visual geometry only.",
+      "region_prompt": "For the carton at the supplied coordinates, find its visible floor contact or trace its support visibly to the floor. The pedestrian zone is $SIDEWALK_ZONE in the same coordinates. Use occupies_sidewalk for clear physical overlap, does_not_occupy_sidewalk for clear disjoint floor contact, and insufficient_visibility for uncertain contact, support or overlap. Image box overlap alone is insufficient."
+    }
+  ],
+  "trusted_scope_field": "synthetic_sidewalk_no_goods_policy"
+}

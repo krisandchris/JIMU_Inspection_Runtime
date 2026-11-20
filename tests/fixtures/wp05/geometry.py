@@ -46,6 +46,7 @@ from jimu_runtime.domain.runtime.executions import (
     ExecutionRecord,
     NodeId,
     NodeRun,
+    PinnedRuntimeInput,
 )
 from jimu_runtime.domain.runtime.facts import (
     AttemptRef,
@@ -85,6 +86,7 @@ from jimu_runtime.tools.registry import ToolWorkerRegistry
 from jimu_runtime.tools.step_attempts import StepCompletion, StepResult
 from jimu_runtime.workers.resource_inventory import HostInventory, ResourceScope
 from jimu_runtime.workers.resources import ResourceAdmission
+from jimu_runtime.workflow.mock_facts import object_artifact
 
 
 class GeometryFixture:
@@ -355,6 +357,10 @@ class GeometryFixture:
         cpu_exchange=None,
     ):
         obj = self.object if obj is None else obj
+        artifact_pin = object_artifact(obj).pin
+        object_pin = PinnedRuntimeInput(
+            ref=artifact_pin.ref, digest=artifact_pin.digest
+        )
         node_ref = NodeRunRef(record_kind=K.NODE_RUN, record_id=f"child.{step}")
         attempt_ref = AttemptRef(record_kind=K.ATTEMPT, record_id=f"attempt.{step}")
         node = NodeRun(
@@ -364,7 +370,7 @@ class GeometryFixture:
             node_id=NodeId.N05,
             trace=self.execution.trace,
             config_ref=self.resolved.policy_ref,
-            upstream_inputs=(),
+            upstream_inputs=(object_pin,),
             input_digest=self.resolved.pins.input_digest,
             status=NodeRunStatus.RUNNING,
             created_at=self.execution.created_at,
@@ -395,7 +401,7 @@ class GeometryFixture:
                     node_run_id=node.node_run_id,
                     attempt_id=attempt.attempt_id,
                     trace=self.execution.trace,
-                    upstream_artifacts=(),
+                    upstream_artifacts=(object_pin,),
                     node_config_ref=self.resolved.policy_ref,
                 ),
                 object_record=obj,

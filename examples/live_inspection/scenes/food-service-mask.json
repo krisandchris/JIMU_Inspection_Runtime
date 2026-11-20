@@ -1,0 +1,26 @@
+{
+  "scene_id": "food-service-mask",
+  "region_id": "isolated_food_service",
+  "profile_id": "food_service_worker",
+  "entity_name": "Person in the synthetic kitchen camera",
+  "violation_category": "food_service_worker_no_mask",
+  "discovery_prompt": "Report a food_service_worker Profile hit whenever this image contains a person. Discovery is based on presence only.",
+  "grounding_prompt": "Locate every visible person independently in the original frame. Return distinct original-image boxes [x_min,y_min,x_max,y_max] for all persons.",
+  "questions": [
+    {
+      "id": "face_visibility",
+      "members": ["face_assessable", "face_not_assessable"],
+      "matching_value": "face_assessable",
+      "prompt": "Inspect only the highlighted person's face. Answer face_assessable if the face and nose/mouth area are clear enough to assess a worn mask, including if a mask clearly covers that area. Answer face_not_assessable for blur or obstruction. Return insufficient_visibility if the target cannot be identified.",
+      "region_prompt": "Inspect the face of the person at the supplied coordinates. Use face_assessable when the nose and mouth area allows a mask assessment, including clear mask coverage. Use face_not_assessable for blur or obstruction and insufficient_visibility when the person cannot be identified."
+    },
+    {
+      "id": "mask_status",
+      "members": ["wearing_mask", "not_wearing_mask"],
+      "matching_value": "not_wearing_mask",
+      "prompt": "Inspect only the highlighted person's face. Answer not_wearing_mask only if the person's nose and mouth area is assessable and no mask is worn across it. Answer wearing_mask if a mask clearly covers both the nose and mouth. Answer insufficient_visibility if the face is occluded, too small, blurred, or the mask is partly worn.",
+      "region_prompt": "Inspect the same person's face. Use wearing_mask when a mask clearly covers the nose and mouth. Use not_wearing_mask when the area is clear and no mask is worn across it. Use insufficient_visibility for an occluded, small or blurred face, or a partly worn mask."
+    }
+  ],
+  "trusted_scope_field": "synthetic_kitchen_employee_roster_attached"
+}

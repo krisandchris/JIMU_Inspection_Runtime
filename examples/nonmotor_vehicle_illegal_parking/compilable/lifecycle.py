@@ -1,12 +1,14 @@
 """Exercise the production compiler, local admission and historical pin reopen."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 
 from jimu_runtime.bundle.admission import AdmissionEnvironment, admit_bundle
 from jimu_runtime.bundle.archive import read_bundle
-from jimu_runtime.bundle.catalogue import build_catalogue
+from jimu_runtime.bundle.capabilities import CapabilitySnapshot
+from jimu_runtime.bundle.catalogue import ArtifactCatalogue, build_catalogue
 from jimu_runtime.bundle.compiler import (
     BundleCompileInput,
     CompiledBundle,
@@ -73,6 +75,22 @@ class ReopenedScene:
     execution: ResolvedExecutionPins
 
 
+@dataclass(frozen=True, slots=True)
+class PreparedScene:
+    bundle: CompiledBundle
+    signed_archive: bytes
+    release: ReleaseRecord
+    activation: ActivationRecord
+    principal: object
+    store: LocalBundleStore
+    releases: ReleaseManager
+    catalogue: ArtifactCatalogue
+    build_manager: Callable[[LocalBundleStore], ReleaseManager]
+    admit: Callable[
+        [BundleCompileInput, str], tuple[CompiledBundle, bytes, AdmissionReceipt]
+    ]
+
+
 def local_submission(media: bytes) -> TaskSubmission:
     return TaskSubmission.model_validate(
         {
@@ -102,10 +120,17 @@ def local_submission(media: bytes) -> TaskSubmission:
     )
 
 
-def exercise_lifecycle(directory: Path) -> ReopenedScene:
-    """Compile, admit, activate and reopen in a caller-owned temporary directory."""
-    source = load_source()
-    host = capability_snapshot(source)
+def prepare_scene(
+    directory: Path,
+    source: BundleCompileInput,
+    host: CapabilitySnapshot,
+    submission: TaskSubmission,
+) -> PreparedScene:
+    """Prepare the admitted, active Release for a registered submission."""
+    context = submission.context
+    activation_scope = RegionActivationScope(
+        scope="region", region_id=context.region_id
+    )
     compile_environment = CompileEnvironment(
         capabilities=host,
         trust=LocalEd25519(directory).as_trust_source(),
@@ -154,13 +179,10 @@ def exercise_lifecycle(directory: Path) -> ReopenedScene:
     (region_ref,) = (
         item.ref
         for item in catalogue.of_kind(ArtifactKind.REGION)
-        if item.ref.artifact_id == REGION
+        if item.ref.artifact_id == context.region_id
     )
     region = require_definition(catalogue, region_ref, RegionDefinition)
     principal = object()
-    submission = local_submission(
-        (DIRECTORY / "assets" / "synthetic-frame.png").read_bytes()
-    )
 
     def authorize(
         caller: object, action: ReleaseAction, target: ReleaseTarget
@@ -179,7 +201,7 @@ def exercise_lifecycle(directory: Path) -> ReopenedScene:
                 ReleaseAction.ACTIVATE,
                 ReleaseAction.ACCEPT_TASK,
             )
-            and target.scope == SCOPE
+            and target.scope == activation_scope
         ):
             return ACTOR
         return None
@@ -188,9 +210,9 @@ def exercise_lifecycle(directory: Path) -> ReopenedScene:
         if caller is not principal or request != submission:
             return None
         return ResolvedTaskScope(
-            device_id=DEVICE,
-            camera_id=CAMERA,
-            region_id=REGION,
+            device_id=context.device_id,
+            camera_id=context.camera_id,
+            region_id=context.region_id,
             scene_type=region.scene_type,
         )
 
@@ -202,8 +224,8 @@ def exercise_lifecycle(directory: Path) -> ReopenedScene:
     ) -> bool:
         return (
             release.bundle_ref == bundle.bundle_ref
-            and activation.scope == SCOPE
-            and scope.region_id == REGION
+            and activation.scope == activation_scope
+            and scope.region_id == context.region_id
             and at == AT
         )
 
@@ -227,23 +249,57 @@ def exercise_lifecycle(directory: Path) -> ReopenedScene:
     release = releases.approve_release(
         operation_key="approve.synthetic.scene",
         release_id=RELEASE_ID,
-        scope=SCOPE,
+        scope=activation_scope,
         principal=principal,
     )
     activated = releases.activate(
         operation_key="activate.synthetic.scene",
         release_id=RELEASE_ID,
         activation_id="synthetic.parking.activation",
-        scope=SCOPE,
+        scope=activation_scope,
         expected_previous_activation_id=None,
         principal=principal,
     )
+    return PreparedScene(
+        bundle,
+        signed,
+        release,
+        activated,
+        principal,
+        store,
+        releases,
+        catalogue,
+        manager,
+        admit,
+    )
+
+
+def exercise_lifecycle(
+    directory: Path,
+    *,
+    source: BundleCompileInput | None = None,
+    capability_builder: Callable[
+        [BundleCompileInput], CapabilitySnapshot
+    ] = capability_snapshot,
+    submission: TaskSubmission | None = None,
+) -> ReopenedScene:
+    """Compile, admit, activate and reopen in a caller-owned temporary directory."""
+    source = source if source is not None else load_source()
+    host = capability_builder(source)
+    if submission is None:
+        submission = local_submission(
+            (DIRECTORY / "assets" / "synthetic-frame.png").read_bytes()
+        )
+    prepared = prepare_scene(directory, source, host, submission)
+    releases, principal = prepared.releases, prepared.principal
+    activated = prepared.activation
+    activation_scope = activated.scope
     task = releases.accept_task(submission, principal=principal)
 
     next_source = replace(
         source, metadata=replace(source.metadata, bundle_version="1.0.1")
     )
-    next_bundle, _, next_receipt = admit(next_source, "next")
+    next_bundle, _, next_receipt = prepared.admit(next_source, "next")
     releases.register_release(
         operation_key="register.synthetic.scene.next",
         release_id=NEXT_RELEASE_ID,
@@ -253,22 +309,22 @@ def exercise_lifecycle(directory: Path) -> ReopenedScene:
     releases.approve_release(
         operation_key="approve.synthetic.scene.next",
         release_id=NEXT_RELEASE_ID,
-        scope=SCOPE,
+        scope=activation_scope,
         principal=principal,
     )
     next_activation = releases.activate(
         operation_key="activate.synthetic.scene.next",
         release_id=NEXT_RELEASE_ID,
         activation_id="synthetic.parking.activation.next",
-        scope=SCOPE,
+        scope=activation_scope,
         expected_previous_activation_id=activated.activation_id,
         principal=principal,
     )
 
-    reopened_store = LocalBundleStore(store_dir)
-    reopened_manager = manager(reopened_store)
+    reopened_store = LocalBundleStore(directory / "releases")
+    reopened_manager = prepared.build_manager(reopened_store)
     reopened_task = reopened_manager.get_task(task.task_id)
-    current = reopened_manager.active_activation(SCOPE)
+    current = reopened_manager.active_activation(activation_scope)
     if (
         reopened_task != task
         or reopened_manager.get_task_activation(reopened_task) != activated
@@ -296,4 +352,12 @@ def exercise_lifecycle(directory: Path) -> ReopenedScene:
         raise RuntimeError(
             "The reopened execution must keep its historical Release pin"
         )
-    return ReopenedScene(bundle, signed, release, activated, current, task, execution)
+    return ReopenedScene(
+        prepared.bundle,
+        prepared.signed_archive,
+        prepared.release,
+        activated,
+        current,
+        task,
+        execution,
+    )

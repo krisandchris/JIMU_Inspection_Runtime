@@ -1,0 +1,72 @@
+"""Run the signed sidewalk carton pilot on its registered original RGB image."""
+
+import argparse
+import asyncio
+import json
+from pathlib import Path
+
+from examples.live_inspection.host import bridge_model_endpoints, run_case
+from examples.live_inspection.providers.live_wire_bridge import (
+    ProfileRoute,
+    start_bridge,
+)
+from examples.live_inspection.scenes import (
+    build_sidewalk_goods_compile_input,
+    capability_snapshot,
+)
+from examples.live_inspection.scenes.trusted_scope import (
+    CAMERA,
+    DEVICE,
+    SIDEWALK_REGION,
+    sidewalk_metadata,
+)
+
+_IMAGE = (
+    Path(__file__).resolve().parents[2]
+    / "LIVE_THREE_TASKS_20261119"
+    / "images"
+    / "goods.png"
+)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("output_dir", type=Path)
+    args = parser.parse_args()
+    metadata = sidewalk_metadata(
+        _IMAGE.read_bytes(),
+        camera_id=CAMERA,
+        region_id=SIDEWALK_REGION,
+        device_id=DEVICE,
+    )
+    source = build_sidewalk_goods_compile_input()
+    # This Profile describes placed cardboard cartons in the signed pilot.
+    routes = {"sidewalk_goods": ProfileRoute(detection_label="cardboard boxes")}
+    args.output_dir.mkdir(mode=0o700, parents=True, exist_ok=False)
+    with start_bridge(args.output_dir / "provider", profile_routes=routes) as adapter:
+        result = asyncio.run(
+            run_case(
+                args.output_dir,
+                _IMAGE,
+                source=source,
+                capability_builder=capability_snapshot,
+                region_id=SIDEWALK_REGION,
+                trusted_metadata=metadata,
+                model_endpoints=bridge_model_endpoints(adapter.url),
+            )
+        )
+    print(
+        json.dumps(
+            {
+                "task_id": result["task_id"],
+                "execution_id": result["execution_id"],
+                "release_id": result["release_id"],
+                "bundle_digest": result["bundle_digest"],
+                "result_file": str(args.output_dir / "result.json"),
+            }
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()

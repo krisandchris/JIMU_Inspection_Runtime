@@ -1,0 +1,48 @@
+{
+  "scene_id": "food-service-mask",
+  "region_id": "isolated_food_service",
+  "profile_id": "food_service_worker",
+  "entity_name": "Person in the food service frame",
+  "violation_category": "food_service_worker_no_mask",
+  "discovery_prompt": "Report a food_service_worker profile hit whenever a person is visible. At this stage the profile is a recall-oriented person discovery scope. Do not decide the person's role or mask state.",
+  "grounding_prompt": "Locate each visible person independently in the original full frame, including customers; return individual person boxes as [x_min,y_min,x_max,y_max] original pixel edges.",
+  "questions": [
+    {
+      "id": "food_service_role",
+      "members": [
+        "food_service_worker",
+        "not_food_service_worker"
+      ],
+      "matching_value": "food_service_worker",
+      "prompt": "Determine this specific person's staff status only from an independently verified employee target binding for this image and this exact person. No employee roster is provided in this trial request. Return insufficient_visibility when verified identity is absent. Work-like actions, clothing, a badge, and being in a kitchen do not establish enrollment as staff."
+    },
+    {
+      "id": "kitchen_position",
+      "members": [
+        "inside_kitchen",
+        "outside_kitchen"
+      ],
+      "matching_value": "inside_kitchen",
+      "prompt": "Assess the highlighted person against a verified same-camera back-of-house boundary and the bottom midpoint of the target box. Return inside_kitchen only for a verified point inside or on this boundary, and outside_kitchen only for a verified point outside it. If a trusted boundary is not provided or the exact person cannot be associated with it, return insufficient_visibility. Interior decor and uniforms are not a verified boundary."
+    },
+    {
+      "id": "face_visibility",
+      "members": [
+        "face_assessable",
+        "face_not_assessable"
+      ],
+      "matching_value": "face_assessable",
+      "prompt": "Inspect the same highlighted person. Answer face_assessable only when the face and mouth/nose area can be inspected clearly for a mask, including when a mask visibly covers that area. Answer face_not_assessable when obstruction or blur is evident; use insufficient_visibility if the target or degree of visibility cannot be determined. A face_not_assessable answer requires insufficient_visibility in mask_status."
+    },
+    {
+      "id": "mask_status",
+      "members": [
+        "wearing_mask",
+        "not_wearing_mask"
+      ],
+      "matching_value": "not_wearing_mask",
+      "prompt": "Inspect the same highlighted person's own face. Return not_wearing_mask only when the person's nose and mouth area can be assessed reliably and no face mask is worn across that area. Return wearing_mask when a face mask is visibly covering both mouth and nose. When the face is occluded, too small, or a mask is worn improperly, return insufficient_visibility. The isolated no-mask test evaluates complete absence only."
+    }
+  ],
+  "trusted_scope_field": "food_service_staff_scope_verified"
+}

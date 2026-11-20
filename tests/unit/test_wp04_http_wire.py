@@ -1,18 +1,24 @@
 """HTTP host config, byte-bound media, and strict data helpers."""
 
+import asyncio
 import json
 from hashlib import sha256
+from types import SimpleNamespace
 
 import pytest
-from fixtures.wp04.http_support import endpoint, transport_fixture
+from fixtures.wp04.http_support import ChatPayload, endpoint, transport_fixture
 from pydantic import ValidationError
 
 from jimu_runtime.bundle.schema_validation import (
     OfflineSchemaError,
     compile_offline_response_schema,
 )
-from jimu_runtime.gateway.http import VerifiedImage
+from jimu_runtime.domain.definition_enums import ModelCapability
+from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
+from jimu_runtime.domain.nodes.observation import N04_REGIONS_MARKER
+from jimu_runtime.gateway.http import ChatContract, HttpModelTransport, VerifiedImage
 from jimu_runtime.gateway.http_wire import WireError, strict_json
+from jimu_runtime.gateway.invocation import DispatchRequest
 
 _LOOPBACK = "http://127.0.0.1:21000/v1/chat/completions"
 
@@ -59,6 +65,158 @@ def test_descriptor_binds_connection_and_limits_without_exposing_location_in_rep
     assert left.descriptor_pin.sha256 != more_bytes.descriptor_pin.sha256
     assert left.url not in repr(left)
     assert left.url not in repr(left.descriptor_pin)
+
+
+def test_region_support_is_an_explicit_endpoint_pin_change():
+    legacy = endpoint(_LOOPBACK)
+    old_document = legacy.model_dump(
+        mode="json", exclude={"supports_region_projection"}
+    )
+    old_bytes = json.dumps(old_document, sort_keys=True, separators=(",", ":")).encode()
+    enabled = legacy.model_copy(update={"supports_region_projection": True})
+    assert legacy.descriptor_pin.sha256 == sha256(old_bytes).hexdigest()
+    assert enabled.descriptor_pin != legacy.descriptor_pin
+
+
+@pytest.fixture
+def signed_question_contract():
+    _, route = transport_fixture(endpoint(_LOOPBACK))
+    signed_schema = canonical_bytes(
+        {
+            "$id": "urn:jimu:region-wire",
+            "$defs": {
+                "code": {"type": "string", "enum": ["clear", "obstructed"]},
+                "score": {"type": "number", "minimum": 0.1},
+            },
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "finding": {"$ref": "#/$defs/code"},
+                "score": {"$ref": "#/$defs/score"},
+                "visible": {"type": "boolean"},
+            },
+            "required": ["finding", "visible", "score"],
+        }
+    )
+    output_ref = route.binding.output_schema_ref.model_copy(
+        update={"digest": sha256(signed_schema).hexdigest()}
+    )
+    return ChatContract(
+        input_schema_ref=route.binding.input_schema_ref,
+        output_schema_ref=output_ref,
+        response_model=ChatPayload,
+        accepts_image=True,
+        response_schema=signed_schema,
+        question_slots=("finding", "visible", "score"),
+    )
+
+
+def _region_route(config, base, selected):
+    _, route = transport_fixture(config)
+    route.binding.input_schema_ref = base.input_schema_ref
+    route.binding.output_schema_ref = base.output_schema_ref
+    route.operation.purposes = (ModelCapability.OBJECT_OBSERVATION,)
+    route.operation.response_contract_digest = selected.response_schema_digest
+    route.operation.contract_snapshot = SimpleNamespace(
+        configured_output_schema_ref=base.output_schema_ref,
+        response_schema_sha256=selected.response_schema_digest,
+        effective_question_refs=tuple(
+            SimpleNamespace(artifact_id=name) for name in selected.question_slots
+        ),
+    )
+    return route
+
+
+def test_region_projection_retains_signed_constraints_for_each_exact_subset(
+    signed_question_contract,
+):
+    base = signed_question_contract
+    finding = base.for_region_questions(("finding",))
+    score_and_visibility = base.for_region_questions(("score", "visible"))
+    assert (
+        score_and_visibility.response_schema_bytes
+        == base.for_region_questions(("visible", "score")).response_schema_bytes
+    )
+    finding_document = finding.response_schema_document()
+    original_document = base.response_schema_document()
+    assert finding_document == {
+        **original_document,
+        "properties": {"finding": original_document["properties"]["finding"]},
+        "required": ["finding"],
+    }
+    assert finding.validate_response_content(
+        '{"finding":"obstructed"}', {"finding": "obstructed"}
+    ) == ((), ())
+    assert score_and_visibility.validate_response_content(
+        '{"score":0}', {"score": 0}
+    ) == (
+        ("score",),
+        ("visible",),
+    )
+    with pytest.raises(WireError, match="offline_schema_question_envelope"):
+        finding.validate_response_content('{"score":5}', {"score": 5})
+
+
+def test_prepare_and_dispatch_reject_regions_on_legacy_endpoint(
+    signed_question_contract,
+):
+    base = signed_question_contract
+    selected = base.for_region_questions(("score",))
+    wire_prompt = f"{N04_REGIONS_MARKER}\n{{}}"
+    image = b"\xff\xd8\xffsynthetic-image"
+    verified = VerifiedImage(image, "image/jpeg", sha256(image).hexdigest())
+    legacy = endpoint(_LOOPBACK)
+    enabled = legacy.model_copy(update={"supports_region_projection": True})
+    approved_transport = HttpModelTransport((enabled,), (base,), max_concurrency=1)
+    allowed_route = _region_route(enabled, base, selected)
+    payload = approved_transport.prepare(allowed_route, wire_prompt, verified)
+    assert json.loads(payload)["response_format"]["json_schema"]["schema"] == (
+        selected.response_schema_document()
+    )
+    with pytest.raises(WireError, match="http_schema_pin_unregistered"):
+        approved_transport.prepare(allowed_route, "Legacy observation", verified)
+    for untrusted_route, expected in (
+        (allowed_route, "http_endpoint_pin_mismatch"),
+        (_region_route(legacy, base, selected), "http_region_projection_unsupported"),
+    ):
+        legacy_transport = HttpModelTransport((legacy,), (base,), max_concurrency=1)
+        with pytest.raises(WireError, match=expected):
+            legacy_transport.prepare(untrusted_route, wire_prompt, verified)
+        result = asyncio.run(
+            legacy_transport.dispatch(
+                DispatchRequest("projection-rejected", untrusted_route, payload)
+            )
+        )
+        assert not result.dispatched
+        assert result.error is not None and result.error.code == expected
+
+
+def test_region_projection_requires_registered_base_and_exact_derived_pin(
+    signed_question_contract,
+):
+    base = signed_question_contract
+    selected = base.for_region_questions(("score",))
+    config = endpoint(_LOOPBACK).model_copy(update={"supports_region_projection": True})
+    transport = HttpModelTransport((config,), (base,), max_concurrency=1)
+    unpinned = HttpModelTransport((config,), (selected,), max_concurrency=1)
+    wire_prompt = f"{N04_REGIONS_MARKER}\n{{}}"
+    image = b"\xff\xd8\xffsynthetic-image"
+    verified = VerifiedImage(image, "image/jpeg", sha256(image).hexdigest())
+    route = _region_route(config, base, selected)
+    with pytest.raises(WireError, match="http_schema_pin_unregistered"):
+        unpinned.prepare(route, wire_prompt, verified)
+    route.operation.contract_snapshot.configured_output_schema_ref = (
+        base.output_schema_ref.model_copy(update={"version": "2.0.0"})
+    )
+    with pytest.raises(WireError, match="http_region_projection_contract_mismatch"):
+        transport.prepare(route, wire_prompt, verified)
+    route = _region_route(config, base, selected)
+    route.operation.response_contract_digest = base.response_schema_digest
+    route.operation.contract_snapshot.response_schema_sha256 = (
+        base.response_schema_digest
+    )
+    with pytest.raises(WireError, match="http_schema_pin_unregistered"):
+        transport.prepare(route, wire_prompt, verified)
 
 
 @pytest.mark.parametrize(

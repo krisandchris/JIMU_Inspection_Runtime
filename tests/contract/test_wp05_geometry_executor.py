@@ -53,6 +53,7 @@ def test_signed_geometry_runs_all_pinned_children_and_preserves_evidence(tmp_pat
         output.evidence_id,
     }
     assert {item.artifact_ref.record_id for item in geometry.execution.input_refs} == {
+        fixture.object.object_id,
         wheel.proof.asset.evidence_id,
         tactile.proof.asset.evidence_id,
     }

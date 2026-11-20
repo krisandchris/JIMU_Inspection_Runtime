@@ -11,12 +11,8 @@ from jimu_runtime.inspection.perception.candidates import (
 )
 from jimu_runtime.inspection.perception.context import build_context
 from jimu_runtime.inspection.perception.discovery import discover
-from jimu_runtime.inspection.perception.grounding import StageMarkedFrame, ground
-from jimu_runtime.inspection.perception.model import (
-    ImageLoader,
-    MarkedImageLoader,
-    ModelAccess,
-)
+from jimu_runtime.inspection.perception.grounding import ground
+from jimu_runtime.inspection.perception.model import ImageLoader, ModelAccess
 from jimu_runtime.inspection.perception.observation import StageRequestEvidence, observe
 from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
 from jimu_runtime.workflow.worker_nodes import NodeResult, invocation_envelope
@@ -29,8 +25,6 @@ class ConfiguredPerception:
     load_image: ImageLoader
     stage_request_evidence: StageRequestEvidence
     resource_scope_id: str
-    stage_marked_frame: StageMarkedFrame | None = None
-    load_marked_image: MarkedImageLoader | None = None
 
     async def execute(
         self, claimed: ClaimedNode, gateway: CapabilityGateway
@@ -38,18 +32,14 @@ class ConfiguredPerception:
         envelope = invocation_envelope(
             claimed.opened, claimed.branch, claimed.node, claimed.attempt
         )
-        access = ModelAccess(
-            self.load_image, self.resource_scope_id, self.load_marked_image
-        )
+        access = ModelAccess(self.load_image, self.resource_scope_id)
         match claimed.node.node_id:
             case NodeId.N01:
                 return build_context(claimed, envelope)
             case NodeId.N02:
                 return await discover(claimed, envelope, gateway, access)
             case NodeId.N03:
-                return await ground(
-                    claimed, envelope, gateway, access, self.stage_marked_frame
-                )
+                return await ground(claimed, envelope, gateway, access)
             case NodeId.N04:
                 return await observe(
                     claimed,

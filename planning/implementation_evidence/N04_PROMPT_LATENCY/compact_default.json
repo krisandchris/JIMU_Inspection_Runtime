@@ -1,0 +1,60 @@
+{
+  "variant": "compact_default",
+  "seconds": 17.61510479298886,
+  "usage": {
+    "prompt_tokens": 1838,
+    "total_tokens": 5705,
+    "completion_tokens": 3867,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+      "reasoning_tokens": 3679
+    }
+  },
+  "model": "Qwen3_5-9B",
+  "request_id": "chatcmpl-bb5324de4f0c5d7f",
+  "finish": "stop",
+  "seed": 42,
+  "request_sha256": "7673fd683b6591703f50f2cff655df8986da6d3bcb1f86b052748f3ed1aa9ae3",
+  "response_sha256": "1ef6ca3d561829f19aa2ec0d9de850eac90dc8bac425eafd14ed581897fa79a9",
+  "answers": {
+    "r1": {
+      "sidewalk_encroachment": "occupies_sidewalk"
+    },
+    "r2": {
+      "sidewalk_encroachment": "does_not_occupy_sidewalk"
+    },
+    "r3": {
+      "sidewalk_encroachment": "occupies_sidewalk"
+    },
+    "r4": {
+      "sidewalk_encroachment": "occupies_sidewalk"
+    },
+    "r5": {
+      "sidewalk_encroachment": "does_not_occupy_sidewalk"
+    },
+    "r6": {
+      "sidewalk_encroachment": "does_not_occupy_sidewalk"
+    },
+    "r7": {
+      "sidewalk_encroachment": "does_not_occupy_sidewalk"
+    },
+    "r8": {
+      "sidewalk_encroachment": "occupies_sidewalk"
+    },
+    "r9": {
+      "sidewalk_encroachment": "does_not_occupy_sidewalk"
+    }
+  },
+  "matches_blind_reference": {
+    "r1": true,
+    "r2": false,
+    "r3": true,
+    "r4": true,
+    "r5": false,
+    "r6": false,
+    "r7": false,
+    "r8": false,
+    "r9": false
+  },
+  "correct": 3
+}

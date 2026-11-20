@@ -326,6 +326,36 @@ def test_signed_perception_through_worker(
                         case == "multiple_objects"
                         and message.batch.outcome == "complete"
                     ):
+                        source = message.original_image_evidence
+                        assert source is not None
+                        for wrong in (
+                            None,
+                            source.model_copy(
+                                update={
+                                    "scope": source.scope.model_copy(
+                                        update={"execution_id": "another.execution"}
+                                    )
+                                }
+                            ),
+                        ):
+                            with pytest.raises(
+                                ValueError,
+                                match="observation_original_evidence_mismatch",
+                            ):
+                                verify_observation_result(
+                                    claimed.opened.scope,
+                                    message.model_copy(
+                                        update={"original_image_evidence": wrong}
+                                    ),
+                                    claimed.previous.snapshot(),
+                                    selection,
+                                    normalized,
+                                )
+                        assert all(
+                            {ref.record_id for ref in fact.evidence_refs}
+                            == {item.evidence_id for item in message.evidence}
+                            for fact in message.facts
+                        )
                         original = message.batch.question_results[1]
                         forged = original.model_copy(
                             update={
@@ -506,6 +536,10 @@ def test_signed_perception_through_worker(
                     observations = capture()
                     assert len(observations) == 2 and len(wire) == 4
                     first, second = observations
+                    assert first.original_image_evidence is not None
+                    assert (
+                        first.original_image_evidence == second.original_image_evidence
+                    )
                     assert first.batch.outcome == "partial"
                     assert [fact.status for fact in first.facts] == [
                         FactStatus.UNKNOWN,

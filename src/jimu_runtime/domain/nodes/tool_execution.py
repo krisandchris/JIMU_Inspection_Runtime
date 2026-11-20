@@ -1,6 +1,7 @@
 """N05 binds one Object to the Profile's fixed ToolPlan and validated inputs."""
 
 from dataclasses import dataclass
+from hashlib import sha256
 from typing import Annotated, Literal, Self
 
 from pydantic import BeforeValidator, Field, model_validator
@@ -16,6 +17,7 @@ from jimu_runtime.domain.definition_support import (
 from jimu_runtime.domain.definitions.capabilities import ProfileDefinition
 from jimu_runtime.domain.definitions.tools import ToolPlanDefinition, ToolStep
 from jimu_runtime.domain.enums import AttemptStatus, NodeRunStatus, RuntimeRecordKind
+from jimu_runtime.domain.fact_schemas.canonicalization import canonical_bytes
 from jimu_runtime.domain.fact_selectors import (
     FactSelector,
     QuestionProducerSelector,
@@ -28,7 +30,7 @@ from jimu_runtime.domain.nodes.envelopes import (
     check_envelope_pair,
 )
 from jimu_runtime.domain.nodes.observation import ObjectImageView
-from jimu_runtime.domain.primitives import ArtifactId
+from jimu_runtime.domain.primitives import ArtifactId, RecordId
 from jimu_runtime.domain.runtime.applicability import ContextSnapshotRef
 from jimu_runtime.domain.runtime.authority import (
     ObservationBatchSelection,
@@ -42,10 +44,12 @@ from jimu_runtime.domain.runtime.executions import (
     PinnedRuntimeInput,
 )
 from jimu_runtime.domain.runtime.facts import (
+    AttemptRef,
     AuthoritySelectionRef,
     EvidenceRefs,
     FactRecord,
     FactRefs,
+    NodeRunRef,
     ObjectRef,
     QuestionFactSource,
     ToolExecutionRef,
@@ -142,6 +146,23 @@ class ToolNodeInput(OptionalContract):
         require_unique_runtime_refs(self.validated_observation_fact_refs)
         self.image_view.check_object(self.object_record)
         return self
+
+    def check_dispatch_object(self) -> None:
+        """Require the current N03 Object and its ROI on the original image."""
+        obj = self.object_record
+        if self.image_view.marked_media_ref is not None:
+            raise ValueError(
+                "N05 dispatch requires the original image without marked media"
+            )
+        self.image_view.check_object(obj, original_regions=True)
+        digest = sha256(canonical_bytes(obj.model_dump(mode="json"))).hexdigest()
+        object_pins = tuple(
+            (item.ref.record_id, item.digest)
+            for item in self.envelope.upstream_artifacts
+            if item.ref.record_kind is RuntimeRecordKind.OBJECT
+        )
+        if object_pins != ((obj.object_id, digest),):
+            raise ValueError("N05 dispatch requires the exact pinned N03 Object")
 
     def check_plan(self, profile: ProfileDefinition, plan: ToolPlanDefinition) -> None:
         obj = self.object_record
@@ -257,6 +278,33 @@ class ToolPlanRunSummary(ContractModel):
         require_unique_runtime_refs(refs)
         if self.status != "succeeded" and not self.validation_issues:
             raise ValueError("incomplete ToolPlan must retain failure diagnostics")
+        return self
+
+
+class ToolPlanCompletionRecord(ContractModel):
+    """Durable success of a configured N05 Attempt with no invoked steps."""
+
+    schema_version: Literal["1.0.0"]
+    execution_id: RecordId
+    node_run_ref: NodeRunRef
+    attempt_ref: AttemptRef
+    summary: ToolPlanRunSummary
+
+    @model_validator(mode="after")
+    def check_no_invocations(self) -> Self:
+        if (
+            self.summary.status != "succeeded"
+            or self.summary.validation_issues
+            or any(
+                not isinstance(step, UninvokedToolStep)
+                or step.disposition != "skipped"
+                or step.validation_issues
+                for step in self.summary.steps
+            )
+        ):
+            raise ValueError(
+                "ToolPlan completion requires only successful skips or an empty plan"
+            )
         return self
 
 

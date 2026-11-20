@@ -30,7 +30,6 @@ from jimu_runtime.domain.runtime.media import MediaAsset, MediaRef
 from jimu_runtime.domain.runtime.perception import (
     GroundingOutcome,
     ModelGroundingProvenance,
-    ObjectRecord,
 )
 from jimu_runtime.domain.runtime.tool_executions import (
     FailedToolResult,
@@ -157,8 +156,6 @@ class InspectionNodes:
             self._load_image,
             requests.stage,
             model_resource_scope_id,
-            self._stage_marked_frame,
-            self._load_marked_frame,
         )
 
     def ports(self) -> WorkflowAdapters:
@@ -187,22 +184,6 @@ class InspectionNodes:
             cast(ImageMediaType, original.asset.mime_type),
             original.asset.media_ref.sha256,
         )
-
-    async def _stage_marked_frame(
-        self, claimed: ClaimedNode, obj: ObjectRecord, image: VerifiedImage
-    ) -> None:
-        await self._media.stage_marked_frame(
-            claimed.claim.scope,
-            obj,
-            image,
-            node_run_id=claimed.node.node_run_id,
-            attempt_id=claimed.attempt.attempt_id,
-        )
-
-    async def _load_marked_frame(
-        self, scope: VerifiedExecutionScope, obj: ObjectRecord
-    ) -> VerifiedImage:
-        return await self._media.read_marked_frame(scope.task.idempotency_scope, obj)
 
     async def invoke(self, claimed: ClaimedNode) -> NodeResult:
         node_id = claimed.node.node_id
@@ -328,29 +309,33 @@ class InspectionNodes:
             if item.selection_id
             == message.inputs.object_record.question_selection_ref.record_id
         )
-        obj = message.inputs.object_record
         prompt_bytes = None
         for row in message.durable_request_evidence:
             content = await self._requests.read(scope.task, row)
             if row.evidence_id == message.inputs.compiled_prompt_evidence_ref.record_id:
                 prompt_bytes = content
-        if obj.marked_frame is not None:
-            if prompt_bytes is None:
-                raise AdapterRejected(
-                    "inspection.marked_observation_prompt_unavailable"
-                )
-            call = observation_model_call(
-                message.inputs,
-                prompt_bytes.decode("utf-8"),
-                await self._load_marked_frame(scope, obj),
-                self._perception.resource_scope_id,
-            )
-            await self._gateway.verify_model_call(
-                claimed,
-                message.invocation,
-                call,
-                late=message.batch.arrival_qualification == "late",
-            )
+        original = message.original_image_evidence
+        if (
+            original is not None
+            and await self._read_evidence(claimed, original) is None
+        ):
+            raise AdapterRejected("inspection_observation_original_unavailable")
+        if prompt_bytes is None:
+            raise AdapterRejected("inspection.observation_prompt_unavailable")
+        call = observation_model_call(
+            message.inputs,
+            prompt_bytes.decode("utf-8"),
+            await self._load_image(scope),
+            self._perception.resource_scope_id,
+            attempt_number=claimed.attempt.attempt_number,
+            original=original,
+        )
+        await self._gateway.verify_model_call(
+            claimed,
+            message.invocation,
+            call,
+            late=message.batch.arrival_qualification == "late",
+        )
         known = await self._media.read_model_response(
             claimed.claim.scope,
             scope.execution_id,
@@ -380,6 +365,7 @@ class InspectionNodes:
                 known.receipt.invalid_question_slots,
                 known.receipt.missing_question_slots,
             ),
+            records=claimed.previous,
         )
 
     async def _validate_decision(

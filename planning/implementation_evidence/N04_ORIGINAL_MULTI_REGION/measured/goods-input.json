@@ -1,0 +1,264 @@
+{
+  "source_case": "goods/registered-policy",
+  "image_sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8",
+  "image_size": [
+    1536,
+    1024
+  ],
+  "id_map": {
+    "r1": {
+      "object_id": "perception.object.1d2b642dc62eda1a36988fb88704bbd7c6bf2ee2ac1fbb41630ad5f0bdbbef57",
+      "xyxy_px": [
+        463.87199999999996,
+        392.192,
+        629.76,
+        575.488
+      ]
+    },
+    "r2": {
+      "object_id": "perception.object.d913ddcf5adf016c17be94cd00e370c715b1a6db21e9894b2950ab0bfb4bf052",
+      "xyxy_px": [
+        509.952,
+        261.12,
+        642.048,
+        394.24
+      ]
+    },
+    "r3": {
+      "object_id": "perception.object.ae365ce50c99f09a316c0a17d0d6f83d0b90110d4701606f09d8383e7a75c007",
+      "xyxy_px": [
+        617.472,
+        424.96,
+        1018.368,
+        613.376
+      ]
+    },
+    "r4": {
+      "object_id": "perception.object.93f3140f76fc54646b5c5cc93b09d4b7880e6941b26340c074a1cbcde5bb0c32",
+      "xyxy_px": [
+        628.2239999999999,
+        272.384,
+        881.664,
+        432.128
+      ]
+    },
+    "r5": {
+      "object_id": "perception.object.9d23ea5cb1a9b9cf0add2b447383e9444451f6435ec09afefd6ce7a38e1e03bb",
+      "xyxy_px": [
+        662.016,
+        210.944,
+        821.76,
+        274.432
+      ]
+    },
+    "r6": {
+      "object_id": "perception.object.b8275436a1c6b4d872a0f7daa8bf56a30030135d08a47a1ade6bd7bb2b6db93b",
+      "xyxy_px": [
+        818.6880000000001,
+        150.528,
+        1003.008,
+        282.624
+      ]
+    },
+    "r7": {
+      "object_id": "perception.object.d812ae38f53d4ebab77ca47ca40567954a3bf4a9dcb28fd7a9a521ba769ebd52",
+      "xyxy_px": [
+        875.52,
+        277.504,
+        1012.224,
+        387.072
+      ]
+    },
+    "r8": {
+      "object_id": "perception.object.1fa673a04ce00b4af8d88ea1d3b0186422bafd998c7ba943f09932e1f7a549af",
+      "xyxy_px": [
+        877.0559999999999,
+        386.048,
+        1035.2640000000001,
+        433.152
+      ]
+    },
+    "r9": {
+      "object_id": "perception.object.a02cd031821b9129411c5c18a9c5f689098ea0aba235b903282378cf5b74dc05",
+      "xyxy_px": [
+        1004.5440000000001,
+        175.104,
+        1084.416,
+        284.672
+      ]
+    }
+  },
+  "prompt": "Observe the one supplied original image. Each bbox_2d is [left,top,right,bottom], integer thousandths of full image width and height, clamped to 0..999, origin top left. Use each target's coordinates to identify that specific subject. Evaluate only its listed questions, using surrounding visual context where needed. Answer by the provided target IDs and question IDs. If unclear use the uncertainty option for that question. Do not decide violations. Return the JSON object only.\n{\"questions\": {\"sidewalk_encroachment\": {\"prompt\": \"Evaluate only the specified carton. The signed synthetic camera calibration covers the pedestrian_zone specified in reference_regions. Evaluate whether the carton's ground-contact footprint overlaps this pedestrian zone. A stacked carton is assessable only when its support to the ground is visually unambiguous and the supporting footprint overlaps the zone. A raised carton seen against this rectangle is not sufficient. Answer occupies_sidewalk when physical overlap is clear, does_not_occupy_sidewalk when clearly disjoint, or insufficient_visibility when ground contact, support, or overlap is ambiguous. Assess visual geometry only.\", \"answers\": [\"occupies_sidewalk\", \"does_not_occupy_sidewalk\", \"insufficient_visibility\"]}}, \"targets\": [{\"id\": \"r1\", \"subject\": \"sidewalk_goods\", \"bbox_2d\": [302, 383, 410, 562], \"questions\": [\"sidewalk_encroachment\"]}, {\"id\": \"r2\", \"subject\": \"sidewalk_goods\", \"bbox_2d\": [332, 255, 418, 385], \"questions\": [\"sidewalk_encroachment\"]}, {\"id\": \"r3\", \"subject\": \"sidewalk_goods\", \"bbox_2d\": [402, 415, 663, 599], \"questions\": [\"sidewalk_encroachment\"]}, {\"id\": \"r4\", \"subject\": \"sidewalk_goods\", \"bbox_2d\": [409, 266, 574, 422], \"questions\": [\"sidewalk_encroachment\"]}, {\"id\": \"r5\", \"subject\": \"sidewalk_goods\", \"bbox_2d\": [431, 206, 535, 268], \"questions\": [\"sidewalk_encroachment\"]}, {\"id\": \"r6\", \"subject\": \"sidewalk_goods\", \"bbox_2d\": [533, 147, 653, 276], \"questions\": [\"sidewalk_encroachment\"]}, {\"id\": \"r7\", \"subject\": \"sidewalk_goods\", \"bbox_2d\": [570, 271, 659, 378], \"questions\": [\"sidewalk_encroachment\"]}, {\"id\": \"r8\", \"subject\": \"sidewalk_goods\", \"bbox_2d\": [571, 377, 674, 423], \"questions\": [\"sidewalk_encroachment\"]}, {\"id\": \"r9\", \"subject\": \"sidewalk_goods\", \"bbox_2d\": [654, 171, 706, 278], \"questions\": [\"sidewalk_encroachment\"]}], \"reference_regions\": {\"pedestrian_zone\": {\"bbox_2d\": [290, 400, 859, 957]}}}",
+  "response_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "r1",
+      "r2",
+      "r3",
+      "r4",
+      "r5",
+      "r6",
+      "r7",
+      "r8",
+      "r9"
+    ],
+    "properties": {
+      "r1": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sidewalk_encroachment"
+        ],
+        "properties": {
+          "sidewalk_encroachment": {
+            "enum": [
+              "occupies_sidewalk",
+              "does_not_occupy_sidewalk",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "r2": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sidewalk_encroachment"
+        ],
+        "properties": {
+          "sidewalk_encroachment": {
+            "enum": [
+              "occupies_sidewalk",
+              "does_not_occupy_sidewalk",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "r3": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sidewalk_encroachment"
+        ],
+        "properties": {
+          "sidewalk_encroachment": {
+            "enum": [
+              "occupies_sidewalk",
+              "does_not_occupy_sidewalk",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "r4": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sidewalk_encroachment"
+        ],
+        "properties": {
+          "sidewalk_encroachment": {
+            "enum": [
+              "occupies_sidewalk",
+              "does_not_occupy_sidewalk",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "r5": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sidewalk_encroachment"
+        ],
+        "properties": {
+          "sidewalk_encroachment": {
+            "enum": [
+              "occupies_sidewalk",
+              "does_not_occupy_sidewalk",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "r6": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sidewalk_encroachment"
+        ],
+        "properties": {
+          "sidewalk_encroachment": {
+            "enum": [
+              "occupies_sidewalk",
+              "does_not_occupy_sidewalk",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "r7": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sidewalk_encroachment"
+        ],
+        "properties": {
+          "sidewalk_encroachment": {
+            "enum": [
+              "occupies_sidewalk",
+              "does_not_occupy_sidewalk",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "r8": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sidewalk_encroachment"
+        ],
+        "properties": {
+          "sidewalk_encroachment": {
+            "enum": [
+              "occupies_sidewalk",
+              "does_not_occupy_sidewalk",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "r9": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sidewalk_encroachment"
+        ],
+        "properties": {
+          "sidewalk_encroachment": {
+            "enum": [
+              "occupies_sidewalk",
+              "does_not_occupy_sidewalk",
+              "insufficient_visibility"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "request_bytes": 4390008,
+  "request_sha256": "3a382149fdba3b045d7f8daafbf40a594bf30e28d9fe80eae4e66a436ff6aed2"
+}

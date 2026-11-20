@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from hashlib import sha256
 from typing import Literal
 
 from pydantic import TypeAdapter
@@ -11,7 +10,6 @@ from jimu_runtime.domain.conditions import condition_references
 from jimu_runtime.domain.definition_enums import (
     ConditionInputDomain,
     ContextSource,
-    EvidenceType,
 )
 from jimu_runtime.domain.definitions.capabilities import ProfileDefinition
 from jimu_runtime.domain.definitions.geometry import GeometryResourceDefinition
@@ -56,11 +54,7 @@ from jimu_runtime.domain.policies import (
 from jimu_runtime.domain.runtime.applicability import RuleTruth
 from jimu_runtime.domain.runtime.evidence import (
     EvidenceAsset,
-    ExecutionEvidenceScope,
-    OriginalImageEvidence,
-    ProjectEvidenceAccess,
     RetentionPolicyRef,
-    TaskEvidenceAccess,
 )
 from jimu_runtime.domain.runtime.executions import NodeId, PinnedRuntimeInput
 from jimu_runtime.domain.runtime.facts import (
@@ -123,6 +117,7 @@ from jimu_runtime.inspection.media import (
     VerifiedEvidence,
     VerifiedOriginal,
 )
+from jimu_runtime.inspection.media.original_evidence import original_image_evidence
 from jimu_runtime.inspection.rules import PredicateInputError, PreparedPredicate
 from jimu_runtime.tools.executor import AncestorToolEvidence
 from jimu_runtime.tools.registry import ToolDispatch
@@ -135,7 +130,11 @@ from jimu_runtime.workflow.tool_dependencies import (
 )
 from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
 from jimu_runtime.workflow.worker_nodes import NodeResult, invocation_envelope
-from jimu_runtime.workflow.worker_records import ObservationMessage, ToolMessage
+from jimu_runtime.workflow.worker_records import (
+    ObservationMessage,
+    ToolMessage,
+    tool_plan_completion_artifact,
+)
 
 _SLOT = TypeAdapter[ToolSidecarSlot](ToolSidecarSlot)
 _OUTPUT_SLOTS: dict[str, ToolSidecarSlot] = {
@@ -280,44 +279,14 @@ def _original_evidence(
     policy_ref: PolicyContentRef,
     policy: EvidencePolicy,
 ) -> EvidenceBytes:
-    media = original.asset
-    scope, task = claimed.claim.scope, claimed.opened.scope.task
-    material = (
-        f"{claimed.execution.execution_id}:{media.media_ref.sha256}:{policy_ref.digest}"
-    )
-    evidence_id = f"input.original.{sha256(material.encode()).hexdigest()}"
-    access = (
-        TaskEvidenceAccess(
-            scope="task", project_id=scope.project_id, task_id=task.task_id
-        )
-        if policy.access_scope == "task"
-        else ProjectEvidenceAccess(scope="project", project_id=scope.project_id)
-    )
     return EvidenceBytes(
-        EvidenceAsset(
-            schema_version=VERSION,
-            evidence_id=evidence_id,
-            evidence_type=EvidenceType.ORIGINAL_IMAGE,
-            scope=ExecutionEvidenceScope(
-                scope="execution", execution_id=claimed.execution.execution_id
-            ),
-            storage=media.storage,
-            sha256=media.media_ref.sha256,
-            mime_type=media.mime_type,
-            byte_size=media.byte_size,
-            stage=media.stage,
-            spatial=OriginalImageEvidence(
-                kind="original_image",
-                original_media_ref=media.media_ref,
-                coordinate_system=original.coordinate_system,
-            ),
-            producer_id="jimu.media.intake",
-            producer_version=VERSION,
-            access_scope=access,
-            retention=RetentionPolicyRef(
-                evidence_policy_ref=policy_ref, retention_class=policy.retention_class
-            ),
-            created_at=media.stage.staged_at,
+        original_image_evidence(
+            claimed.opened.scope.task,
+            claimed.execution.execution_id,
+            original.asset,
+            original.coordinate_system,
+            policy_ref,
+            policy,
         ),
         original.content,
     )
@@ -661,31 +630,34 @@ def _completion_output(
             for item in invocations
         ),
     )
-    summary: Literal["succeeded", "partial", "failed"] = (
+    status: Literal["succeeded", "partial", "failed"] = (
         "failed"
         if state.publication_blocked
         else ("partial" if authority else "failed")
         if state.issues
         else "succeeded"
     )
+    summary = ToolPlanRunSummary(
+        tool_plan_ref=inputs.tool_plan_ref,
+        object_ref=ObjectRef(
+            record_kind=K.OBJECT, record_id=inputs.object_record.object_id
+        ),
+        status=status,
+        steps=tuple(state.outcomes[step.step_id] for step in plan.steps),
+        validation_issues=tuple(state.issues),
+    )
+    if status == "succeeded" and not contents:
+        artifacts = (tool_plan_completion_artifact(inputs, summary),)
     output = ToolNodeOutput(
         schema_version=VERSION,
         envelope=_output_envelope(
             claimed,
             () if state.publication_blocked else artifacts,
             contents,
-            summary,
-            tuple(state.issues),
+            status,
+            summary.validation_issues,
         ),
-        summary=ToolPlanRunSummary(
-            tool_plan_ref=inputs.tool_plan_ref,
-            object_ref=ObjectRef(
-                record_kind=K.OBJECT, record_id=inputs.object_record.object_id
-            ),
-            status=summary,
-            steps=tuple(state.outcomes[step.step_id] for step in plan.steps),
-            validation_issues=tuple(state.issues),
-        ),
+        summary=summary,
         tool_fact_refs=tuple(
             FactRef(record_kind=K.FACT, record_id=item.fact_id) for item in facts
         ),
@@ -767,6 +739,7 @@ def _output_envelope(
 class GeometryNodeAdapter:
     media: LocalMediaStore
     tools: ToolExecutionAdapter
+    input_type: type[GeometryInput] = GeometryInput
 
     async def execute(self, claimed: ClaimedNode) -> NodeResult:
         opened, scope = claimed.opened, claimed.opened.scope
@@ -801,6 +774,8 @@ class GeometryNodeAdapter:
                 claimed.claim.scope, scope.task
             )
         except MediaError:
+            if not plan.steps:
+                raise AdapterRejected("geometry.original_unavailable") from None
             state.publication_blocked = True
             for step in plan.steps:
                 state.block(
@@ -813,6 +788,8 @@ class GeometryNodeAdapter:
             original.asset != opened.source.media
             or original.coordinate_system != obj.coordinate_system
         ):
+            if not plan.steps:
+                raise AdapterRejected("geometry.original_media_mismatch")
             state.publication_blocked = True
             for step in plan.steps:
                 state.block(
@@ -820,6 +797,8 @@ class GeometryNodeAdapter:
                     "geometry.original_media_mismatch",
                     "The original image differs from the pinned source.",
                 )
+            return _completion_output(claimed, inputs, plan, state)
+        if not plan.steps:
             return _completion_output(claimed, inputs, plan, state)
         region = _parking_area(claimed, original)
         steps = {
@@ -1019,13 +998,15 @@ class GeometryNodeAdapter:
                 self.media, claimed.claim.scope, dispatch, sidecar, retention, policy
             )
 
-        prepared = GeometryInput(
+        prepared = self.input_type(
             original.asset,
             _original_evidence(claimed, original, policy_ref, policy),
             stage,
             object_bbox=inputs.object_record.bbox,
             parking_area=region,
             masks=tuple(proofs),
+            member_boxes=inputs.object_record.grounding_member_boxes
+            or (inputs.object_record.bbox,),
         )
         finished = await self.tools.execute_step(
             claimed,

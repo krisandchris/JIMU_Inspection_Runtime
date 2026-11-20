@@ -1,0 +1,35 @@
+task=task.5543b45156b53065ba5c23bd2c4933a384b8289e2876ec16f9e1b463e9cae482 execution=execution.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6 bundle=e88e79380456d9aaf4778ccb18a7daed04a230ef18a2339148819cdf49c4c535
+0 applied
+1 applied
+2 applied
+3 applied
+Traceback (most recent call last):
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/planning/implementation_evidence/LIVE_THREE_TASKS_20261119/harness/run_marked_mask.py", line 24, in <module>
+    asyncio.run(run(out,bridge.url,img,marked_mask_source,region='isolated_food_service',caps=capability_snapshot))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/planning/implementation_evidence/LIVE_THREE_TASKS_20261119/harness/runtime_harness.py", line 160, in run
+    step = await worker.run_once(scope, eid, owner=f"live-{index}", lease_ms=99000)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/src/jimu_runtime/workflow/worker.py", line 589, in run_once
+    return await self._execute_claim(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/src/jimu_runtime/workflow/worker.py", line 850, in _execute_claim
+    disposition = await self._commit(
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/src/jimu_runtime/workflow/worker.py", line 907, in _commit
+    return await jobs.complete(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/src/jimu_runtime/workflow/jobs.py", line 1124, in complete
+    return await self._submit(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/src/jimu_runtime/workflow/jobs.py", line 1207, in _submit
+    raise ValueError(
+ValueError: a successful result requires at least one pinned artifact

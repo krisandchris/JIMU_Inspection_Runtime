@@ -185,6 +185,7 @@ class ObjectRecord(EffectiveQuestionSelection):
         exclude_if=lambda value: value is None,
         json_schema_extra=omit_default_from_schema,
     )
+    # Preserve serialized records and digests written before geometry-only grounding.
     marked_frame: AbsentOptional[MarkedGroundingFrame] = Field(
         default=None,
         validate_default=False,
@@ -211,16 +212,19 @@ class ObjectRecord(EffectiveQuestionSelection):
             if self.marked_frame is not None:
                 raise ValueError("a marked frame requires grouped grounding members")
         elif (
-            self.marked_frame is None
-            or self.marked_frame.media_ref.media_id
-            in {self.source_media_ref.media_id, self.object_id}
-            or BBoxXYXY.enclosing(self.grounding_member_boxes) != self.bbox
+            BBoxXYXY.enclosing(self.grounding_member_boxes) != self.bbox
             or tuple(sorted(self.grounding_member_boxes, key=lambda box: box.xyxy))
             != self.grounding_member_boxes
         ):
             raise ValueError(
-                "grouped grounding requires canonical members, their enclosing box, "
-                "and a distinct marked frame"
+                "grouped grounding requires canonical members and their enclosing box"
+            )
+        if self.marked_frame is not None and self.marked_frame.media_ref.media_id in {
+            self.source_media_ref.media_id,
+            self.object_id,
+        }:
+            raise ValueError(
+                "a historical marked frame requires a distinct media identity"
             )
         require_unique_runtime_refs(self.evidence_refs)
         return self

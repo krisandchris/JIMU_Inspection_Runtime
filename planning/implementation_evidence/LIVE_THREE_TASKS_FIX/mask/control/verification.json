@@ -1,0 +1,135 @@
+{
+  "status": "RUNTIME_VERIFIED",
+  "case": "control",
+  "task_id": "task.b15b9d50cbc1c4d5877fde1f78d1aa1e9cd96c2f4e250cbcaa32ce5ec01ddea7",
+  "execution_id": "execution.99664253af49d2a2eff30230a704f3efd2773b432ebb4e455b632f72d3c875e3",
+  "object_id": "perception.object.7d068a5765a80ee0a50a1ebdb7156f10a63a0d2bb15691fb97204a3cfa66fdd8",
+  "bbox_xyxy": [
+    579.072,
+    0.0,
+    1276.416,
+    1021.952
+  ],
+  "postgres_version": "16.14 (Debian 16.14-1.pgdg13+1)",
+  "bundle_digest": "378c0cbc0f6a37b63ac0502228d58b736fad810cbe23c68f3745801cf261875a",
+  "original_image_sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3",
+  "marked_image_sha256": "dcafecc62714bb126af80a41b8ee26e0ff23b34e093327b0b9a9b36784e28504",
+  "http_statuses": [
+    202,
+    200,
+    200,
+    200,
+    200
+  ],
+  "node_statuses": {
+    "N01": "succeeded",
+    "N02": "succeeded",
+    "N03": "succeeded",
+    "N04": "succeeded",
+    "N05": "succeeded",
+    "N06": "succeeded"
+  },
+  "provider_invocations": {
+    "object_observation-result": "live-153e795d6417461e91254bd72a62f67d",
+    "object_grounding-result": "live-ae998eada1be4bf3b0e010ea91c511d5",
+    "candidate_prediction-result": "live-2580b59d8d8745d69ae198f4476b2589",
+    "profile_discovery-result": "live-0cdcd6a9efd948bc962fba6bbc6d74a8"
+  },
+  "context_values": [],
+  "grounding_scope_association": null,
+  "observations": {
+    "face_visibility": {
+      "status": "known",
+      "value": "face_assessable",
+      "fact_id": "perception.fact.9d3dec42300366fb5aa35cbd25e11c963d72413f2b5323832bcae1f2758a4490"
+    },
+    "mask_status": {
+      "status": "known",
+      "value": "not_wearing_mask",
+      "fact_id": "perception.fact.1afb18de3aec2ca008f706f693b41bf689df973dc5632be33d01599f4f380628"
+    }
+  },
+  "tool_plan_completion": {
+    "ref": {
+      "record_kind": "tool_plan_run_summary",
+      "record_id": "cc9a1533e9be460ea36e008b8b40f9ea"
+    },
+    "digest": "c60f080fb6f190aea857b6beb212a4161f8a6f5650a98a9358891ace691e1e7a"
+  },
+  "tool_steps": 0,
+  "original_image_evidence": {
+    "schema_version": "1.0.0",
+    "evidence_id": "input.original.f6b2d99cc19d840ce83c6dd5b78fceca36d01201e8885b900b601bd0cb182bf1",
+    "evidence_type": "original_image",
+    "scope": {
+      "scope": "execution",
+      "execution_id": "execution.99664253af49d2a2eff30230a704f3efd2773b432ebb4e455b632f72d3c875e3"
+    },
+    "storage": {
+      "store_id": "jimu.local-media",
+      "object_key": "media-v1/08170ec13efc2c564365c65f38bb1f488a3c84485027b3181019d0f6ca5fbb71"
+    },
+    "sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3",
+    "mime_type": "image/png",
+    "byte_size": 2195859,
+    "stage": {
+      "stage": "finalized",
+      "staged_at": "2026-11-19T13:02:35.066635Z",
+      "verified_at": "2026-11-19T13:02:35.066635Z",
+      "verified_sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3",
+      "object_version": "sha256:11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3"
+    },
+    "spatial": {
+      "kind": "original_image",
+      "original_media_ref": {
+        "media_id": "synthetic.scene.image",
+        "sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3"
+      },
+      "coordinate_system": {
+        "coordinate_system_id": "synthetic.scene.image",
+        "frame": "original_image",
+        "dimensions": {
+          "width": 1536,
+          "height": 1024
+        }
+      }
+    },
+    "producer_id": "jimu.media.intake",
+    "producer_version": "1.0.0",
+    "access_scope": {
+      "scope": "task",
+      "project_id": "synthetic.nonmotor.parking",
+      "task_id": "task.b15b9d50cbc1c4d5877fde1f78d1aa1e9cd96c2f4e250cbcaa32ce5ec01ddea7"
+    },
+    "retention": {
+      "evidence_policy_ref": {
+        "artifact_kind": "policy",
+        "artifact_id": "question-evidence",
+        "version": "1.0.0",
+        "digest": "daee5c30f05ec3a34f8c30f3ac0e9e74322eb0ed8b22056ce191fe20fd39020d"
+      },
+      "retention_class": {
+        "vocabulary_ref": {
+          "artifact_kind": "vocabulary",
+          "artifact_id": "retention",
+          "version": "1.0.0",
+          "digest": "ade921a7c39a30bb44e7aa9c4b58907389cdbecfc03e6188ebfd36e693c59fc5"
+        },
+        "member": "synthetic"
+      }
+    },
+    "created_at": "2026-11-19T13:02:35.066635Z"
+  },
+  "fact_evidence_refs": [
+    "input.original.f6b2d99cc19d840ce83c6dd5b78fceca36d01201e8885b900b601bd0cb182bf1",
+    "request.40f5a5230dfae50012386021cedd59279955cfc4cc6954244bf2cb9b108f80dd",
+    "request.92be7246155f7d1d01a03c95ab40dda2867742d9e89d5acddb0e70b7aae6ebfe"
+  ],
+  "object_decision": "uncertain",
+  "summary_result": "uncertain",
+  "coverage": "partial",
+  "matched_rules": [],
+  "coverage_reasons": [
+    "applicability_unresolved"
+  ]
+}

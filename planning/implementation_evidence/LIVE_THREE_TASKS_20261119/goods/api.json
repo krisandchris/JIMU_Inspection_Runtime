@@ -1,0 +1,692 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/v1/inference/tasks",
+    "status": 202,
+    "body": {
+      "schema_version": "1.0.0",
+      "task": {
+        "schema_version": "1.0.0",
+        "task_id": "task.372725a228511cef0112f674a556e6f3837204c194696d12837a56c3a95e7746",
+        "request_id": "trial.82caa4290de746d5871a139e4f68d317",
+        "idempotency_scope": {
+          "project_id": "synthetic.nonmotor.parking",
+          "client_id": "synthetic.edge"
+        },
+        "idempotency_key": "trial.82caa4290de746d5871a139e4f68d317",
+        "media_ref": {
+          "media_id": "synthetic.scene.image",
+          "sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8"
+        },
+        "context": {
+          "device_id": "synthetic.device",
+          "camera_id": "synthetic.fixed.camera",
+          "region_id": "isolated_sidewalk",
+          "clock": {
+            "captured_at": "2026-01-02T00:00:00Z",
+            "original_timestamp": "2026-01-02T00:00:00+00:00",
+            "original_timezone": "UTC",
+            "source": "device_clock",
+            "clock_id": "synthetic.device",
+            "uncertainty_ms": null
+          },
+          "metadata": {
+            "kind": "record",
+            "value": {}
+          }
+        },
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+        "accepted_at": "2026-01-02T00:00:00Z",
+        "status": "accepted",
+        "trace": {
+          "trace_id": "synthetic.scene.trace",
+          "span_id": null,
+          "parent_span_id": null
+        }
+      },
+      "execution": {
+        "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+        "pins": {
+          "release_id": "synthetic.parking.release",
+          "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+          "runtime_version": "1.0.0",
+          "workflow_version": "1.0.0",
+          "model_pins": [
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "candidate_prediction",
+                "version": "1.0.0",
+                "digest": "8a7cb3177fe68b907d50a60d6d8a0691e5eeeceb557bcaffe6431e99e79905d3"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+              "deployments": [
+                {
+                  "provider_id": "synthetic.loopback",
+                  "deployment_id": "synthetic.nonmotor.parking.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.0.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.0.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "object_grounding",
+                "version": "1.0.0",
+                "digest": "6677d577d063c0be708256c655a68ca83c6d4b6316ce9426b70ae5631eb88c15"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+              "deployments": [
+                {
+                  "provider_id": "synthetic.loopback",
+                  "deployment_id": "synthetic.nonmotor.parking.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.0.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.0.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "object_observation",
+                "version": "1.0.0",
+                "digest": "c931b89341be8e13e6948e0959d9bfe29f905db5a1c44ae1eb48f9a4a613d170"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+              "deployments": [
+                {
+                  "provider_id": "synthetic.loopback",
+                  "deployment_id": "synthetic.nonmotor.parking.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.0.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.0.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "profile_discovery",
+                "version": "1.0.0",
+                "digest": "86fba2ed5ec769f9836c5e624d33d37c4fe57f725e981c4bc55125657738e8a3"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+              "deployments": [
+                {
+                  "provider_id": "synthetic.loopback",
+                  "deployment_id": "synthetic.nonmotor.parking.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.0.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.0.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tool_pins": [],
+          "input_digest": "35be76c9bc1df5f7569fef64edb42795e665daf5f865225b77ebb37707fc9200"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/inference/tasks/task.372725a228511cef0112f674a556e6f3837204c194696d12837a56c3a95e7746/result",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+      "coverage": {
+        "schema_version": "1.0.0",
+        "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+        "coverage_id": "synthetic.coverage.4dcdc5a1abb044388df6a18f1f923b73dd04e2fc8838dc047c23c174f365dc27",
+        "applicability_scope": {
+          "scope_status": "evaluated",
+          "context_snapshot_ref": {
+            "record_kind": "context_snapshot",
+            "record_id": "perception.context.be1bd640f36ae42f49bb9689caa166a67ffdb52f40cd6f556c794c1cde10da92"
+          },
+          "profile_eligibility_evaluation_ref": {
+            "record_kind": "profile_eligibility_evaluation",
+            "record_id": "synthetic.eligibility.4c92efafb5ffc1bdf2c9bbff14e3921c13c3bd1e0d63c89caf6719a22659c627"
+          },
+          "configured_profile_refs": [
+            {
+              "artifact_kind": "profile",
+              "artifact_id": "sidewalk_goods",
+              "version": "1.0.0",
+              "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+            }
+          ]
+        },
+        "discovery_outcome": "failed",
+        "discovery_model_invocation_refs": [],
+        "hit_profile_refs": [],
+        "profiles": [
+          {
+            "schema_version": "1.0.0",
+            "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+            "release_id": "synthetic.parking.release",
+            "bundle_digest": "131eeb998fbdfd2f9131c161da9afb4f962a1eab2f31e13ac142498f91ae1e76",
+            "profile_ref": {
+              "artifact_kind": "profile",
+              "artifact_id": "sidewalk_goods",
+              "version": "1.0.0",
+              "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+            },
+            "grounding_outcome": "not_evaluated",
+            "object_refs": [],
+            "object_count": 0,
+            "obligation_ids": [
+              "synthetic.profile-obligation.23f18aeb5f49a94a6fd2031ddbf9bb01db85b03c971c23f344e4ffef68e631cc",
+              "synthetic.coverage-obligation.df87d32577cbd795939b1bc4391da9696ccc192cc45038c5135b95b8f1247cbf",
+              "synthetic.coverage-obligation.9df1898d384ed4e4aefaaca8ac6da70b857b962bd552c2d28a51d82921159125"
+            ],
+            "coverage_status": "none",
+            "reasons": [
+              "grounding_not_evaluated",
+              "profile_not_discovered"
+            ],
+            "missing_evidence_refs": []
+          }
+        ],
+        "mandatory_rule_coverage": {
+          "scan": "all_mandatory",
+          "obligations": [
+            {
+              "obligation_id": "synthetic.profile-obligation.23f18aeb5f49a94a6fd2031ddbf9bb01db85b03c971c23f344e4ffef68e631cc",
+              "profile_ref": {
+                "artifact_kind": "profile",
+                "artifact_id": "sidewalk_goods",
+                "version": "1.0.0",
+                "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+              },
+              "target": {
+                "scope": "profile"
+              },
+              "outcome": {
+                "disposition": "included",
+                "selected_applicability": {
+                  "evaluation_ref": {
+                    "record_kind": "profile_eligibility_evaluation",
+                    "record_id": "synthetic.eligibility.4c92efafb5ffc1bdf2c9bbff14e3921c13c3bd1e0d63c89caf6719a22659c627"
+                  },
+                  "trace_ref": {
+                    "record_kind": "applicability_trace",
+                    "record_id": "synthetic.profile-trace.4dd4cbf6bb2a82c7b70c0e61b7e7e87ad458595a34b51ebe6108b10615e41657"
+                  }
+                }
+              }
+            },
+            {
+              "obligation_id": "synthetic.coverage-obligation.df87d32577cbd795939b1bc4391da9696ccc192cc45038c5135b95b8f1247cbf",
+              "profile_ref": {
+                "artifact_kind": "profile",
+                "artifact_id": "sidewalk_goods",
+                "version": "1.0.0",
+                "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+              },
+              "target": {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "sidewalk-goods.rules",
+                  "version": "1.0.0",
+                  "digest": "d6e696bd54c2892174b2e714b2aba6b265e5cd8dfc371b18e0fdf102ca543c31"
+                },
+                "scope": "rule_set"
+              },
+              "outcome": {
+                "disposition": "dependency_not_evaluated",
+                "reason": "discovery_failed",
+                "blocker_node_run_ref": {
+                  "record_kind": "node_run",
+                  "record_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc"
+                }
+              }
+            },
+            {
+              "obligation_id": "synthetic.coverage-obligation.9df1898d384ed4e4aefaaca8ac6da70b857b962bd552c2d28a51d82921159125",
+              "profile_ref": {
+                "artifact_kind": "profile",
+                "artifact_id": "sidewalk_goods",
+                "version": "1.0.0",
+                "digest": "c971a41fedc8a11cf217b3a5a4a31e83a66f5746c36dd4431592e3d945e1f3ae"
+              },
+              "target": {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "sidewalk-goods.rules",
+                  "version": "1.0.0",
+                  "digest": "d6e696bd54c2892174b2e714b2aba6b265e5cd8dfc371b18e0fdf102ca543c31"
+                },
+                "scope": "rule",
+                "rule_ref": {
+                  "artifact_kind": "rule",
+                  "artifact_id": "sidewalk_goods_encroachment",
+                  "version": "1.0.0",
+                  "digest": "73c9f0fc091f4a3ee88c3d7de98839694529d49c94209410a1f8cdb2cac02f80"
+                }
+              },
+              "outcome": {
+                "disposition": "dependency_not_evaluated",
+                "reason": "discovery_failed",
+                "blocker_node_run_ref": {
+                  "record_kind": "node_run",
+                  "record_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc"
+                }
+              }
+            }
+          ]
+        },
+        "selected_applicability_evaluation_refs": [
+          {
+            "record_kind": "profile_eligibility_evaluation",
+            "record_id": "synthetic.eligibility.4c92efafb5ffc1bdf2c9bbff14e3921c13c3bd1e0d63c89caf6719a22659c627"
+          }
+        ],
+        "applicability_trace_refs": [
+          {
+            "record_kind": "applicability_trace",
+            "record_id": "synthetic.profile-trace.4dd4cbf6bb2a82c7b70c0e61b7e7e87ad458595a34b51ebe6108b10615e41657"
+          }
+        ],
+        "unresolved_obligation_refs": [],
+        "object_count": 0,
+        "coverage_status": "none",
+        "reasons": [
+          "discovery_failed",
+          "grounding_not_evaluated",
+          "profile_not_discovered"
+        ],
+        "missing_evidence_refs": [],
+        "summary_result": "uncertain",
+        "matches": [],
+        "created_at": "2026-11-19T12:21:04.431271Z"
+      },
+      "decisions": [],
+      "projected_traces": [],
+      "projected_rule_set_evaluations": [],
+      "projected_rule_evaluations": [],
+      "unresolved_obligations": []
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/executions/execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb/trace",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+      "trace_id": "synthetic.scene.trace",
+      "through_event_number": 20,
+      "events": [
+        {
+          "number": 1,
+          "recorded_at": "2026-11-19T12:21:02.457405Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "accepted"
+        },
+        {
+          "number": 2,
+          "recorded_at": "2026-11-19T12:21:02.457405Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "queued"
+        },
+        {
+          "number": 3,
+          "recorded_at": "2026-11-19T12:21:02.457405Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 4,
+          "recorded_at": "2026-11-19T12:21:02.778510Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 5,
+          "recorded_at": "2026-11-19T12:21:02.778510Z",
+          "kind": "execution_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 6,
+          "recorded_at": "2026-11-19T12:21:02.778510Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "node_id": "N01",
+          "attempt_id": "0ae5563621f84d52ada838c10dafff64",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 7,
+          "recorded_at": "2026-11-19T12:21:02.778510Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 8,
+          "recorded_at": "2026-11-19T12:21:02.822363Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "node_id": "N01",
+          "attempt_id": "0ae5563621f84d52ada838c10dafff64",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 9,
+          "recorded_at": "2026-11-19T12:21:02.822363Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.3d20c1538bdd3f36d0b251f957615f3a4f636d4be40977b083d531ca6ca817fb",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 10,
+          "recorded_at": "2026-11-19T12:21:02.822363Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 11,
+          "recorded_at": "2026-11-19T12:21:03.177250Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc",
+          "node_id": "N02",
+          "attempt_id": "8234f9e666814f92abcf3375f5cac6d5",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 12,
+          "recorded_at": "2026-11-19T12:21:03.177250Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 13,
+          "recorded_at": "2026-11-19T12:21:04.112784Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc",
+          "node_id": "N02",
+          "attempt_id": "8234f9e666814f92abcf3375f5cac6d5",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "failed"
+        },
+        {
+          "number": 14,
+          "recorded_at": "2026-11-19T12:21:04.112784Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2e00665c47fab9c93cf958033840cea753f32d86185abb4185cb39c7155737dc",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "failed"
+        },
+        {
+          "number": 15,
+          "recorded_at": "2026-11-19T12:21:04.112784Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.f4e8c3b0f94dce350a5912a106f08e9120992469e3567374861e8db86c9bee14",
+          "node_id": "N03",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "blocked"
+        },
+        {
+          "number": 16,
+          "recorded_at": "2026-11-19T12:21:04.112784Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.e06c725e3bab283563e4ff9fce4dd5ab27eb41a2ceefa27016791ce2b212f322",
+          "node_id": "N04",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "blocked"
+        },
+        {
+          "number": 17,
+          "recorded_at": "2026-11-19T12:21:04.112784Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.852ee09b7a3036eeaf81065d828e077cac7306c77792d9c02d9cb8ba500dc165",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "blocked"
+        },
+        {
+          "number": 18,
+          "recorded_at": "2026-11-19T12:21:04.112784Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.af2bd94a5875812a5df124f8a563f5c769275769dc35562392d1a0b03401098c",
+          "node_id": "N06",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "blocked"
+        },
+        {
+          "number": 19,
+          "recorded_at": "2026-11-19T12:21:04.431271Z",
+          "kind": "execution_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "failed"
+        },
+        {
+          "number": 20,
+          "recorded_at": "2026-11-19T12:21:04.431271Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "failed"
+        }
+      ],
+      "next_after_event_number": null
+    }
+  }
+]

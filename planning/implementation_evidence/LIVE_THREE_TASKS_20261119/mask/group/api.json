@@ -1,0 +1,805 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/v1/inference/tasks",
+    "status": 202,
+    "body": {
+      "schema_version": "1.0.0",
+      "task": {
+        "schema_version": "1.0.0",
+        "task_id": "task.5543b45156b53065ba5c23bd2c4933a384b8289e2876ec16f9e1b463e9cae482",
+        "request_id": "trial.3284e60594c64580aa0e1de796a2cc90",
+        "idempotency_scope": {
+          "project_id": "synthetic.nonmotor.parking",
+          "client_id": "synthetic.edge"
+        },
+        "idempotency_key": "trial.3284e60594c64580aa0e1de796a2cc90",
+        "media_ref": {
+          "media_id": "synthetic.scene.image",
+          "sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3"
+        },
+        "context": {
+          "device_id": "synthetic.device",
+          "camera_id": "synthetic.fixed.camera",
+          "region_id": "isolated_food_service",
+          "clock": {
+            "captured_at": "2026-01-02T00:00:00Z",
+            "original_timestamp": "2026-01-02T00:00:00+00:00",
+            "original_timezone": "UTC",
+            "source": "device_clock",
+            "clock_id": "synthetic.device",
+            "uncertainty_ms": null
+          },
+          "metadata": {
+            "kind": "record",
+            "value": {}
+          }
+        },
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "e88e79380456d9aaf4778ccb18a7daed04a230ef18a2339148819cdf49c4c535",
+        "accepted_at": "2026-01-02T00:00:00Z",
+        "status": "accepted",
+        "trace": {
+          "trace_id": "synthetic.scene.trace",
+          "span_id": null,
+          "parent_span_id": null
+        }
+      },
+      "execution": {
+        "execution_id": "execution.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6",
+        "pins": {
+          "release_id": "synthetic.parking.release",
+          "bundle_digest": "e88e79380456d9aaf4778ccb18a7daed04a230ef18a2339148819cdf49c4c535",
+          "runtime_version": "1.0.0",
+          "workflow_version": "1.0.0",
+          "model_pins": [
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "candidate_prediction",
+                "version": "1.0.0",
+                "digest": "bb284ea7b8afcf9350621ef6f755816f4209c297f5037f3e624bb29bd1b5eb4f"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+              "deployments": [
+                {
+                  "provider_id": "synthetic.loopback",
+                  "deployment_id": "synthetic.nonmotor.parking.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.0.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.0.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "object_grounding",
+                "version": "1.0.0",
+                "digest": "ffded5d1fac0cd1d999f791776e49215f605f17af6eb8f21e3464bde8df9e027"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+              "deployments": [
+                {
+                  "provider_id": "synthetic.loopback",
+                  "deployment_id": "synthetic.nonmotor.parking.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.0.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.0.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "object_observation",
+                "version": "1.0.0",
+                "digest": "1e1ddf2d2291149f3cc49ebee2074791171ae53b45472ff71a3b46164508ab44"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+              "deployments": [
+                {
+                  "provider_id": "synthetic.loopback",
+                  "deployment_id": "synthetic.nonmotor.parking.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.0.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.0.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "profile_discovery",
+                "version": "1.0.0",
+                "digest": "542c6f94dd8763f34992dfb6fdedd568108a235fb9b8706b1236a10a9d23f10c"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+              "deployments": [
+                {
+                  "provider_id": "synthetic.loopback",
+                  "deployment_id": "synthetic.nonmotor.parking.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.0.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.0.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tool_pins": [],
+          "input_digest": "d60c1e56adad3e2cf8988642454d6231178b3b629b7b4d0b58c48ca849570b99"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/executions/execution.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6",
+      "task_id": "task.5543b45156b53065ba5c23bd2c4933a384b8289e2876ec16f9e1b463e9cae482",
+      "pins": {
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "e88e79380456d9aaf4778ccb18a7daed04a230ef18a2339148819cdf49c4c535",
+        "runtime_version": "1.0.0",
+        "workflow_version": "1.0.0",
+        "model_pins": [
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "candidate_prediction",
+              "version": "1.0.0",
+              "digest": "bb284ea7b8afcf9350621ef6f755816f4209c297f5037f3e624bb29bd1b5eb4f"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+            "deployments": [
+              {
+                "provider_id": "synthetic.loopback",
+                "deployment_id": "synthetic.nonmotor.parking.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.0.0"
+                  ],
+                  "allowed_model_versions": [
+                    "1.0.0"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          },
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "object_grounding",
+              "version": "1.0.0",
+              "digest": "ffded5d1fac0cd1d999f791776e49215f605f17af6eb8f21e3464bde8df9e027"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+            "deployments": [
+              {
+                "provider_id": "synthetic.loopback",
+                "deployment_id": "synthetic.nonmotor.parking.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.0.0"
+                  ],
+                  "allowed_model_versions": [
+                    "1.0.0"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          },
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "object_observation",
+              "version": "1.0.0",
+              "digest": "1e1ddf2d2291149f3cc49ebee2074791171ae53b45472ff71a3b46164508ab44"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+            "deployments": [
+              {
+                "provider_id": "synthetic.loopback",
+                "deployment_id": "synthetic.nonmotor.parking.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.0.0"
+                  ],
+                  "allowed_model_versions": [
+                    "1.0.0"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          },
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "profile_discovery",
+              "version": "1.0.0",
+              "digest": "542c6f94dd8763f34992dfb6fdedd568108a235fb9b8706b1236a10a9d23f10c"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+            "deployments": [
+              {
+                "provider_id": "synthetic.loopback",
+                "deployment_id": "synthetic.nonmotor.parking.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.0.0"
+                  ],
+                  "allowed_model_versions": [
+                    "1.0.0"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          }
+        ],
+        "tool_pins": [],
+        "input_digest": "d60c1e56adad3e2cf8988642454d6231178b3b629b7b4d0b58c48ca849570b99"
+      },
+      "trace": {
+        "trace_id": "synthetic.scene.trace",
+        "span_id": null,
+        "parent_span_id": null
+      },
+      "status": "running",
+      "created_at": "2026-11-19T12:25:07.379990Z",
+      "started_at": "2026-11-19T12:25:07.693777Z",
+      "ended_at": null,
+      "context_snapshot": {
+        "snapshot_ref": {
+          "record_kind": "context_snapshot",
+          "record_id": "perception.context.4e058145fbc7ba934729f097f4179a8a39afa48d36165c43385f8795f0344b6b"
+        },
+        "snapshot_digest": "254c41f3c01e8c414b2a0fd5034bb87c44eb4d6c68cefb68aad6b15d4256ab58"
+      },
+      "model_invocation_refs": [
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.db4903369a0d4b0a8cbf4a62308e764d"
+        },
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.76f5ab5ae11b406495f029be1db6e7d1"
+        },
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.d86dac1a67f04a3eadad6c16ec5ab2a9"
+        }
+      ]
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/inference/tasks/task.5543b45156b53065ba5c23bd2c4933a384b8289e2876ec16f9e1b463e9cae482/result",
+    "status": 409,
+    "body": {
+      "code": "result_pending",
+      "request_id": "534b49632ea74161a823f1d514b0be0c"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/executions/execution.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6/trace",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6",
+      "trace_id": "synthetic.scene.trace",
+      "through_event_number": 27,
+      "events": [
+        {
+          "number": 1,
+          "recorded_at": "2026-11-19T12:25:07.379990Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "accepted"
+        },
+        {
+          "number": 2,
+          "recorded_at": "2026-11-19T12:25:07.379990Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "queued"
+        },
+        {
+          "number": 3,
+          "recorded_at": "2026-11-19T12:25:07.379990Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 4,
+          "recorded_at": "2026-11-19T12:25:07.693777Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 5,
+          "recorded_at": "2026-11-19T12:25:07.693777Z",
+          "kind": "execution_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 6,
+          "recorded_at": "2026-11-19T12:25:07.693777Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6",
+          "node_id": "N01",
+          "attempt_id": "a544961b08b04c54a5a022864933b3dd",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 7,
+          "recorded_at": "2026-11-19T12:25:07.693777Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 8,
+          "recorded_at": "2026-11-19T12:25:07.731159Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6",
+          "node_id": "N01",
+          "attempt_id": "a544961b08b04c54a5a022864933b3dd",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 9,
+          "recorded_at": "2026-11-19T12:25:07.731159Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.126a7660acdd407efb8c4b068804f85d7c412650adb99c6c54b7cd36f08cf1b6",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 10,
+          "recorded_at": "2026-11-19T12:25:07.731159Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.899d5bfb02cc1559082bac6fcf71fc3505fc60b7e020f5f5b1caccf179f00fe0",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 11,
+          "recorded_at": "2026-11-19T12:25:08.063049Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.899d5bfb02cc1559082bac6fcf71fc3505fc60b7e020f5f5b1caccf179f00fe0",
+          "node_id": "N02",
+          "attempt_id": "0400a2b909194e1b8885fff9eedfcbc4",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 12,
+          "recorded_at": "2026-11-19T12:25:08.063049Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.899d5bfb02cc1559082bac6fcf71fc3505fc60b7e020f5f5b1caccf179f00fe0",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 13,
+          "recorded_at": "2026-11-19T12:25:08.911231Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.899d5bfb02cc1559082bac6fcf71fc3505fc60b7e020f5f5b1caccf179f00fe0",
+          "node_id": "N02",
+          "attempt_id": "0400a2b909194e1b8885fff9eedfcbc4",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 14,
+          "recorded_at": "2026-11-19T12:25:08.911231Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.899d5bfb02cc1559082bac6fcf71fc3505fc60b7e020f5f5b1caccf179f00fe0",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 15,
+          "recorded_at": "2026-11-19T12:25:08.911231Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.7f03716d3631cbfab83f2655254d383a9c685d823bb01f1966254c03d6824774",
+          "node_id": "N03",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 16,
+          "recorded_at": "2026-11-19T12:25:09.236993Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.7f03716d3631cbfab83f2655254d383a9c685d823bb01f1966254c03d6824774",
+          "node_id": "N03",
+          "attempt_id": "bb0b88dc470f45668bcde60997bfa025",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 17,
+          "recorded_at": "2026-11-19T12:25:09.236993Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.7f03716d3631cbfab83f2655254d383a9c685d823bb01f1966254c03d6824774",
+          "node_id": "N03",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 18,
+          "recorded_at": "2026-11-19T12:25:10.825778Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.7f03716d3631cbfab83f2655254d383a9c685d823bb01f1966254c03d6824774",
+          "node_id": "N03",
+          "attempt_id": "bb0b88dc470f45668bcde60997bfa025",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 19,
+          "recorded_at": "2026-11-19T12:25:10.825778Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.7f03716d3631cbfab83f2655254d383a9c685d823bb01f1966254c03d6824774",
+          "node_id": "N03",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 20,
+          "recorded_at": "2026-11-19T12:25:10.825778Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2c3c2fc51523dd6da740cfc426e85e0b8942aca10b57bcd9bfe79fa67651aeea",
+          "node_id": "N04",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 21,
+          "recorded_at": "2026-11-19T12:25:10.825778Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.30d394921a42d842f48a44fd2dee870972819724ba9862f4487724109648e859",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 22,
+          "recorded_at": "2026-11-19T12:25:11.133201Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2c3c2fc51523dd6da740cfc426e85e0b8942aca10b57bcd9bfe79fa67651aeea",
+          "node_id": "N04",
+          "attempt_id": "940a20d10cbd4ab2b6c602d3a0a568a9",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 23,
+          "recorded_at": "2026-11-19T12:25:11.133201Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2c3c2fc51523dd6da740cfc426e85e0b8942aca10b57bcd9bfe79fa67651aeea",
+          "node_id": "N04",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 24,
+          "recorded_at": "2026-11-19T12:25:55.024630Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2c3c2fc51523dd6da740cfc426e85e0b8942aca10b57bcd9bfe79fa67651aeea",
+          "node_id": "N04",
+          "attempt_id": "940a20d10cbd4ab2b6c602d3a0a568a9",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 25,
+          "recorded_at": "2026-11-19T12:25:55.024630Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2c3c2fc51523dd6da740cfc426e85e0b8942aca10b57bcd9bfe79fa67651aeea",
+          "node_id": "N04",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        }
+      ],
+      "next_after_event_number": 25
+    }
+  }
+]

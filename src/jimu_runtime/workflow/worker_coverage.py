@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from jimu_runtime.bundle.producer_rules import producer_activation_contexts
 from jimu_runtime.domain.definition_enums import FactScope
 from jimu_runtime.domain.definition_support import reference_identity
 from jimu_runtime.domain.definitions.capabilities import ProfileDefinition
@@ -16,6 +17,7 @@ from jimu_runtime.domain.producers import (
     AlwaysActivation,
     ProducerCatalogue,
     SystemProducer,
+    ToolStepProducer,
 )
 from jimu_runtime.domain.rules.definitions import RuleDefinition, RuleSetDefinition
 from jimu_runtime.domain.runtime.applicability import (
@@ -1125,15 +1127,41 @@ def build_coverage_authority(
             "Coverage authority must use the actual pinned Bundle catalogue"
         )
     (entry,) = resolved.catalogue.of_kind(ArtifactKind.FACT_PRODUCER_CATALOG)
-    if not isinstance(entry.value, ProducerCatalogue) or any(
-        isinstance(item.producer, SystemProducer)
-        or not isinstance(item.activation_condition, AlwaysActivation)
+    if not isinstance(entry.value, ProducerCatalogue):
+        raise ValueError("workflow authority requires the pinned Producer Catalogue")
+    conditional = tuple(
+        item
         for item in entry.value.declarations
+        if not isinstance(item.activation_condition, AlwaysActivation)
+    )
+    conditional_steps = {
+        (item.profile_ref, producer.tool_plan_ref, producer.step_id)
+        for item in conditional
+        if isinstance(producer := item.producer, ToolStepProducer)
+    }
+    executed_steps = {
+        (tool.profile_ref, origin.tool_plan_ref, origin.step_id)
+        for tool in records.tool_executions
+        if isinstance(origin := tool.invocation_origin, ToolPlanStepOrigin)
+    }
+    # This projection validates declared condition scopes but cannot attest the
+    # truth of an invoked step's activation condition.
+    if (
+        conditional_steps & executed_steps
+        or {item.declaration_id for item in conditional}
+        & {item.producer_declaration_id for item in records.facts}
+        or any(
+            isinstance(item.producer, SystemProducer)
+            for item in entry.value.declarations
+        )
     ):
         raise ValueError(
-            "workflow authority currently requires unconditional Question or Tool declarations"
+            "workflow authority currently requires unconditional active Question or Tool declarations"
         )
     catalogue_ref = ProducerCatalogueContentRef.model_validate(entry.ref.model_dump())
+    registration = ProducerCatalogueRegistration(
+        ref=catalogue_ref, definition=entry.value
+    )
     definitions = resolved.definition_inputs
     profiles = tuple(
         item
@@ -1156,9 +1184,7 @@ def build_coverage_authority(
         if isinstance(item, RegisteredTool)
     )
     context = ProducerCatalogueContext(
-        registration=ProducerCatalogueRegistration(
-            ref=catalogue_ref, definition=entry.value
-        ),
+        registration=registration,
         context=ProducerValidationContext(
             profiles=profiles,
             questions=questions,
@@ -1166,7 +1192,9 @@ def build_coverage_authority(
             tools=tools,
             policies=definitions.policies,
             system_capabilities=(),
-            condition_contexts=(),
+            condition_contexts=producer_activation_contexts(
+                resolved.catalogue, registration, definitions
+            ),
         ),
     )
     history = LocalAuthorityHistoryInput(

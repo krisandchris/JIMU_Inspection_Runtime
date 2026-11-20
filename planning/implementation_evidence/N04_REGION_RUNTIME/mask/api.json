@@ -1,0 +1,1529 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/v1/inference/tasks",
+    "query": "",
+    "status": 202,
+    "body": {
+      "schema_version": "1.0.0",
+      "task": {
+        "schema_version": "1.0.0",
+        "task_id": "task.6461e27fd3ebdb1c62a05c148ee0378274edc8eab8e2d0cf453d23ea0e67c789",
+        "request_id": "live.8b8fbe544a9c4adb97b6aeb56131883e",
+        "idempotency_scope": {
+          "project_id": "synthetic.nonmotor.parking",
+          "client_id": "synthetic.edge"
+        },
+        "idempotency_key": "live.8b8fbe544a9c4adb97b6aeb56131883e",
+        "media_ref": {
+          "media_id": "synthetic.scene.image",
+          "sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3"
+        },
+        "context": {
+          "device_id": "synthetic.device",
+          "camera_id": "synthetic.fixed.camera",
+          "region_id": "isolated_food_service",
+          "clock": {
+            "captured_at": "2026-01-02T00:00:00Z",
+            "original_timestamp": "2026-01-02T00:00:00+00:00",
+            "original_timezone": "UTC",
+            "source": "device_clock",
+            "clock_id": "synthetic.device",
+            "uncertainty_ms": null
+          },
+          "metadata": {
+            "kind": "record",
+            "value": {
+              "synthetic_kitchen_employee_roster_attached": {
+                "kind": "bool",
+                "value": true
+              },
+              "synthetic_scope_evidence_sha256": {
+                "kind": "enum",
+                "value": "988ccf01c689c0db59fe9a3ce2914e642b299e289266e73480b4e4779fc8fa8d"
+              },
+              "synthetic_scope_image_sha256": {
+                "kind": "enum",
+                "value": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3"
+              }
+            }
+          }
+        },
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "beecd1ab6c4ae8f20f2727fc78764cc70aa13e678fa1652ed36baf2cfad7f30f",
+        "accepted_at": "2026-01-02T00:00:00Z",
+        "status": "accepted",
+        "trace": {
+          "trace_id": "live.8b8fbe544a9c4adb97b6aeb56131883e",
+          "span_id": null,
+          "parent_span_id": null
+        }
+      },
+      "execution": {
+        "execution_id": "execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+        "pins": {
+          "release_id": "synthetic.parking.release",
+          "bundle_digest": "beecd1ab6c4ae8f20f2727fc78764cc70aa13e678fa1652ed36baf2cfad7f30f",
+          "runtime_version": "1.0.0",
+          "workflow_version": "1.0.0",
+          "model_pins": [
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "candidate_prediction",
+                "version": "1.0.0",
+                "digest": "abca209fae4be533f71d2ac5c8183139c4661245fc66de6f70688448bd5da4bf"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "502301bc8103391aad51ec94b1ce1f43128e38b5793fcce3873b26233a1df1e3"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+              "deployments": [
+                {
+                  "provider_id": "live.inspection.protocol_bridge",
+                  "deployment_id": "live.inspection.protocol_bridge.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.2.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.2.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "object_grounding",
+                "version": "1.0.0",
+                "digest": "33761fd18d400edfae7f804f382cd775ebdc8fff214eedc767a849ae10ea1892"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "502301bc8103391aad51ec94b1ce1f43128e38b5793fcce3873b26233a1df1e3"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+              "deployments": [
+                {
+                  "provider_id": "live.inspection.protocol_bridge",
+                  "deployment_id": "live.inspection.protocol_bridge.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.2.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.2.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "object_observation",
+                "version": "1.0.0",
+                "digest": "3f134e7ff43d3740bf5b984a8e4607b33cede5950bba4db8929410e8144a835a"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "502301bc8103391aad51ec94b1ce1f43128e38b5793fcce3873b26233a1df1e3"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+              "deployments": [
+                {
+                  "provider_id": "live.inspection.protocol_bridge",
+                  "deployment_id": "live.inspection.protocol_bridge.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.2.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.2.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            },
+            {
+              "binding_ref": {
+                "artifact_kind": "model_binding",
+                "artifact_id": "profile_discovery",
+                "version": "1.0.0",
+                "digest": "a439afdb8859c376d38482da8b4dd2feaf1f42d0fc6918e261f52f2dc11cc22b"
+              },
+              "provider_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "provider",
+                "version": "1.0.0",
+                "digest": "502301bc8103391aad51ec94b1ce1f43128e38b5793fcce3873b26233a1df1e3"
+              },
+              "fallback_policy_ref": {
+                "artifact_kind": "policy",
+                "artifact_id": "fallback",
+                "version": "1.0.0",
+                "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+              },
+              "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+              "deployments": [
+                {
+                  "provider_id": "live.inspection.protocol_bridge",
+                  "deployment_id": "live.inspection.protocol_bridge.loopback",
+                  "logical_model_id": "synthetic.nonmotor.parking",
+                  "provider_kind": "remote",
+                  "actual_version_constraints": {
+                    "allowed_deployment_versions": [
+                      "1.2.0"
+                    ],
+                    "allowed_model_versions": [
+                      "1.2.0"
+                    ]
+                  },
+                  "required_features": [
+                    "rgb_image",
+                    "typed_context",
+                    "structured_output",
+                    "original_xyxy"
+                  ]
+                }
+              ]
+            }
+          ],
+          "tool_pins": [],
+          "input_digest": "0794057b83a3f0e2cba1afa70825050002c274f1f12ea6a0514359727c7955b9"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/executions/execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+    "query": "",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+      "task_id": "task.6461e27fd3ebdb1c62a05c148ee0378274edc8eab8e2d0cf453d23ea0e67c789",
+      "pins": {
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "beecd1ab6c4ae8f20f2727fc78764cc70aa13e678fa1652ed36baf2cfad7f30f",
+        "runtime_version": "1.0.0",
+        "workflow_version": "1.0.0",
+        "model_pins": [
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "candidate_prediction",
+              "version": "1.0.0",
+              "digest": "abca209fae4be533f71d2ac5c8183139c4661245fc66de6f70688448bd5da4bf"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "502301bc8103391aad51ec94b1ce1f43128e38b5793fcce3873b26233a1df1e3"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+            "deployments": [
+              {
+                "provider_id": "live.inspection.protocol_bridge",
+                "deployment_id": "live.inspection.protocol_bridge.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.2.0"
+                  ],
+                  "allowed_model_versions": [
+                    "1.2.0"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          },
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "object_grounding",
+              "version": "1.0.0",
+              "digest": "33761fd18d400edfae7f804f382cd775ebdc8fff214eedc767a849ae10ea1892"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "502301bc8103391aad51ec94b1ce1f43128e38b5793fcce3873b26233a1df1e3"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+            "deployments": [
+              {
+                "provider_id": "live.inspection.protocol_bridge",
+                "deployment_id": "live.inspection.protocol_bridge.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.2.0"
+                  ],
+                  "allowed_model_versions": [
+                    "1.2.0"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          },
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "object_observation",
+              "version": "1.0.0",
+              "digest": "3f134e7ff43d3740bf5b984a8e4607b33cede5950bba4db8929410e8144a835a"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "502301bc8103391aad51ec94b1ce1f43128e38b5793fcce3873b26233a1df1e3"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+            "deployments": [
+              {
+                "provider_id": "live.inspection.protocol_bridge",
+                "deployment_id": "live.inspection.protocol_bridge.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.2.0"
+                  ],
+                  "allowed_model_versions": [
+                    "1.2.0"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          },
+          {
+            "binding_ref": {
+              "artifact_kind": "model_binding",
+              "artifact_id": "profile_discovery",
+              "version": "1.0.0",
+              "digest": "a439afdb8859c376d38482da8b4dd2feaf1f42d0fc6918e261f52f2dc11cc22b"
+            },
+            "provider_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "provider",
+              "version": "1.0.0",
+              "digest": "502301bc8103391aad51ec94b1ce1f43128e38b5793fcce3873b26233a1df1e3"
+            },
+            "fallback_policy_ref": {
+              "artifact_kind": "policy",
+              "artifact_id": "fallback",
+              "version": "1.0.0",
+              "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+            },
+            "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+            "deployments": [
+              {
+                "provider_id": "live.inspection.protocol_bridge",
+                "deployment_id": "live.inspection.protocol_bridge.loopback",
+                "logical_model_id": "synthetic.nonmotor.parking",
+                "provider_kind": "remote",
+                "actual_version_constraints": {
+                  "allowed_deployment_versions": [
+                    "1.2.0"
+                  ],
+                  "allowed_model_versions": [
+                    "1.2.0"
+                  ]
+                },
+                "required_features": [
+                  "rgb_image",
+                  "typed_context",
+                  "structured_output",
+                  "original_xyxy"
+                ]
+              }
+            ]
+          }
+        ],
+        "tool_pins": [],
+        "input_digest": "0794057b83a3f0e2cba1afa70825050002c274f1f12ea6a0514359727c7955b9"
+      },
+      "trace": {
+        "trace_id": "live.8b8fbe544a9c4adb97b6aeb56131883e",
+        "span_id": null,
+        "parent_span_id": null
+      },
+      "status": "completed",
+      "created_at": "2026-11-19T15:09:32.391699Z",
+      "started_at": "2026-11-19T15:09:32.943991Z",
+      "ended_at": "2026-11-19T15:09:52.866481Z",
+      "context_snapshot": {
+        "snapshot_ref": {
+          "record_kind": "context_snapshot",
+          "record_id": "perception.context.c4fbf1303e43e6505594f364b2d1cb3da5eb85a78cdb3a060469faab8b48afdd"
+        },
+        "snapshot_digest": "7b4ea1408decc634b9b551557417673381279c52924d3f888b76d7402397f0c7"
+      },
+      "model_invocation_refs": [
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.21fba644fe8f4c659cb8693e25c08bf6"
+        },
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.b559ccceda2545e1a325168ae3c9688a"
+        },
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.bc07208b409446a3aed45ac927154d26"
+        },
+        {
+          "record_kind": "model_invocation",
+          "record_id": "dispatch.bcccfcd6b23e4009a46d8cfd0d10d892"
+        }
+      ]
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/inference/tasks/task.6461e27fd3ebdb1c62a05c148ee0378274edc8eab8e2d0cf453d23ea0e67c789/result",
+    "query": "",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+      "coverage": {
+        "schema_version": "1.0.0",
+        "execution_id": "execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+        "release_id": "synthetic.parking.release",
+        "bundle_digest": "beecd1ab6c4ae8f20f2727fc78764cc70aa13e678fa1652ed36baf2cfad7f30f",
+        "coverage_id": "synthetic.coverage.43297b5b25bf07ebf43c2266de2799a35302322f413cc77077c8d53e15483f63",
+        "applicability_scope": {
+          "scope_status": "evaluated",
+          "context_snapshot_ref": {
+            "record_kind": "context_snapshot",
+            "record_id": "perception.context.c4fbf1303e43e6505594f364b2d1cb3da5eb85a78cdb3a060469faab8b48afdd"
+          },
+          "profile_eligibility_evaluation_ref": {
+            "record_kind": "profile_eligibility_evaluation",
+            "record_id": "synthetic.eligibility.106fbc82e920dbfbd7a89867adf26c201b6258d450ee9d84a7b977858400aee8"
+          },
+          "configured_profile_refs": [
+            {
+              "artifact_kind": "profile",
+              "artifact_id": "food_service_worker",
+              "version": "1.0.0",
+              "digest": "17b2290a2486a4deb2c88bab22435a7baa6c63f8b3d8ce7192a252148812b008"
+            }
+          ]
+        },
+        "discovery_outcome": "hits",
+        "discovery_model_invocation_refs": [
+          {
+            "record_kind": "model_invocation",
+            "record_id": "dispatch.21fba644fe8f4c659cb8693e25c08bf6"
+          }
+        ],
+        "hit_profile_refs": [
+          {
+            "artifact_kind": "profile",
+            "artifact_id": "food_service_worker",
+            "version": "1.0.0",
+            "digest": "17b2290a2486a4deb2c88bab22435a7baa6c63f8b3d8ce7192a252148812b008"
+          }
+        ],
+        "profiles": [
+          {
+            "schema_version": "1.0.0",
+            "execution_id": "execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+            "release_id": "synthetic.parking.release",
+            "bundle_digest": "beecd1ab6c4ae8f20f2727fc78764cc70aa13e678fa1652ed36baf2cfad7f30f",
+            "profile_ref": {
+              "artifact_kind": "profile",
+              "artifact_id": "food_service_worker",
+              "version": "1.0.0",
+              "digest": "17b2290a2486a4deb2c88bab22435a7baa6c63f8b3d8ce7192a252148812b008"
+            },
+            "grounding_outcome": "objects",
+            "object_refs": [
+              {
+                "record_kind": "object",
+                "record_id": "perception.object.36ae4e85d6f609efd27f1789f200df953515ced81b6638cad108132bc702560e"
+              }
+            ],
+            "object_count": 1,
+            "obligation_ids": [
+              "synthetic.profile-obligation.8237e971812d2b2dc1afad38549a9b12a174672c442c3a7092babd7ae5875d2b",
+              "synthetic.coverage-obligation.e5184179cedda02cf4732666b584b3699af0f148556df5bc941b056ea9ffa6ab",
+              "synthetic.coverage-obligation.649ad05754db64328b7278332a069664f07156bd4f73cbd89f932d196b5a9540"
+            ],
+            "coverage_status": "complete",
+            "reasons": [],
+            "missing_evidence_refs": []
+          }
+        ],
+        "mandatory_rule_coverage": {
+          "scan": "all_mandatory",
+          "obligations": [
+            {
+              "obligation_id": "synthetic.profile-obligation.8237e971812d2b2dc1afad38549a9b12a174672c442c3a7092babd7ae5875d2b",
+              "profile_ref": {
+                "artifact_kind": "profile",
+                "artifact_id": "food_service_worker",
+                "version": "1.0.0",
+                "digest": "17b2290a2486a4deb2c88bab22435a7baa6c63f8b3d8ce7192a252148812b008"
+              },
+              "target": {
+                "scope": "profile"
+              },
+              "outcome": {
+                "disposition": "included",
+                "selected_applicability": {
+                  "evaluation_ref": {
+                    "record_kind": "profile_eligibility_evaluation",
+                    "record_id": "synthetic.eligibility.106fbc82e920dbfbd7a89867adf26c201b6258d450ee9d84a7b977858400aee8"
+                  },
+                  "trace_ref": {
+                    "record_kind": "applicability_trace",
+                    "record_id": "synthetic.profile-trace.baab2a0a86b1da95d5d894451a4b425a7275047db1e8792a4a6942d67acd7151"
+                  }
+                }
+              }
+            },
+            {
+              "obligation_id": "synthetic.coverage-obligation.e5184179cedda02cf4732666b584b3699af0f148556df5bc941b056ea9ffa6ab",
+              "profile_ref": {
+                "artifact_kind": "profile",
+                "artifact_id": "food_service_worker",
+                "version": "1.0.0",
+                "digest": "17b2290a2486a4deb2c88bab22435a7baa6c63f8b3d8ce7192a252148812b008"
+              },
+              "target": {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "food-service-mask.rules",
+                  "version": "1.0.0",
+                  "digest": "bc93c39ca74e25ae78b9c0124d9db68e81a369601fde850f8e1ad54371146980"
+                },
+                "object_ref": {
+                  "record_kind": "object",
+                  "record_id": "perception.object.36ae4e85d6f609efd27f1789f200df953515ced81b6638cad108132bc702560e"
+                },
+                "scope": "rule_set"
+              },
+              "outcome": {
+                "disposition": "included",
+                "selected_applicability": {
+                  "evaluation_ref": {
+                    "record_kind": "rule_set_applicability_evaluation",
+                    "record_id": "synthetic.ruleset.1fe9046a00df33ea07f7e74b3e842e9d7e019b9904ec1b17691908be3cc3717c"
+                  },
+                  "trace_ref": {
+                    "record_kind": "applicability_trace",
+                    "record_id": "synthetic.ruleset-trace.6c437c7b495bb16f066cef0e7367eb1658269ab3d6c53843703c6b28f161eb54"
+                  }
+                }
+              }
+            },
+            {
+              "obligation_id": "synthetic.coverage-obligation.649ad05754db64328b7278332a069664f07156bd4f73cbd89f932d196b5a9540",
+              "profile_ref": {
+                "artifact_kind": "profile",
+                "artifact_id": "food_service_worker",
+                "version": "1.0.0",
+                "digest": "17b2290a2486a4deb2c88bab22435a7baa6c63f8b3d8ce7192a252148812b008"
+              },
+              "target": {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "food-service-mask.rules",
+                  "version": "1.0.0",
+                  "digest": "bc93c39ca74e25ae78b9c0124d9db68e81a369601fde850f8e1ad54371146980"
+                },
+                "object_ref": {
+                  "record_kind": "object",
+                  "record_id": "perception.object.36ae4e85d6f609efd27f1789f200df953515ced81b6638cad108132bc702560e"
+                },
+                "scope": "rule",
+                "rule_ref": {
+                  "artifact_kind": "rule",
+                  "artifact_id": "food_service_worker_no_mask",
+                  "version": "1.0.0",
+                  "digest": "f670baffe34ca1fc075c7d85fe63342c3ef22a886970b0a376816940018ea7f6"
+                }
+              },
+              "outcome": {
+                "disposition": "evaluated",
+                "selected_applicability": {
+                  "evaluation_ref": {
+                    "record_kind": "rule_applicability_evaluation",
+                    "record_id": "synthetic.rule.e1b2123516526d2559430d9a04248f782b1d79dc286f5ced29413505b2795e18"
+                  },
+                  "trace_ref": {
+                    "record_kind": "applicability_trace",
+                    "record_id": "synthetic.rule-trace.d9d256413c30e9a61912c8ee1fff9287b910d768b18401baf2178858da04ee49"
+                  }
+                },
+                "decision_ref": {
+                  "record_kind": "decision",
+                  "record_id": "synthetic.decision.945067a9a1a4f43d8c7cbc8bcaee64dfc1ed6c14e99ef18a2aced93d8bd75bea"
+                }
+              }
+            }
+          ]
+        },
+        "selected_applicability_evaluation_refs": [
+          {
+            "record_kind": "profile_eligibility_evaluation",
+            "record_id": "synthetic.eligibility.106fbc82e920dbfbd7a89867adf26c201b6258d450ee9d84a7b977858400aee8"
+          },
+          {
+            "record_kind": "rule_set_applicability_evaluation",
+            "record_id": "synthetic.ruleset.1fe9046a00df33ea07f7e74b3e842e9d7e019b9904ec1b17691908be3cc3717c"
+          },
+          {
+            "record_kind": "rule_applicability_evaluation",
+            "record_id": "synthetic.rule.e1b2123516526d2559430d9a04248f782b1d79dc286f5ced29413505b2795e18"
+          }
+        ],
+        "applicability_trace_refs": [
+          {
+            "record_kind": "applicability_trace",
+            "record_id": "synthetic.profile-trace.baab2a0a86b1da95d5d894451a4b425a7275047db1e8792a4a6942d67acd7151"
+          },
+          {
+            "record_kind": "applicability_trace",
+            "record_id": "synthetic.ruleset-trace.6c437c7b495bb16f066cef0e7367eb1658269ab3d6c53843703c6b28f161eb54"
+          },
+          {
+            "record_kind": "applicability_trace",
+            "record_id": "synthetic.rule-trace.d9d256413c30e9a61912c8ee1fff9287b910d768b18401baf2178858da04ee49"
+          }
+        ],
+        "unresolved_obligation_refs": [],
+        "object_count": 1,
+        "coverage_status": "complete",
+        "reasons": [],
+        "missing_evidence_refs": [],
+        "summary_result": "violation",
+        "matches": [
+          {
+            "object_ref": {
+              "record_kind": "object",
+              "record_id": "perception.object.36ae4e85d6f609efd27f1789f200df953515ced81b6638cad108132bc702560e"
+            },
+            "profile_ref": {
+              "artifact_kind": "profile",
+              "artifact_id": "food_service_worker",
+              "version": "1.0.0",
+              "digest": "17b2290a2486a4deb2c88bab22435a7baa6c63f8b3d8ce7192a252148812b008"
+            },
+            "decision_ref": {
+              "record_kind": "decision",
+              "record_id": "synthetic.decision.945067a9a1a4f43d8c7cbc8bcaee64dfc1ed6c14e99ef18a2aced93d8bd75bea"
+            },
+            "rule": {
+              "rule_set_ref": {
+                "artifact_kind": "rule_set",
+                "artifact_id": "food-service-mask.rules",
+                "version": "1.0.0",
+                "digest": "bc93c39ca74e25ae78b9c0124d9db68e81a369601fde850f8e1ad54371146980"
+              },
+              "rule_ref": {
+                "artifact_kind": "rule",
+                "artifact_id": "food_service_worker_no_mask",
+                "version": "1.0.0",
+                "digest": "f670baffe34ca1fc075c7d85fe63342c3ef22a886970b0a376816940018ea7f6"
+              }
+            }
+          }
+        ],
+        "created_at": "2026-11-19T15:09:52.866481Z"
+      },
+      "decisions": [
+        {
+          "schema_version": "1.0.0",
+          "execution_id": "execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+          "release_id": "synthetic.parking.release",
+          "bundle_digest": "beecd1ab6c4ae8f20f2727fc78764cc70aa13e678fa1652ed36baf2cfad7f30f",
+          "context_snapshot_ref": {
+            "record_kind": "context_snapshot",
+            "record_id": "perception.context.c4fbf1303e43e6505594f364b2d1cb3da5eb85a78cdb3a060469faab8b48afdd"
+          },
+          "scope": "object",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "food_service_worker",
+            "version": "1.0.0",
+            "digest": "17b2290a2486a4deb2c88bab22435a7baa6c63f8b3d8ce7192a252148812b008"
+          },
+          "object_ref": {
+            "record_kind": "object",
+            "record_id": "perception.object.36ae4e85d6f609efd27f1789f200df953515ced81b6638cad108132bc702560e"
+          },
+          "node_run_ref": {
+            "record_kind": "node_run",
+            "record_id": "synthetic.node.2127a168cd57c7fcd47fa81e002e8d5c1c881336912407e7e8842232a7497b17"
+          },
+          "attempt_ref": {
+            "record_kind": "attempt",
+            "record_id": "43c8a8154acf48dd9519cbdfb6b97e67"
+          },
+          "decision_id": "synthetic.decision.945067a9a1a4f43d8c7cbc8bcaee64dfc1ed6c14e99ef18a2aced93d8bd75bea",
+          "profile_eligibility_evaluation_ref": {
+            "record_kind": "profile_eligibility_evaluation",
+            "record_id": "synthetic.eligibility.106fbc82e920dbfbd7a89867adf26c201b6258d450ee9d84a7b977858400aee8"
+          },
+          "candidate_prediction_ref": {
+            "record_kind": "candidate_prediction",
+            "record_id": "synthetic.candidate.945067a9a1a4f43d8c7cbc8bcaee64dfc1ed6c14e99ef18a2aced93d8bd75bea"
+          },
+          "execution_coverage_ref": {
+            "record_kind": "execution_coverage",
+            "record_id": "synthetic.coverage.43297b5b25bf07ebf43c2266de2799a35302322f413cc77077c8d53e15483f63"
+          },
+          "rule_engine_version": "1.0.0",
+          "rule_evaluations": [
+            {
+              "rule": {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "food-service-mask.rules",
+                  "version": "1.0.0",
+                  "digest": "bc93c39ca74e25ae78b9c0124d9db68e81a369601fde850f8e1ad54371146980"
+                },
+                "rule_ref": {
+                  "artifact_kind": "rule",
+                  "artifact_id": "food_service_worker_no_mask",
+                  "version": "1.0.0",
+                  "digest": "f670baffe34ca1fc075c7d85fe63342c3ef22a886970b0a376816940018ea7f6"
+                }
+              },
+              "selected_rule_set_evaluation_ref": {
+                "record_kind": "rule_set_applicability_evaluation",
+                "record_id": "synthetic.ruleset.1fe9046a00df33ea07f7e74b3e842e9d7e019b9904ec1b17691908be3cc3717c"
+              },
+              "selected_rule_evaluation_ref": {
+                "record_kind": "rule_applicability_evaluation",
+                "record_id": "synthetic.rule.e1b2123516526d2559430d9a04248f782b1d79dc286f5ced29413505b2795e18"
+              },
+              "applicability_trace_ref": {
+                "record_kind": "applicability_trace",
+                "record_id": "synthetic.rule-trace.d9d256413c30e9a61912c8ee1fff9287b910d768b18401baf2178858da04ee49"
+              },
+              "result": {
+                "outcome": "evaluated",
+                "predicate": {
+                  "truth": "true",
+                  "diagnostic_codes": []
+                },
+                "guard": {
+                  "required_fact_refs": [
+                    {
+                      "record_kind": "fact",
+                      "record_id": "perception.fact.0a1f043ca17f5c94bf2556460cc42c53ece7b8bdc9602c2c43bc587d19a35b12"
+                    },
+                    {
+                      "record_kind": "fact",
+                      "record_id": "perception.fact.c54a2d61fbe3cdf90b5be070fcadb853d5eb68bcb9cd5dcdf2bb04d12023b924"
+                    }
+                  ],
+                  "required_evidence_refs": [
+                    {
+                      "record_kind": "evidence",
+                      "record_id": "input.original.a7d315ca512db782671621a269866b289e7702ef76429d1807d64b5b02e2cf00"
+                    }
+                  ],
+                  "authoritative_result_selection_refs": [
+                    {
+                      "record_kind": "authoritative_result_selection",
+                      "record_id": "perception.observation-authority.214635c7383b7c04cbe7671fd0ca902455a0f6dbf5a1db13e977e191b9e39629"
+                    }
+                  ],
+                  "fact_proofs": [
+                    {
+                      "selector": {
+                        "scope": "object",
+                        "fact_key": "face_visibility",
+                        "fact_schema_ref": {
+                          "artifact_kind": "fact_schema",
+                          "artifact_id": "face_visibility",
+                          "version": "1.0.0",
+                          "digest": "f7b55a359923b7b7d5b1d7624c15b40137eeac2c8f96ff2582cdf92fd56a904f"
+                        },
+                        "producer_selector": {
+                          "producer_kind": "vlm_question",
+                          "question_ref": {
+                            "artifact_kind": "question",
+                            "artifact_id": "face_visibility",
+                            "version": "1.0.0",
+                            "digest": "7d0baf8e90c6c15b73e5d69510d932eee70d29c4ab88f683c2123ef3caa1a867"
+                          },
+                          "output_name": "primary"
+                        },
+                        "field_path": []
+                      },
+                      "fact_ref": {
+                        "record_kind": "fact",
+                        "record_id": "perception.fact.0a1f043ca17f5c94bf2556460cc42c53ece7b8bdc9602c2c43bc587d19a35b12"
+                      },
+                      "authority_selection_ref": {
+                        "record_kind": "authoritative_result_selection",
+                        "record_id": "perception.observation-authority.214635c7383b7c04cbe7671fd0ca902455a0f6dbf5a1db13e977e191b9e39629"
+                      }
+                    },
+                    {
+                      "selector": {
+                        "scope": "object",
+                        "fact_key": "mask_status",
+                        "fact_schema_ref": {
+                          "artifact_kind": "fact_schema",
+                          "artifact_id": "mask_status",
+                          "version": "1.0.0",
+                          "digest": "6587783b11c63c676d62c3b0cbbbaf17fc61b6f899324003cb2b400fc46a3ee8"
+                        },
+                        "producer_selector": {
+                          "producer_kind": "vlm_question",
+                          "question_ref": {
+                            "artifact_kind": "question",
+                            "artifact_id": "mask_status",
+                            "version": "1.0.0",
+                            "digest": "c11b1e4d4db8c8bf75adb8968a815afc7816211e64a95d5f5c1c2e83c3eef423"
+                          },
+                          "output_name": "primary"
+                        },
+                        "field_path": []
+                      },
+                      "fact_ref": {
+                        "record_kind": "fact",
+                        "record_id": "perception.fact.c54a2d61fbe3cdf90b5be070fcadb853d5eb68bcb9cd5dcdf2bb04d12023b924"
+                      },
+                      "authority_selection_ref": {
+                        "record_kind": "authoritative_result_selection",
+                        "record_id": "perception.observation-authority.214635c7383b7c04cbe7671fd0ca902455a0f6dbf5a1db13e977e191b9e39629"
+                      }
+                    }
+                  ],
+                  "outcome": "complete"
+                },
+                "matched": true
+              },
+              "optional_fact_proofs": [],
+              "fact_refs": [
+                {
+                  "record_kind": "fact",
+                  "record_id": "perception.fact.0a1f043ca17f5c94bf2556460cc42c53ece7b8bdc9602c2c43bc587d19a35b12"
+                },
+                {
+                  "record_kind": "fact",
+                  "record_id": "perception.fact.c54a2d61fbe3cdf90b5be070fcadb853d5eb68bcb9cd5dcdf2bb04d12023b924"
+                }
+              ],
+              "evidence_refs": [
+                {
+                  "record_kind": "evidence",
+                  "record_id": "input.original.a7d315ca512db782671621a269866b289e7702ef76429d1807d64b5b02e2cf00"
+                }
+              ]
+            }
+          ],
+          "result": "violation",
+          "explanation": {
+            "applicable_rules": [
+              {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "food-service-mask.rules",
+                  "version": "1.0.0",
+                  "digest": "bc93c39ca74e25ae78b9c0124d9db68e81a369601fde850f8e1ad54371146980"
+                },
+                "rule_ref": {
+                  "artifact_kind": "rule",
+                  "artifact_id": "food_service_worker_no_mask",
+                  "version": "1.0.0",
+                  "digest": "f670baffe34ca1fc075c7d85fe63342c3ef22a886970b0a376816940018ea7f6"
+                }
+              }
+            ],
+            "evaluated_rules": [
+              {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "food-service-mask.rules",
+                  "version": "1.0.0",
+                  "digest": "bc93c39ca74e25ae78b9c0124d9db68e81a369601fde850f8e1ad54371146980"
+                },
+                "rule_ref": {
+                  "artifact_kind": "rule",
+                  "artifact_id": "food_service_worker_no_mask",
+                  "version": "1.0.0",
+                  "digest": "f670baffe34ca1fc075c7d85fe63342c3ef22a886970b0a376816940018ea7f6"
+                }
+              }
+            ],
+            "skipped_rules": [],
+            "blocked_rules": [],
+            "not_evaluated_rules": [],
+            "applicability_trace_refs": [
+              {
+                "record_kind": "applicability_trace",
+                "record_id": "synthetic.profile-trace.baab2a0a86b1da95d5d894451a4b425a7275047db1e8792a4a6942d67acd7151"
+              },
+              {
+                "record_kind": "applicability_trace",
+                "record_id": "synthetic.ruleset-trace.6c437c7b495bb16f066cef0e7367eb1658269ab3d6c53843703c6b28f161eb54"
+              },
+              {
+                "record_kind": "applicability_trace",
+                "record_id": "synthetic.rule-trace.d9d256413c30e9a61912c8ee1fff9287b910d768b18401baf2178858da04ee49"
+              }
+            ],
+            "obligation_ids": [
+              "synthetic.profile-obligation.8237e971812d2b2dc1afad38549a9b12a174672c442c3a7092babd7ae5875d2b",
+              "synthetic.coverage-obligation.e5184179cedda02cf4732666b584b3699af0f148556df5bc941b056ea9ffa6ab",
+              "synthetic.coverage-obligation.649ad05754db64328b7278332a069664f07156bd4f73cbd89f932d196b5a9540"
+            ],
+            "fact_refs": [
+              {
+                "record_kind": "fact",
+                "record_id": "perception.fact.0a1f043ca17f5c94bf2556460cc42c53ece7b8bdc9602c2c43bc587d19a35b12"
+              },
+              {
+                "record_kind": "fact",
+                "record_id": "perception.fact.c54a2d61fbe3cdf90b5be070fcadb853d5eb68bcb9cd5dcdf2bb04d12023b924"
+              }
+            ],
+            "evidence_refs": [
+              {
+                "record_kind": "evidence",
+                "record_id": "input.original.a7d315ca512db782671621a269866b289e7702ef76429d1807d64b5b02e2cf00"
+              }
+            ]
+          },
+          "conflict_resolution": {
+            "mode": "collect_all",
+            "conflict_policy_refs": [
+              {
+                "artifact_kind": "policy",
+                "artifact_id": "conflict",
+                "version": "1.0.0",
+                "digest": "33115f079b9fdb09b64e9e6801b01790bb536d17f4b8a814bb844702d7c87671"
+              }
+            ],
+            "matched_rules": [
+              {
+                "rule_set_ref": {
+                  "artifact_kind": "rule_set",
+                  "artifact_id": "food-service-mask.rules",
+                  "version": "1.0.0",
+                  "digest": "bc93c39ca74e25ae78b9c0124d9db68e81a369601fde850f8e1ad54371146980"
+                },
+                "rule_ref": {
+                  "artifact_kind": "rule",
+                  "artifact_id": "food_service_worker_no_mask",
+                  "version": "1.0.0",
+                  "digest": "f670baffe34ca1fc075c7d85fe63342c3ef22a886970b0a376816940018ea7f6"
+                }
+              }
+            ],
+            "matched_category_ids": [
+              "food_service_worker_no_mask"
+            ]
+          },
+          "created_at": "2026-11-19T15:09:51.513313Z"
+        }
+      ],
+      "projected_traces": [],
+      "projected_rule_set_evaluations": [],
+      "projected_rule_evaluations": [],
+      "unresolved_obligations": []
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/executions/execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a/trace",
+    "query": "limit=25&after_event_number=0",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+      "trace_id": "live.8b8fbe544a9c4adb97b6aeb56131883e",
+      "through_event_number": 36,
+      "events": [
+        {
+          "number": 1,
+          "recorded_at": "2026-11-19T15:09:32.391699Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "accepted"
+        },
+        {
+          "number": 2,
+          "recorded_at": "2026-11-19T15:09:32.391699Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "queued"
+        },
+        {
+          "number": 3,
+          "recorded_at": "2026-11-19T15:09:32.391699Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 4,
+          "recorded_at": "2026-11-19T15:09:32.943991Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 5,
+          "recorded_at": "2026-11-19T15:09:32.943991Z",
+          "kind": "execution_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 6,
+          "recorded_at": "2026-11-19T15:09:32.943991Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+          "node_id": "N01",
+          "attempt_id": "1f75df0cc8084212962e6277a5acbd5d",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 7,
+          "recorded_at": "2026-11-19T15:09:32.943991Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 8,
+          "recorded_at": "2026-11-19T15:09:33.014454Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+          "node_id": "N01",
+          "attempt_id": "1f75df0cc8084212962e6277a5acbd5d",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 9,
+          "recorded_at": "2026-11-19T15:09:33.014454Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "node.n01.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+          "node_id": "N01",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 10,
+          "recorded_at": "2026-11-19T15:09:33.014454Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.fad851406cdb7ebb0142db523d9611aec7f70dbad13f8048aa9bc6e3b8793655",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 11,
+          "recorded_at": "2026-11-19T15:09:33.514910Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.fad851406cdb7ebb0142db523d9611aec7f70dbad13f8048aa9bc6e3b8793655",
+          "node_id": "N02",
+          "attempt_id": "693b1f2412284626865504416c51d179",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 12,
+          "recorded_at": "2026-11-19T15:09:33.514910Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.fad851406cdb7ebb0142db523d9611aec7f70dbad13f8048aa9bc6e3b8793655",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 13,
+          "recorded_at": "2026-11-19T15:09:34.414309Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.fad851406cdb7ebb0142db523d9611aec7f70dbad13f8048aa9bc6e3b8793655",
+          "node_id": "N02",
+          "attempt_id": "693b1f2412284626865504416c51d179",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 14,
+          "recorded_at": "2026-11-19T15:09:34.414309Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.fad851406cdb7ebb0142db523d9611aec7f70dbad13f8048aa9bc6e3b8793655",
+          "node_id": "N02",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 15,
+          "recorded_at": "2026-11-19T15:09:34.414309Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2a4861e94c9416c17d3f98a6dd51acdcd8a38550b471a20407dbf7659e756821",
+          "node_id": "N03",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 16,
+          "recorded_at": "2026-11-19T15:09:34.749415Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2a4861e94c9416c17d3f98a6dd51acdcd8a38550b471a20407dbf7659e756821",
+          "node_id": "N03",
+          "attempt_id": "15027ab9cc774e2c8774ba2ac3f667fe",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 17,
+          "recorded_at": "2026-11-19T15:09:34.749415Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2a4861e94c9416c17d3f98a6dd51acdcd8a38550b471a20407dbf7659e756821",
+          "node_id": "N03",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 18,
+          "recorded_at": "2026-11-19T15:09:36.436672Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2a4861e94c9416c17d3f98a6dd51acdcd8a38550b471a20407dbf7659e756821",
+          "node_id": "N03",
+          "attempt_id": "15027ab9cc774e2c8774ba2ac3f667fe",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 19,
+          "recorded_at": "2026-11-19T15:09:36.436672Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2a4861e94c9416c17d3f98a6dd51acdcd8a38550b471a20407dbf7659e756821",
+          "node_id": "N03",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 20,
+          "recorded_at": "2026-11-19T15:09:36.436672Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.57872a819591b49dae253a77a0837cbc60f188fd4d00d033e9889ff1bf4f8437",
+          "node_id": "N04",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 21,
+          "recorded_at": "2026-11-19T15:09:36.436672Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.f2d82dbae722d39af7dfd3f0a4f1321c8b0372d5c7484fd35eb1c436d5558ac5",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 22,
+          "recorded_at": "2026-11-19T15:09:36.763077Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.57872a819591b49dae253a77a0837cbc60f188fd4d00d033e9889ff1bf4f8437",
+          "node_id": "N04",
+          "attempt_id": "c344345c6d6b4edcbc72712f5f699509",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 23,
+          "recorded_at": "2026-11-19T15:09:36.763077Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.57872a819591b49dae253a77a0837cbc60f188fd4d00d033e9889ff1bf4f8437",
+          "node_id": "N04",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 24,
+          "recorded_at": "2026-11-19T15:09:37.626958Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.57872a819591b49dae253a77a0837cbc60f188fd4d00d033e9889ff1bf4f8437",
+          "node_id": "N04",
+          "attempt_id": "c344345c6d6b4edcbc72712f5f699509",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 25,
+          "recorded_at": "2026-11-19T15:09:37.626958Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.57872a819591b49dae253a77a0837cbc60f188fd4d00d033e9889ff1bf4f8437",
+          "node_id": "N04",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        }
+      ],
+      "next_after_event_number": 25
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/executions/execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a/trace",
+    "query": "limit=25&after_event_number=25&through_event_number=36",
+    "status": 200,
+    "body": {
+      "schema_version": "1.0.0",
+      "execution_id": "execution.a5a1829bb78d292b4e007eacf7bc81300ecf62fa03b9c5fa59d98ee03c03826a",
+      "trace_id": "live.8b8fbe544a9c4adb97b6aeb56131883e",
+      "through_event_number": 36,
+      "events": [
+        {
+          "number": 26,
+          "recorded_at": "2026-11-19T15:09:37.951789Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.f2d82dbae722d39af7dfd3f0a4f1321c8b0372d5c7484fd35eb1c436d5558ac5",
+          "node_id": "N05",
+          "attempt_id": "1834ddf56cd94a5da1ab30633fe4492f",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 27,
+          "recorded_at": "2026-11-19T15:09:37.951789Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.f2d82dbae722d39af7dfd3f0a4f1321c8b0372d5c7484fd35eb1c436d5558ac5",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 28,
+          "recorded_at": "2026-11-19T15:09:38.126572Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.f2d82dbae722d39af7dfd3f0a4f1321c8b0372d5c7484fd35eb1c436d5558ac5",
+          "node_id": "N05",
+          "attempt_id": "1834ddf56cd94a5da1ab30633fe4492f",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 29,
+          "recorded_at": "2026-11-19T15:09:38.126572Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.f2d82dbae722d39af7dfd3f0a4f1321c8b0372d5c7484fd35eb1c436d5558ac5",
+          "node_id": "N05",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 30,
+          "recorded_at": "2026-11-19T15:09:38.126572Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2127a168cd57c7fcd47fa81e002e8d5c1c881336912407e7e8842232a7497b17",
+          "node_id": "N06",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "ready"
+        },
+        {
+          "number": 31,
+          "recorded_at": "2026-11-19T15:09:38.555859Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2127a168cd57c7fcd47fa81e002e8d5c1c881336912407e7e8842232a7497b17",
+          "node_id": "N06",
+          "attempt_id": "43c8a8154acf48dd9519cbdfb6b97e67",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 32,
+          "recorded_at": "2026-11-19T15:09:38.555859Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2127a168cd57c7fcd47fa81e002e8d5c1c881336912407e7e8842232a7497b17",
+          "node_id": "N06",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "running"
+        },
+        {
+          "number": 33,
+          "recorded_at": "2026-11-19T15:09:52.866481Z",
+          "kind": "attempt_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2127a168cd57c7fcd47fa81e002e8d5c1c881336912407e7e8842232a7497b17",
+          "node_id": "N06",
+          "attempt_id": "43c8a8154acf48dd9519cbdfb6b97e67",
+          "attempt_number": 1,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 34,
+          "recorded_at": "2026-11-19T15:09:52.866481Z",
+          "kind": "node_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": "synthetic.node.2127a168cd57c7fcd47fa81e002e8d5c1c881336912407e7e8842232a7497b17",
+          "node_id": "N06",
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "succeeded"
+        },
+        {
+          "number": 35,
+          "recorded_at": "2026-11-19T15:09:52.866481Z",
+          "kind": "execution_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "completed"
+        },
+        {
+          "number": 36,
+          "recorded_at": "2026-11-19T15:09:52.866481Z",
+          "kind": "task_transition",
+          "span_id": null,
+          "parent_span_id": null,
+          "node_run_id": null,
+          "node_id": null,
+          "attempt_id": null,
+          "attempt_number": null,
+          "dispatch_id": null,
+          "status": "completed"
+        }
+      ],
+      "next_after_event_number": null
+    }
+  }
+]

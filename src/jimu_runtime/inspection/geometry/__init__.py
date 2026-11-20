@@ -212,6 +212,7 @@ class GeometryInput:
     object_bbox: BBoxXYXY | None = None
     parking_area: ParkingArea | None = None
     masks: tuple[MaskInput, ...] = ()
+    member_boxes: tuple[BBoxXYXY, ...] = ()
 
     @property
     def ancestor_evidence(self) -> tuple[AncestorToolEvidence, ...]:

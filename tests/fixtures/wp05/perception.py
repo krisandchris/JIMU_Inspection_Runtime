@@ -6,17 +6,15 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from examples.nonmotor_vehicle_illegal_parking.compilable import lifecycle
 from examples.nonmotor_vehicle_illegal_parking.compilable.lifecycle import (
     ACTOR,
-    SCOPE,
     ReopenedScene,
     exercise_lifecycle,
     local_submission,
+    prepare_scene,
 )
 from examples.nonmotor_vehicle_illegal_parking.compilable.scene import (
     AT,
@@ -31,6 +29,7 @@ from jimu_runtime.bundle.capabilities import CapabilitySnapshot
 from jimu_runtime.bundle.compiler import BundleCompileInput, SourceIdentity
 from jimu_runtime.bundle.integrity import sha256_digest
 from jimu_runtime.bundle.releases import ReleaseAction, ReleaseManager
+from jimu_runtime.bundle.semantic_inputs import require_definition
 from jimu_runtime.bundle.store import LocalBundleStore
 from jimu_runtime.bundle.trust import TrustPin
 from jimu_runtime.domain.definition_enums import EvidenceType, ModelCapability
@@ -39,8 +38,10 @@ from jimu_runtime.domain.definitions.capabilities import (
     ProfileDefinition,
 )
 from jimu_runtime.domain.definitions.models import ModelBinding
+from jimu_runtime.domain.definitions.prompts import PromptTemplateDefinition
 from jimu_runtime.domain.definitions.tools import ToolDefinition
 from jimu_runtime.domain.enums import ArtifactKind
+from jimu_runtime.domain.nodes.observation import is_region_observation_template
 from jimu_runtime.domain.policies import EvidencePolicyArtifact
 from jimu_runtime.domain.runtime.evidence import (
     EvidenceAsset,
@@ -66,7 +67,12 @@ from jimu_runtime.domain.runtime.media import (
 )
 from jimu_runtime.domain.runtime.perception import ObjectRecord
 from jimu_runtime.gateway.bridge import CapabilityGateway, ModelCallLimits
-from jimu_runtime.gateway.http import ChatEndpoint, HttpLimits, HttpModelTransport
+from jimu_runtime.gateway.http import (
+    ChatEndpoint,
+    HttpLimits,
+    HttpModelTransport,
+    SecretResolver,
+)
 from jimu_runtime.gateway.http_wire import VerifiedImage
 from jimu_runtime.gateway.journal import DispatchJournal
 from jimu_runtime.gateway.routing import (
@@ -95,6 +101,7 @@ from jimu_runtime.workflow.intake import (
     IntakeService,
 )
 from jimu_runtime.workflow.mock_support import K, VerifiedExecutionScope
+from jimu_runtime.workflow.pins import ResolvedExecutionPins, resolve_execution_pins
 from jimu_runtime.workflow.scheduling import (
     JobBudget,
     NodeBudgetOverride,
@@ -106,6 +113,7 @@ from jimu_runtime.workflow.worker_source import TrustedWorkerSource
 from tests.fixtures.wp03.intake.support import migrated_application
 
 IMAGE = (DIRECTORY / "assets/synthetic-frame.png").read_bytes()
+_IMAGE_DIMENSIONS = ImageDimensions(width=64, height=48)
 PROOF = TrustPin(
     identity="wp05.loopback.host",
     version=VERSION,
@@ -211,33 +219,47 @@ class PerceptionFixture:
     resources: ResourceAdmission
     media_store: LocalMediaStore | None
     tool_proofs: dict[str, TrustPin]
+    model_endpoints: tuple[ChatEndpoint, ...]
 
 
-def original_media(scene: ReopenedScene) -> MediaAsset:
+def original_media(
+    scene: ReopenedScene,
+    *,
+    image: bytes = IMAGE,
+    dimensions: ImageDimensions = _IMAGE_DIMENSIONS,
+) -> MediaAsset:
+    return _original_media(scene.task.media_ref, image, dimensions)
+
+
+def _original_media(
+    media_ref: MediaRef, image: bytes, dimensions: ImageDimensions
+) -> MediaAsset:
     return MediaAsset(
         schema_version="1.0.0",
-        media_ref=scene.task.media_ref,
+        media_ref=media_ref,
         storage=StorageReference(store_id="local-test", object_key="image.png"),
         stage=FinalizedAsset(
             stage="finalized",
             staged_at=AT,
             verified_at=AT,
             object_version=VERSION,
-            verified_sha256=scene.task.media_ref.sha256,
+            verified_sha256=media_ref.sha256,
         ),
         mime_type="image/png",
-        byte_size=len(IMAGE),
-        dimensions=ImageDimensions(width=64, height=48),
+        byte_size=len(image),
+        dimensions=dimensions,
         color_space="RGB",
     )
 
 
-def release_scope(scene: ReopenedScene) -> VerifiedExecutionScope:
+def release_scope(
+    scene: ReopenedScene, media: MediaAsset | None = None
+) -> VerifiedExecutionScope:
     return VerifiedExecutionScope(
         scene.task,
         "wp05.admitted.perception",
         scene.execution.pins,
-        original_media(scene),
+        media if media is not None else original_media(scene),
         scene.execution.files,
         LIMITS.max_file_bytes,
         LIMITS.max_json_depth,
@@ -357,30 +379,74 @@ def grouped_profile_source() -> BundleCompileInput:
 
 @asynccontextmanager
 async def perception_fixture(
-    directory: Path, url: str, *, with_media: bool = False, multi_profile: bool = False
+    directory: Path,
+    url: str | None = None,
+    *,
+    with_media: bool = False,
+    multi_profile: bool = False,
+    source: BundleCompileInput | None = None,
+    capability_builder: Callable[
+        [BundleCompileInput], CapabilitySnapshot
+    ] = capability_snapshot,
+    image: bytes = IMAGE,
+    dimensions: ImageDimensions = _IMAGE_DIMENSIONS,
+    submission: TaskSubmission | None = None,
+    model_endpoints: Callable[[CapabilitySnapshot], tuple[ChatEndpoint, ...]]
+    | None = None,
+    model_secrets: SecretResolver | None = None,
+    allow_model_network: bool = False,
+    tool_proof_overrides: dict[str, TrustPin] | None = None,
+    scheduling_limits: SchedulingLimits = _LIMITS,
+    submit: Callable[[AsyncEngine, IntakeService, SceneHost], Awaitable[IntakeResult]]
+    | None = None,
 ) -> AsyncIterator[PerceptionFixture]:
-    source = grouped_profile_source() if multi_profile else load_source()
-    with patch.object(lifecycle, "load_source", return_value=source):
-        scene = exercise_lifecycle(directory)
-    scope = release_scope(scene)
-    principal = object()
-    store = LocalBundleStore(directory / "releases")
-    releases = ReleaseManager(
-        store,
-        authorize=lambda given, action, target: ACTOR
-        if (
-            given is principal
-            and action is ReleaseAction.ACCEPT_TASK
-            and target.release_id == scene.release.release_id
-            and target.scope == SCOPE
+    if source is not None and multi_profile:
+        raise ValueError("Provide a source or use the multiple-Profile fixture")
+    if source is None:
+        source = grouped_profile_source() if multi_profile else load_source()
+    if (url is None) == (model_endpoints is None):
+        raise ValueError("Provide one model URL or an explicit endpoint registry")
+    submission = submission if submission is not None else local_submission(image)
+    if submission.media_ref.sha256 != sha256_digest(image):
+        raise ValueError("Registered submission media digest differs from image bytes")
+    caps = capability_builder(source)
+    scene = None
+    if submit is not None:
+        # This path exercises a genuinely fresh POST. No task is preaccepted.
+        prepared = prepare_scene(directory, source, caps, submission)
+        principal, store, releases = (
+            prepared.principal,
+            prepared.store,
+            prepared.releases,
         )
-        else None,
-        resolve_task_scope=lambda *_: None,
-        allow_new_task=lambda *_: False,
-        scope_precedence=("device", "region", "scene", "global"),
-        clock=lambda: AT,
-    )
-    caps = capability_snapshot(source)
+        catalogue = prepared.catalogue
+    else:
+        # Existing tests exercise a reopened historical task after a newer Release.
+        prepared = None
+        scene = exercise_lifecycle(
+            directory,
+            source=source,
+            capability_builder=lambda _: caps,
+            submission=submission,
+        )
+        catalogue = scene.execution.catalogue
+        principal = object()
+        store = LocalBundleStore(directory / "releases")
+        releases = ReleaseManager(
+            store,
+            authorize=lambda given, action, target: ACTOR
+            if (
+                given is principal
+                and action is ReleaseAction.ACCEPT_TASK
+                and target.release_id == scene.release.release_id
+                and target.scope == scene.activation.scope
+            )
+            else None,
+            resolve_task_scope=lambda *_: None,
+            allow_new_task=lambda *_: False,
+            scope_precedence=("device", "region", "scene", "global"),
+            clock=lambda: AT,
+        )
     now = datetime.now(UTC)
     validity = {
         "valid_from": now - timedelta(days=1),
@@ -400,45 +466,68 @@ async def perception_fixture(
             ),
         }
     )
-    host = SceneHost(principal, local_submission(IMAGE), scope.media, current)
-    (registered,) = current.model_deployments
-    deployment = registered.identity
-    endpoint = ChatEndpoint(
-        endpoint_id="wp05.loopback.model",
-        endpoint_version=VERSION,
-        provider_id=deployment.provider_id,
-        deployment_id=deployment.deployment_id,
-        provider_kind=deployment.provider_kind,
-        model_id="wp05/parking",
-        url=url,
-        protocol="openai_chat_completions",
-        allow_plaintext_loopback=True,
-        retain_complete_response=True,
-        limits=HttpLimits(
-            timeout_ms=3500,
-            io_timeout_ms=3000,
-            request_bytes=65536,
-            response_bytes=8192,
-            image_bytes=4096,
-            max_retry_after_seconds=1,
-        ),
+    host = SceneHost(
+        principal,
+        submission,
+        _original_media(submission.media_ref, image, dimensions),
+        current,
     )
-    ownership = DeploymentOwnership(
-        deployment=deployment,
-        owner_ref=PROOF,
-        endpoint_descriptor_ref=endpoint.descriptor_pin,
-        model_id=endpoint.model_id,
-        version_evidence=None,
+    deployments = {
+        (row.identity.provider_id, row.identity.deployment_id): row.identity
+        for row in current.model_deployments
+    }
+    if model_endpoints is None:
+        (deployment,) = deployments.values()
+        assert url is not None
+        endpoints = (
+            ChatEndpoint(
+                endpoint_id="wp05.loopback.model",
+                endpoint_version=VERSION,
+                provider_id=deployment.provider_id,
+                deployment_id=deployment.deployment_id,
+                provider_kind=deployment.provider_kind,
+                model_id="wp05/parking",
+                url=url,
+                protocol="openai_chat_completions",
+                allow_plaintext_loopback=True,
+                retain_complete_response=True,
+                limits=HttpLimits(
+                    timeout_ms=3500,
+                    io_timeout_ms=3000,
+                    request_bytes=65536,
+                    response_bytes=8192,
+                    image_bytes=4096,
+                    max_retry_after_seconds=1,
+                ),
+            ),
+        )
+    else:
+        endpoints = model_endpoints(current)
+    endpoint_keys = {(item.provider_id, item.deployment_id) for item in endpoints}
+    if len(endpoint_keys) != len(endpoints) or endpoint_keys != set(deployments):
+        raise ValueError(
+            "Endpoint registry must exactly cover registered model deployments"
+        )
+    ownership = tuple(
+        DeploymentOwnership(
+            deployment=deployments[(item.provider_id, item.deployment_id)],
+            owner_ref=PROOF,
+            endpoint_descriptor_ref=item.descriptor_pin,
+            model_id=item.model_id,
+            version_evidence=None,
+        )
+        for item in endpoints
     )
     routing = CurrentRoutingState(
         capabilities=current,
-        ownership=(
+        ownership=tuple(
             DeploymentOwnershipRegistration(
-                ownership=ownership,
+                ownership=item,
                 valid_from=validity["valid_from"],
                 valid_until=validity["valid_until"],
                 revoked_at=None,
-            ),
+            )
+            for item in ownership
         ),
     )
 
@@ -450,11 +539,11 @@ async def perception_fixture(
         _: IdempotencyScope, capabilities: CapabilitySnapshot
     ) -> tuple[DeploymentOwnership, ...]:
         assert capabilities == current
-        return (ownership,)
+        return ownership
 
     tools = tuple(
-        scope.resolve(row.ref, ToolDefinition)
-        for row in scope.catalogue.of_kind(ArtifactKind.TOOL)
+        require_definition(catalogue, row.ref, ToolDefinition)
+        for row in catalogue.of_kind(ArtifactKind.TOOL)
     )
     cpu_digest = sha256_digest(CPU_ARTIFACT.read_bytes()) if with_media else None
     tool_proofs = {
@@ -469,8 +558,10 @@ async def perception_fixture(
         )
         for tool in tools
     }
-
-    from jimu_runtime.workflow.pins import ResolvedExecutionPins
+    if tool_proof_overrides:
+        if not tool_proof_overrides.keys() <= tool_proofs.keys():
+            raise ValueError("Tool proof override lacks an admitted Tool capability")
+        tool_proofs.update(tool_proof_overrides)
 
     async def freeze_tools(
         _: IdempotencyScope, resolved: ResolvedExecutionPins
@@ -480,40 +571,14 @@ async def perception_fixture(
                 tool_ref=pin.tool_ref,
                 implementation_version=pin.implementation_version,
                 implementation_proof_ref=tool_proofs[
-                    scope.resolve(
-                        pin.tool_ref, ToolDefinition
+                    require_definition(
+                        catalogue, pin.tool_ref, ToolDefinition
                     ).implementation_requirement.capability_id
                 ],
             )
             for pin in resolved.pins.tool_pins
         )
 
-    profile_member = scope.catalogue.of_kind(ArtifactKind.PROFILE)[0]
-    profile = scope.resolve(profile_member.ref, ProfileDefinition)
-    contracts = {}
-    candidates = []
-    for member in scope.catalogue.of_kind(ArtifactKind.MODEL_BINDING):
-        ref = ModelBindingContentRef.model_validate(member.ref.model_dump())
-        binding = scope.resolve(ref, ModelBinding)
-        slots = (
-            profile.question_refs
-            if binding.capability is ModelCapability.OBJECT_OBSERVATION
-            else ()
-        )
-        if binding.capability is ModelCapability.CANDIDATE_PREDICTION:
-            candidates.append(ref)
-        contract = build_chat_contract(scope, ref, slots)
-        contracts[
-            (
-                contract.input_schema_ref,
-                contract.output_schema_ref,
-                contract.response_schema_digest,
-            )
-        ] = contract
-    (candidate,) = candidates
-    transport = HttpModelTransport(
-        (endpoint,), tuple(contracts.values()), max_concurrency=1
-    )
     resources = ResourceAdmission.provision(
         directory / "resources.sqlite",
         HostInventory(
@@ -547,7 +612,7 @@ async def perception_fixture(
                 host.submission.media_ref,
                 mime_type="image/png",
                 dimensions=host.media.dimensions,
-                content=IMAGE,
+                content=image,
             )
             host = replace(host, media=asset)
 
@@ -558,7 +623,7 @@ async def perception_fixture(
                     await host.verified_original(scope, bound.media.media_ref)
                     == bound.media
                 )
-                content = IMAGE
+                content = image
             else:
                 original = await media_store.verified_task_original(scope, bound.task)
                 assert original.asset == bound.media
@@ -572,12 +637,101 @@ async def perception_fixture(
             store,
             host=host,
             bundle_limits=LIMITS,
-            scheduling_limits=_LIMITS,
+            scheduling_limits=scheduling_limits,
             max_submission_bytes=65536,
             historical_ownership=freeze_models,
             historical_tool_ownership=freeze_tools,
         )
-        accepted = await intake.submit(host.submission, principal=principal)
+        accepted = (
+            await intake.submit(host.submission, principal=principal)
+            if submit is None
+            else await submit(application, intake, host)
+        )
+        if prepared is not None:
+            resolved = resolve_execution_pins(
+                releases,
+                store,
+                accepted.task,
+                scope=submission.idempotency_scope,
+                host=caps,
+                validation_at=AT,
+                limits=LIMITS,
+            )
+            scene = ReopenedScene(
+                prepared.bundle,
+                prepared.signed_archive,
+                prepared.release,
+                prepared.activation,
+                prepared.activation,
+                accepted.task,
+                resolved,
+            )
+        assert scene is not None
+        scope = release_scope(scene, host.media)
+        profiles = tuple(
+            scope.resolve(item.ref, ProfileDefinition)
+            for item in scope.catalogue.of_kind(ArtifactKind.PROFILE)
+        )
+        contracts = {}
+        candidates = []
+        for member in scope.catalogue.of_kind(ArtifactKind.MODEL_BINDING):
+            ref = ModelBindingContentRef.model_validate(member.ref.model_dump())
+            binding = scope.resolve(ref, ModelBinding)
+            slots = ()
+            region_base = False
+            if binding.capability is ModelCapability.OBJECT_OBSERVATION:
+                question_sets = {
+                    profile.question_refs
+                    for profile in profiles
+                    if profile.observation_binding_ref == ref
+                }
+                template = binding.prompt_template_ref
+                if template is not None and is_region_observation_template(
+                    scope.resolve(template, PromptTemplateDefinition).template_text
+                ):
+                    region_base = True
+                    slots = tuple(
+                        sorted(
+                            {q for group in question_sets for q in group},
+                            key=lambda q: (q.artifact_id, q.version, q.digest),
+                        )
+                    )
+                elif len(question_sets) == 1:
+                    (slots,) = question_sets
+                else:
+                    raise ValueError(
+                        "Each fixture observation binding requires one exact Question set"
+                    )
+            if binding.capability is ModelCapability.CANDIDATE_PREDICTION:
+                candidates.append(ref)
+            contract = build_chat_contract(
+                scope, ref, slots, register_region_base=region_base
+            )
+            if region_base and {q.artifact_id for q in slots} - set(
+                contract.question_slots
+            ):
+                raise ValueError("Profile Questions missing from the regional binding")
+            key = (
+                contract.input_schema_ref,
+                contract.output_schema_ref,
+                contract.response_schema_digest,
+            )
+            previous = contracts.setdefault(key, contract)
+            if (
+                previous.response_model is not contract.response_model
+                or previous.response_schema != contract.response_schema
+                or previous.accepts_image != contract.accepts_image
+                or previous.question_slots != contract.question_slots
+            ):
+                raise ValueError("Fixture bindings disagree on a shared wire contract")
+        (candidate,) = candidates
+        transport = HttpModelTransport(
+            endpoints,
+            tuple(contracts.values()),
+            max_concurrency=1,
+            secrets=model_secrets,
+            allow_network=allow_model_network,
+        )
         journal = DispatchJournal(application)
         gateway = CapabilityGateway(
             application,
@@ -598,9 +752,10 @@ async def perception_fixture(
             gateway,
             adapter,
             journal,
-            endpoint.model_id,
+            endpoints[0].model_id,
             candidate,
             resources,
             media_store,
             tool_proofs,
+            endpoints,
         )

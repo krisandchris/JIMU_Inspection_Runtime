@@ -1,0 +1,528 @@
+{
+  "mode": "isolated_local_harness_using_live_models",
+  "task_id": "task.12f1d07894761d14c2562a78c551f6d409b101210a10d5662cd68914f95ca721",
+  "execution_id": "execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3",
+  "bundle_digest": "e35fdb69dbad8d94e30efa69ce5eb58c2df45c6adf41548d25bbdea3bbe3c778",
+  "release_id": "synthetic.parking.release",
+  "postgres_version": "16.14 (Debian 16.14-1.pgdg13+1)",
+  "execution_status": "partial_failed",
+  "summary_result": "violation",
+  "coverage_status": "partial",
+  "original_media_sha256": "a17325853ec562bbe1946769abd0074def1ab853adf603e58605dfed5f11f9be",
+  "provider_calls": 6,
+  "verified_segmentation_calls": 4,
+  "objects": [
+    {
+      "object_id": "perception.object.3564100ff70a92a45603985a8cd5fa64099e7ef651cdb0dd6042766087305bf0",
+      "bbox": [
+        638.976,
+        41.984,
+        1078.272,
+        689.152
+      ],
+      "members": null,
+      "marked_frame": null,
+      "decision": "uncertain",
+      "decision_id": "synthetic.decision.397e907e649c0fa120bbefaeab9af168b21295aa8b6335699963080e2aa42568",
+      "rule_id": "nonmotor_vehicle_illegal_parking",
+      "rule_outcome": "blocked",
+      "facts": [
+        {
+          "execution_id": "execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3",
+          "scope": "object",
+          "object_id": "perception.object.3564100ff70a92a45603985a8cd5fa64099e7ef651cdb0dd6042766087305bf0",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "nonmotor_vehicle",
+            "version": "1.0.0",
+            "digest": "4a770883f7189c4a02705a919c734aa46ae730dab42f4d4c8e0afe6084dd50d8"
+          },
+          "schema_version": "1.0.0",
+          "fact_id": "perception.fact.14a8c319ef17131c8dd2173141fa9f47d040992c01f3957b8064ea16dce06c78",
+          "fact_key": "vehicle_type",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "vehicle_type",
+            "version": "1.0.0",
+            "digest": "5e5186336890661fa755478b0a549495d6f6ef083c8c80238758cc905cdde8bb"
+          },
+          "producer_catalogue_ref": {
+            "artifact_kind": "fact_producer_catalog",
+            "artifact_id": "synthetic.nonmotor.parking.producers",
+            "version": "1.0.0",
+            "digest": "8afd7da6ac32d737ea93ae732a97e06afe45e74309d26eb6ae2bc5998f030aa4"
+          },
+          "producer_declaration_id": "vlm_question.cd35d65875e5ccef735df0cae995c5fc9e952ffecaed94d5ed0c3f0fadbe98a6",
+          "producer_kind": "vlm_question",
+          "producer_id": "vehicle_type",
+          "producer_version": "1.0.0",
+          "attempt_id": "9cac6f77765247a29e55369f6ef178c1",
+          "source": {
+            "source_kind": "vlm_question",
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "vehicle_type",
+              "version": "1.0.0",
+              "digest": "f4472a902b641b8c5a48c3be9fb6a649758960aa732547a13092150e247daf75"
+            },
+            "observation_batch_ref": {
+              "record_kind": "observation_batch",
+              "record_id": "perception.batch.bb09476e416601c2519531057df50b5e8e0c88cfcb003301d8fd72e9e6569e8f"
+            },
+            "model_invocation_ref": {
+              "record_kind": "model_invocation",
+              "record_id": "dispatch.9d3ca20dab3a4ab5a0d1fa18ac24bbfc"
+            }
+          },
+          "evidence_refs": [],
+          "created_at": "2026-11-19T12:23:25.803294Z",
+          "trace_id": "synthetic.scene.trace",
+          "status": "known",
+          "value": {
+            "kind": "enum",
+            "value": "electric_bicycle"
+          }
+        },
+        {
+          "execution_id": "execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3",
+          "scope": "object",
+          "object_id": "perception.object.3564100ff70a92a45603985a8cd5fa64099e7ef651cdb0dd6042766087305bf0",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "nonmotor_vehicle",
+            "version": "1.0.0",
+            "digest": "4a770883f7189c4a02705a919c734aa46ae730dab42f4d4c8e0afe6084dd50d8"
+          },
+          "schema_version": "1.0.0",
+          "fact_id": "perception.fact.aaae9eea31fe2a658e3d55269990924e6f1457e552899f0b0bbb81868cdb4925",
+          "fact_key": "parking_state",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "parking_state",
+            "version": "1.0.0",
+            "digest": "88041ae67b64ab2a21681ec6610761cdefae81778325df243910acebd46c31e6"
+          },
+          "producer_catalogue_ref": {
+            "artifact_kind": "fact_producer_catalog",
+            "artifact_id": "synthetic.nonmotor.parking.producers",
+            "version": "1.0.0",
+            "digest": "8afd7da6ac32d737ea93ae732a97e06afe45e74309d26eb6ae2bc5998f030aa4"
+          },
+          "producer_declaration_id": "vlm_question.94731efede3201a8cb2074803d3338092d534451505c463eb386b43940a543d3",
+          "producer_kind": "vlm_question",
+          "producer_id": "parking_state",
+          "producer_version": "1.0.0",
+          "attempt_id": "9cac6f77765247a29e55369f6ef178c1",
+          "source": {
+            "source_kind": "vlm_question",
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "parking_state",
+              "version": "1.0.0",
+              "digest": "35409ad773f4a0524f936768ab73f7a8a27ea14426ed1aea1d1c4519fd9779b4"
+            },
+            "observation_batch_ref": {
+              "record_kind": "observation_batch",
+              "record_id": "perception.batch.bb09476e416601c2519531057df50b5e8e0c88cfcb003301d8fd72e9e6569e8f"
+            },
+            "model_invocation_ref": {
+              "record_kind": "model_invocation",
+              "record_id": "dispatch.9d3ca20dab3a4ab5a0d1fa18ac24bbfc"
+            }
+          },
+          "evidence_refs": [],
+          "created_at": "2026-11-19T12:23:25.803294Z",
+          "trace_id": "synthetic.scene.trace",
+          "status": "known",
+          "value": {
+            "kind": "enum",
+            "value": "parked"
+          }
+        },
+        {
+          "execution_id": "execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3",
+          "scope": "object",
+          "object_id": "perception.object.3564100ff70a92a45603985a8cd5fa64099e7ef651cdb0dd6042766087305bf0",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "nonmotor_vehicle",
+            "version": "1.0.0",
+            "digest": "4a770883f7189c4a02705a919c734aa46ae730dab42f4d4c8e0afe6084dd50d8"
+          },
+          "schema_version": "1.0.0",
+          "fact_id": "perception.fact.c16ebc24c0638c2dc73d2875dc6ce751f06c345e6980b9ea3cd9eb2d0eeda600",
+          "fact_key": "parking_position",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "parking_position",
+            "version": "1.0.0",
+            "digest": "6d1fb5cb9c0842cd52483c293e2e2b1eaef0435157c54094835d8e28bd2d2a73"
+          },
+          "producer_catalogue_ref": {
+            "artifact_kind": "fact_producer_catalog",
+            "artifact_id": "synthetic.nonmotor.parking.producers",
+            "version": "1.0.0",
+            "digest": "8afd7da6ac32d737ea93ae732a97e06afe45e74309d26eb6ae2bc5998f030aa4"
+          },
+          "producer_declaration_id": "vlm_question.2e6c1a582ba182b48bafb40982de0c44b7dc154889c8751b8f07b57867ee6304",
+          "producer_kind": "vlm_question",
+          "producer_id": "parking_position",
+          "producer_version": "1.0.0",
+          "attempt_id": "9cac6f77765247a29e55369f6ef178c1",
+          "source": {
+            "source_kind": "vlm_question",
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "parking_position",
+              "version": "1.0.0",
+              "digest": "ffa55102f651a12f70511f62f30341a909b95465e6697806de308f9d6dd68287"
+            },
+            "observation_batch_ref": {
+              "record_kind": "observation_batch",
+              "record_id": "perception.batch.bb09476e416601c2519531057df50b5e8e0c88cfcb003301d8fd72e9e6569e8f"
+            },
+            "model_invocation_ref": {
+              "record_kind": "model_invocation",
+              "record_id": "dispatch.9d3ca20dab3a4ab5a0d1fa18ac24bbfc"
+            }
+          },
+          "evidence_refs": [],
+          "created_at": "2026-11-19T12:23:25.803294Z",
+          "trace_id": "synthetic.scene.trace",
+          "status": "known",
+          "value": {
+            "kind": "enum",
+            "value": "outside_parking_area"
+          }
+        }
+      ],
+      "geometry": {
+        "attempt_id": "847d527f2206460f8e4bfa35e683df29",
+        "execution_id": "execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3",
+        "implementation": {
+          "identity": "trial.deterministic.wheel_boundary_geometry",
+          "sha256": "ea8887c3270625f2b4e550af296e9c16220ee0723049c94628bef1a7849187b6",
+          "version": "1.0.0"
+        },
+        "inputs": {
+          "tactile_paving_mask": {
+            "evidence_id": "tool:395941e4a8d323d8c02d1f839c4b5027939c2f8a964c153104aacb1713e27264.tactile_paving_mask",
+            "sha256": "ef7460eab26d7da1645e1b5029ba1ee1dedfb7441d6c0fb003584fb67bf5f984"
+          },
+          "wheel_mask": {
+            "evidence_id": "tool:22d517d44e2d808f66cf10c6f1041fd97858455a0c85865b1c0e16e94c17e887.wheel_mask",
+            "sha256": "bdc046449e71be63dcaf022673d4fd07cfe526bf4279624c7880c5a22e0884e5"
+          }
+        },
+        "metrics": {
+          "crossing": 0,
+          "inside": 0,
+          "outside": 47783,
+          "overlap": 6,
+          "tactile": 175924,
+          "touching": 0,
+          "wheel": 47783
+        },
+        "object_ref": {
+          "record_id": "perception.object.3564100ff70a92a45603985a8cd5fa64099e7ef651cdb0dd6042766087305bf0",
+          "record_kind": "object"
+        },
+        "original_sha256": "a17325853ec562bbe1946769abd0074def1ab853adf603e58605dfed5f11f9be",
+        "parking_area": {
+          "bbox": {
+            "xyxy": [
+              344.0,
+              498.0,
+              606.0,
+              702.0
+            ]
+          },
+          "coordinate_system": {
+            "coordinate_system_id": "synthetic.scene.image",
+            "dimensions": {
+              "height": 1024,
+              "width": 1536
+            },
+            "frame": "original_image"
+          },
+          "geometry_resource_id": "synthetic-parking-area",
+          "geometry_sha256": "3dd386228bef6a100613273574d450248fdb4d7978367388cda68871574d34c3",
+          "geometry_version": "1.0.0",
+          "region_id": "synthetic_nonmotor_parking",
+          "region_sha256": "e76004f46ce9b8053196bf179ceeb2004de7d900c4fc3c8747130a953f09dca4",
+          "region_version": "1.0.0",
+          "source_asset_sha256": "c174044f833ca14f378712c8cf3d40928e0338e2d06b12f7855ed71581b22cc8",
+          "units": "pixel"
+        },
+        "profile_ref": {
+          "artifact_id": "nonmotor_vehicle",
+          "artifact_kind": "profile",
+          "digest": "4a770883f7189c4a02705a919c734aa46ae730dab42f4d4c8e0afe6084dd50d8",
+          "version": "1.0.0"
+        },
+        "reason": "overlapping_relations_unresolved",
+        "relation": null,
+        "request_sha256": "b58f636750c35330714480a2a8ccf46ab93ffe080baba54ebf95c5cafcb83aaa",
+        "response_sha256": "14cd487c1c0afc37935ebfa14710c0e016c1b9d4c36ce55f8e3c52af03e33da3",
+        "schema_version": "1.0.0",
+        "tool_execution_id": "tool:76bdffcc344a036dbe1f87370dc0e5b743a671b658f767f9478c6585a72d40f3"
+      }
+    },
+    {
+      "object_id": "perception.object.ff5eb547962b87912e68530802e75a61adec8ae1cc78e205f886b1a485a597af",
+      "bbox": [
+        1058.3039999999999,
+        77.824,
+        1439.232,
+        641.024
+      ],
+      "members": null,
+      "marked_frame": null,
+      "decision": "violation",
+      "decision_id": "synthetic.decision.82a24e8ae4c78932433a43cad430622f0d26ca4de04a3fa607272a059b532a31",
+      "rule_id": "nonmotor_vehicle_illegal_parking",
+      "rule_outcome": "evaluated",
+      "facts": [
+        {
+          "execution_id": "execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3",
+          "scope": "object",
+          "object_id": "perception.object.ff5eb547962b87912e68530802e75a61adec8ae1cc78e205f886b1a485a597af",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "nonmotor_vehicle",
+            "version": "1.0.0",
+            "digest": "4a770883f7189c4a02705a919c734aa46ae730dab42f4d4c8e0afe6084dd50d8"
+          },
+          "schema_version": "1.0.0",
+          "fact_id": "perception.fact.c6990693af69571875ef23892e3dbc0e427ffcf8b0ec4d525173ac2494bedc2a",
+          "fact_key": "vehicle_type",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "vehicle_type",
+            "version": "1.0.0",
+            "digest": "5e5186336890661fa755478b0a549495d6f6ef083c8c80238758cc905cdde8bb"
+          },
+          "producer_catalogue_ref": {
+            "artifact_kind": "fact_producer_catalog",
+            "artifact_id": "synthetic.nonmotor.parking.producers",
+            "version": "1.0.0",
+            "digest": "8afd7da6ac32d737ea93ae732a97e06afe45e74309d26eb6ae2bc5998f030aa4"
+          },
+          "producer_declaration_id": "vlm_question.cd35d65875e5ccef735df0cae995c5fc9e952ffecaed94d5ed0c3f0fadbe98a6",
+          "producer_kind": "vlm_question",
+          "producer_id": "vehicle_type",
+          "producer_version": "1.0.0",
+          "attempt_id": "d2342d710c6d4f5dbc93a38767a9e5e1",
+          "source": {
+            "source_kind": "vlm_question",
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "vehicle_type",
+              "version": "1.0.0",
+              "digest": "f4472a902b641b8c5a48c3be9fb6a649758960aa732547a13092150e247daf75"
+            },
+            "observation_batch_ref": {
+              "record_kind": "observation_batch",
+              "record_id": "perception.batch.6719dc624bcb3ec82c74f2ed3dcea4ec06cf19a10904389d7f0d48ffd1fd3d59"
+            },
+            "model_invocation_ref": {
+              "record_kind": "model_invocation",
+              "record_id": "dispatch.f644ff3780d6489d953ff26bb54276a3"
+            }
+          },
+          "evidence_refs": [],
+          "created_at": "2026-11-19T12:23:47.769251Z",
+          "trace_id": "synthetic.scene.trace",
+          "status": "known",
+          "value": {
+            "kind": "enum",
+            "value": "electric_bicycle"
+          }
+        },
+        {
+          "execution_id": "execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3",
+          "scope": "object",
+          "object_id": "perception.object.ff5eb547962b87912e68530802e75a61adec8ae1cc78e205f886b1a485a597af",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "nonmotor_vehicle",
+            "version": "1.0.0",
+            "digest": "4a770883f7189c4a02705a919c734aa46ae730dab42f4d4c8e0afe6084dd50d8"
+          },
+          "schema_version": "1.0.0",
+          "fact_id": "perception.fact.e29f0a714ae79899f35b873d2f91bd7355af45e2e9db62ad29bea657c7718cda",
+          "fact_key": "parking_state",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "parking_state",
+            "version": "1.0.0",
+            "digest": "88041ae67b64ab2a21681ec6610761cdefae81778325df243910acebd46c31e6"
+          },
+          "producer_catalogue_ref": {
+            "artifact_kind": "fact_producer_catalog",
+            "artifact_id": "synthetic.nonmotor.parking.producers",
+            "version": "1.0.0",
+            "digest": "8afd7da6ac32d737ea93ae732a97e06afe45e74309d26eb6ae2bc5998f030aa4"
+          },
+          "producer_declaration_id": "vlm_question.94731efede3201a8cb2074803d3338092d534451505c463eb386b43940a543d3",
+          "producer_kind": "vlm_question",
+          "producer_id": "parking_state",
+          "producer_version": "1.0.0",
+          "attempt_id": "d2342d710c6d4f5dbc93a38767a9e5e1",
+          "source": {
+            "source_kind": "vlm_question",
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "parking_state",
+              "version": "1.0.0",
+              "digest": "35409ad773f4a0524f936768ab73f7a8a27ea14426ed1aea1d1c4519fd9779b4"
+            },
+            "observation_batch_ref": {
+              "record_kind": "observation_batch",
+              "record_id": "perception.batch.6719dc624bcb3ec82c74f2ed3dcea4ec06cf19a10904389d7f0d48ffd1fd3d59"
+            },
+            "model_invocation_ref": {
+              "record_kind": "model_invocation",
+              "record_id": "dispatch.f644ff3780d6489d953ff26bb54276a3"
+            }
+          },
+          "evidence_refs": [],
+          "created_at": "2026-11-19T12:23:47.769251Z",
+          "trace_id": "synthetic.scene.trace",
+          "status": "known",
+          "value": {
+            "kind": "enum",
+            "value": "parked"
+          }
+        },
+        {
+          "execution_id": "execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3",
+          "scope": "object",
+          "object_id": "perception.object.ff5eb547962b87912e68530802e75a61adec8ae1cc78e205f886b1a485a597af",
+          "profile_ref": {
+            "artifact_kind": "profile",
+            "artifact_id": "nonmotor_vehicle",
+            "version": "1.0.0",
+            "digest": "4a770883f7189c4a02705a919c734aa46ae730dab42f4d4c8e0afe6084dd50d8"
+          },
+          "schema_version": "1.0.0",
+          "fact_id": "perception.fact.a2c20766ea2acfb4737811e32892a89079774ee27f2b84221d869d05b4469c1a",
+          "fact_key": "parking_position",
+          "fact_schema_ref": {
+            "artifact_kind": "fact_schema",
+            "artifact_id": "parking_position",
+            "version": "1.0.0",
+            "digest": "6d1fb5cb9c0842cd52483c293e2e2b1eaef0435157c54094835d8e28bd2d2a73"
+          },
+          "producer_catalogue_ref": {
+            "artifact_kind": "fact_producer_catalog",
+            "artifact_id": "synthetic.nonmotor.parking.producers",
+            "version": "1.0.0",
+            "digest": "8afd7da6ac32d737ea93ae732a97e06afe45e74309d26eb6ae2bc5998f030aa4"
+          },
+          "producer_declaration_id": "vlm_question.2e6c1a582ba182b48bafb40982de0c44b7dc154889c8751b8f07b57867ee6304",
+          "producer_kind": "vlm_question",
+          "producer_id": "parking_position",
+          "producer_version": "1.0.0",
+          "attempt_id": "d2342d710c6d4f5dbc93a38767a9e5e1",
+          "source": {
+            "source_kind": "vlm_question",
+            "question_ref": {
+              "artifact_kind": "question",
+              "artifact_id": "parking_position",
+              "version": "1.0.0",
+              "digest": "ffa55102f651a12f70511f62f30341a909b95465e6697806de308f9d6dd68287"
+            },
+            "observation_batch_ref": {
+              "record_kind": "observation_batch",
+              "record_id": "perception.batch.6719dc624bcb3ec82c74f2ed3dcea4ec06cf19a10904389d7f0d48ffd1fd3d59"
+            },
+            "model_invocation_ref": {
+              "record_kind": "model_invocation",
+              "record_id": "dispatch.f644ff3780d6489d953ff26bb54276a3"
+            }
+          },
+          "evidence_refs": [],
+          "created_at": "2026-11-19T12:23:47.769251Z",
+          "trace_id": "synthetic.scene.trace",
+          "status": "known",
+          "value": {
+            "kind": "enum",
+            "value": "outside_parking_area"
+          }
+        }
+      ],
+      "geometry": {
+        "attempt_id": "f68085fc08464eb7af0d1ca5d91b5806",
+        "execution_id": "execution.31dbce7fe0312adf3e18da65e5ba6db6385aa59fcf3a370863d4a271a185bfb3",
+        "implementation": {
+          "identity": "trial.deterministic.wheel_boundary_geometry",
+          "sha256": "ea8887c3270625f2b4e550af296e9c16220ee0723049c94628bef1a7849187b6",
+          "version": "1.0.0"
+        },
+        "inputs": {
+          "tactile_paving_mask": {
+            "evidence_id": "tool:32d5983345ceed2064e57c49c91c9a42f4586f0f72bf426076f5012375a1c570.tactile_paving_mask",
+            "sha256": "ef7460eab26d7da1645e1b5029ba1ee1dedfb7441d6c0fb003584fb67bf5f984"
+          },
+          "wheel_mask": {
+            "evidence_id": "tool:b321d2c6c1481e4c79fc8169e9ccf5030e8e517059ab19afa92eba21fd54f073.wheel_mask",
+            "sha256": "efa4a0cbb75ce3f3a78b55d69dbc7fc0cbb5dbad304c81e3b672112489dddb10"
+          }
+        },
+        "metrics": {
+          "crossing": 0,
+          "inside": 0,
+          "outside": 41014,
+          "overlap": 0,
+          "tactile": 175924,
+          "touching": 0,
+          "wheel": 41014
+        },
+        "object_ref": {
+          "record_id": "perception.object.ff5eb547962b87912e68530802e75a61adec8ae1cc78e205f886b1a485a597af",
+          "record_kind": "object"
+        },
+        "original_sha256": "a17325853ec562bbe1946769abd0074def1ab853adf603e58605dfed5f11f9be",
+        "parking_area": {
+          "bbox": {
+            "xyxy": [
+              344.0,
+              498.0,
+              606.0,
+              702.0
+            ]
+          },
+          "coordinate_system": {
+            "coordinate_system_id": "synthetic.scene.image",
+            "dimensions": {
+              "height": 1024,
+              "width": 1536
+            },
+            "frame": "original_image"
+          },
+          "geometry_resource_id": "synthetic-parking-area",
+          "geometry_sha256": "3dd386228bef6a100613273574d450248fdb4d7978367388cda68871574d34c3",
+          "geometry_version": "1.0.0",
+          "region_id": "synthetic_nonmotor_parking",
+          "region_sha256": "e76004f46ce9b8053196bf179ceeb2004de7d900c4fc3c8747130a953f09dca4",
+          "region_version": "1.0.0",
+          "source_asset_sha256": "c174044f833ca14f378712c8cf3d40928e0338e2d06b12f7855ed71581b22cc8",
+          "units": "pixel"
+        },
+        "profile_ref": {
+          "artifact_id": "nonmotor_vehicle",
+          "artifact_kind": "profile",
+          "digest": "4a770883f7189c4a02705a919c734aa46ae730dab42f4d4c8e0afe6084dd50d8",
+          "version": "1.0.0"
+        },
+        "reason": null,
+        "relation": "outside_parking_area",
+        "request_sha256": "36b192796c5eb16c90863a081746535dd7f0b35565c8444e269052588242df50",
+        "response_sha256": "0df1230e706c998c92f69b1f151dc4180e5ae6a302595a1e1366367327b5e784",
+        "schema_version": "1.0.0",
+        "tool_execution_id": "tool:6710647e98b6aabff2b8132ed0a5e231647cb7f002eacc47e8407cdd0e4c0b1c"
+      }
+    }
+  ]
+}

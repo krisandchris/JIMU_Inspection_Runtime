@@ -1,0 +1,186 @@
+{
+  "parking": {
+    "task_id": "task.a2c1113f2cedc639877ffbb37df7e55b716db58565735e39e78a2d79d42ca6f4",
+    "execution_id": "execution.c9ed9da16cf5d6bee578c9bada870b178715aec986c33b7e19fca1b2528c452e",
+    "original_sha256": "a17325853ec562bbe1946769abd0074def1ab853adf603e58605dfed5f11f9be",
+    "bundle_digest": "ebc5c749f54af9a8f74f5329d99b12d0501987e017eb0df7734800c16c4cd88f",
+    "execution_status": "completed",
+    "node_counts": {
+      "N01": 1,
+      "N02": 1,
+      "N03": 1,
+      "N04": 1,
+      "N05": 1,
+      "N06": 1
+    },
+    "node_statuses": {
+      "succeeded": 6
+    },
+    "coverage": "complete",
+    "result": "violation",
+    "objects": 1,
+    "decisions": {
+      "violation": 1
+    },
+    "rule_ids": [
+      "nonmotor_vehicle_illegal_parking"
+    ],
+    "api_status": [
+      202,
+      200,
+      200,
+      200,
+      200
+    ],
+    "trace_events": 41
+  },
+  "mask/synthetic-roster": {
+    "task_id": "task.630c3de520ed7dd5d330b5e0633e23d689c53de68424e4f537443f6f17a7b33a",
+    "execution_id": "execution.0f9386a1ff40d00d3445f7b65cd03e0dc19c439a4dbd856eb3a8c96748908f64",
+    "original_sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3",
+    "bundle_digest": "378c0cbc0f6a37b63ac0502228d58b736fad810cbe23c68f3745801cf261875a",
+    "execution_status": "completed",
+    "node_counts": {
+      "N01": 1,
+      "N02": 1,
+      "N03": 1,
+      "N04": 1,
+      "N05": 1,
+      "N06": 1
+    },
+    "node_statuses": {
+      "succeeded": 6
+    },
+    "coverage": "complete",
+    "result": "violation",
+    "objects": 1,
+    "decisions": {
+      "violation": 1
+    },
+    "rule_ids": [
+      "food_service_worker_no_mask"
+    ],
+    "api_status": [
+      202,
+      200,
+      200,
+      200,
+      200
+    ],
+    "trace_events": 36
+  },
+  "mask/control": {
+    "task_id": "task.b15b9d50cbc1c4d5877fde1f78d1aa1e9cd96c2f4e250cbcaa32ce5ec01ddea7",
+    "execution_id": "execution.99664253af49d2a2eff30230a704f3efd2773b432ebb4e455b632f72d3c875e3",
+    "original_sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3",
+    "bundle_digest": "378c0cbc0f6a37b63ac0502228d58b736fad810cbe23c68f3745801cf261875a",
+    "execution_status": "completed",
+    "node_counts": {
+      "N01": 1,
+      "N02": 1,
+      "N03": 1,
+      "N04": 1,
+      "N05": 1,
+      "N06": 1
+    },
+    "node_statuses": {
+      "succeeded": 6
+    },
+    "coverage": "partial",
+    "result": "uncertain",
+    "objects": 1,
+    "decisions": {
+      "uncertain": 1
+    },
+    "rule_ids": [],
+    "api_status": [
+      202,
+      200,
+      200,
+      200,
+      200
+    ],
+    "trace_events": 36
+  },
+  "goods/registered-policy": {
+    "task_id": "task.282da38ae396258a7622edbe0c93986c8c7fbcff685d6fc6b866d6c17aa33d6e",
+    "execution_id": "execution.6ac49d016ee7c3e8b1ee6ef5b93cbf734654b0c7acff1c4c9d639d3dd47f1a62",
+    "original_sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8",
+    "bundle_digest": "e5acdc66274003b12952712a4e67d06b8b7488dbbba7200f86c006632900632c",
+    "execution_status": "partial_failed",
+    "node_counts": {
+      "N01": 1,
+      "N02": 1,
+      "N03": 1,
+      "N04": 9,
+      "N05": 9,
+      "N06": 9
+    },
+    "node_statuses": {
+      "succeeded": 29,
+      "failed": 1
+    },
+    "coverage": "partial",
+    "result": "violation",
+    "objects": 9,
+    "decisions": {
+      "no_violation": 2,
+      "violation": 4,
+      "uncertain": 3
+    },
+    "rule_ids": [
+      "sidewalk_goods_encroachment"
+    ],
+    "api_status": [
+      202,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "trace_events": 158
+  },
+  "goods/registered-no-policy": {
+    "task_id": "task.9701015349d914af682b74edcfc17d06f98826aff92b81ff3fcd8a17c5d8254e",
+    "execution_id": "execution.b1ad7468456e85b45728bb656f8560e44dc08756e2b8b82b40b54108d01300dc",
+    "original_sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8",
+    "bundle_digest": "e5acdc66274003b12952712a4e67d06b8b7488dbbba7200f86c006632900632c",
+    "execution_status": "completed",
+    "node_counts": {
+      "N01": 1,
+      "N02": 1,
+      "N03": 1,
+      "N04": 9,
+      "N05": 9,
+      "N06": 9
+    },
+    "node_statuses": {
+      "succeeded": 30
+    },
+    "coverage": "partial",
+    "result": "uncertain",
+    "objects": 9,
+    "decisions": {
+      "uncertain": 9
+    },
+    "rule_ids": [],
+    "api_status": [
+      202,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "trace_events": 156
+  }
+}

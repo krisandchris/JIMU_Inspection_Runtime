@@ -46,6 +46,12 @@ from jimu_runtime.domain.runtime.perception import (
 )
 from jimu_runtime.domain.runtime.selection import QuestionSelectionRecord
 
+N04_REGIONS_MARKER = "JIMU_N04_REGIONS_V1"
+
+
+def is_region_observation_template(text: str) -> bool:
+    return text.partition("\n")[0] == N04_REGIONS_MARKER
+
 
 class ObjectImageView(OptionalContract):
     roi: BBoxXYXY
@@ -66,19 +72,24 @@ class ObjectImageView(OptionalContract):
 
     @classmethod
     def for_object(cls, obj: ObjectRecord) -> Self:
-        if obj.marked_frame is None:
-            return cls(roi=obj.bbox, transforms=())
-        return cls(
-            roi=obj.bbox, transforms=(), marked_media_ref=obj.marked_frame.media_ref
-        )
+        return cls(roi=obj.bbox, transforms=())
 
-    def check_object(self, object_record: ObjectRecord) -> None:
+    def check_object(
+        self, object_record: ObjectRecord, *, original_regions: bool = False
+    ) -> None:
         frame = object_record.marked_frame
-        if self.marked_media_ref != (frame.media_ref if frame is not None else None):
+        # Historical inputs can still pin the archived marked frame.
+        if self.marked_media_ref is not None and (
+            original_regions
+            or frame is None
+            or self.marked_media_ref != frame.media_ref
+        ):
             raise ValueError("observation image must match the exact Object frame")
-        if frame is not None and (self.roi != object_record.bbox or self.transforms):
+        if (frame is not None or original_regions) and (
+            self.roi != object_record.bbox or self.transforms
+        ):
             raise ValueError(
-                "marked observation uses the full original grid and group ROI"
+                "full-frame observation uses the original grid and Object ROI"
             )
         self.roi.validate_bounds(object_record.coordinate_system.dimensions)
         check_transforms(object_record.coordinate_system, self.transforms)
@@ -155,6 +166,12 @@ class ObservationInput(OptionalContract):
     object_record: ObjectRecord
     context_snapshot_ref: ContextSnapshotRef
     image_view: ObjectImageView
+    image_mode: AbsentOptional[Literal["original_regions_v1"]] = Field(
+        default=None,
+        validate_default=False,
+        exclude_if=lambda value: value is None,
+        json_schema_extra=omit_default_from_schema,
+    )
     observation_binding_ref: ModelBindingContentRef
     compiled_prompt_evidence_ref: EvidenceRef
     contract_snapshot: InvocationContractSnapshot
@@ -188,7 +205,10 @@ class ObservationInput(OptionalContract):
             raise ValueError(
                 "joint request must exactly inherit the Object's effective Question set"
             )
-        self.image_view.check_object(self.object_record)
+        self.image_view.check_object(
+            self.object_record,
+            original_regions=self.image_mode == "original_regions_v1",
+        )
         return self
 
     def check_configuration(

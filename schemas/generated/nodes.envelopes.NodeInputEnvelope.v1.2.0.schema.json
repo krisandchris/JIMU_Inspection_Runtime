@@ -1,0 +1,326 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "entity",
+        "region",
+        "profile",
+        "facet",
+        "question",
+        "tool",
+        "tool_plan",
+        "rule",
+        "rule_set",
+        "model_binding",
+        "fact_schema",
+        "prompt_template",
+        "response_schema",
+        "attribute_schema",
+        "context_schema",
+        "tool_input_schema",
+        "tool_output_schema",
+        "object_schema",
+        "decision_schema",
+        "value_schema",
+        "policy",
+        "vocabulary",
+        "geometry_resource",
+        "static_asset",
+        "fact_producer_catalog"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ContentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 5,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "artifact_id",
+        "version",
+        "digest"
+      ],
+      "title": "ContentRef",
+      "type": "object"
+    },
+    "NodeId": {
+      "enum": [
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "title": "NodeId",
+      "type": "string"
+    },
+    "NodeInputs": {
+      "items": {
+        "$ref": "#/$defs/PinnedRuntimeInput"
+      },
+      "maxItems": 1024,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "PinnedRuntimeInput": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "ref": {
+          "$ref": "#/$defs/RuntimeRecordRef"
+        }
+      },
+      "required": [
+        "ref",
+        "digest"
+      ],
+      "title": "PinnedRuntimeInput",
+      "type": "object"
+    },
+    "RuntimeRecordKind": {
+      "enum": [
+        "task",
+        "execution",
+        "node_run",
+        "attempt",
+        "object",
+        "fact",
+        "evidence",
+        "tool_execution",
+        "model_invocation",
+        "decision",
+        "release",
+        "activation",
+        "context_snapshot",
+        "grounding_record",
+        "question_selection_record",
+        "authoritative_result_selection",
+        "execution_coverage",
+        "profile_eligibility_evaluation",
+        "rule_set_applicability_evaluation",
+        "rule_applicability_evaluation",
+        "applicability_trace",
+        "unresolved_obligation",
+        "replay_run",
+        "execution_event",
+        "candidate_prediction",
+        "observation_batch",
+        "tool_plan_run_summary"
+      ],
+      "title": "RuntimeRecordKind",
+      "type": "string"
+    },
+    "RuntimeRecordRef": {
+      "additionalProperties": false,
+      "description": "Record identity, interpreted within its owning root's pinned scope.\n\nIn particular an Object ID is Execution-local: this nested ref must not be\nresolved globally or reused across Executions. Scope/existence checks belong\nto the later owning record contracts, not a hidden resolver in this model.",
+      "properties": {
+        "record_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_kind": {
+          "$ref": "#/$defs/RuntimeRecordKind"
+        }
+      },
+      "required": [
+        "record_kind",
+        "record_id"
+      ],
+      "title": "RuntimeRecordRef",
+      "type": "object"
+    },
+    "TraceContext": {
+      "additionalProperties": false,
+      "properties": {
+        "parent_span_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Span Id"
+        },
+        "span_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Span Id"
+        },
+        "trace_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "not": {
+            "pattern": "\\s"
+          },
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_id"
+      ],
+      "title": "TraceContext",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attempt_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "bundle_digest": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Bundle Digest",
+      "type": "string"
+    },
+    "execution_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "node_config_ref": {
+      "$ref": "#/$defs/ContentRef"
+    },
+    "node_id": {
+      "$ref": "#/$defs/NodeId"
+    },
+    "node_run_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Node Run Id",
+      "type": "string"
+    },
+    "release_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Release Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "not": {
+        "pattern": "\\s"
+      },
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "trace": {
+      "$ref": "#/$defs/TraceContext"
+    },
+    "upstream_artifacts": {
+      "$ref": "#/$defs/NodeInputs"
+    }
+  },
+  "required": [
+    "schema_version",
+    "node_id",
+    "task_id",
+    "execution_id",
+    "release_id",
+    "bundle_digest",
+    "node_run_id",
+    "attempt_id",
+    "trace",
+    "upstream_artifacts",
+    "node_config_ref"
+  ],
+  "title": "NodeInputEnvelope",
+  "type": "object"
+}

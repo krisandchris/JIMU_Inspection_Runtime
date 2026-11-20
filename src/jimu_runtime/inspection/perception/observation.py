@@ -3,12 +3,13 @@
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
 from decimal import Decimal
-from typing import Literal, cast
+from typing import Literal, TypedDict, cast
 
 from jimu_runtime.bundle.integrity import sha256_digest
 from jimu_runtime.bundle.schema_validation import (
     INSUFFICIENT_VISIBILITY,
     OfflineResponseSchema,
+    OfflineSchemaError,
     compile_offline_response_schema,
 )
 from jimu_runtime.bundle.semantic_inputs import build_fact_schema_registry
@@ -22,9 +23,10 @@ from jimu_runtime.domain.definitions.capabilities import (
     ProfileDefinition,
     QuestionDefinition,
 )
+from jimu_runtime.domain.definitions.models import ModelBinding
 from jimu_runtime.domain.definitions.prompts import PromptTemplateDefinition
 from jimu_runtime.domain.enums import ArtifactKind, AttemptStatus, FactStatus
-from jimu_runtime.domain.fact_schemas.canonicalization import JSONValue
+from jimu_runtime.domain.fact_schemas.canonicalization import JSONValue, canonical_bytes
 from jimu_runtime.domain.fact_schemas.models import FactSchemaDefinition
 from jimu_runtime.domain.fact_schemas.registry import FactSchemaRegistry
 from jimu_runtime.domain.fact_selectors import (
@@ -37,12 +39,15 @@ from jimu_runtime.domain.nodes.envelopes import (
     NodeInputEnvelope,
 )
 from jimu_runtime.domain.nodes.observation import (
+    N04_REGIONS_MARKER,
     JointQuestionInput,
     ObjectImageView,
     ObservationInput,
     ObservationRetry,
+    is_region_observation_template,
 )
 from jimu_runtime.domain.policies import (
+    EvidencePolicy,
     EvidencePolicyArtifact,
     QuestionValidationPolicy,
     QuestionValidationPolicyArtifact,
@@ -56,6 +61,7 @@ from jimu_runtime.domain.producers import (
     QuestionProducer,
 )
 from jimu_runtime.domain.references import SchemaRef
+from jimu_runtime.domain.runtime.applicability import ContextSnapshotRef
 from jimu_runtime.domain.runtime.authority import ActorRef, ObservationBatchSelection
 from jimu_runtime.domain.runtime.evidence import (
     EvidenceAsset,
@@ -83,6 +89,8 @@ from jimu_runtime.domain.runtime.media import FinalizedAsset
 from jimu_runtime.domain.runtime.observations import ObservationBatch, QuestionResult
 from jimu_runtime.domain.runtime.perception import ObjectRecord
 from jimu_runtime.domain.runtime.selection import QuestionSelectionRecord
+from jimu_runtime.domain.schema_types import RawDtoSchemaDescriptor
+from jimu_runtime.domain.validation.schema_descriptors import resolve_descriptor
 from jimu_runtime.domain.values import (
     BooleanTypeDefinition,
     EnumTypeDefinition,
@@ -97,8 +105,10 @@ from jimu_runtime.gateway.bridge import (
 )
 from jimu_runtime.gateway.http_wire import ChatContract, VerifiedImage, strict_json
 from jimu_runtime.gateway.invocation import DispatchOutcome
+from jimu_runtime.inspection.media.original_evidence import original_image_evidence
 from jimu_runtime.inspection.perception.model import (
     ModelAccess,
+    PreparedBinding,
     associated_invocation,
     build_chat_contract,
     gateway_binding,
@@ -110,9 +120,13 @@ from jimu_runtime.inspection.perception.model import (
     node_output,
     original_frame,
     prepare_binding,
-    response_schema_bytes,
     runtime_id,
     schema_resource,
+    uses_region_observation,
+)
+from jimu_runtime.inspection.perception.region_request import (
+    RegionObject,
+    compile_region_request,
 )
 from jimu_runtime.workflow.mock_context import snapshot_artifact, snapshot_ref
 from jimu_runtime.workflow.mock_support import (
@@ -123,7 +137,11 @@ from jimu_runtime.workflow.mock_support import (
     record_digest,
 )
 from jimu_runtime.workflow.worker import AdapterRejected, ClaimedNode
-from jimu_runtime.workflow.worker_nodes import NodeResult, ObservationRetryWitness
+from jimu_runtime.workflow.worker_nodes import (
+    BranchInputs,
+    NodeResult,
+    ObservationRetryWitness,
+)
 from jimu_runtime.workflow.worker_records import ObservationMessage
 
 type RequestEvidenceKind = Literal["compiled_prompt", "response_schema"]
@@ -135,6 +153,13 @@ _ACTOR = ActorRef(
     actor_kind="service", actor_id="jimu.workflow", identity_registry_id="jimu.runtime"
 )
 _PURPOSE = ModelCapability.OBJECT_OBSERVATION
+_REGION_EVIDENCE_TYPES = frozenset(
+    (
+        EvidenceType.ORIGINAL_IMAGE,
+        EvidenceType.MODEL_REQUEST,
+        EvidenceType.MODEL_RESPONSE,
+    )
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,6 +185,12 @@ class ObservationPlan:
     prompt: str
     schema: bytes
     output_limit: int
+    original_regions: bool
+
+
+class _RequestOptions(TypedDict, total=False):
+    image_mode: Literal["original_regions_v1"]
+    retry: ObservationRetry
 
 
 def _resolve_questions(
@@ -232,28 +263,249 @@ def _resolve_questions(
     return catalogue_ref, tuple(plans)
 
 
-def _plan(
+def _check_object_configuration(
     scope: VerifiedExecutionScope,
     obj: ObjectRecord,
-    snapshot: ContextSnapshot,
+    context_ref: ContextSnapshotRef,
+    context_digest: str,
     selection: QuestionSelectionRecord,
-) -> ObservationPlan:
-    profile = scope.resolve(obj.profile_ref, ProfileDefinition)
-    scope.check_snapshot(snapshot, snapshot_ref(snapshot))
+    profile: ProfileDefinition,
+) -> None:
     obj.check_selection(scope.execution_id, selection)
     if (
         obj.source_media_ref != scope.media.media_ref
         or obj.coordinate_system != original_frame(scope)
         or obj.entity_ref != profile.entity_ref
-        or selection.context_snapshot_digest != record_digest(snapshot)
-        or selection.context_snapshot_ref != snapshot_ref(snapshot)
+        or selection.context_snapshot_digest != context_digest
+        or selection.context_snapshot_ref != context_ref
     ):
         raise AdapterRejected("perception.object_or_context_pin_mismatch")
+
+
+def _question_prompt(
+    scope: VerifiedExecutionScope, question: QuestionDefinition, schema_dialect: str
+) -> str:
+    if question.context_allowlist:
+        raise AdapterRejected("perception.unsupported_question_context")
+    template = scope.resolve(question.prompt_template_ref, PromptTemplateDefinition)
+    schema_ref = scope.catalogue.resolve(template.response_schema_ref).ref
+    exact_schema = SchemaRef.model_validate(
+        {**schema_ref.model_dump(), "schema_dialect": schema_dialect}
+    )
+    return literal_prompt(scope, question.prompt_template_ref, _PURPOSE, exact_schema)
+
+
+def _check_region_evidence_policy(
+    policy: EvidencePolicy, baseline: EvidencePolicy | None
+) -> None:
+    if not _REGION_EVIDENCE_TYPES.issubset(policy.allowed_evidence_types):
+        raise AdapterRejected("perception.region_evidence_not_permitted")
+    if baseline is not None and (
+        policy.access_scope,
+        policy.retention_class,
+        policy.retention_duration_seconds,
+    ) != (
+        baseline.access_scope,
+        baseline.retention_class,
+        baseline.retention_duration_seconds,
+    ):
+        raise AdapterRejected("perception.incompatible_region_evidence_policies")
+
+
+def _declares_member_boxes(
+    scope: VerifiedExecutionScope, binding: PreparedBinding
+) -> bool:
+    descriptor = resolve_descriptor(
+        binding.definition.input_schema_ref, scope.schema_descriptors
+    )
+    return (
+        isinstance(descriptor, RawDtoSchemaDescriptor)
+        and isinstance(descriptor.type_definition, RecordTypeDefinition)
+        and any(
+            field.name == "member_boxes" for field in descriptor.type_definition.fields
+        )
+    )
+
+
+def _observation_model_input(
+    scope: VerifiedExecutionScope,
+    obj: ObjectRecord,
+    *,
+    include_members: bool,
+) -> dict[str, JSONValue]:
+    model_input = image_input(scope)
+    model_input["bbox"] = {"xyxy": list(obj.bbox.xyxy)}
+    if include_members:
+        model_input["member_boxes"] = [
+            {"xyxy": list(box.xyxy)}
+            for box in obj.grounding_member_boxes or (obj.bbox,)
+        ]
+    return model_input
+
+
+def _regions_prompt(
+    scope: VerifiedExecutionScope,
+    records: BranchInputs | None,
+    obj: ObjectRecord,
+    context_ref: ContextSnapshotRef,
+    context_digest: str,
+    profile: ProfileDefinition,
+    binding: PreparedBinding,
+) -> str | None:
+    original_regions = is_region_observation_template(binding.template)
+    if records is None or records.grounding is None or records.discovery is None:
+        if original_regions:
+            raise AdapterRejected("perception.region_inputs_unavailable")
+        return None
+    selections = {row.selection_id: row for row in records.discovery.selections}
+    active_objects = tuple(
+        item for item in records.grounding.objects if item.effective_question_refs
+    )
+    object_profiles = {
+        ref: scope.resolve(ref, ProfileDefinition)
+        for ref in {item.profile_ref for item in active_objects}
+    }
+    bindings = {item.observation_binding_ref for item in object_profiles.values()}
+    if not original_regions:
+        if any(
+            uses_region_observation(scope, scope.resolve(ref, ModelBinding))
+            for ref in bindings - {profile.observation_binding_ref}
+        ):
+            raise AdapterRejected("perception.incompatible_region_bindings")
+        return None
+    if bindings != {profile.observation_binding_ref}:
+        raise AdapterRejected("perception.incompatible_region_bindings")
+    input_validator = binding.input_validator()
+    include_members = _declares_member_boxes(scope, binding)
+    schema_ref = binding.definition.output_schema_ref
+    schema = schema_resource(scope, schema_ref).document
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        raise AdapterRejected("perception.region_question_catalogue_unavailable")
+    definitions = schema.get("$defs")
+    if definitions is not None and not isinstance(definitions, dict):
+        raise AdapterRejected("perception.region_question_schema_definitions_invalid")
+
+    question_inputs: dict[
+        str, tuple[QuestionContentRef, str, dict[str, JSONValue], PolicyContentRef]
+    ] = {}
+    batch_policy: EvidencePolicy | None = None
+    regions = []
+    for item in active_objects:
+        selection = selections.get(item.question_selection_ref.record_id)
+        if selection is None:
+            raise AdapterRejected("perception.region_selection_unavailable")
+        _check_object_configuration(
+            scope,
+            item,
+            context_ref,
+            context_digest,
+            selection,
+            object_profiles[item.profile_ref],
+        )
+        try:
+            input_validator.validate(
+                _observation_model_input(scope, item, include_members=include_members)
+            )
+        except OfflineSchemaError:
+            raise AdapterRejected("perception.invalid_region_model_input") from None
+        questions = {}
+        policy_refs = set()
+        for ref in item.effective_question_refs:
+            question_id = ref.artifact_id
+            question_input = question_inputs.get(question_id)
+            if question_input is None:
+                slot = properties.get(question_id)
+                if not isinstance(slot, dict):
+                    raise AdapterRejected("perception.region_question_slot_unavailable")
+                question = scope.resolve(ref, QuestionDefinition)
+                policy_ref = PolicyContentRef.model_validate(
+                    question.evidence_policy_ref.model_dump()
+                )
+                policy = scope.resolve(policy_ref, EvidencePolicyArtifact).policy
+                _check_region_evidence_policy(policy, batch_policy)
+                if batch_policy is None:
+                    batch_policy = policy
+                question_input = (
+                    ref,
+                    _question_prompt(scope, question, schema_ref.schema_dialect),
+                    slot,
+                    policy_ref,
+                )
+                question_inputs[question_id] = question_input
+            pinned_ref, prompt, slot, policy_ref = question_input
+            if pinned_ref != ref:
+                raise AdapterRejected(
+                    "perception.incompatible_region_question_versions"
+                )
+            questions[question_id] = (prompt, slot)
+            policy_refs.add(policy_ref)
+        if len(policy_refs) != 1:
+            # Each projected Object still writes one exact evidence policy reference.
+            raise AdapterRejected("perception.unsupported_joint_evidence_policies")
+        regions.append(
+            RegionObject(
+                object_id=item.object_id,
+                entity_id=item.entity_ref.artifact_id,
+                xyxy=item.bbox.xyxy,
+                member_boxes=tuple(
+                    box.xyxy for box in item.grounding_member_boxes or ()
+                ),
+                questions=questions,
+            )
+        )
+    dimensions = scope.media.dimensions
+    try:
+        request = compile_region_request(
+            regions,
+            width=dimensions.width,
+            height=dimensions.height,
+            definitions=definitions,
+        )
+    except ValueError:
+        raise AdapterRejected("perception.invalid_region_request") from None
+    if obj.object_id not in request.object_ids:
+        raise AdapterRejected("perception.region_object_unavailable")
+    instructions = binding.template.partition("\n")[2]
+    evidence = canonical_bytes(
+        {
+            "execution_id": scope.execution_id,
+            "release_id": scope.pins.release_id,
+            "bundle_digest": scope.pins.bundle_digest,
+            "image_sha256": scope.media.media_ref.sha256,
+            "prompt": f"{instructions}\n{request.prompt}"
+            if instructions
+            else request.prompt,
+            "response_schema": request.schema,
+            "object_ids": list(request.object_ids),
+        }
+    ).decode("utf-8")
+    return f"{N04_REGIONS_MARKER}\n{evidence}"
+
+
+def _plan(
+    scope: VerifiedExecutionScope,
+    obj: ObjectRecord,
+    snapshot: ContextSnapshot,
+    selection: QuestionSelectionRecord,
+    records: BranchInputs | None,
+) -> ObservationPlan:
+    profile = scope.resolve(obj.profile_ref, ProfileDefinition)
+    context_ref = snapshot_ref(snapshot)
+    context_digest = record_digest(snapshot)
+    scope.check_snapshot(snapshot, context_ref)
+    _check_object_configuration(
+        scope, obj, context_ref, context_digest, selection, profile
+    )
     if not obj.effective_question_refs:
         raise AdapterRejected("perception.no_effective_questions")
     ref = profile.observation_binding_ref
     binding = prepare_binding(scope, ref, _PURPOSE)
     contract = build_chat_contract(scope, ref, obj.effective_question_refs)
+    original_regions = is_region_observation_template(binding.template)
+    region_prompt = _regions_prompt(
+        scope, records, obj, context_ref, context_digest, profile, binding
+    )
     fact_registry = build_fact_schema_registry(scope.catalogue)
     catalogue_ref, questions = _resolve_questions(scope, obj, fact_registry)
     policy_refs = {
@@ -268,30 +520,10 @@ def _plan(
     policy = scope.resolve(policy_ref, EvidencePolicyArtifact).policy
     if EvidenceType.MODEL_REQUEST not in policy.allowed_evidence_types:
         raise AdapterRejected("perception.request_evidence_not_permitted")
-    prompts: dict[str, JSONValue] = {}
-    for plan in questions:
-        question = plan.definition
-        if question.context_allowlist:
-            raise AdapterRejected("perception.unsupported_question_context")
-        template = scope.resolve(question.prompt_template_ref, PromptTemplateDefinition)
-        schema_ref = scope.catalogue.resolve(template.response_schema_ref).ref
-        # Embedded instructions use the admitted per-Question prompt while
-        # the stock transport validates the independent joint response slots.
-        exact_schema = SchemaRef.model_validate(
-            {
-                **schema_ref.model_dump(),
-                "schema_dialect": contract.output_schema_ref.schema_dialect,
-            }
-        )
-        prompts[plan.ref.artifact_id] = literal_prompt(
-            scope, question.prompt_template_ref, _PURPOSE, exact_schema
-        )
-    model_input = image_input(scope)
-    if obj.marked_frame is not None:
-        model_input["image"] = obj.marked_frame.media_ref.model_dump(mode="json")
-    model_input["bbox"] = {"xyxy": list(obj.bbox.xyxy)}
-    prompt = binding.prompt(
-        model_input, {"object_id": obj.object_id, "questions": prompts}
+    prompt = (
+        region_prompt
+        if region_prompt is not None
+        else _legacy_prompt(scope, obj, binding, contract, questions)
     )
     return ObservationPlan(
         profile,
@@ -301,11 +533,47 @@ def _plan(
         policy_ref,
         contract,
         prompt,
-        response_schema_bytes(scope, binding.definition.output_schema_ref),
+        contract.response_schema_bytes,
         scope.resolve(
             binding.definition.resource_requirements_ref, ResourceRequirementsArtifact
         ).policy.output_byte_limit,
+        original_regions,
     )
+
+
+def _legacy_prompt(
+    scope: VerifiedExecutionScope,
+    obj: ObjectRecord,
+    binding: PreparedBinding,
+    contract: ChatContract,
+    questions: tuple[QuestionPlan, ...],
+) -> str:
+    prompts: dict[str, JSONValue] = {}
+    for plan in questions:
+        prompts[plan.ref.artifact_id] = _question_prompt(
+            scope, plan.definition, contract.output_schema_ref.schema_dialect
+        )
+    includes_members = _declares_member_boxes(scope, binding)
+    model_input = _observation_model_input(scope, obj, include_members=includes_members)
+    instructions: dict[str, JSONValue] = {
+        "object_id": obj.object_id,
+        "questions": prompts,
+        "image_view": (
+            "Use the original image and locate the target by bbox.xyxy in original "
+            "pixels. References to a highlight, outline or a marked image refer to "
+            "this bounding box."
+        ),
+    }
+    if obj.grounding_member_boxes is None and includes_members:
+        instructions["member_box_semantics"] = (
+            "The member_boxes entry repeats the target bounding box. "
+            "Individual member coordinates are unavailable."
+        )
+    elif obj.grounding_member_boxes is not None and not includes_members:
+        instructions["member_boxes"] = [
+            {"xyxy": list(box.xyxy)} for box in obj.grounding_member_boxes
+        ]
+    return binding.prompt(model_input, instructions)
 
 
 def _request_inputs(
@@ -322,6 +590,11 @@ def _request_inputs(
         raise AdapterRejected("perception.incomplete_request_evidence")
     _check_evidence(scope, obj, plan, evidence)
     (prompt, schema) = evidence
+    options: _RequestOptions = {}
+    if plan.original_regions:
+        options["image_mode"] = "original_regions_v1"
+    if retry is not None:
+        options["retry"] = retry
     inputs = ObservationInput(
         schema_version=VERSION,
         envelope=envelope,
@@ -347,7 +620,7 @@ def _request_inputs(
             )
             for question in plan.questions
         ),
-        **({} if retry is None else {"retry": retry}),
+        **options,
     )
     inputs.check_configuration(
         obj.profile_ref,
@@ -360,6 +633,41 @@ def _request_inputs(
 
 def _evidence_ref(evidence: EvidenceAsset) -> EvidenceRef:
     return EvidenceRef(record_kind=K.EVIDENCE, record_id=evidence.evidence_id)
+
+
+def _observation_original(
+    scope: VerifiedExecutionScope, obj: ObjectRecord, plan: ObservationPlan
+) -> EvidenceAsset | None:
+    policy = scope.resolve(plan.evidence_policy_ref, EvidencePolicyArtifact).policy
+    if (
+        plan.original_regions
+        and EvidenceType.ORIGINAL_IMAGE not in policy.allowed_evidence_types
+    ):
+        raise AdapterRejected("perception.original_image_evidence_not_permitted")
+    if not (
+        plan.original_regions
+        or policy.original_media_required
+        or EvidenceType.ORIGINAL_IMAGE in policy.required_evidence_types
+    ):
+        return None
+    return original_image_evidence(
+        scope.task,
+        scope.execution_id,
+        scope.media,
+        obj.coordinate_system,
+        plan.evidence_policy_ref,
+        policy,
+    )
+
+
+def _observation_fact_evidence(
+    inputs: ObservationInput, original: EvidenceAsset | None
+) -> tuple[EvidenceRef, ...]:
+    return (
+        inputs.compiled_prompt_evidence_ref,
+        inputs.contract_snapshot.response_schema_evidence_ref,
+        *((_evidence_ref(original),) if original is not None else ()),
+    )
 
 
 def _check_evidence(
@@ -412,11 +720,12 @@ def verify_observation_inputs(
     evidence: tuple[EvidenceAsset, ...],
     *,
     retry_witness: ObservationRetryWitness | None = None,
+    records: BranchInputs | None = None,
 ) -> None:
     """Reconstruct the exact admitted prompt/schema and verify their metadata."""
     obj = inputs.object_record
     retry, _ = _trusted_retry(inputs.envelope, obj, retry_witness)
-    plan = _plan(scope, obj, snapshot, selection)
+    plan = _plan(scope, obj, snapshot, selection, records)
     expected = _request_inputs(
         scope, inputs.envelope, obj, snapshot, selection, plan, evidence, retry
     )
@@ -485,6 +794,7 @@ def _question_result(
     invocation: ModelInvocation,
     value: object,
     failed_slot: str | None,
+    evidence_refs: tuple[EvidenceRef, ...],
 ) -> QuestionResult:
     ref, declaration = question.ref, question.declaration
     fields = {
@@ -508,7 +818,7 @@ def _question_result(
             observation_batch_ref=batch_ref,
             model_invocation_ref=invocation_ref(invocation),
         ),
-        "evidence_refs": (),
+        "evidence_refs": evidence_refs,
         "created_at": invocation.completed_at,
         "trace_id": env.trace.trace_id,
     }
@@ -598,7 +908,9 @@ def _project_results(
     raw: dict[str, object],
     invalid: tuple[str, ...],
     missing: tuple[str, ...],
+    original: EvidenceAsset | None,
 ) -> tuple[QuestionResult, ...]:
+    evidence_refs = _observation_fact_evidence(inputs, original)
     return tuple(
         _question_result(
             inputs.envelope,
@@ -613,6 +925,7 @@ def _project_results(
             else "perception.question_invalid"
             if question.ref.artifact_id in invalid
             else None,
+            evidence_refs,
         )
         for question in plan.questions
     )
@@ -761,12 +1074,20 @@ def verify_observation_result(
     retry_witness: ObservationRetryWitness | None = None,
     failure: InvocationError | None = None,
     slot_receipt: SlotReceipt | None = None,
+    records: BranchInputs | None = None,
 ) -> None:
-    """Reproject a batch from the independently authenticated receipt and prior Attempt."""
+    """Qualify a new submission against its authenticated receipt and prior Attempt.
+
+    Archived batches keep their persisted evidence and are verified against their
+    recorded artifact digests during load and replay.
+    """
     inputs, batch = message.inputs, message.batch
     obj = inputs.object_record
     retry, previous_batch = _trusted_retry(inputs.envelope, obj, retry_witness)
-    plan = _plan(scope, obj, snapshot, selection)
+    plan = _plan(scope, obj, snapshot, selection, records)
+    original = _observation_original(scope, obj, plan)
+    if message.original_image_evidence != original:
+        raise AdapterRejected("perception.observation_original_evidence_mismatch")
     if inputs != _request_inputs(
         scope,
         inputs.envelope,
@@ -774,7 +1095,7 @@ def verify_observation_result(
         snapshot,
         selection,
         plan,
-        message.evidence,
+        message.request_assets,
         retry,
     ):
         raise AdapterRejected("perception.observation_input_pin_mismatch")
@@ -788,7 +1109,14 @@ def verify_observation_result(
             raise AdapterRejected("perception.observation_wire_missing")
         raw, invalid, missing = _receipt_slots(plan, normalized_content, slot_receipt)
         expected = _project_results(
-            plan, inputs, batch.batch_ref, message.invocation, raw, invalid, missing
+            plan,
+            inputs,
+            batch.batch_ref,
+            message.invocation,
+            raw,
+            invalid,
+            missing,
+            original,
         )
         if batch.question_results != expected:
             raise AdapterRejected("perception.observation_fact_pin_mismatch")
@@ -819,9 +1147,33 @@ def observation_model_call(
     prompt: str,
     image: VerifiedImage,
     resource_scope_id: str,
+    *,
+    attempt_number: int | None = None,
+    original: EvidenceAsset | None = None,
 ) -> ModelCall:
     """Rebuild the same request identity for dispatch and durable validation."""
     obj = inputs.object_record
+    if inputs.image_view != ObjectImageView.for_object(obj):
+        raise AdapterRejected("perception.observation_input_pin_mismatch")
+    region_evidence: tuple[EvidenceRef, ...] = ()
+    if inputs.image_mode == "original_regions_v1":
+        if (
+            attempt_number is None
+            or original is None
+            or not is_region_observation_template(prompt)
+        ):
+            raise AdapterRejected("perception.region_request_evidence_unavailable")
+        stable = strict_json(prompt.partition("\n")[2].encode("utf-8"))
+        if not isinstance(stable, dict):
+            raise AdapterRejected("perception.invalid_region_request")
+        metadata = canonical_bytes(
+            {
+                "jimu_region_request": {**stable, "attempt_number": attempt_number},
+                "jimu_projection_object": obj.object_id,
+            }
+        ).decode("utf-8")
+        prompt = f"{N04_REGIONS_MARKER}\n{metadata}"
+        region_evidence = (_evidence_ref(original),)
     return ModelCall(
         binding_ref=gateway_binding(inputs.observation_binding_ref),
         purposes=(_PURPOSE,),
@@ -834,6 +1186,7 @@ def observation_model_call(
         evidence_refs=(
             inputs.compiled_prompt_evidence_ref,
             inputs.contract_snapshot.response_schema_evidence_ref,
+            *region_evidence,
         ),
     )
 
@@ -863,8 +1216,9 @@ async def observe(
         snapshot_artifact(snapshot),
     )
     retry, previous_batch = _trusted_retry(envelope, obj, records.observation_retry)
-    plan = _plan(scope, obj, snapshot, selection)
+    plan = _plan(scope, obj, snapshot, selection, records)
     image = await access.observation_image(scope, obj)
+    original = _observation_original(scope, obj, plan)
     request_evidence = (
         await stage(
             claimed,
@@ -880,7 +1234,14 @@ async def observe(
     inputs = _request_inputs(
         scope, envelope, obj, snapshot, selection, plan, request_evidence, retry
     )
-    call = observation_model_call(inputs, plan.prompt, image, access.resource_scope_id)
+    call = observation_model_call(
+        inputs,
+        plan.prompt,
+        image,
+        access.resource_scope_id,
+        attempt_number=claimed.attempt.attempt_number,
+        original=original,
+    )
     dispatched = await gateway.invoke_model(claimed, call)
     # Only a receipt already marked late by the journal can supply archival
     # bytes after the gateway removes the authority-bearing output.
@@ -893,7 +1254,14 @@ async def observe(
         require_model_output(dispatched)
         raise AdapterRejected("perception.observation_invocation_missing")
     return _observation_result(
-        claimed, inputs, plan, request_evidence, dispatched, invocation, previous_batch
+        claimed,
+        inputs,
+        plan,
+        request_evidence,
+        original,
+        dispatched,
+        invocation,
+        previous_batch,
     )
 
 
@@ -902,6 +1270,7 @@ def _observation_result(
     inputs: ObservationInput,
     plan: ObservationPlan,
     request_evidence: tuple[EvidenceAsset, ...],
+    original: EvidenceAsset | None,
     dispatched: DispatchOutcome,
     invocation: ModelInvocation,
     previous_batch: ObservationBatch | None,
@@ -931,7 +1300,7 @@ def _observation_result(
             outcome, error = _failed_batch(invocation, None, exc.code)
         else:
             results = _project_results(
-                plan, inputs, batch_ref, invocation, raw, invalid, missing
+                plan, inputs, batch_ref, invocation, raw, invalid, missing, original
             )
             outcome = (
                 "partial"
@@ -974,6 +1343,11 @@ def _observation_result(
     inputs.check_batch(batch, (invocation,), previous_batch)
     artifacts = (
         *(artifact(K.EVIDENCE, row.evidence_id, row) for row in request_evidence),
+        *(
+            (artifact(K.EVIDENCE, original.evidence_id, original),)
+            if original is not None
+            else ()
+        ),
         artifact(K.MODEL_INVOCATION, invocation.model_invocation_id, invocation),
         artifact(K.OBSERVATION_BATCH, batch.observation_batch_id, batch),
         *(
@@ -1015,6 +1389,7 @@ def _observation_result(
         invocation=invocation,
         request_evidence=(),
         durable_request_evidence=request_evidence,
+        original_image_evidence=original,
         authority=authority,
     )
     return NodeResult(

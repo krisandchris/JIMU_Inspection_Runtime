@@ -1,0 +1,49 @@
+{
+  "kind": "separate_provider_diagnostic",
+  "original_bridge_request_id": "live-a51865eff19144538e1bf88a8e9fbe0b",
+  "diagnostic_bridge_request_id": "live-ff086d022e80437cb049a593a19bf47e",
+  "runtime_request": {
+    "bytes": 3991674,
+    "sha256": "cca7c136ed29c477cb5ee4cee43e144f4d60fbb9212b22ea208ab9b33e4201e2"
+  },
+  "upstream_request": {
+    "bytes": 3991667,
+    "sha256": "f3ff1e4a40503baea5b4447f674c6fe68431e9ea8dfe2150a48c1737a2ee7b44"
+  },
+  "bridge_http": 200,
+  "qwen": {
+    "actual_model": "Qwen3_5-9B",
+    "upstream_completion_id": "chatcmpl-be540b8830cb2f87",
+    "system_fingerprint": "vllm-0.29.0-c2041a80",
+    "requested_max_tokens": null,
+    "choice_count": 1,
+    "choice_index": 0,
+    "finish_reason": "stop",
+    "token_usage": {
+      "prompt_tokens": 1991,
+      "completion_tokens": 1565,
+      "total_tokens": 3556
+    },
+    "removed_envelope_fields": {
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "ec_transfer_params": null,
+      "metrics": null,
+      "choices.0.stop_reason": null,
+      "choices.0.token_ids": null,
+      "choices.0.routed_experts": null,
+      "choices.0.message.reasoning": {
+        "bytes": 6023,
+        "sha256": "dea24d6660f6fb18f45dae4f8a0fbd0d064dcbaca797a291d3fb7ea9d8ff9339"
+      }
+    },
+    "unaltered_completion_content": "{\"sidewalk_encroachment\": \"occupies_sidewalk\"}",
+    "completion_content": {
+      "bytes": 46,
+      "sha256": "b5791a112dbb2db2870221425c25ceb31de907bb1c11250a8540366de69c9230"
+    }
+  },
+  "bridge_failure": null
+}

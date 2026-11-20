@@ -1,0 +1,16 @@
+{
+  "method": "Independent AI visual reviewer inspected only the three original images and N03 boxes. Prior and new answers, generation prompts and official decisions were withheld. This is an image-based reference, not human-annotated ground truth.",
+  "parking": {"r1":{"vehicle_type":"electric_bicycle","parking_position":"outside_parking_area","parking_state.1":"parked","parking_state.2":"parked"}},
+  "mask": {"r1":{"face_visibility":"face_assessable","mask_status":"not_wearing_mask"}},
+  "goods": {
+    "r1":{"value":"occupies_sidewalk","object_suffix":"bdbbef57","reason":"Left bottom box has a visible base inside the registered zone."},
+    "r2":{"value":"occupies_sidewalk","object_suffix":"fb4bf052","reason":"Supported directly by r1, whose base is visible."},
+    "r3":{"value":"occupies_sidewalk","object_suffix":"7a75c007","reason":"Front bottom carton base intersects the zone."},
+    "r4":{"value":"occupies_sidewalk","object_suffix":"e5bb0c32","reason":"Front middle carton visibly rests on r3."},
+    "r5":{"value":"insufficient_visibility","object_suffix":"8e1e03bb","reason":"Rear center carton base is occluded by r4."},
+    "r6":{"value":"insufficient_visibility","object_suffix":"2b6db93b","reason":"Immediate support is visible but its path to the ground is occluded."},
+    "r7":{"value":"insufficient_visibility","object_suffix":"769ebd52","reason":"The base of the lower supporting stack is occluded."},
+    "r8":{"value":"insufficient_visibility","object_suffix":"f7a549af","reason":"Only a narrow strip is visible above or behind the front carton."},
+    "r9":{"value":"insufficient_visibility","object_suffix":"5b74dc05","reason":"The lower part is hidden by the front cartons and crates."}
+  }
+}

@@ -1,0 +1,114 @@
+INFO:     127.0.0.1:33386 - "GET /healthz HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58454 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35684 - "POST /v1/detect?label=person HTTP/1.1" 413 Request Entity Too Large
+{"task": "detection", "image_sha256": "6ef251cab9dca854095b8c122627471c477f2c83b8ca71c7828b79879a97be3b", "model_forward_calls": 25, "latency_s": 1.3049}
+INFO:     127.0.0.1:49486 - "POST /v1/detect?label=person HTTP/1.1" 200 OK
+{"task": "detection", "image_sha256": "6ef251cab9dca854095b8c122627471c477f2c83b8ca71c7828b79879a97be3b", "model_forward_calls": 10, "latency_s": 0.5251}
+INFO:     127.0.0.1:53370 - "POST /v1/detect?label=protective%20face%20mask HTTP/1.1" 200 OK
+{"task": "detection", "image_sha256": "bab2b61db33d2e87729ca09069ea97678910eeb8893df228e56db33e15d75968", "model_forward_calls": 17, "latency_s": 0.8818}
+INFO:     127.0.0.1:41388 - "POST /v1/detect?label=cardboard%20boxes HTTP/1.1" 200 OK
+{"task": "segmentation", "image_sha256": "bab2b61db33d2e87729ca09069ea97678910eeb8893df228e56db33e15d75968", "model_forward_calls": 20, "latency_s": 1.1886}
+INFO:     127.0.0.1:41398 - "POST /v1/segment?label=cardboard%20boxes HTTP/1.1" 200 OK
+{"task": "detection", "image_sha256": "44e477cfc6219e4eb02c079242561fc9922b8172b03934e160dde879f4da91de", "model_forward_calls": 10, "latency_s": 0.5666}
+INFO:     127.0.0.1:58832 - "POST /v1/detect?label=non-motor+vehicle HTTP/1.1" 200 OK
+{"task": "detection", "image_sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3", "model_forward_calls": 10, "latency_s": 0.6014}
+INFO:     127.0.0.1:58842 - "POST /v1/detect?label=person HTTP/1.1" 200 OK
+{"task": "detection", "image_sha256": "2270ce7d8acd45780bbed034e4598e68c38fddd333d16750d2761d4c506356e8", "model_forward_calls": 52, "latency_s": 2.834}
+INFO:     127.0.0.1:58850 - "POST /v1/detect?label=cardboard%20boxes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58864 - "POST /v1/segment?label=cardboard%20boxes HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/uvicorn/protocols/http/httptools_impl.py", line 421, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/uvicorn/middleware/proxy_headers.py", line 62, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/usr/local/lib/python3.12/dist-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.12/dist-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/usr/local/lib/python3.12/dist-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/usr/local/lib/python3.12/dist-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/smoke/serve.py", line 140, in segment
+    return await run_in_threadpool(infer, image, image_sha256, "segmentation", label)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/anyio/_backends/_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/smoke/serve.py", line 82, in infer
+    result = engine.predict(
+             ^^^^^^^^^^^^^^^
+  File "/repo/outputs/nf4_4090_Ar0zap/gpu_loader/wevisone_vl/engine.py", line 545, in predict
+    boxes, masks = self.decode_masks(image, actual_prompt, response)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/repo/outputs/nf4_4090_Ar0zap/gpu_loader/wevisone_vl/engine.py", line 509, in decode_masks
+    output = self.mask_decoder(
+             ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/repo/outputs/nf4_4090_Ar0zap/gpu_loader/wevisone_vl/mask_decoder.py", line 722, in forward
+    return self._forward_fp32(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/repo/outputs/nf4_4090_Ar0zap/gpu_loader/wevisone_vl/mask_decoder.py", line 761, in _forward_fp32
+    logits_s1, logits_s2 = self.highres_refine(
+                           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/repo/outputs/nf4_4090_Ar0zap/gpu_loader/wevisone_vl/mask_decoder.py", line 668, in forward
+    torch.cat(
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 6.75 GiB. GPU 0 has a total capacity of 23.48 GiB of which 5.12 GiB is free. Process 2716950 has 697.55 MiB memory in use. Process 3929330 has 1.06 GiB memory in use. Process 3960737 has 11.21 GiB memory in use. Process 3965473 has 2.50 GiB memory in use. Of the allocated memory 8.72 GiB is allocated by PyTorch, and 2.03 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+{"task": "detection", "image_sha256": "44e477cfc6219e4eb02c079242561fc9922b8172b03934e160dde879f4da91de", "model_forward_calls": 8, "latency_s": 0.5216}
+INFO:     127.0.0.1:52042 - "POST /v1/detect?label=bicycle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52058 - "GET /health HTTP/1.1" 200 OK

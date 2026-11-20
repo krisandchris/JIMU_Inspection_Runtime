@@ -118,7 +118,8 @@ def _bootstrap() -> tuple[tuple[object, ...], Callable[[], int]]:
         symbol: str
         filename: str
         role: Role
-        revision: Literal["1.0.0", "1.1.0"] | None = None
+        revision: Literal["1.0.0", "1.1.0", "1.2.0", "1.3.0"] | None = None
+        supersedes: str | None = None
 
         @property
         def source_symbol(self) -> str:
@@ -500,11 +501,47 @@ def _bootstrap() -> tuple[tuple[object, ...], Callable[[], int]]:
         "validation.rule_type_inputs.RuleTypeBindings",
         "validation.runtime_authority.RuntimeAuthorityRecords",
     }
+    TOOL_PLAN_COMPLETION_EXPORTS = {
+        "enums.RuntimeRecordKind",
+        "nodes.context.ContextBuildInput",
+        "nodes.context.ContextBuildOutput",
+        "nodes.context.FailedContextBuild",
+        "nodes.context.SuccessfulContextBuild",
+        "nodes.decision.DecisionInput",
+        "nodes.decision.DecisionOutput",
+        "nodes.discovery.DiscoveryAttemptOutput",
+        "nodes.discovery.DiscoveryInput",
+        "nodes.discovery.DiscoveryOutput",
+        "nodes.envelopes.ArtifactOutputRef",
+        "nodes.envelopes.CancelledNodeOutput",
+        "nodes.envelopes.FailedNodeOutput",
+        "nodes.envelopes.NodeInputEnvelope",
+        "nodes.envelopes.NodeInputs",
+        "nodes.envelopes.NodeOutputEnvelope",
+        "nodes.envelopes.NodeOutputs",
+        "nodes.envelopes.SucceededNodeOutput",
+        "nodes.grounding.GroundingInput",
+        "nodes.grounding.GroundingOutput",
+        "nodes.observation.ObservationInput",
+        "nodes.tool_execution.ToolNodeInput",
+        "nodes.tool_execution.ToolNodeOutput",
+        "references.RuntimeRecordRef",
+        "runtime.executions.ExecutionEvent",
+        "runtime.executions.ExecutionEventPayload",
+        "runtime.executions.NodeRun",
+        "runtime.replay.ArtifactReplayRequest",
+        "runtime.replay.ArtifactReplayRun",
+        "runtime.replay.ReplayRequest",
+        "runtime.replay.ReplayRun",
+        "validation.coverage_sources.CoverageSources",
+        "validation.runtime_authority.RuntimeAuthorityRecords",
+    }
 
     def _published(entries: tuple[Export, ...]) -> tuple[Export, ...]:
         return tuple(
             replace(entry, revision="1.0.0")
-            if entry.filename.removesuffix(".schema.json") in REVISED_EXPORTS
+            if entry.filename.removesuffix(".schema.json")
+            in REVISED_EXPORTS | TOOL_PLAN_COMPLETION_EXPORTS
             else entry
             for entry in entries
         )
@@ -517,18 +554,70 @@ def _bootstrap() -> tuple[tuple[object, ...], Callable[[], int]]:
             filename=entry.filename.removesuffix(".schema.json")
             + ".v1.1.0.schema.json",
             revision="1.1.0",
+            supersedes=entry.filename,
         )
         for entry in (*WP01B_INVENTORY, *WP01C_INVENTORY)
-        if entry.revision == "1.0.0"
+        if entry.filename.removesuffix(".schema.json") in REVISED_EXPORTS
+    )
+    TOOL_PLAN_COMPLETION_INVENTORY = tuple(
+        replace(
+            entry,
+            filename=stem + ".v1.2.0.schema.json",
+            revision="1.2.0",
+            supersedes=(
+                stem + ".v1.1.0.schema.json"
+                if stem in REVISED_EXPORTS
+                else entry.filename
+            ),
+        )
+        for entry in (*WP01B_INVENTORY, *WP01C_INVENTORY)
+        if (stem := entry.filename.removesuffix(".schema.json"))
+        in TOOL_PLAN_COMPLETION_EXPORTS
     )
     INVENTORY = (
         *WP01B_INVENTORY,
         *WP01C_INVENTORY,
         *REVISED_INVENTORY,
+        *TOOL_PLAN_COMPLETION_INVENTORY,
+        *(
+            replace(
+                entry,
+                filename="nodes.observation.ObservationInput.v1.3.0.schema.json",
+                revision="1.3.0",
+                supersedes=entry.filename,
+            )
+            for entry in TOOL_PLAN_COMPLETION_INVENTORY
+            if entry.symbol == "ObservationInput"
+        ),
+        *_group(tool_node, "ToolPlanCompletionRecord", "runtime_root"),
         *_group(capabilities, "GroundingGrouping", "named_union"),
     )
 
-    class PublishedSchemaGenerator(GenerateJsonSchema):
+    class PreRegionObservationSchemaGenerator(GenerateJsonSchema):
+        """Keep the published single-Object input projection byte stable."""
+
+        def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
+            document = super().model_schema(schema)
+            if schema["cls"] is observation.ObservationInput:
+                document["properties"].pop("image_mode", None)
+            return document
+
+    class PreToolPlanCompletionSchemaGenerator(PreRegionObservationSchemaGenerator):
+        """Preserve the enum values present in published schema revisions."""
+
+        def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
+            if schema["cls"] is enums.RuntimeRecordKind:
+                schema = {
+                    **schema,
+                    "members": [
+                        member
+                        for member in schema["members"]
+                        if member is not enums.RuntimeRecordKind.TOOL_PLAN_RUN_SUMMARY
+                    ],
+                }
+            return super().enum_schema(schema)
+
+    class PublishedSchemaGenerator(PreToolPlanCompletionSchemaGenerator):
         """Generate the frozen validation shape from the shared Pydantic contracts."""
 
         _grouping_fields: dict[type[object], set[str]] = {
@@ -670,6 +759,10 @@ def _bootstrap() -> tuple[tuple[object, ...], Callable[[], int]]:
                     schema_generator=(
                         PublishedSchemaGenerator
                         if entry.revision == "1.0.0"
+                        else PreToolPlanCompletionSchemaGenerator
+                        if entry.revision == "1.1.0"
+                        else PreRegionObservationSchemaGenerator
+                        if entry.revision == "1.2.0"
                         else GenerateJsonSchema
                     ),
                 ),
@@ -686,10 +779,8 @@ def _bootstrap() -> tuple[tuple[object, ...], Callable[[], int]]:
             }
             if entry.revision is not None:
                 item["export_revision"] = entry.revision
-            if entry.revision == "1.1.0":
-                item["supersedes"] = entry.filename.replace(
-                    ".v1.1.0.schema.json", ".schema.json"
-                )
+            if entry.supersedes is not None:
+                item["supersedes"] = entry.supersedes
             index.append(item)
         rendered["index.json"] = _json_bytes(
             {

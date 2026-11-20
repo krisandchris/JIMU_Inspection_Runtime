@@ -1,0 +1,9 @@
+{
+  "started_at": "2026-11-19T12:19:02.940346+00:00",
+  "elapsed_seconds": 0.840568944986444,
+  "http_status": 200,
+  "image_sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3",
+  "source": "planning/implementation_evidence/LIVE_THREE_TASKS_20261119/images/mask.png",
+  "prompt": "这是合成画面。观察画面主要人物，用JSON返回相互独立的可见事实。face_visibility 取 assessable/unassessable，表示图像质量和遮挡是否足以判断口罩状态，口罩本身能够看清时可判断；mask_state 取 not_worn/worn_misplaced/worn_covers_nose_and_mouth/unknown，区分无口罩、戴了但未盖住口鼻、盖住口鼻和无法判断；food_operation 取 visible/not_visible/unclear，须看见人物手部与食材或厨房工具直接操作，距离接近不能代替；kitchen_cues 取 visible/not_visible/unclear，根据画面描述可见的设施；employment_status 取 unknown，单帧画面无法验证受雇或已登记身份；evidence 写明可见依据。不要输出违规判断。只输出 JSON 对象。",
+  "image_sent": "original input bytes"
+}

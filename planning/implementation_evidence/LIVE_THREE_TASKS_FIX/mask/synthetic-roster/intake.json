@@ -1,0 +1,253 @@
+{
+  "task": {
+    "schema_version": "1.0.0",
+    "task_id": "task.630c3de520ed7dd5d330b5e0633e23d689c53de68424e4f537443f6f17a7b33a",
+    "request_id": "live.6fc28a6e56aa4123b0e4277109344236",
+    "idempotency_scope": {
+      "project_id": "synthetic.nonmotor.parking",
+      "client_id": "synthetic.edge"
+    },
+    "idempotency_key": "live.6fc28a6e56aa4123b0e4277109344236",
+    "media_ref": {
+      "media_id": "synthetic.scene.image",
+      "sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3"
+    },
+    "context": {
+      "device_id": "synthetic.device",
+      "camera_id": "synthetic.fixed.camera",
+      "region_id": "isolated_food_service",
+      "clock": {
+        "captured_at": "2026-01-02T00:00:00Z",
+        "original_timestamp": "2026-01-02T00:00:00+00:00",
+        "original_timezone": "UTC",
+        "source": "device_clock",
+        "clock_id": "synthetic.device",
+        "uncertainty_ms": null
+      },
+      "metadata": {
+        "kind": "record",
+        "value": {
+          "synthetic_kitchen_employee_roster_attached": {
+            "kind": "bool",
+            "value": true
+          },
+          "synthetic_scope_evidence_sha256": {
+            "kind": "enum",
+            "value": "988ccf01c689c0db59fe9a3ce2914e642b299e289266e73480b4e4779fc8fa8d"
+          },
+          "synthetic_scope_image_sha256": {
+            "kind": "enum",
+            "value": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3"
+          }
+        }
+      }
+    },
+    "release_id": "synthetic.parking.release",
+    "bundle_digest": "378c0cbc0f6a37b63ac0502228d58b736fad810cbe23c68f3745801cf261875a",
+    "accepted_at": "2026-01-02T00:00:00Z",
+    "status": "accepted",
+    "trace": {
+      "trace_id": "live.6fc28a6e56aa4123b0e4277109344236",
+      "span_id": null,
+      "parent_span_id": null
+    }
+  },
+  "execution": {
+    "schema_version": "1.0.0",
+    "execution_id": "execution.0f9386a1ff40d00d3445f7b65cd03e0dc19c439a4dbd856eb3a8c96748908f64",
+    "task_id": "task.630c3de520ed7dd5d330b5e0633e23d689c53de68424e4f537443f6f17a7b33a",
+    "pins": {
+      "release_id": "synthetic.parking.release",
+      "bundle_digest": "378c0cbc0f6a37b63ac0502228d58b736fad810cbe23c68f3745801cf261875a",
+      "runtime_version": "1.0.0",
+      "workflow_version": "1.0.0",
+      "model_pins": [
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "candidate_prediction",
+            "version": "1.0.0",
+            "digest": "269b89ade7f1dc1c9b76c9cb2f401e93f8b2d01895af224a74ea468ff4857db3"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "8ef2723e027d2ec519de7cc9411029fc79283306e4f001e193d72c8b60863b2a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+          "deployments": [
+            {
+              "provider_id": "live.inspection.protocol_bridge",
+              "deployment_id": "live.inspection.protocol_bridge.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.1.0"
+                ],
+                "allowed_model_versions": [
+                  "1.1.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        },
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "object_grounding",
+            "version": "1.0.0",
+            "digest": "c0d947aeafe0e9778776b5a2751858dbfde8e622fac4a77975b53981ca3e7bca"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "8ef2723e027d2ec519de7cc9411029fc79283306e4f001e193d72c8b60863b2a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+          "deployments": [
+            {
+              "provider_id": "live.inspection.protocol_bridge",
+              "deployment_id": "live.inspection.protocol_bridge.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.1.0"
+                ],
+                "allowed_model_versions": [
+                  "1.1.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        },
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "object_observation",
+            "version": "1.0.0",
+            "digest": "dc64dd27a8467364df915bb4636370b543ac84afde879ec6f64367995d20d461"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "8ef2723e027d2ec519de7cc9411029fc79283306e4f001e193d72c8b60863b2a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+          "deployments": [
+            {
+              "provider_id": "live.inspection.protocol_bridge",
+              "deployment_id": "live.inspection.protocol_bridge.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.1.0"
+                ],
+                "allowed_model_versions": [
+                  "1.1.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        },
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "profile_discovery",
+            "version": "1.0.0",
+            "digest": "a8e0560e265e86072ffaa9e079b99702cb26404c5a4d308d26fb7b4830e514f9"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "8ef2723e027d2ec519de7cc9411029fc79283306e4f001e193d72c8b60863b2a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "live.inspection.protocol_bridge.loopback",
+          "deployments": [
+            {
+              "provider_id": "live.inspection.protocol_bridge",
+              "deployment_id": "live.inspection.protocol_bridge.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.1.0"
+                ],
+                "allowed_model_versions": [
+                  "1.1.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        }
+      ],
+      "tool_pins": [],
+      "input_digest": "345f6e07d775ccd7daa2bbd08cc58a7d84b0046b1ce4779f7a0cdbe5dade9494"
+    },
+    "trace": {
+      "trace_id": "live.6fc28a6e56aa4123b0e4277109344236",
+      "span_id": null,
+      "parent_span_id": null
+    },
+    "status": "initialized",
+    "created_at": "2026-11-19T13:02:18.764476Z",
+    "started_at": null,
+    "ended_at": null,
+    "context_snapshot": null,
+    "model_invocation_refs": []
+  }
+}

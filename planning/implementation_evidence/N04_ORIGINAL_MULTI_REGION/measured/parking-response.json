@@ -1,0 +1,41 @@
+{
+  "start_utc": "2026-11-19T14:43:35.887698+00:00",
+  "request_count": 1,
+  "http": 200,
+  "seconds": 3.4908650230499916,
+  "id": "chatcmpl-a60212ee53e08f6f",
+  "model": "Qwen3_5-9B",
+  "usage": {
+    "prompt_tokens": 2015,
+    "total_tokens": 2663,
+    "completion_tokens": 648,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+      "reasoning_tokens": 499
+    }
+  },
+  "finish": "stop",
+  "raw_content": "{\n  \"r1\": {\n    \"vehicle_type\": \"electric_bicycle\",\n    \"parking_state\": {\n      \"members\": [\n        {\n          \"member_index\": 1,\n          \"state\": \"parked\",\n          \"visual_evidence\": \"Kickstand is deployed, no rider present, vehicle is stationary.\"\n        },\n        {\n          \"member_index\": 2,\n          \"state\": \"parked\",\n          \"visual_evidence\": \"Kickstand is deployed, no rider present, vehicle is stationary.\"\n        }\n      ]\n    },\n    \"parking_position\": \"outside_parking_area\"\n  }\n}",
+  "response_sha256": "d32470f26daad3014e7abdbb61469cd89290487168337e21feb13746e90ba17d",
+  "answers": {
+    "r1": {
+      "vehicle_type": "electric_bicycle",
+      "parking_state": {
+        "members": [
+          {
+            "member_index": 1,
+            "state": "parked",
+            "visual_evidence": "Kickstand is deployed, no rider present, vehicle is stationary."
+          },
+          {
+            "member_index": 2,
+            "state": "parked",
+            "visual_evidence": "Kickstand is deployed, no rider present, vehicle is stationary."
+          }
+        ]
+      },
+      "parking_position": "outside_parking_area"
+    }
+  },
+  "validated": true
+}

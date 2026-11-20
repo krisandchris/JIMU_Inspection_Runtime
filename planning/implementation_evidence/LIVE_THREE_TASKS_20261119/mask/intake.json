@@ -1,0 +1,240 @@
+{
+  "task": {
+    "schema_version": "1.0.0",
+    "task_id": "task.c6158a9fec397bd4ddbeada0bd5e1f4b53ad939565b99b154c527b42cdb8a899",
+    "request_id": "trial.09ea61d1790f48d685723853530c8151",
+    "idempotency_scope": {
+      "project_id": "synthetic.nonmotor.parking",
+      "client_id": "synthetic.edge"
+    },
+    "idempotency_key": "trial.09ea61d1790f48d685723853530c8151",
+    "media_ref": {
+      "media_id": "synthetic.scene.image",
+      "sha256": "11a19d6d6ec44a249bd77e3350bcccf6ab741b7943de5ae6e36853f9fceb90f3"
+    },
+    "context": {
+      "device_id": "synthetic.device",
+      "camera_id": "synthetic.fixed.camera",
+      "region_id": "isolated_food_service",
+      "clock": {
+        "captured_at": "2026-01-02T00:00:00Z",
+        "original_timestamp": "2026-01-02T00:00:00+00:00",
+        "original_timezone": "UTC",
+        "source": "device_clock",
+        "clock_id": "synthetic.device",
+        "uncertainty_ms": null
+      },
+      "metadata": {
+        "kind": "record",
+        "value": {}
+      }
+    },
+    "release_id": "synthetic.parking.release",
+    "bundle_digest": "4a79efc889f8fba2394ffc4ebdd62f48c7fc5d79cf14429d71a4518f829eab96",
+    "accepted_at": "2026-01-02T00:00:00Z",
+    "status": "accepted",
+    "trace": {
+      "trace_id": "synthetic.scene.trace",
+      "span_id": null,
+      "parent_span_id": null
+    }
+  },
+  "execution": {
+    "schema_version": "1.0.0",
+    "execution_id": "execution.9941fb7ad0c27c0667aa9135310583efa842bb070e5980403d006707c42c0354",
+    "task_id": "task.c6158a9fec397bd4ddbeada0bd5e1f4b53ad939565b99b154c527b42cdb8a899",
+    "pins": {
+      "release_id": "synthetic.parking.release",
+      "bundle_digest": "4a79efc889f8fba2394ffc4ebdd62f48c7fc5d79cf14429d71a4518f829eab96",
+      "runtime_version": "1.0.0",
+      "workflow_version": "1.0.0",
+      "model_pins": [
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "candidate_prediction",
+            "version": "1.0.0",
+            "digest": "bb284ea7b8afcf9350621ef6f755816f4209c297f5037f3e624bb29bd1b5eb4f"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+          "deployments": [
+            {
+              "provider_id": "synthetic.loopback",
+              "deployment_id": "synthetic.nonmotor.parking.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        },
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "object_grounding",
+            "version": "1.0.0",
+            "digest": "ffded5d1fac0cd1d999f791776e49215f605f17af6eb8f21e3464bde8df9e027"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+          "deployments": [
+            {
+              "provider_id": "synthetic.loopback",
+              "deployment_id": "synthetic.nonmotor.parking.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        },
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "object_observation",
+            "version": "1.0.0",
+            "digest": "1e1ddf2d2291149f3cc49ebee2074791171ae53b45472ff71a3b46164508ab44"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+          "deployments": [
+            {
+              "provider_id": "synthetic.loopback",
+              "deployment_id": "synthetic.nonmotor.parking.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        },
+        {
+          "binding_ref": {
+            "artifact_kind": "model_binding",
+            "artifact_id": "profile_discovery",
+            "version": "1.0.0",
+            "digest": "542c6f94dd8763f34992dfb6fdedd568108a235fb9b8706b1236a10a9d23f10c"
+          },
+          "provider_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "provider",
+            "version": "1.0.0",
+            "digest": "17487405f7cec9fef4496f44c98ad74329a759cdc129947e9543c31e64d2543a"
+          },
+          "fallback_policy_ref": {
+            "artifact_kind": "policy",
+            "artifact_id": "fallback",
+            "version": "1.0.0",
+            "digest": "6e3c5baa05bd651faf1393acea9aaf6352965e259a1a6f7ebe7f380370ad56ce"
+          },
+          "primary_deployment_id": "synthetic.nonmotor.parking.loopback",
+          "deployments": [
+            {
+              "provider_id": "synthetic.loopback",
+              "deployment_id": "synthetic.nonmotor.parking.loopback",
+              "logical_model_id": "synthetic.nonmotor.parking",
+              "provider_kind": "remote",
+              "actual_version_constraints": {
+                "allowed_deployment_versions": [
+                  "1.0.0"
+                ],
+                "allowed_model_versions": [
+                  "1.0.0"
+                ]
+              },
+              "required_features": [
+                "rgb_image",
+                "typed_context",
+                "structured_output",
+                "original_xyxy"
+              ]
+            }
+          ]
+        }
+      ],
+      "tool_pins": [],
+      "input_digest": "fcbe706ea08ab10a1d4d6eccca6f6bf3be24e345abce10baf73b6308eab09fea"
+    },
+    "trace": {
+      "trace_id": "synthetic.scene.trace",
+      "span_id": null,
+      "parent_span_id": null
+    },
+    "status": "initialized",
+    "created_at": "2026-11-19T12:22:22.121705Z",
+    "started_at": null,
+    "ended_at": null,
+    "context_snapshot": null,
+    "model_invocation_refs": []
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "parking": {
+    "old_http_calls": 1,
+    "new_http_calls": 1,
+    "old_wire_s": 6.129,
+    "new_wire_s": 3.4908650230499916,
+    "old_over_new": 1.7557252885833587,
+    "old_request_bytes": 4194279,
+    "new_request_bytes": 4613650,
+    "comparisons": [
+      {
+        "region": "r1",
+        "question": "vehicle_type",
+        "old": "electric_bicycle",
+        "new": "electric_bicycle",
+        "exact": true
+      },
+      {
+        "region": "r1",
+        "question": "parking_state.1",
+        "old": "parked",
+        "new": "parked",
+        "exact": true
+      },
+      {
+        "region": "r1",
+        "question": "parking_state.2",
+        "old": "parked",
+        "new": "parked",
+        "exact": true
+      },
+      {
+        "region": "r1",
+        "question": "parking_position",
+        "old": "outside_parking_area",
+        "new": "outside_parking_area",
+        "exact": true
+      }
+    ],
+    "matching": 4,
+    "comparable": 4
+  },
+  "mask": {
+    "old_http_calls": 1,
+    "new_http_calls": 1,
+    "old_wire_s": 1.488,
+    "new_wire_s": 0.8525538559770212,
+    "old_over_new": 1.745344284783935,
+    "old_request_bytes": 2678888,
+    "new_request_bytes": 2930031,
+    "comparisons": [
+      {
+        "region": "r1",
+        "question": "face_visibility",
+        "old": "face_assessable",
+        "new": "face_assessable",
+        "exact": true
+      },
+      {
+        "region": "r1",
+        "question": "mask_status",
+        "old": "not_wearing_mask",
+        "new": "not_wearing_mask",
+        "exact": true
+      }
+    ],
+    "matching": 2,
+    "comparable": 2
+  },
+  "goods": {
+    "old_http_calls": 9,
+    "new_http_calls": 1,
+    "old_wire_s": 153.04500000000002,
+    "new_wire_s": 29.02110549196368,
+    "old_over_new": 5.273575813381063,
+    "old_request_bytes": 35923107,
+    "new_request_bytes": 4390008,
+    "comparisons": [
+      {
+        "region": "r1",
+        "question": "sidewalk_encroachment",
+        "old": "does_not_occupy_sidewalk",
+        "new": "occupies_sidewalk",
+        "exact": false
+      },
+      {
+        "region": "r2",
+        "question": "sidewalk_encroachment",
+        "old": "occupies_sidewalk",
+        "new": "occupies_sidewalk",
+        "exact": true
+      },
+      {
+        "region": "r3",
+        "question": "sidewalk_encroachment",
+        "old": "occupies_sidewalk",
+        "new": "occupies_sidewalk",
+        "exact": true
+      },
+      {
+        "region": "r4",
+        "question": "sidewalk_encroachment",
+        "old": "occupies_sidewalk",
+        "new": "occupies_sidewalk",
+        "exact": true
+      },
+      {
+        "region": "r5",
+        "question": "sidewalk_encroachment",
+        "old": "insufficient_visibility",
+        "new": "occupies_sidewalk",
+        "exact": false
+      },
+      {
+        "region": "r6",
+        "question": "sidewalk_encroachment",
+        "old": "occupies_sidewalk",
+        "new": "occupies_sidewalk",
+        "exact": true
+      },
+      {
+        "region": "r7",
+        "question": "sidewalk_encroachment",
+        "old": "does_not_occupy_sidewalk",
+        "new": "occupies_sidewalk",
+        "exact": false
+      },
+      {
+        "region": "r8",
+        "question": "sidewalk_encroachment",
+        "old": null,
+        "new": "occupies_sidewalk",
+        "exact": null
+      },
+      {
+        "region": "r9",
+        "question": "sidewalk_encroachment",
+        "old": "insufficient_visibility",
+        "new": "occupies_sidewalk",
+        "exact": false
+      }
+    ],
+    "matching": 4,
+    "comparable": 8
+  }
+}

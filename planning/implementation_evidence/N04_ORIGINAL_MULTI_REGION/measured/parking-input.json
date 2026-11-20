@@ -1,0 +1,98 @@
+{
+  "source_case": "parking",
+  "image_sha256": "a17325853ec562bbe1946769abd0074def1ab853adf603e58605dfed5f11f9be",
+  "image_size": [
+    1536,
+    1024
+  ],
+  "id_map": {
+    "r1": {
+      "object_id": "perception.object.75392ab43119caa55935e0db378ceff8a2e839171f4b01fa12f650b58f5edfb2",
+      "xyxy_px": [
+        638.976,
+        41.984,
+        1439.232,
+        689.152
+      ]
+    }
+  },
+  "prompt": "Observe the one supplied original image. Each bbox_2d is [left,top,right,bottom], integer thousandths of full image width and height, clamped to 0..999, origin top left. Use each target's coordinates to identify that specific subject. Evaluate only its listed questions, using surrounding visual context where needed. Answer by the provided target IDs and question IDs. If unclear use the uncertainty option for that question. Do not decide violations. Return the JSON object only.\n{\"questions\": {\"vehicle_type\": {\"prompt\": \"Identify the vehicle class: electric_bicycle, bicycle, tricycle, or other.\", \"answers\": [\"bicycle\", \"electric_bicycle\", \"insufficient_visibility\", \"other\", \"tricycle\"]}, \"parking_state\": {\"prompt\": \"For each member_boxes entry (one-based member_index in provided order), identify that vehicle only. Return a members list with member_index, state, and visual_evidence. Use parked for a clearly unattended stationary parked vehicle, unparked for a clearly operated or moving vehicle, unknown when identity or state is ambiguous. Describe a distinguishing visible detail and the reason for that state in visual_evidence. One entry per supplied member, including unknown members. Ignore vehicles outside the supplied boxes. Do not infer state from the supplied bounding box, parking area, or other members. Do not decide violations.\"}, \"parking_position\": {\"prompt\": \"Describe the apparent parking position: inside_parking_area, outside_parking_area, or over_boundary.\", \"answers\": [\"inside_parking_area\", \"insufficient_visibility\", \"outside_parking_area\", \"over_boundary\"]}}, \"targets\": [{\"id\": \"r1\", \"subject\": \"nonmotor_vehicle\", \"bbox_2d\": [416, 41, 937, 673], \"questions\": [\"vehicle_type\", \"parking_state\", \"parking_position\"], \"member_boxes\": [{\"member_index\": 1, \"bbox_2d\": [416, 41, 702, 673]}, {\"member_index\": 2, \"bbox_2d\": [689, 76, 937, 626]}]}]}",
+  "response_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "r1"
+    ],
+    "properties": {
+      "r1": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "vehicle_type",
+          "parking_state",
+          "parking_position"
+        ],
+        "properties": {
+          "vehicle_type": {
+            "enum": [
+              "bicycle",
+              "electric_bicycle",
+              "insufficient_visibility",
+              "other",
+              "tricycle"
+            ],
+            "type": "string"
+          },
+          "parking_state": {
+            "additionalProperties": false,
+            "properties": {
+              "members": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "member_index": {
+                      "type": "integer"
+                    },
+                    "state": {
+                      "enum": [
+                        "parked",
+                        "unknown",
+                        "unparked"
+                      ],
+                      "type": "string"
+                    },
+                    "visual_evidence": {
+                      "maxLength": 160,
+                      "minLength": 0,
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "maxItems": 256,
+                "minItems": 0,
+                "type": "array"
+              }
+            },
+            "required": [
+              "members"
+            ],
+            "type": "object"
+          },
+          "parking_position": {
+            "enum": [
+              "inside_parking_area",
+              "insufficient_visibility",
+              "outside_parking_area",
+              "over_boundary"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "request_bytes": 4613650,
+  "request_sha256": "ae09bc31489ec04838e8c64f87458ffcefe3e883e9561e3c99a41ceb04b2da89"
+}

@@ -1,0 +1,131 @@
+{
+  "baseline": "36885d61109ba1f55c42ce65b95da701dc71c326",
+  "environment": {
+    "python": "3.12.3",
+    "pydantic": "2.12.5",
+    "sqlalchemy": "2.0.52",
+    "psycopg": "3.3.5",
+    "fastapi": "0.141.1",
+    "pytest": "8.4.2",
+    "ruff": "0.14.14",
+    "mypy": "1.18.2"
+  },
+  "uv_lock_sha256": "9891b88578fb59e8f45070523df7c037fe18bcc7cc23fb03e884900d5537e908",
+  "runs": {
+    "unit-negative": {
+      "command": "pytest -q tests/unit tests/negative --disable-warnings --maxfail=12",
+      "tests": 3245,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "duration_s": 834.007,
+      "nonpass": {
+        "tests.unit.test_b_schema_export.test_cli_check_is_read_only_and_detects_mismatch[valid]": {
+          "outcome": "failure",
+          "reason": "AssertionError: Schema export rejected: Export source module does not belong to this repository\n  \nassert 1 == 0\n +  where 1 = CompletedProcess(args=['/tmp/jimu-three-fixes-jajig3/env-accepted/bin/python', '/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/...], returncode=1, stdout='', stderr='Schema export rejected: Export source module does not belong to this repository\\n').returncode"
+        }
+      }
+    },
+    "frozen-schema-test": {
+      "command": "pytest -q 'tests/unit/test_b_schema_export.py::test_cli_check_is_read_only_and_detects_mismatch[valid]'",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_s": 34.368,
+      "nonpass": {}
+    },
+    "media-reopen": {
+      "command": "pytest -q tests/contract/test_wp05_media_postgres.py::test_original_retry_scope_and_reopen",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_s": 5.507,
+      "nonpass": {}
+    },
+    "final-scenes": {
+      "command": "pytest -q tests/contract/test_live*.py tests/unit/test_live_capture_host.py tests/contract/test_dependency_boundaries.py",
+      "tests": 58,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_s": 22.757,
+      "nonpass": {}
+    },
+    "final-worker": {
+      "command": "pytest -q tests/contract/test_wp05_worker_inspection.py tests/contract/test_wp05_media_tool_sidecars.py tests/contract/test_wp05_decision_gate.py",
+      "tests": 23,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_s": 195.744,
+      "nonpass": {}
+    },
+    "final-group-and-plan": {
+      "command": "pytest -q tests/contract/test_grouped_inspection_worker.py tests/contract/test_wp05_mixed_tool_plan.py",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_s": 250.054,
+      "nonpass": {}
+    },
+    "contract-0": {
+      "command": "pytest -q --disable-warnings --tb=short tests/contract/test_wp05_perception_loopback.py tests/contract/test_wp06_retention_postgres.py tests/contract/test_wp05_geometry_executor.py tests/contract/test_c_schema_inventory.py tests/contract/test_n03_marked_frame_media.py tests/contract/test_wp07_api_wp06.py tests/contract/test_wp07_recovery.py tests/contract/test_wp03_worker_coverage_records.py tests/contract/test_wp03_postgres_migrations.py tests/contract/test_b_fact_records.py tests/contract/test_b_definition_catalogue.py tests/contract/test_wp06_eval_contracts.py tests/contract/test_b_authority_history.py tests/contract/test_c_rule_type_contract.py tests/contract/test_b_capabilities.py tests/contract/test_b_registry_contract.py tests/contract/test_c_decision_schemas.py tests/contract/test_b_fact_selectors.py tests/contract/test_wp02_artifact_kinds.py tests/contract/test_wp03_engine_records.py tests/contract/test_wp02_semantics_contract.py tests/contract/test_wp02_integrity_vectors.py tests/contract/test_wp02_trust_contracts.py tests/contract/test_wp02_producer_rules_contract.py",
+      "tests": 226,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_s": 608.894,
+      "nonpass": {}
+    },
+    "contract-1": {
+      "command": "pytest -q --disable-warnings --tb=short tests/contract/test_wp05_worker_inspection.py tests/contract/test_wp04_worker_gateway.py tests/contract/test_wp03_jobs.py tests/contract/test_wp05_geometry_step.py tests/contract/test_wp03_worker_coverage_lease_postgres.py tests/contract/test_wp04_worker_lifecycle.py tests/contract/test_wp07_compose_local.py tests/contract/test_wp07_api_runtime.py tests/contract/test_wp06_retention_read_limits.py tests/contract/test_wp03_repository_roundtrip.py tests/contract/test_b_producers_contracts.py tests/contract/test_c_node_contracts.py tests/contract/test_b_condition_bindings_schema.py tests/contract/test_wp02_compiler_packaging.py tests/contract/test_c_runtime_authority_schema.py tests/contract/test_json_schema.py tests/contract/test_b_fact_schema.py tests/contract/test_c_execution_schema.py tests/contract/test_c_rule_declarations_schema.py tests/contract/test_wp03_historical_activation.py",
+      "tests": 198,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "duration_s": 559.119,
+      "nonpass": {
+        "tests.contract.test_wp07_compose_local.test_local_compose_workflow_retains_result_trace_and_evidence": {
+          "outcome": "skipped",
+          "reason": "requires preloaded pinned images, a locked cache, and an isolated Docker project"
+        }
+      }
+    },
+    "contract-2": {
+      "command": "pytest -q --disable-warnings --tb=short tests/contract/test_wp06_eval_history.py tests/contract/test_wp05_geometry_recovery.py tests/contract/test_wp05_decision_gate.py tests/contract/test_grouped_inspection_worker.py tests/contract/test_wp06_retention_review.py tests/contract/test_wp04_dispatch_journal.py tests/contract/test_b_schema_inventory.py tests/contract/test_wp03_intake_recovery.py tests/contract/test_wp07_observability_readiness.py tests/contract/test_b_complete_policies.py tests/contract/test_wp02_releases_contract.py tests/contract/test_wp03_providers_contract.py tests/contract/test_wp04_workflow_upgrade.py tests/contract/test_b_producer_authority_contracts.py tests/contract/test_b_conditions_schema.py tests/contract/test_c_invocation_schema.py tests/contract/test_c_applicability_schemas.py tests/contract/test_c_geometry_replay_schema.py tests/contract/test_c_intake_schema.py tests/contract/test_b_models_tools.py tests/contract/test_b_ontology.py",
+      "tests": 154,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_s": 517.667,
+      "nonpass": {}
+    },
+    "contract-3": {
+      "command": "pytest -q --disable-warnings --tb=short tests/contract/test_wp04_tool_executor.py tests/contract/test_wp06_artifact_replay.py tests/contract/test_wp06_inference_replay.py tests/contract/test_wp05_media_postgres.py tests/contract/test_n04_mixed_observation.py tests/contract/test_wp04_nested_dispatch_journal.py tests/contract/test_wp05_media_tool_sidecars.py tests/contract/test_c_release_schemas.py tests/contract/test_wp07_observability_postgres.py tests/contract/test_wp07_api_admin.py tests/contract/test_wp05_decision_grounding_gap.py tests/contract/test_wp02_admission_receipt.py tests/contract/test_wp03_pins_contract.py tests/contract/test_b_producer_authority_inputs.py tests/contract/test_dependency_boundaries.py tests/contract/test_b_mapping_contracts.py tests/contract/test_b_policy_contracts.py tests/contract/test_wp04_http_contract.py tests/contract/test_wp02_schema_views_contract.py tests/contract/test_b_producer_ref.py tests/contract/test_wp02_store_contracts.py",
+      "tests": 174,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0,
+      "duration_s": 614.812,
+      "nonpass": {
+        "tests.contract.test_wp05_media_postgres.test_original_retry_scope_and_reopen": {
+          "outcome": "failure",
+          "reason": "assert False"
+        },
+        "tests.contract.test_dependency_boundaries.test_runtime_layers_have_a_pure_domain_and_an_acyclic_import_graph": {
+          "outcome": "failure",
+          "reason": "AssertionError: Pillow import outside the image decoder or isolated CPU tool: jimu_runtime.inspection.geometry.parking_members"
+        }
+      }
+    }
+  },
+  "static_checks": {
+    "ruff check src scripts tests examples/live_inspection examples/nonmotor_vehicle_illegal_parking/compilable": "All checks passed!",
+    "ruff format --check src scripts tests examples/live_inspection examples/nonmotor_vehicle_illegal_parking/compilable": "517 files already formatted",
+    "mypy src": "Success: no issues found in 223 source files",
+    "python scripts/generate_schemas.py --check": "Schema export matches"
+  }
+}

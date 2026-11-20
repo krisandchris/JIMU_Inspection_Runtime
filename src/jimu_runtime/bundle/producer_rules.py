@@ -530,7 +530,7 @@ def _execution_contexts(
         )
 
 
-def _activation_contexts(
+def producer_activation_contexts(
     catalogue: ArtifactCatalogue,
     registration: ProducerCatalogueRegistration,
     definitions: DefinitionValidationInput,
@@ -615,7 +615,7 @@ def _check_producer_catalogue(
     fact_schemas: FactSchemaRegistry,
 ) -> None:
     bindings = inputs.bindings
-    contexts = _activation_contexts(catalogue, registration, definitions)
+    contexts = producer_activation_contexts(catalogue, registration, definitions)
     report = validate_producer_catalogue(
         registration,
         ProducerValidationContext(

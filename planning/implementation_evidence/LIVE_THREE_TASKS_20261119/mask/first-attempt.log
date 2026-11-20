@@ -1,0 +1,35 @@
+task=task.c9605a42da9b9d41bec642001824980d1d608444d628d104c3bcc3b8298d2a71 execution=execution.adb0748837d5b8c1291b99bb0b6be7bdb8be69800eb46c9c10f6091ec8644392 bundle=4a79efc889f8fba2394ffc4ebdd62f48c7fc5d79cf14429d71a4518f829eab96
+0 applied
+1 applied
+2 applied
+3 applied
+Traceback (most recent call last):
+  File "/tmp/jimu-three-tasks-runner/run_trial.py", line 13, in <module>
+    asyncio.run(run(opts.out,bridge.url,img,source,region=region,caps=trial_scenes.capability_snapshot))
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/jimu-three-tasks-rt-nm/runtime_harness.py", line 160, in run
+    step = await worker.run_once(scope, eid, owner=f"live-{index}", lease_ms=99000)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/src/jimu_runtime/workflow/worker.py", line 589, in run_once
+    return await self._execute_claim(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/src/jimu_runtime/workflow/worker.py", line 850, in _execute_claim
+    disposition = await self._commit(
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/src/jimu_runtime/workflow/worker.py", line 907, in _commit
+    return await jobs.complete(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/src/jimu_runtime/workflow/jobs.py", line 1124, in complete
+    return await self._submit(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/lc/LC/ares_xtws/4_agent/RSI_ares/inspect_pipeline/JIMU_Inspection_Runtime_Codex_Starter_v1.0.0/src/jimu_runtime/workflow/jobs.py", line 1207, in _submit
+    raise ValueError(
+ValueError: a successful result requires at least one pinned artifact
